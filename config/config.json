@@ -1,0 +1,32 @@
+{
+  "_comment": "ScoreStream Pro configuration — edit and restart scorestream-api to apply",
+  "version": "0.2.0-beta",
+
+  "channel_numbering": {
+    "mode": "auto",
+    "_mode_options": ["auto", "manual"],
+    "_auto_note": "In auto mode, channels are numbered sequentially from base_number",
+    "base_number": 900,
+    "channels": {
+      "all":      { "name": "ScoreStream — All Sports",      "number": 900, "enabled": true  },
+      "nfl":      { "name": "ScoreStream — NFL",             "number": 901, "enabled": true  },
+      "nba":      { "name": "ScoreStream — NBA",             "number": 902, "enabled": true  },
+      "mlb":      { "name": "ScoreStream — MLB",             "number": 903, "enabled": true  },
+      "nhl":      { "name": "ScoreStream — NHL",             "number": 904, "enabled": true  },
+      "ncaab":    { "name": "ScoreStream — NCAA Basketball", "number": 905, "enabled": true  },
+      "ncaabase": { "name": "ScoreStream — NCAA Baseball",   "number": 906, "enabled": false }
+    }
+  },
+
+  "dispatcharr": {
+    "group_name": "ScoreStream",
+    "channel_profiles": {
+      "mode": "all",
+      "_mode_options": ["all", "none", "specific"],
+      "_all_note":      "Add channels to ALL existing Dispatcharr Channel Profiles",
+      "_none_note":     "Do not add channels to any Channel Profile",
+      "_specific_note": "Add channels only to the profiles listed in profile_ids",
+      "profile_ids": []
+    }
+  }
+}

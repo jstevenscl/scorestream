@@ -1,0 +1,111 @@
+version: "3.8"
+
+# ============================================================
+#  ScoreStream Pro — Docker Compose Stack
+#  Pull from GitHub Container Registry (ghcr.io)
+#  or build locally with: docker compose build
+# ============================================================
+
+# Image tag to use — options:
+#   latest  → stable release
+#   beta    → bleeding edge (built on every main branch push)
+#   v0.2.0-beta → specific version
+x-image-tag: &image-tag ${SCORESTREAM_TAG:-latest}
+
+services:
+
+  scorestream-web:
+    image: ghcr.io/${GITHUB_OWNER:-yourusername}/scorestream-pro-web:*image-tag
+    # Uncomment to build locally instead of pulling:
+    # build:
+    #   context: .
+    #   dockerfile: nginx/Dockerfile
+    container_name: scorestream-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8888}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./scoreboard.html:/usr/share/nginx/html/index.html:ro
+      - hls_segments:/usr/share/nginx/html/hls:ro
+    networks:
+      - scorestream-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  scorestream-renderer:
+    image: ghcr.io/${GITHUB_OWNER:-yourusername}/scorestream-pro-renderer:*image-tag
+    # build:
+    #   context: ./renderer
+    container_name: scorestream-renderer
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - STREAM_WIDTH=${STREAM_WIDTH:-1920}
+      - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
+      - STREAM_FPS=${STREAM_FPS:-30}
+      - SCOREBOARD_URL=http://scorestream-web/
+    volumes:
+      - renderer_pipe:/pipes
+    networks:
+      - scorestream-net
+    depends_on:
+      scorestream-web:
+        condition: service_healthy
+    shm_size: 512mb
+
+  scorestream-ffmpeg:
+    image: ghcr.io/${GITHUB_OWNER:-yourusername}/scorestream-pro-ffmpeg:*image-tag
+    # build:
+    #   context: ./ffmpeg
+    container_name: scorestream-ffmpeg
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - STREAM_WIDTH=${STREAM_WIDTH:-1920}
+      - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
+      - STREAM_FPS=${STREAM_FPS:-30}
+      - HLS_SEGMENT_DURATION=${HLS_SEGMENT_DURATION:-2}
+      - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-10}
+    volumes:
+      - renderer_pipe:/pipes:ro
+      - hls_segments:/hls
+    networks:
+      - scorestream-net
+    depends_on:
+      - scorestream-renderer
+
+  scorestream-api:
+    image: ghcr.io/${GITHUB_OWNER:-yourusername}/scorestream-pro-api:*image-tag
+    # build:
+    #   context: ./api
+    container_name: scorestream-api
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - DISPATCHARR_URL=${DISPATCHARR_URL}
+      - DISPATCHARR_USER=${DISPATCHARR_USER}
+      - DISPATCHARR_PASS=${DISPATCHARR_PASS}
+      - DISPATCHARR_GROUP=${DISPATCHARR_GROUP:-ScoreStream}
+      - DISPATCHARR_CHANNEL_START=${DISPATCHARR_CHANNEL_START:-900}
+      - STREAM_BASE_URL=${STREAM_BASE_URL}
+      - CONFIG_PATH=/config/config.json
+    volumes:
+      # config.json — channel numbering + profile assignment
+      - ./config:/config
+    networks:
+      - scorestream-net
+    depends_on:
+      - scorestream-ffmpeg
+
+volumes:
+  hls_segments:
+  renderer_pipe:
+
+networks:
+  scorestream-net:
+    driver: bridge
