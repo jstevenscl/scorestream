@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ScoreStream Pro 📡
 
 A self-hosted live sports scoreboard that streams to Dispatcharr as real channels — automatically.
@@ -275,3 +276,7 @@ Dispatcharr reaches this URL from inside its own container.
 
 - [CHANGELOG.md](./CHANGELOG.md) — version history
 - [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) — the IPTV manager this integrates with
+=======
+# scorestream
+Digital scoreboard for use with dispatcharr
+>>>>>>> 11786f2ffb6d3e1d06023804e7ac39431d7e3bf5
