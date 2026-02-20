@@ -29,7 +29,7 @@ services:
     networks:
       - scorestream-net
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 20s
       timeout: 5s
       retries: 3
