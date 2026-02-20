@@ -63,7 +63,7 @@ jobs:
       - name: Build & Push — Web/Nginx (beta)
         uses: docker/build-push-action@v5
         with:
-          context: ./nginx
+          context: .
           file: ./nginx/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64

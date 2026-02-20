@@ -1,13 +1,11 @@
-﻿FROM nginx:1.25-alpine
+FROM nginx:1.25-alpine
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl && \
+    rm -f /etc/nginx/conf.d/default.conf && \
+    mkdir -p /usr/share/nginx/html/hls
 
-RUN rm /etc/nginx/conf.d/default.conf
-
-COPY nginx.conf /etc/nginx/nginx.conf
-
-RUN mkdir -p /usr/share/nginx/html/hls && \
-    echo "ScoreStream" > /usr/share/nginx/html/index.html
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY scoreboard.html /usr/share/nginx/html/index.html
 
 EXPOSE 80
 
