@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-PIPE_PATH="/pipes/scoreboard.rawvideo"
+PIPE_PATH="${PIPE_PATH:-/pipes/scoreboard.rawvideo}"
 WIDTH="${STREAM_WIDTH:-1920}"
 HEIGHT="${STREAM_HEIGHT:-1080}"
 FPS="${STREAM_FPS:-30}"
@@ -17,5 +17,7 @@ if [ ! -p "$PIPE_PATH" ]; then
   echo "[renderer] Created pipe: ${PIPE_PATH}"
 fi
 
-# Start the renderer
-exec node /app/render.js
+# Use full path to node to avoid PATH issues in slim images
+NODE_BIN=$(which node 2>/dev/null || echo "/usr/local/bin/node")
+echo "[renderer] Node: ${NODE_BIN}"
+exec "$NODE_BIN" /app/render.js
