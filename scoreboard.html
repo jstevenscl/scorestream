@@ -1314,11 +1314,11 @@ function updateTbFavCount(){
 // =====================
 //  DISPATCHARR
 // =====================
-const API_BASE='http://localhost:5000';
+const API_BASE='/api';
 let dsNumMode='auto'; // 'auto' | 'manual'
 
 // Load saved credentials into UI on tab open
-async async async function initDsTab(){
+async function initDsTab(){
   try{
     const r=await fetch(`${API_BASE}/dispatcharr/credentials`);
     if(r.ok){
@@ -1470,12 +1470,7 @@ async function createChannels(mode){
     const d=await r.json();
     if(r.ok){
       el.style.color='var(--accent)';
-      el.textContent=`✅ Created ${d.created?.length||0} channel(s)
-${(d.created||[]).map(c=>`  #${c.number} ${c.name}`).join('
-')}${d.errors?.length?`
-⚠️ ${d.errors.length} error(s):
-${d.errors.join('
-')}`:''}`;
+      el.textContent='✅ Created '+(d.created?.length||0)+' channel(s)\n'+(d.created||[]).map(c=>'  #'+c.number+' '+c.name).join('\n')+(d.errors?.length?'\n⚠️ '+d.errors.length+' error(s):\n'+d.errors.join('\n'):'');
     }else{
       el.style.color='#ff6b6b';el.textContent=`❌ ${d.error||'Channel creation failed'}`;
     }
