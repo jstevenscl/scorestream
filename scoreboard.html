@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScoreStream Pro</title>
+<title>ScoreStream</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -325,7 +325,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <button class="sidebar-btn" onclick="openSettings('sports')">&#x2699;&#xFE0F; Settings</button>
   </div>
 
-  <div class="sidebar-footer">ScoreStream Pro v0.0.1-beta &middot; ESPN Data</div>
+  <div class="sidebar-footer">ScoreStream v0.0.1-beta &middot; ESPN Data</div>
 </aside>
 
 <div id="main">
@@ -471,34 +471,77 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
     <!-- TAB: DISPATCHARR -->
     <div id="tab-dispatcharr" class="tab-panel" style="display:none">
+
+      <!-- CREDENTIALS -->
       <div class="modal-section">
-        <div class="modal-section-title">Connection Status</div>
-        <div class="modal-row">
-          <div>
-            <div class="modal-label">ScoreStream API</div>
-            <div class="modal-sublabel">Your local API container must be running</div>
-          </div>
+        <div class="modal-section-title">Dispatcharr Credentials</div>
+        <div class="modal-sublabel" style="margin-bottom:10px;">Stored securely in the ScoreStream API container — never in your browser.</div>
+        <div class="modal-row" style="margin-bottom:6px;">
+          <span class="modal-label">Dispatcharr URL</span>
+          <input type="text" class="modal-input" id="dsUrl" placeholder="http://dispatcharr:9191" style="flex:1;min-width:0;">
+        </div>
+        <div class="modal-row" style="margin-bottom:6px;">
+          <span class="modal-label">Username</span>
+          <input type="text" class="modal-input" id="dsUser" placeholder="admin" style="flex:1;min-width:0;" autocomplete="username">
+        </div>
+        <div class="modal-row" style="margin-bottom:10px;">
+          <span class="modal-label">Password</span>
+          <input type="password" class="modal-input" id="dsPass" placeholder="••••••••" style="flex:1;min-width:0;" autocomplete="current-password">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="modal-btn" onclick="saveCredentials()">Save Credentials</button>
           <button class="modal-btn" onclick="testConnection()">Test Connection</button>
         </div>
-        <div class="dispatcharr-test-result" id="testResult"></div>
+        <div class="dispatcharr-test-result" id="testResult" style="display:none;margin-top:8px;"></div>
       </div>
+
+      <!-- CHANNEL GROUP & PROFILE -->
       <div class="modal-section">
-        <div class="modal-section-title">Channel Configuration</div>
-        <div class="modal-row">
-          <div>
-            <div class="modal-label">Credentials</div>
-            <div class="modal-sublabel">Set DISPATCHARR_URL, DISPATCHARR_USER, DISPATCHARR_PASS in your .env file &mdash; credentials never enter the browser</div>
+        <div class="modal-section-title">Channel Defaults</div>
+        <div class="modal-row" style="margin-bottom:6px;">
+          <span class="modal-label" style="min-width:130px;">Channel Group</span>
+          <div style="display:flex;gap:6px;flex:1;min-width:0;">
+            <select class="modal-input" id="dGroupSelect" style="flex:1;min-width:0;">
+              <option value="">— connect to load groups —</option>
+            </select>
+            <button class="modal-btn" onclick="loadDsGroups()" title="Refresh groups" style="padding:4px 10px;font-size:16px;">↻</button>
           </div>
         </div>
-        <div class="modal-row" style="margin-top:4px;">
-          <span class="modal-label">Channel Group</span>
-          <input type="text" class="modal-input" id="dGroupInput" placeholder="ScoreStream" value="ScoreStream">
-        </div>
-        <div class="modal-row">
-          <span class="modal-label">Starting Channel #</span>
-          <input type="number" class="modal-input" id="dChannelStart" placeholder="900" value="900">
+        <div class="modal-row" style="margin-bottom:6px;">
+          <span class="modal-label" style="min-width:130px;">Channel Profile</span>
+          <div style="display:flex;gap:6px;flex:1;min-width:0;">
+            <select class="modal-input" id="dProfileSelect" style="flex:1;min-width:0;">
+              <option value="">— connect to load profiles —</option>
+            </select>
+            <button class="modal-btn" onclick="loadDsProfiles()" title="Refresh profiles" style="padding:4px 10px;font-size:16px;">↻</button>
+          </div>
         </div>
       </div>
+
+      <!-- CHANNEL NUMBERING MODE -->
+      <div class="modal-section">
+        <div class="modal-section-title">Channel Numbering</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button class="modal-btn active" id="numModeAuto" onclick="setNumMode('auto')" style="flex:1;">Auto Assign</button>
+          <button class="modal-btn" id="numModeManual" onclick="setNumMode('manual')" style="flex:1;">Manual Assign</button>
+        </div>
+
+        <!-- Auto mode -->
+        <div id="numAutoPanel">
+          <div class="modal-row">
+            <span class="modal-label">Starting Channel #</span>
+            <input type="number" class="modal-input" id="dChannelStart" placeholder="900" value="900" style="width:100px;">
+          </div>
+        </div>
+
+        <!-- Manual mode: per-sport channel # and group override -->
+        <div id="numManualPanel" style="display:none;">
+          <div class="modal-sublabel" style="margin-bottom:8px;">Assign a channel number and group for each enabled sport:</div>
+          <div id="manualSportRows"></div>
+        </div>
+      </div>
+
+      <!-- CREATE CHANNELS -->
       <div class="modal-section">
         <div class="modal-section-title">Create Channels in Dispatcharr</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
@@ -524,7 +567,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
             <button class="modal-btn" onclick="createChannels('both')">Create All</button>
           </div>
         </div>
-        <div class="channel-result" id="channelResult"></div>
+        <div class="channel-result" id="channelResult" style="display:none;"></div>
       </div>
     </div>
 
@@ -659,9 +702,17 @@ function loadEnabledSports(){
 }
 function saveEnabledSports(){ss.set('ss_sports',JSON.stringify([...state.enabledSports]));}
 
+function loadActiveSports(enabled){
+  // activeSports defaults to all currently enabled sports
+  try{const s=ss.get('ss_active_sports');return s?new Set(JSON.parse(s)):new Set(enabled);}catch(e){return new Set(enabled);}
+}
+function saveActiveSports(){ss.set('ss_active_sports',JSON.stringify([...state.activeSports]));}
+
+const _enabledSports=loadEnabledSports();
 const state={
   layout:'grid',
-  enabledSports:loadEnabledSports(),
+  enabledSports:_enabledSports,
+  activeSports:loadActiveSports(_enabledSports),
   statsDepth:'basic',
   filterMode:'all',
   games:{},
@@ -677,8 +728,10 @@ const state={
   display:{abbrSize:18,scoreSize:34,nameSize:11,nameColor:'#3d5a78'},
 };
 
-// getter
-function getSPORTS(){return ALL_SPORTS.filter(s=>state.enabledSports.has(s.id));}
+// getSPORTS: returns sports enabled in Settings AND active in sidebar (for scoreboard render)
+function getSPORTS(){return ALL_SPORTS.filter(s=>state.enabledSports.has(s.id)&&state.activeSports.has(s.id));}
+// getAllEnabledSports: returns all sports enabled in Settings (for team browser, fetch, etc.)
+function getAllEnabledSports(){return ALL_SPORTS.filter(s=>state.enabledSports.has(s.id));}
 
 function loadFavs(){try{return new Set(JSON.parse(ss.get('ss_favs')||'[]'));}catch(e){return new Set();}}
 function loadFavLeagues(){try{return new Set(JSON.parse(ss.get('ss_fav_leagues')||'[]'));}catch(e){return new Set();}}
@@ -707,7 +760,8 @@ function renderFavSummary(){
 // =====================
 function buildEndedLeagueToggles(){
   const c=document.getElementById('endedLeagueToggles');if(!c)return;c.innerHTML='';
-  getSPORTS().forEach(sport=>{
+  // Only show sports that are enabled in Settings AND currently active in sidebar
+  ALL_SPORTS.filter(s=>state.enabledSports.has(s.id)&&state.activeSports.has(s.id)).forEach(sport=>{
     const on=state.endedLeagues.has(sport.id),days=state.daysPerSport[sport.id]||1,filter=state.endedFilter[sport.id]||'all';
     const row=document.createElement('div');
     row.className=`ended-league-row${on?' active':''}`;row.id=`ended-row-${sport.id}`;
@@ -766,16 +820,15 @@ function onLeagueDaysChange(sid,v){
 // =====================
 //  SIDEBAR SPORT TOGGLES
 // =====================
-function getSPORTS(){return ALL_SPORTS.filter(s=>state.enabledSports.has(s.id));}
-
 function buildSportToggles(){
   const c=document.getElementById('sport-toggles');c.innerHTML='';
-  getSPORTS().forEach(sport=>{
-    const active=true; // all enabled sports shown as active by default
+  // Show all sports enabled in Settings; toggle controls active display
+  ALL_SPORTS.filter(s=>state.enabledSports.has(s.id)).forEach(sport=>{
+    const active=state.activeSports.has(sport.id);
     const season=state.seasonMeta[sport.id];
     const isOff=season?.isOff||false;
     const div=document.createElement('div');
-    div.className=`sport-toggle active${isOff?' off-season':''}`;
+    div.className=`sport-toggle${active?' active':''}${isOff?' off-season':''}`;
     div.id=`sport-toggle-${sport.id}`;
     div.dataset.sport=sport.id;
     let badge='';
@@ -789,6 +842,18 @@ function buildSportToggles(){
         <span class="sport-count" id="count-${sport.id}">–</span>
         <div class="toggle-switch"></div>
       </div>`;
+    div.addEventListener('click',()=>{
+      if(state.activeSports.has(sport.id)){
+        state.activeSports.delete(sport.id);
+        div.classList.remove('active');
+      } else {
+        state.activeSports.add(sport.id);
+        div.classList.add('active');
+      }
+      saveActiveSports();
+      if(state.showEnded) buildEndedLeagueToggles();
+      renderScoreboard();
+    });
     c.appendChild(div);
   });
 }
@@ -866,6 +931,7 @@ function switchTab(tab){
   document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
   const panel=document.getElementById(`tab-${tab}`);if(panel)panel.style.display='block';
   if(tab==='teams'){buildTbTabs();loadTbSport(tbState.activeSport||getSPORTS()[0]?.id);}
+  if(tab==='dispatcharr'){initDsTab();}
 }
 
 // =====================
@@ -891,12 +957,22 @@ function buildSportsTab(){
 }
 
 function toggleSportEnabled(id,toggleEl){
-  if(state.enabledSports.has(id))state.enabledSports.delete(id);else state.enabledSports.add(id);
+  if(state.enabledSports.has(id)){
+    state.enabledSports.delete(id);
+    // Also remove from activeSports when disabled in settings
+    state.activeSports.delete(id);
+  } else {
+    state.enabledSports.add(id);
+    // Auto-activate when enabled in settings
+    state.activeSports.add(id);
+  }
   const on=state.enabledSports.has(id);
   toggleEl.classList.toggle('on',on);
   toggleEl.closest('.sport-setting-row').classList.toggle('enabled',on);
   saveEnabledSports();
+  saveActiveSports();
   buildSportToggles();
+  if(state.showEnded) buildEndedLeagueToggles();
   renderScoreboard();
 }
 
@@ -977,7 +1053,7 @@ async function fetchAllScores(){
   const btn=document.getElementById('refreshBtn');
   if(btn){btn.innerHTML='↻ Fetching...';btn.style.opacity='0.6';}
   showLoadingState();
-  await Promise.all(getSPORTS().map(s=>fetchSport(s)));
+  await Promise.all(getAllEnabledSports().map(s=>fetchSport(s)));
   refreshSportToggles();updateTopbar();renderScoreboard();
   const el=document.getElementById('lastUpdate');
   if(el)el.textContent=`Updated: ${new Date().toLocaleTimeString()}${state.usingMock?' (demo)':''}`;
@@ -1172,7 +1248,7 @@ async function fetchTeamsForSport(sid){
 
 function buildTbTabs(){
   const c=document.getElementById('tbTabs');if(!c)return;c.innerHTML='';
-  getSPORTS().forEach(sport=>{
+  getAllEnabledSports().forEach(sport=>{
     const tab=document.createElement('div');
     tab.style.cssText='padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;';
     tab.textContent=`${sport.emoji} ${sport.name}`;
@@ -1239,38 +1315,178 @@ function updateTbFavCount(){
 //  DISPATCHARR
 // =====================
 const API_BASE='http://localhost:5000';
+let dsNumMode='auto'; // 'auto' | 'manual'
 
-async function testConnection(){
-  const el=document.getElementById('testResult');el.style.display='block';el.className='dispatcharr-test-result';el.textContent='Testing...';
+// Load saved credentials into UI on tab open
+async function initDsTab(){
   try{
-    const r=await fetch(`${API_BASE}/health`,{signal:AbortSignal.timeout(5000)});
+    const r=await fetch(`${API_BASE}/dispatcharr/credentials`);
+    if(r.ok){
+      const d=await r.json();
+      if(d.url)document.getElementById('dsUrl').value=d.url;
+      if(d.username)document.getElementById('dsUser').value=d.username;
+      document.getElementById('dsPass').placeholder=d.has_password?'••••••• (saved)':'••••••••';
+    }
+  }catch(e){}
+  buildManualSportRows();
+}
+
+async function saveCredentials(){
+  const url=document.getElementById('dsUrl').value.trim();
+  const username=document.getElementById('dsUser').value.trim();
+  const password=document.getElementById('dsPass').value;
+  if(!url){alert('Please enter the Dispatcharr URL');return;}
+  const el=document.getElementById('testResult');
+  el.style.display='block';el.className='dispatcharr-test-result';el.textContent='Saving credentials...';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/credentials`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url,username,password:password||undefined}),
+      signal:AbortSignal.timeout(5000)
+    });
     const d=await r.json();
     if(r.ok){
-      el.className='dispatcharr-test-result ok';el.textContent=`✅ API connected — ${d.version||'ok'}`;
-      const ds=await fetch(`${API_BASE}/dispatcharr/status`);const dd=await ds.json();
-      el.textContent+=dd.connected?'\n✅ Dispatcharr reachable':'\n⚠️ Dispatcharr not reachable — check DISPATCHARR_URL in .env';
-      updateDsStatus(dd.connected);
-    }else throw new Error(r.status);
-  }catch(e){el.className='dispatcharr-test-result err';el.textContent=`❌ Cannot reach API at ${API_BASE}\nMake sure the scorestream-api container is running.`;updateDsStatus(false,'error');}
+      el.className='dispatcharr-test-result ok';el.textContent='✅ Credentials saved';
+      document.getElementById('dsPass').value='';
+      document.getElementById('dsPass').placeholder='••••••• (saved)';
+    }else{el.className='dispatcharr-test-result err';el.textContent=`❌ ${d.error||'Save failed'}`;}
+  }catch(e){el.className='dispatcharr-test-result err';el.textContent=`❌ Cannot reach ScoreStream API at ${API_BASE}`;}
+}
+
+async function testConnection(){
+  const el=document.getElementById('testResult');
+  el.style.display='block';el.className='dispatcharr-test-result';el.textContent='Testing connection...';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/test`,{signal:AbortSignal.timeout(8000)});
+    const d=await r.json();
+    if(r.ok&&d.connected){
+      el.className='dispatcharr-test-result ok';
+      el.textContent=`✅ Connected to Dispatcharr${d.version?' (v'+d.version+')':''}`;
+      updateDsStatus(true);
+      // Auto-load groups and profiles after successful connection
+      loadDsGroups();loadDsProfiles();
+    }else{
+      el.className='dispatcharr-test-result err';
+      el.textContent=`❌ ${d.error||'Could not connect to Dispatcharr'}`;
+      updateDsStatus(false,'error');
+    }
+  }catch(e){
+    el.className='dispatcharr-test-result err';
+    el.textContent=`❌ ScoreStream API not reachable at ${API_BASE}`;
+    updateDsStatus(false,'error');
+  }
+}
+
+async function loadDsGroups(){
+  const sel=document.getElementById('dGroupSelect');
+  sel.innerHTML='<option value="">Loading...</option>';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/groups`,{signal:AbortSignal.timeout(8000)});
+    const d=await r.json();
+    if(r.ok&&d.groups?.length){
+      sel.innerHTML='<option value="">— select group —</option>'+d.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+    }else{
+      sel.innerHTML='<option value="">— no groups found —</option>';
+    }
+  }catch(e){sel.innerHTML='<option value="">— connect first —</option>';}
+  // Also rebuild manual rows since group list changed
+  buildManualSportRows();
+}
+
+async function loadDsProfiles(){
+  const sel=document.getElementById('dProfileSelect');
+  sel.innerHTML='<option value="">Loading...</option>';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(8000)});
+    const d=await r.json();
+    if(r.ok&&d.profiles?.length){
+      sel.innerHTML='<option value="">— no profile (default) —</option>'+d.profiles.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+    }else{
+      sel.innerHTML='<option value="">— no profiles found —</option>';
+    }
+  }catch(e){sel.innerHTML='<option value="">— connect first —</option>';}
+}
+
+// Channel numbering mode
+function setNumMode(mode){
+  dsNumMode=mode;
+  document.getElementById('numModeAuto').classList.toggle('active',mode==='auto');
+  document.getElementById('numModeManual').classList.toggle('active',mode==='manual');
+  document.getElementById('numAutoPanel').style.display=mode==='auto'?'block':'none';
+  document.getElementById('numManualPanel').style.display=mode==='manual'?'block':'none';
+  if(mode==='manual')buildManualSportRows();
+}
+
+function buildManualSportRows(){
+  const c=document.getElementById('manualSportRows');if(!c)return;
+  const sports=getAllEnabledSports();
+  // Get current groups for dropdown
+  const groupSel=document.getElementById('dGroupSelect');
+  const groupOptions=groupSel?Array.from(groupSel.options).filter(o=>o.value).map(o=>`<option value="${o.value}">${o.text}</option>`).join(''):'';
+  c.innerHTML=sports.map(sport=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;">
+      <div style="width:8px;height:8px;border-radius:2px;background:${sport.color};flex-shrink:0;"></div>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;min-width:140px;">${sport.emoji} ${sport.name}</span>
+      <input type="number" placeholder="Ch#" id="mch-${sport.id}" style="width:70px;background:var(--bg-input,rgba(255,255,255,0.05));border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:12px;">
+      <select id="mgrp-${sport.id}" style="flex:1;background:var(--bg-input,rgba(255,255,255,0.05));border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:12px;">
+        <option value="">Default group</option>
+        ${groupOptions}
+      </select>
+    </div>`).join('');
 }
 
 async function createChannels(mode){
-  const el=document.getElementById('channelResult');el.style.display='block';el.textContent='Creating channels...';
+  const el=document.getElementById('channelResult');
+  el.style.display='block';el.className='channel-result';el.textContent='Creating channels...';
   try{
-    const group=document.getElementById('dGroupInput')?.value||'ScoreStream';
-    const start=parseInt(document.getElementById('dChannelStart')?.value||'900');
-    const sports=getSPORTS().map(s=>s.name);
-    const r=await fetch(`${API_BASE}/dispatcharr/create`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode,sports,group,start}),signal:AbortSignal.timeout(15000)});
+    const groupId=document.getElementById('dGroupSelect')?.value||null;
+    const profileId=document.getElementById('dProfileSelect')?.value||null;
+    const sports=getAllEnabledSports().map(s=>({id:s.id,name:s.name,emoji:s.emoji}));
+
+    let channelAssignments=null;
+    if(dsNumMode==='manual'){
+      channelAssignments=sports.map(s=>({
+        sportId:s.id,
+        sportName:s.name,
+        channelNumber:parseInt(document.getElementById(`mch-${s.id}`)?.value||'0')||null,
+        groupId:document.getElementById(`mgrp-${s.id}`)?.value||groupId||null,
+      }));
+    }
+
+    const body={
+      mode,
+      sports,
+      numberingMode:dsNumMode,
+      startChannel:parseInt(document.getElementById('dChannelStart')?.value||'900'),
+      groupId,
+      profileId,
+      channelAssignments,
+    };
+
+    const r=await fetch(`${API_BASE}/dispatcharr/create`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body),signal:AbortSignal.timeout(20000)
+    });
     const d=await r.json();
-    el.textContent=`✅ Created ${d.created?.length||0} channel(s)${d.errors?.length?`\n⚠️ ${d.errors.length} error(s)`:''}\n${(d.created||[]).map(c=>`#${c.number} ${c.name}`).join('\n')}`;
-  }catch(e){el.textContent=`❌ Error: ${e.message}`;}
+    if(r.ok){
+      el.style.color='var(--accent)';
+      el.textContent=`✅ Created ${d.created?.length||0} channel(s)
+${(d.created||[]).map(c=>`  #${c.number} ${c.name}`).join('
+')}${d.errors?.length?`
+⚠️ ${d.errors.length} error(s):
+${d.errors.join('
+')}`:''}`;
+    }else{
+      el.style.color='#ff6b6b';el.textContent=`❌ ${d.error||'Channel creation failed'}`;
+    }
+  }catch(e){el.style.color='#ff6b6b';el.textContent=`❌ Error: ${e.message}`;}
 }
 
-function updateDsStatus(connected,state2=''){
+function updateDsStatus(connected,st=''){
   const dot=document.getElementById('dsDot'),label=document.getElementById('dsLabel');
   if(!dot||!label)return;
   if(connected){dot.className='ds-dot connected';label.className='ds-label connected';label.textContent='Dispatcharr: Connected';}
-  else if(state2==='error'){dot.className='ds-dot error';label.className='ds-label error';label.textContent='Dispatcharr: Error';}
+  else if(st==='error'){dot.className='ds-dot error';label.className='ds-label error';label.textContent='Dispatcharr: Error';}
   else{dot.className='ds-dot';label.className='ds-label';label.textContent='Dispatcharr: Not configured';}
 }
 
