@@ -29,7 +29,7 @@ services:
     networks:
       - scorestream-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
       interval: 20s
       timeout: 5s
       retries: 3
@@ -96,8 +96,8 @@ services:
       - ./config:/config
     networks:
       - scorestream-net
-    depends_on:
-      - scorestream-ffmpeg
+    # API starts independently — no dependency on renderer/ffmpeg pipeline
+    # This ensures the Dispatcharr UI works even if the streaming stack is not running
 
 volumes:
   hls_segments:

@@ -346,7 +346,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 <div class="modal">
   <div class="modal-header">
     <div class="modal-title">&#x2699;&#xFE0F; Settings</div>
-    <button class="modal-close" onclick="closeSettings()">&#x2715;</button>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent-green);opacity:0.7;letter-spacing:1px;">&#x2713; AUTO-SAVED</span>
+      <button class="modal-close" onclick="closeSettings()">&#x2715;</button>
+    </div>
   </div>
   <div class="modal-tabs">
     <button class="modal-tab active" data-tab="sports" onclick="switchTab('sports')">Sports &amp; Leagues</button>
@@ -1317,17 +1320,37 @@ function updateTbFavCount(){
 const API_BASE='/api';
 let dsNumMode='auto'; // 'auto' | 'manual'
 
-// Load saved credentials into UI on tab open
+// ── Dispatcharr credential cache (localStorage fallback) ─────────────────────
+// We cache URL + username in localStorage so the tab fields survive page refreshes
+// even when the API container isn't reachable yet. Password is never cached locally.
+function saveDsCache(url,username){
+  try{ss.set('ss_ds_url',url||'');ss.set('ss_ds_user',username||'');}catch(e){}
+}
+function loadDsCache(){
+  return{url:ss.get('ss_ds_url')||'',username:ss.get('ss_ds_user')||''};
+}
+
+// Load saved credentials into UI on tab open — cache first, then API
 async function initDsTab(){
+  // 1. Populate fields immediately from localStorage cache (instant, no network)
+  const cache=loadDsCache();
+  const urlEl=document.getElementById('dsUrl'),userEl=document.getElementById('dsUser'),passEl=document.getElementById('dsPass');
+  if(cache.url&&urlEl)urlEl.value=cache.url;
+  if(cache.username&&userEl)userEl.value=cache.username;
+  // 2. Try to refresh from API in the background (updates placeholder if password is saved)
   try{
-    const r=await fetch(`${API_BASE}/dispatcharr/credentials`);
+    const r=await fetch(`${API_BASE}/dispatcharr/credentials`,{signal:AbortSignal.timeout(4000)});
     if(r.ok){
       const d=await r.json();
-      if(d.url)document.getElementById('dsUrl').value=d.url;
-      if(d.username)document.getElementById('dsUser').value=d.username;
-      document.getElementById('dsPass').placeholder=d.has_password?'••••••• (saved)':'••••••••';
+      if(d.url&&urlEl)urlEl.value=d.url;
+      if(d.username&&userEl)userEl.value=d.username;
+      if(passEl)passEl.placeholder=d.has_password?'••••••• (saved)':'••••••••';
+      // Keep cache in sync
+      saveDsCache(d.url,d.username);
     }
-  }catch(e){}
+  }catch(e){
+    // API unreachable — fields already populated from cache above, nothing to do
+  }
   buildManualSportRows();
 }
 
@@ -1338,6 +1361,8 @@ async function saveCredentials(){
   if(!url){alert('Please enter the Dispatcharr URL');return;}
   const el=document.getElementById('testResult');
   el.style.display='block';el.className='dispatcharr-test-result';el.textContent='Saving credentials...';
+  // Always cache URL+username locally so fields survive page refresh even if API is down
+  saveDsCache(url,username);
   try{
     const r=await fetch(`${API_BASE}/dispatcharr/credentials`,{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -1346,11 +1371,14 @@ async function saveCredentials(){
     });
     const d=await r.json();
     if(r.ok){
-      el.className='dispatcharr-test-result ok';el.textContent='✅ Credentials saved';
+      el.className='dispatcharr-test-result ok';el.textContent='✅ Credentials saved to API';
       document.getElementById('dsPass').value='';
       document.getElementById('dsPass').placeholder='••••••• (saved)';
     }else{el.className='dispatcharr-test-result err';el.textContent=`❌ ${d.error||'Save failed'}`;}
-  }catch(e){el.className='dispatcharr-test-result err';el.textContent=`❌ Cannot reach ScoreStream API at ${API_BASE}`;}
+  }catch(e){
+    el.className='dispatcharr-test-result err';
+    el.textContent='❌ ScoreStream API not reachable — check that the scorestream-api container is running. URL and username were cached locally.';
+  }
 }
 
 async function testConnection(){
@@ -1372,7 +1400,7 @@ async function testConnection(){
     }
   }catch(e){
     el.className='dispatcharr-test-result err';
-    el.textContent=`❌ ScoreStream API not reachable at ${API_BASE}`;
+    el.textContent=`❌ ScoreStream API container not reachable — go to Portainer and confirm scorestream-api is running, then retry.`;
     updateDsStatus(false,'error');
   }
 }
