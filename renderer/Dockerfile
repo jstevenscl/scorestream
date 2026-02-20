@@ -1,27 +1,22 @@
-FROM node:20-alpine
+FROM nginx:1.25-alpine
 
-# Install Chromium and dependencies
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    ffmpeg \
-    bash
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Tell Puppeteer to use installed Chromium
-ENV PUPPETEER_SKIP_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# Copy our nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
 
-WORKDIR /app
+# Create HLS output directory
+RUN mkdir -p /usr/share/nginx/html/hls
 
-COPY package.json .
-RUN npm install
+# scoreboard.html is mounted at runtime via docker-compose volume
+# so we just need a placeholder
+RUN echo "ScoreStream" > /usr/share/nginx/html/index.html
 
-COPY render.js .
-COPY entrypoint.sh .
-RUN chmod +x entrypoint.sh
+# Health check endpoint — nginx returns 200 on /health via config
+EXPOSE 80
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost/health || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

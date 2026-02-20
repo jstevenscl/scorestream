@@ -1,22 +1,20 @@
 version: "3.8"
 
 # ============================================================
-#  ScoreStream Pro — Docker Compose Stack
+#  ScoreStream — Docker Compose Stack
 #  Pull from GitHub Container Registry (ghcr.io)
-#  or build locally with: docker compose build
+#
+#  Set SCORESTREAM_TAG in .env to choose image version:
+#    latest        → stable release
+#    beta          → bleeding edge (built on every dev push)
+#    v0.0.1-beta   → specific version
 # ============================================================
-
-# Image tag to use — options:
-#   latest  → stable release
-#   beta    → bleeding edge (built on every main branch push)
-#   v0.2.0-beta → specific version
-x-image-tag: &image-tag ${SCORESTREAM_TAG:-latest}
 
 services:
 
   scorestream-web:
-    image: ghcr.io/${GITHUB_OWNER:-yourusername}/scorestream-pro-web:*image-tag
-    # Uncomment to build locally instead of pulling:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-web:${SCORESTREAM_TAG:-latest}
+    # To build locally instead of pulling, comment image line above and uncomment below:
     # build:
     #   context: .
     #   dockerfile: nginx/Dockerfile
@@ -38,7 +36,7 @@ services:
       start_period: 10s
 
   scorestream-renderer:
-    image: ghcr.io/${GITHUB_OWNER:-yourusername}/scorestream-pro-renderer:*image-tag
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-renderer:${SCORESTREAM_TAG:-latest}
     # build:
     #   context: ./renderer
     container_name: scorestream-renderer
@@ -59,7 +57,7 @@ services:
     shm_size: 512mb
 
   scorestream-ffmpeg:
-    image: ghcr.io/${GITHUB_OWNER:-yourusername}/scorestream-pro-ffmpeg:*image-tag
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-ffmpeg:${SCORESTREAM_TAG:-latest}
     # build:
     #   context: ./ffmpeg
     container_name: scorestream-ffmpeg
@@ -80,7 +78,7 @@ services:
       - scorestream-renderer
 
   scorestream-api:
-    image: ghcr.io/${GITHUB_OWNER:-yourusername}/scorestream-pro-api:*image-tag
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-api:${SCORESTREAM_TAG:-latest}
     # build:
     #   context: ./api
     container_name: scorestream-api
@@ -95,7 +93,6 @@ services:
       - STREAM_BASE_URL=${STREAM_BASE_URL}
       - CONFIG_PATH=/config/config.json
     volumes:
-      # config.json — channel numbering + profile assignment
       - ./config:/config
     networks:
       - scorestream-net

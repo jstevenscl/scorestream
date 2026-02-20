@@ -1,138 +1,119 @@
-name: Release — Build & Push Docker Image
+name: Release — Build on Version Tag
 
-# Triggers on version tags: v1.0.0, v0.2.0-beta, etc.
+# Triggers when you push a tag matching v*.*.*-beta or v*.*.* (stable)
+# Examples: v0.0.1-beta, v0.1.0-beta, v1.0.0
+# Publishes versioned + :latest or :beta tags to GHCR
+
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*.*.*-beta'   # beta releases  e.g. v0.0.1-beta
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # stable releases e.g. v1.0.0
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/scorestream-pro
+  IMAGE_NAME: ${{ github.repository_owner }}/scorestream
 
 jobs:
-  build-and-push:
-    name: Build & Push to GHCR
+  build-release:
+    name: Build Release Images
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract version info
-        id: version
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-
-          # Determine if beta or stable
-          if echo "$TAG" | grep -qi "beta\|alpha\|rc"; then
-            echo "channel=beta" >> $GITHUB_OUTPUT
-            echo "is_latest=false" >> $GITHUB_OUTPUT
-          else
-            echo "channel=stable" >> $GITHUB_OUTPUT
-            echo "is_latest=true" >> $GITHUB_OUTPUT
-          fi
-          echo "Version: ${TAG}"
-
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up QEMU (for multi-arch)
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ── Build each service image ─────────────────────────────────────────
+      # Determine if this is a beta or stable release
+      - name: Determine release track
+        id: track
+        run: |
+          TAG=${GITHUB_REF##*/}
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          if [[ "$TAG" == *"-beta" ]]; then
+            echo "channel=beta" >> $GITHUB_OUTPUT
+            echo "floating_tag=beta" >> $GITHUB_OUTPUT
+          else
+            echo "channel=stable" >> $GITHUB_OUTPUT
+            echo "floating_tag=latest" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Build & Push — Web (nginx)
+      - name: Build & Push — API
         uses: docker/build-push-action@v5
         with:
-          context: ./scorestream/nginx
-          file: ./scorestream/nginx/Dockerfile
+          context: ./api
+          file: ./api/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:${{ steps.version.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:${{ steps.version.outputs.channel }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:${{ steps.version.outputs.is_latest == 'true' && 'latest' || steps.version.outputs.channel }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ steps.track.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ steps.track.outputs.floating_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build & Push — Renderer (headless Chrome)
+      - name: Build & Push — Web/Nginx
         uses: docker/build-push-action@v5
         with:
-          context: ./scorestream/renderer
+          context: ./nginx
+          file: ./nginx/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-renderer:${{ steps.version.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-renderer:${{ steps.version.outputs.channel }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-renderer:${{ steps.version.outputs.is_latest == 'true' && 'latest' || steps.version.outputs.channel }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:${{ steps.track.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:${{ steps.track.outputs.floating_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build & Push — FFmpeg encoder
+      - name: Build & Push — Renderer
         uses: docker/build-push-action@v5
         with:
-          context: ./scorestream/ffmpeg
+          context: ./renderer
+          file: ./renderer/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ffmpeg:${{ steps.version.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ffmpeg:${{ steps.version.outputs.channel }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ffmpeg:${{ steps.version.outputs.is_latest == 'true' && 'latest' || steps.version.outputs.channel }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-renderer:${{ steps.track.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-renderer:${{ steps.track.outputs.floating_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build & Push — API (Dispatcharr integration)
+      - name: Build & Push — FFmpeg
         uses: docker/build-push-action@v5
         with:
-          context: ./scorestream/api
+          context: ./ffmpeg
+          file: ./ffmpeg/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ steps.version.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ steps.version.outputs.channel }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ steps.version.outputs.is_latest == 'true' && 'latest' || steps.version.outputs.channel }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ffmpeg:${{ steps.track.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ffmpeg:${{ steps.track.outputs.floating_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ── Create GitHub Release ────────────────────────────────────────────
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: "ScoreStream Pro ${{ steps.version.outputs.tag }}"
-          prerelease: ${{ steps.version.outputs.channel == 'beta' }}
-          generate_release_notes: true
-          body: |
-            ## 🐳 Docker Images
-
-            Pull the latest images:
-            ```bash
-            # Stable (latest)
-            docker pull ghcr.io/${{ env.IMAGE_NAME }}-api:latest
-            docker pull ghcr.io/${{ env.IMAGE_NAME }}-web:latest
-            docker pull ghcr.io/${{ env.IMAGE_NAME }}-renderer:latest
-            docker pull ghcr.io/${{ env.IMAGE_NAME }}-ffmpeg:latest
-
-            # This specific version
-            docker pull ghcr.io/${{ env.IMAGE_NAME }}-api:${{ steps.version.outputs.tag }}
-            ```
-
-            ## 🚀 Quick Deploy
-
-            1. Download `docker-compose.yml` from this release
-            2. Copy `.env.example` → `.env` and fill in your values
-            3. `docker compose up -d`
-
-            See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for full setup instructions.
-          files: |
-            scorestream/docker-compose.yml
-            scorestream/.env
+      - name: Summary
+        run: |
+          echo "### 🚀 Release images pushed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`${{ steps.track.outputs.tag }}\`  |  **Channel:** \`${{ steps.track.outputs.channel }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/${{ env.IMAGE_NAME }}-api:${{ steps.track.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/${{ env.IMAGE_NAME }}-web:${{ steps.track.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/${{ env.IMAGE_NAME }}-renderer:${{ steps.track.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/${{ env.IMAGE_NAME }}-ffmpeg:${{ steps.track.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

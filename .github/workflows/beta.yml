@@ -1,22 +1,22 @@
-name: Beta — Auto-Build on Main Push
+name: Beta — Build on Dev Push
 
-# Builds and pushes :beta tag on every push to main branch
-# This gives users a bleeding-edge image between tagged releases
+# Triggers on every push to the dev branch
+# Publishes bleeding-edge :beta and :beta-<sha> images to GHCR
+
 on:
   push:
     branches:
-      - main
+      - dev
     paths:
-      # Only rebuild if actual code changes, not docs/config
-      - 'scorestream/api/**'
-      - 'scorestream/renderer/**'
-      - 'scorestream/ffmpeg/**'
-      - 'scorestream/nginx/**'
-      - 'scorestream/scoreboard.html'
+      - 'api/**'
+      - 'renderer/**'
+      - 'ffmpeg/**'
+      - 'nginx/**'
+      - 'scoreboard.html'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/scorestream-pro
+  IMAGE_NAME: ${{ github.repository_owner }}/scorestream
 
 jobs:
   build-beta:
@@ -37,6 +37,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up QEMU (for multi-arch)
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -47,7 +50,8 @@ jobs:
       - name: Build & Push — API (beta)
         uses: docker/build-push-action@v5
         with:
-          context: ./scorestream/api
+          context: ./api
+          file: ./api/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
@@ -56,11 +60,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build & Push — Web (beta)
+      - name: Build & Push — Web/Nginx (beta)
         uses: docker/build-push-action@v5
         with:
-          context: ./scorestream/nginx
-          file: ./scorestream/nginx/Dockerfile
+          context: ./nginx
+          file: ./nginx/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
@@ -72,7 +76,8 @@ jobs:
       - name: Build & Push — Renderer (beta)
         uses: docker/build-push-action@v5
         with:
-          context: ./scorestream/renderer
+          context: ./renderer
+          file: ./renderer/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
@@ -84,7 +89,8 @@ jobs:
       - name: Build & Push — FFmpeg (beta)
         uses: docker/build-push-action@v5
         with:
-          context: ./scorestream/ffmpeg
+          context: ./ffmpeg
+          file: ./ffmpeg/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
@@ -97,7 +103,7 @@ jobs:
         run: |
           echo "### ✅ Beta images pushed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "SHA: \`${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`dev\`  |  **SHA:** \`${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "ghcr.io/${{ env.IMAGE_NAME }}-api:beta" >> $GITHUB_STEP_SUMMARY

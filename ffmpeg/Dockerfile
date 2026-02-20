@@ -1,11 +1,22 @@
-FROM alpine:3.19
+FROM nginx:1.25-alpine
 
-RUN apk add --no-cache ffmpeg bash
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Copy our nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Create HLS output directories for each channel
-RUN mkdir -p /hls/all /hls/nfl /hls/nba /hls/mlb /hls/nhl /hls/ncaab /hls/ncaabase
+# Create HLS output directory
+RUN mkdir -p /usr/share/nginx/html/hls
 
-ENTRYPOINT ["/entrypoint.sh"]
+# scoreboard.html is mounted at runtime via docker-compose volume
+# so we just need a placeholder
+RUN echo "ScoreStream" > /usr/share/nginx/html/index.html
+
+# Health check endpoint — nginx returns 200 on /health via config
+EXPOSE 80
+
+HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost/health || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

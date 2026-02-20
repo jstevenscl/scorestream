@@ -1,14 +1,21 @@
-#!/bin/bash
-# ScoreStream Renderer Entrypoint
-# Waits for web container, then starts the renderer
-
+#!/bin/sh
 set -e
 
-echo "[entrypoint] Waiting for scoreboard web service..."
-until wget -qO- http://scorestream-web/health > /dev/null 2>&1; do
-  echo "[entrypoint] Web not ready, retrying in 3s..."
-  sleep 3
-done
-echo "[entrypoint] Web service ready. Starting renderer."
+PIPE_PATH="/pipes/scoreboard.rawvideo"
+WIDTH="${STREAM_WIDTH:-1920}"
+HEIGHT="${STREAM_HEIGHT:-1080}"
+FPS="${STREAM_FPS:-30}"
+SCOREBOARD_URL="${SCOREBOARD_URL:-http://scorestream-web/}"
 
+echo "[renderer] Starting — ${WIDTH}x${HEIGHT}@${FPS}fps"
+echo "[renderer] Scoreboard URL: ${SCOREBOARD_URL}"
+echo "[renderer] Output pipe: ${PIPE_PATH}"
+
+# Create named pipe if it doesn't exist
+if [ ! -p "$PIPE_PATH" ]; then
+  mkfifo "$PIPE_PATH"
+  echo "[renderer] Created pipe: ${PIPE_PATH}"
+fi
+
+# Start the renderer
 exec node /app/render.js

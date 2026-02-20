@@ -1,12 +1,15 @@
 {
   "name": "scorestream-renderer",
-  "version": "1.0.0",
-  "description": "Headless Chromium renderer for ScoreStream Pro",
+  "version": "0.0.1",
+  "description": "Headless Chrome renderer for ScoreStream scoreboard",
   "main": "render.js",
   "scripts": {
     "start": "node render.js"
   },
   "dependencies": {
-    "puppeteer-core": "^21.0.0"
+    "puppeteer-core": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
