@@ -318,6 +318,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <div class="sidebar-section">
     <button class="refresh-btn" id="refreshBtn"><span>&#x21BB;</span> Refresh Scores</button>
     <div class="last-update" id="lastUpdate">Last updated: --</div>
+    <button id="sidebarSaveBtn" onclick="manualSave()" style="display:none;width:100%;padding:9px;background:linear-gradient(135deg,rgba(255,107,0,0.2),rgba(255,59,92,0.15));border:1px solid var(--accent2);border-radius:8px;color:var(--accent2);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;margin-bottom:6px;">&#x1F4BE; Save Settings</button>
     <div class="dispatcharr-status" id="dsStatus" onclick="openSettings('dispatcharr')">
       <div class="ds-dot" id="dsDot"></div>
       <span class="ds-label" id="dsLabel">Dispatcharr: Not configured</span>
@@ -346,8 +347,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 <div class="modal">
   <div class="modal-header">
     <div class="modal-title">&#x2699;&#xFE0F; Settings</div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent-green);opacity:0.7;letter-spacing:1px;">&#x2713; AUTO-SAVED</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="saveStatusBadge" style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;transition:opacity 0.4s;opacity:0;"></span>
+      <button id="modalSaveBtn" onclick="manualSave()" style="display:none;padding:5px 14px;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,102,255,0.2));border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Save</button>
       <button class="modal-close" onclick="closeSettings()">&#x2715;</button>
     </div>
   </div>
@@ -379,7 +381,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <!-- TAB: TEAMS -->
     <div id="tab-teams" class="tab-panel" style="display:none">
       <div class="modal-section">
-        <div class="modal-section-title">Browse &amp; Favorite Teams</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div class="modal-section-title" style="margin-bottom:0;">Browse &amp; Favorite Teams</div>
+          <div style="display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:0.5px;">
+            LABEL:
+            <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+              <button id="tbLabelAbbr" onclick="setTbLabelMode('abbr')" style="padding:3px 9px;background:rgba(0,212,255,0.15);border:none;color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">ABBR</button>
+              <button id="tbLabelNick" onclick="setTbLabelMode('nick')" style="padding:3px 9px;background:transparent;border:none;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">NICKNAME</button>
+            </div>
+          </div>
+        </div>
         <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;" id="tbTabs"></div>
         <div style="position:relative;margin-bottom:10px;">
           <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;">&#x1F50D;</span>
@@ -387,8 +398,31 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
             style="width:100%;padding:8px 12px 8px 32px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"
             oninput="filterTeams(this.value)">
         </div>
+        <div id="tbDivPills" style="display:none;gap:5px;margin-bottom:10px;flex-wrap:wrap;">
+          <button onclick="setTbDivision('d1')"  id="tbDivD1"  style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:rgba(0,212,255,0.12);border-color:var(--accent);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">D-I</button>
+          <button onclick="setTbDivision('d2')"  id="tbDivD2"  style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">D-II</button>
+          <button onclick="setTbDivision('d3')"  id="tbDivD3"  style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">D-III</button>
+          <button onclick="setTbDivision('all')" id="tbDivAll" style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">ALL</button>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:340px;overflow-y:auto;" id="tbTeamList"></div>
         <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="tbFavCount">&#x2B50; 0 teams favorited</div>
+      </div>
+
+      <!-- NCAA TEAM MANAGEMENT — Coming Soon ─────────────────────────────── -->
+      <div style="opacity:0.38;pointer-events:none;user-select:none;" title="Coming in a future release">
+        <div class="modal-section" style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:14px;position:relative;">
+          <div style="position:absolute;top:10px;right:12px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--accent2);background:rgba(255,107,0,0.12);border:1px solid rgba(255,107,0,0.3);padding:2px 8px;border-radius:10px;">COMING SOON</div>
+          <div class="modal-section-title" style="margin-bottom:8px;">Manage NCAA Teams</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;font-family:'Barlow',sans-serif;">
+            Add, edit, or remove schools from the NCAA team database. Changes persist in your config volume and survive container updates.
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:not-allowed;">+ Add School</button>
+            <button style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:not-allowed;">✏ Edit School</button>
+            <button style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:not-allowed;">🗑 Remove School</button>
+            <button style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:not-allowed;">↺ Reseed Defaults</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -452,6 +486,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
     <!-- TAB: DATA -->
     <div id="tab-data" class="tab-panel" style="display:none">
+      <div class="modal-section">
+        <div class="modal-section-title">Settings Save Mode</div>
+        <div class="modal-row">
+          <div>
+            <div class="modal-label">Auto-save settings</div>
+            <div class="modal-sublabel">When off, a Save button appears in the header so you can review changes before applying.</div>
+          </div>
+          <div class="big-toggle" id="autoSaveToggle" onclick="toggleAutoSave()"></div>
+        </div>
+      </div>
+
       <div class="modal-section">
         <div class="modal-section-title">Auto-Refresh Rate</div>
         <div class="rate-pills" id="ratePills">
@@ -612,91 +657,78 @@ const DEFAULT_ENABLED=new Set(['nfl','nba','mlb','nhl','ncaamb','ncaabase']);
 // =====================
 //  NCAA FULL NAME MAP
 // =====================
-// Maps ESPN abbreviations to [full school name, common name, nickname, state]
-const NCAA_NAMES={
-  'TEX':['University of Texas','Texas','Longhorns','Austin'],
-  'KU':['University of Kansas','Kansas','Jayhawks'],
-  'UK':['University of Kentucky','Kentucky','Wildcats'],
-  'DUKE':['Duke University','Duke','Blue Devils'],
-  'UNC':['University of North Carolina','North Carolina','Tar Heels','Chapel Hill'],
-  'UCLA':['UCLA','University of California Los Angeles','Bruins'],
-  'USC':['USC','University of Southern California','Trojans'],
-  'OU':['University of Oklahoma','Oklahoma','Sooners'],
-  'OSU':['Ohio State University','Ohio State','Buckeyes'],
-  'MICH':['University of Michigan','Michigan','Wolverines'],
-  'MSU':['Michigan State University','Michigan State','Spartans'],
-  'PSU':['Penn State University','Penn State','Nittany Lions'],
-  'IU':['Indiana University','Indiana','Hoosiers'],
-  'PUR':['Purdue University','Purdue','Boilermakers'],
-  'IOWA':['University of Iowa','Iowa','Hawkeyes'],
-  'WISC':['University of Wisconsin','Wisconsin','Badgers'],
-  'MINN':['University of Minnesota','Minnesota','Gophers'],
-  'NW':['Northwestern University','Northwestern','Wildcats'],
-  'ILL':['University of Illinois','Illinois','Illini','Fighting Illini'],
-  'RUT':['Rutgers University','Rutgers','Scarlet Knights'],
-  'MD':['University of Maryland','Maryland','Terrapins','Terps'],
-  'NEB':['University of Nebraska','Nebraska','Cornhuskers','Huskers'],
-  'ARIZ':['University of Arizona','Arizona','Wildcats'],
-  'ASU':['Arizona State University','Arizona State','Sun Devils'],
-  'UTAH':['University of Utah','Utah','Utes'],
-  'COL':['University of Colorado','Colorado','Buffaloes','Buffs'],
-  'WSU':['Washington State University','Washington State','Cougars'],
-  'UW':['University of Washington','Washington','Huskies'],
-  'ORE':['University of Oregon','Oregon','Ducks'],
-  'ORST':['Oregon State University','Oregon State','Beavers'],
-  'CAL':['University of California Berkeley','California','Cal','Golden Bears'],
-  'STAN':['Stanford University','Stanford','Cardinal'],
-  'AUB':['Auburn University','Auburn','Tigers'],
-  'ALA':['University of Alabama','Alabama','Crimson Tide','Bama'],
-  'LSU':['Louisiana State University','LSU','Tigers'],
-  'TENN':['University of Tennessee','Tennessee','Vols','Volunteers'],
-  'UGA':['University of Georgia','Georgia','Bulldogs'],
-  'FLA':['University of Florida','Florida','Gators'],
-  'FSU':['Florida State University','Florida State','Seminoles','Noles'],
-  'MIAMI':['University of Miami','Miami','Hurricanes','Canes'],
-  'CLEM':['Clemson University','Clemson','Tigers'],
-  'SC':['University of South Carolina','South Carolina','Gamecocks'],
-  'VAN':['Vanderbilt University','Vanderbilt','Commodores'],
-  'MISS':['University of Mississippi','Ole Miss','Rebels'],
-  'MSST':['Mississippi State University','Mississippi State','Bulldogs'],
-  'ARK':['University of Arkansas','Arkansas','Razorbacks','Hogs'],
-  'MO':['University of Missouri','Missouri','Mizzou','Tigers'],
-  'TA&M':['Texas A&M University','Texas A&M','Aggies'],
-  'TAMU':['Texas A&M University','Texas A&M','Aggies'],
-  'TCU':['Texas Christian University','TCU','Horned Frogs'],
-  'TTU':['Texas Tech University','Texas Tech','Red Raiders'],
-  'BAYLOR':['Baylor University','Baylor','Bears'],
-  'UT':['University of Texas','Texas','Longhorns'],
-  'WVU':['West Virginia University','West Virginia','Mountaineers'],
-  'KST':['Kansas State University','Kansas State','Wildcats','K-State'],
-  'OKST':['Oklahoma State University','Oklahoma State','Cowboys'],
-  'ISU':['Iowa State University','Iowa State','Cyclones'],
-  'CIN':['University of Cincinnati','Cincinnati','Bearcats'],
-  'UCF':['University of Central Florida','UCF','Knights'],
-  'KENN':['University of Connecticut','UConn','Huskies'],
-  'UCONN':['University of Connecticut','UConn','Huskies'],
-  'GONZ':['Gonzaga University','Gonzaga','Bulldogs','Zags'],
-  'MARQ':['Marquette University','Marquette','Golden Eagles'],
-  'VILL':['Villanova University','Villanova','Wildcats','Nova'],
-  'NOVA':['Villanova University','Villanova','Wildcats','Nova'],
-  'CREI':['Creighton University','Creighton','Bluejays'],
-  'XAVI':['Xavier University','Xavier','Musketeers'],
-  'PROV':['Providence College','Providence','Friars'],
-  'BIGA':['Big East',''],
-  'SYRA':['Syracuse University','Syracuse','Orange'],
-  'BOST':['Boston College','Boston College','Eagles'],
-  'WAKE':['Wake Forest University','Wake Forest','Demon Deacons'],
-  'PITT':['University of Pittsburgh','Pittsburgh','Pitt','Panthers'],
-  'ND':['University of Notre Dame','Notre Dame','Fighting Irish','Irish'],
-  'NORT':['Northern Iowa','Panthers'],
-  'DRKE':['Drake University','Drake','Bulldogs'],
-  'BRAD':['Bradley University','Bradley','Braves'],
-  'ILL ST':['Illinois State University','Illinois State','Redbirds'],
-  'INST':['Indiana State','Sycamores'],
-  'SDST':['South Dakota State','Jackrabbits'],
-  'NDSU':['North Dakota State','Bison'],
+// This object is the bundled fallback — used only when the API is unavailable.
+// The authoritative data lives in the SQLite DB (/config/scorestream.db)
+// and is served by the Flask API at /api/ncaa/teams.
+// To add/edit/remove schools: update the DB directly or wait for the
+// Manage NCAA Teams admin UI (Coming Soon).
+//
+// NCAA_CRUD_ENABLED = false  ← set true when admin UI is ready for release
+
+const NCAA_CRUD_ENABLED = false;
+
+const NCAA_NAMES_FALLBACK={
+// ── SEC ──────────────────────────────────────────────────────────────────
+'ALA':  {school:'University of Alabama',         nick:'Crimson Tide',   short:'Alabama',          sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'ARK':  {school:'University of Arkansas',        nick:'Razorbacks',     short:'Arkansas',         sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'AUB':  {school:'Auburn University',             nick:'Tigers',         short:'Auburn',           sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'FLA':  {school:'University of Florida',         nick:'Gators',         short:'Florida',          sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'UGA':  {school:'University of Georgia',         nick:'Bulldogs',       short:'Georgia',          sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'UK':   {school:'University of Kentucky',        nick:'Wildcats',       short:'Kentucky',         sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'LSU':  {school:'Louisiana State University',    nick:'Tigers',         short:'LSU',              sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'MISS': {school:'University of Mississippi',     nick:'Rebels',         short:'Ole Miss',         sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'MSST': {school:'Mississippi State University',  nick:'Bulldogs',       short:'Mississippi St',   sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'MO':   {school:'University of Missouri',        nick:'Tigers',         short:'Missouri',         sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'SC':   {school:'University of South Carolina',  nick:'Gamecocks',      short:'South Carolina',   sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'TAMU': {school:'Texas A&M University',          nick:'Aggies',         short:'Texas A&M',        sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'TA&M': {school:'Texas A&M University',          nick:'Aggies',         short:'Texas A&M',        sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'TENN': {school:'University of Tennessee',       nick:'Volunteers',     short:'Tennessee',        sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
+'VAN':  {school:'Vanderbilt University',         nick:'Commodores',     short:'Vanderbilt',       sports:['ncaafb','ncaamb','ncaawb','ncaabase','ncaasb']},
 };
 
+// Runtime NCAA name map — populated from API on load, falls back to NCAA_NAMES_FALLBACK
+let NCAA_NAMES = {...NCAA_NAMES_FALLBACK};
+
+async function loadNcaaFromApi() {
+  try {
+    // New two-table API: fetch all programs (one row per school+sport+division)
+    const r = await fetch(`${API_BASE}/ncaa/programs`, {signal: AbortSignal.timeout(8000)});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const programs = data.programs || [];
+    if (!programs.length) throw new Error('empty');
+    // Build NCAA_NAMES map: keyed by abbr, contains per-sport nick overrides
+    const map = {};
+    programs.forEach(p => {
+      const abbr = (p.espn_abbr || '').toUpperCase();
+      if (!abbr) return;
+      if (!map[abbr]) {
+        map[abbr] = {
+          school: p.full_name,
+          nick:   p.nick || p.short_name,
+          short:  p.short_name || p.full_name,
+          color:  p.color || '333333',
+          logo:   p.logo_url || null,
+          sports: [],
+          // per-sport nick overrides (e.g. TENN womens = "Lady Volunteers")
+          nickBySport: {},
+          division: p.division || 'unknown',
+        };
+      }
+      if (!map[abbr].sports.includes(p.sport_id)) map[abbr].sports.push(p.sport_id);
+      map[abbr].nickBySport[p.sport_id + '_' + p.gender] = p.nick || p.short_name;
+      // Prefer color/logo from any program (they're school-level)
+      if (!map[abbr].color || map[abbr].color === '333333') map[abbr].color = p.color || '333333';
+      if (!map[abbr].logo && p.logo_url) map[abbr].logo = p.logo_url;
+    });
+    Object.assign(NCAA_NAMES, map);
+    // Bust NCAA sport caches so next load uses fresh data
+    Object.keys(tbState.teamCache).forEach(k => { if (k.startsWith('ncaa')) delete tbState.teamCache[k]; });
+    console.log('[NCAA] Loaded', programs.length, 'programs for', Object.keys(map).length, 'schools');
+  } catch(e) {
+    console.warn('[NCAA] API unavailable, using bundled fallback:', e.message);
+  }
+}
 // =====================
 //  STATE
 // =====================
@@ -853,7 +885,7 @@ function buildSportToggles(){
         state.activeSports.add(sport.id);
         div.classList.add('active');
       }
-      saveActiveSports();
+      settingsSave(saveActiveSports);
       if(state.showEnded) buildEndedLeagueToggles();
       renderScoreboard();
     });
@@ -877,7 +909,7 @@ function applyDisplay(){
   root.style.setProperty('--card-score-size',state.display.scoreSize+'px');
   root.style.setProperty('--card-name-size',state.display.nameSize+'px');
   root.style.setProperty('--card-name-color',state.display.nameColor);
-  saveDisplay();
+  settingsSave(saveDisplay);
 }
 
 function setNameColor(c){
@@ -908,7 +940,7 @@ function setRefreshRate(r){
   const el=document.getElementById('rateStatus');
   if(el)el.textContent=r===0?'Auto-refresh: disabled':`Auto-refresh: every ${r<60?r+' seconds':r/60+' minute(s)'}`;
   startAutoRefresh();
-  ss.set('ss_refresh_rate',String(r));
+  settingsSave(() => ss.set('ss_refresh_rate',String(r)));
 }
 
 function startAutoRefresh(){
@@ -921,12 +953,17 @@ function startAutoRefresh(){
 // =====================
 function openSettings(tab='sports'){
   document.getElementById('settingsOverlay').style.display='flex';
+  updateSaveUI();
+  initAutoSaveToggle();
   switchTab(tab);
   buildSportsTab();
   updateTbFavCount();
 }
 
-function closeSettings(){document.getElementById('settingsOverlay').style.display='none';}
+function closeSettings(){
+  if(_dirty) flushSave();
+  document.getElementById('settingsOverlay').style.display='none';
+}
 function handleModalOverlay(e){if(e.target===document.getElementById('settingsOverlay'))closeSettings();}
 
 function switchTab(tab){
@@ -972,8 +1009,8 @@ function toggleSportEnabled(id,toggleEl){
   const on=state.enabledSports.has(id);
   toggleEl.classList.toggle('on',on);
   toggleEl.closest('.sport-setting-row').classList.toggle('enabled',on);
-  saveEnabledSports();
-  saveActiveSports();
+  settingsSave(saveEnabledSports);
+  settingsSave(saveActiveSports);
   buildSportToggles();
   if(state.showEnded) buildEndedLeagueToggles();
   renderScoreboard();
@@ -1212,45 +1249,107 @@ const MOCK_TEAMS={
   ncaamb:[],ncaawb:[],ncaabase:[],ncaasb:[],ncaafb:[],
 };
 
-const tbState={activeSport:'nfl',teamCache:{},searchQuery:''};
+const tbState={activeSport:'nfl',teamCache:{},searchQuery:'',labelMode:ss.get('ss_tb_label')||'abbr',divisionFilter:ss.get('ss_tb_div')||'d1'};
 
-// Enhanced search: checks abbr, name, AND NCAA_NAMES lookup terms
+function setTbLabelMode(mode){
+  tbState.labelMode=mode;
+  ss.set('ss_tb_label',mode);
+  // Update button styles
+  const abbrBtn=document.getElementById('tbLabelAbbr');
+  const nickBtn=document.getElementById('tbLabelNick');
+  if(abbrBtn&&nickBtn){
+    abbrBtn.style.background=mode==='abbr'?'rgba(0,212,255,0.15)':'transparent';
+    abbrBtn.style.color=mode==='abbr'?'var(--accent)':'var(--text-dim)';
+    nickBtn.style.background=mode==='nick'?'rgba(0,212,255,0.15)':'transparent';
+    nickBtn.style.color=mode==='nick'?'var(--accent)':'var(--text-dim)';
+  }
+  const teams=tbState.teamCache[tbState.activeSport]||[];
+  renderTbTeams(teams);
+}
+
+function setTbDivision(div){
+  tbState.divisionFilter=div;
+  ss.set('ss_tb_div', div);
+  ['d1','d2','d3','all'].forEach(d=>{
+    const btn=document.getElementById('tbDiv'+d.charAt(0).toUpperCase()+d.slice(1));
+    if(!btn)return;
+    const active=d===div;
+    btn.style.background=active?'rgba(0,212,255,0.12)':'transparent';
+    btn.style.borderColor=active?'var(--accent)':'var(--border)';
+    btn.style.color=active?'var(--accent)':'var(--text-dim)';
+  });
+  const teams=tbState.teamCache[tbState.activeSport]||[];
+  renderTbTeams(teams);
+}
+
+// Enhanced search: checks abbr, name, AND all NCAA_NAMES fields (school, nick, short)
 function teamMatchesQuery(team,query){
   const q=query.toLowerCase();
-  if(team.abbr.toLowerCase().includes(q)||team.name.toLowerCase().includes(q))return true;
-  const extra=NCAA_NAMES[team.abbr.toUpperCase()];
-  if(extra)return extra.some(term=>term.toLowerCase().includes(q));
+  if(team.abbr.toLowerCase().includes(q))return true;
+  if(team.name.toLowerCase().includes(q))return true;
+  if(team.shortName&&team.shortName.toLowerCase().includes(q))return true;
+  if(team.nick&&team.nick.toLowerCase().includes(q))return true;
+  if(team.school&&team.school.toLowerCase().includes(q))return true;
+  if(team.short&&team.short.toLowerCase().includes(q))return true;
   return false;
 }
 
+function enrichTeam(abbr, espnName, color, logo){
+  // Merge ESPN data with our NCAA_NAMES rich metadata (color+logo now come from DB)
+  const extra=NCAA_NAMES[abbr.toUpperCase()];
+  return {
+    abbr,
+    name:     espnName || abbr,
+    school:   extra ? extra.school  : null,
+    nick:     extra ? extra.nick    : null,
+    short:    extra ? extra.short   : null,
+    shortName:espnName || abbr,
+    color:    color || (extra && extra.color) || '333333',
+    logo:     logo  || (extra && extra.logo)  || null,
+    division: extra ? (extra.division || 'unknown') : 'unknown',
+  };
+}
+
 async function fetchTeamsForSport(sid){
-  if(tbState.teamCache[sid])return tbState.teamCache[sid];
+  if(tbState.teamCache[sid]&&tbState.teamCache[sid].length>0)return tbState.teamCache[sid];
   try{
-    const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),6000);
+    const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),8000);
     const res=await fetch(TEAM_URLS[sid],{signal:ctrl.signal});
-    if(!res.ok)throw new Error();
+    if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
     const raw=data.sports?.[0]?.leagues?.[0]?.teams||data.teams||[];
     const teams=raw.map(t=>{
       const team=t.team||t;
       const abbr=team.abbreviation||team.abbr||'??';
-      // Enrich name with full school name if available
-      const extra=NCAA_NAMES[abbr.toUpperCase()];
-      const displayName=extra?extra[0]:(team.displayName||team.name||'Unknown');
-      return{abbr,name:displayName,shortName:team.displayName||team.name||'Unknown',color:team.color||team.alternateColor||'333333',logo:team.logos?.[0]?.href||null};
+      const espnName=team.displayName||team.name||abbr;
+      const color=team.color||team.alternateColor||'333333';
+      const logo=team.logos?.[0]?.href||null;
+      return enrichTeam(abbr, espnName, color, logo);
     }).sort((a,b)=>a.name.localeCompare(b.name));
-    tbState.teamCache[sid]=teams;return teams;
+    tbState.teamCache[sid]=teams;
+    return teams;
   }catch(e){
-    const teams=(MOCK_TEAMS[sid]||[]).map(t=>{
-      const extra=NCAA_NAMES[t.abbr.toUpperCase()];
-      return{...t,name:extra?extra[0]:t.name,shortName:t.name};
-    }).sort((a,b)=>a.name.localeCompare(b.name));
-    tbState.teamCache[sid]=teams;return teams;
+    // Build fallback from NCAA_NAMES for college sports — covers all major programs
+    // even when ESPN API is unavailable or returns an empty list
+    if(sid.startsWith('ncaa')){
+      const isNcaa = Object.entries(NCAA_NAMES)
+        .filter(([,v])=>v.sports.includes(sid))
+        .map(([abbr,v])=>enrichTeam(abbr, v.short+' '+v.nick, null, null))
+        .sort((a,b)=>a.name.localeCompare(b.name));
+      tbState.teamCache[sid]=isNcaa;
+      return isNcaa;
+    }
+    // Pro sports: use static MOCK_TEAMS
+    const teams=(MOCK_TEAMS[sid]||[]).map(t=>enrichTeam(t.abbr,t.name,t.color,null));
+    tbState.teamCache[sid]=teams;
+    return teams;
   }
 }
 
 function buildTbTabs(){
   const c=document.getElementById('tbTabs');if(!c)return;c.innerHTML='';
+  // Sync label mode button states
+  setTbLabelMode(tbState.labelMode);
   getAllEnabledSports().forEach(sport=>{
     const tab=document.createElement('div');
     tab.style.cssText='padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;';
@@ -1270,6 +1369,9 @@ async function loadTbSport(sid){
   const list=document.getElementById('tbTeamList');if(!list)return;
   list.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-dim);">Loading teams...</div>';
   tbState.activeSport=sid;
+  // Show division pills only for NCAA sports
+  const pills=document.getElementById('tbDivPills');
+  if(pills) pills.style.display=sid.startsWith('ncaa')?'flex':'none';
   const teams=await fetchTeamsForSport(sid);
   renderTbTeams(teams);
 }
@@ -1283,7 +1385,17 @@ function filterTeams(query){
 function renderTbTeams(teams){
   const list=document.getElementById('tbTeamList');if(!list)return;
   const q=tbState.searchQuery;
-  const filtered=q?teams.filter(t=>teamMatchesQuery(t,q)):teams;
+  const sid=tbState.activeSport;
+  const div=tbState.divisionFilter;
+  // Apply division filter for NCAA sports (skip if 'all' or pro sport)
+  let filtered=teams;
+  if(sid.startsWith('ncaa') && div && div!=='all'){
+    filtered=filtered.filter(t=>{
+      const extra=NCAA_NAMES[(t.abbr||'').toUpperCase()];
+      return extra && extra.division===div;
+    });
+  }
+  if(q) filtered=filtered.filter(t=>teamMatchesQuery(t,q));
   if(!filtered.length){list.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-dim);">No teams found for "${q}"</div>`;return;}
   list.innerHTML='';
   filtered.forEach(team=>{
@@ -1291,11 +1403,18 @@ function renderTbTeams(teams){
     const card=document.createElement('div');
     card.style.cssText=`display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--bg-card);border:1px solid ${starred?'rgba(255,215,0,0.4)':'var(--border)'};border-radius:8px;cursor:pointer;transition:all 0.15s;${starred?'background:rgba(255,215,0,0.05);':''}`;
     const logoHtml=team.logo?`<img src="${team.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:4px" onerror="this.parentNode.textContent='${team.abbr}'">`:`<span style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:9px;color:white;">${team.abbr}</span>`;
+    // Label mode: abbr shows ESPN abbreviation as primary, nickname shows team nick as primary
+    const useNick=tbState.labelMode==='nick';
+    const primaryLabel=useNick?(team.nick||team.abbr):team.abbr;
+    // Secondary line: show nickname or school if available, else fall back to name
+    const secondaryLabel=useNick
+      ?(team.school||team.name)
+      :(team.nick?`${team.nick} · ${team.short||team.name}`:team.name);
     card.innerHTML=`
       <div style="width:28px;height:28px;border-radius:6px;background:#${team.color.replace('#','')};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${logoHtml}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:12px;letter-spacing:0.5px;color:var(--text-primary);line-height:1;">${team.abbr}</div>
-        <div class="tb-team-full">${team.name}</div>
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:12px;letter-spacing:0.5px;color:var(--text-primary);line-height:1;">${primaryLabel}</div>
+        <div class="tb-team-full">${secondaryLabel}</div>
       </div>
       <span style="font-size:14px;filter:${starred?'grayscale(0) opacity(1) drop-shadow(0 0 3px rgba(255,215,0,0.5))':'grayscale(1) opacity(0.25)'};transition:all 0.15s;">⭐</span>`;
     card.onclick=()=>{
@@ -1312,6 +1431,95 @@ function renderTbTeams(teams){
 function updateTbFavCount(){
   const el=document.getElementById('tbFavCount');
   if(el)el.innerHTML=`⭐ <span style="color:#ffd700;">${state.favTeams.size}</span> team${state.favTeams.size!==1?'s':''} favorited`;
+}
+
+// =====================
+//  SAVE-STATE MANAGEMENT
+// =====================
+// autoSave=true  → settings save immediately on every change (old behaviour)
+// autoSave=false → changes are held in state; Save button appears in modal header
+let autoSave = ss.get('ss_auto_save') !== 'false'; // default: ON
+let _dirty   = false;
+let _savedTimer = null;
+
+function initAutoSaveToggle() {
+  const el = document.getElementById('autoSaveToggle');
+  if (el) el.classList.toggle('on', autoSave);
+}
+
+function toggleAutoSave() {
+  autoSave = !autoSave;
+  ss.set('ss_auto_save', String(autoSave));
+  const el = document.getElementById('autoSaveToggle');
+  if (el) el.classList.toggle('on', autoSave);
+  // If switching back to auto-save, flush any pending dirty changes immediately
+  if (autoSave && _dirty) flushSave();
+  else updateSaveUI();
+}
+
+// Call this instead of save*() directly for settings that respect the toggle.
+function settingsSave(saveFn) {
+  if (autoSave) {
+    saveFn();
+    showSavedBriefly();
+  } else {
+    _dirty = true;
+    updateSaveUI();
+  }
+}
+
+// Explicit Save button pressed
+function manualSave() {
+  flushSave();
+}
+
+function flushSave() {
+  // Re-run all settings saves so current state is fully persisted
+  saveEnabledSports();
+  saveActiveSports();
+  saveDisplay();
+  ss.set('ss_refresh_rate', String(state.refreshRate));
+  _dirty = false;
+  updateSaveUI();
+  showSavedBriefly();
+}
+
+function updateSaveUI() {
+  const badge      = document.getElementById('saveStatusBadge');
+  const modalBtn   = document.getElementById('modalSaveBtn');
+  const sidebarBtn = document.getElementById('sidebarSaveBtn');
+
+  if (_dirty) {
+    // Unsaved changes — show orange indicator everywhere
+    if (badge)      { badge.textContent='● Unsaved changes'; badge.style.color='var(--accent2)'; badge.style.opacity='1'; }
+    if (modalBtn)   modalBtn.style.display = 'block';
+    if (sidebarBtn) sidebarBtn.style.display = 'block';
+  } else if (!autoSave) {
+    // Manual mode, nothing pending — show Save button as mode indicator (modal only)
+    if (badge)      { badge.textContent='Manual save mode'; badge.style.color='var(--text-secondary)'; badge.style.opacity='0.8'; }
+    if (modalBtn)   modalBtn.style.display = 'block';
+    if (sidebarBtn) sidebarBtn.style.display = 'none'; // sidebar stays clean when nothing pending
+  } else {
+    // Auto-save on, nothing pending — hide everything
+    if (badge)      badge.style.opacity = '0';
+    if (modalBtn)   modalBtn.style.display = 'none';
+    if (sidebarBtn) sidebarBtn.style.display = 'none';
+  }
+}
+
+function showSavedBriefly() {
+  const badge      = document.getElementById('saveStatusBadge');
+  const modalBtn   = document.getElementById('modalSaveBtn');
+  const sidebarBtn = document.getElementById('sidebarSaveBtn');
+  clearTimeout(_savedTimer);
+  if (badge) { badge.textContent='✓ Saved'; badge.style.color='var(--accent-green)'; badge.style.opacity='0.85'; }
+  if (modalBtn)   modalBtn.style.display = !autoSave ? 'block' : 'none'; // keep visible if still in manual mode
+  if (sidebarBtn) sidebarBtn.style.display = 'none'; // always hide sidebar btn after save
+  _savedTimer = setTimeout(() => {
+    if (badge) badge.style.opacity = '0';
+    // In manual mode, re-show the modal mode indicator after the flash fades
+    if (!autoSave) setTimeout(() => updateSaveUI(), 100);
+  }, 2500);
 }
 
 // =====================
@@ -1549,12 +1757,14 @@ document.getElementById('refreshBtn').addEventListener('click',fetchAllScores);
 const savedRate=parseInt(ss.get('ss_refresh_rate')||'60');
 state.refreshRate=savedRate;
 initDisplayControls();
+initAutoSaveToggle();
 buildSportToggles();
 startClock();
 renderFavSummary();
 fetchAllScores();
 startAutoRefresh();
 setRefreshRate(savedRate);
+loadNcaaFromApi(); // fetch live NCAA data from DB; falls back to bundled seed silently
 </script>
 </body>
 </html>
