@@ -571,7 +571,7 @@ def test_connection():
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'connected':False,'error':err})
     try:
-        r = s.get(f'{c["url"]}/api/channels/channels/?limit=1',timeout=5)
+        r = s.get(f'{c["url"]}/api/channels/channels/?limit=1',timeout=15)
         r.raise_for_status(); return jsonify({'connected':True})
     except Exception as e: return jsonify({'connected':False,'error':str(e)})
 
@@ -580,7 +580,7 @@ def get_groups():
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
     try:
-        r = s.get(f'{c["url"]}/api/channels/channel-groups/',timeout=8); r.raise_for_status()
+        r = s.get(f'{c["url"]}/api/channels/channel-groups/',timeout=15); r.raise_for_status()
         data = r.json(); items = data.get('results',data) if isinstance(data,dict) else data
         return jsonify({'groups':sorted([{'id':g['id'],'name':g['name']} for g in items if 'id' in g],key=lambda x:x['name'])})
     except Exception as e: return jsonify({'error':str(e)}),500
@@ -590,7 +590,7 @@ def get_profiles():
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
     try:
-        r = s.get(f'{c["url"]}/api/channels/channel-profiles/',timeout=8); r.raise_for_status()
+        r = s.get(f'{c["url"]}/api/channels/channel-profiles/',timeout=15); r.raise_for_status()
         data = r.json(); items = data.get('results',data) if isinstance(data,dict) else data
         return jsonify({'profiles':sorted([{'id':p['id'],'name':p['name']} for p in items if 'id' in p],key=lambda x:x['name'])})
     except Exception as e: return jsonify({'error':str(e)}),500
@@ -612,7 +612,7 @@ def create_channels():
         if profile_id: payload['channel_profile_ids']=[int(profile_id)]
         if stream_url: payload['url']=stream_url
         try:
-            r = s.post(f'{base}/api/channels/channels/',json=payload,timeout=10)
+            r = s.post(f'{base}/api/channels/channels/',json=payload,timeout=15)
             r.raise_for_status(); created.append({'name':name,'number':num})
         except http.exceptions.HTTPError as e:
             try: detail=e.response.json()
