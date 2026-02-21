@@ -447,7 +447,34 @@ def _attempt_espn_sync_inner():
             log.info(f'ESPN sync: {sport_id} done ({len(raw)} teams — {counts})')
         except Exception as e:
             log.error(f'ESPN sync error {sport_id}: {e}'); all_ok = False
+    # Pass 2: fix non-football divisions using cross-sport school lookup.
+    # Handles schools that play D-II/D-III basketball/baseball/softball but have no football.
     if all_ok:
+        try:
+            with get_db() as conn:
+                updated = 0
+                rows = conn.execute(
+                    "SELECT DISTINCT s.id FROM ncaa_schools s "
+                    "JOIN ncaa_programs p ON p.school_id = s.id "
+                    "WHERE p.sport_id != 'ncaafb' AND p.division = 'd1' "
+                    "AND s.id IN (SELECT school_id FROM ncaa_programs WHERE division != 'd1')"
+                ).fetchall()
+                for row in rows:
+                    best = conn.execute(
+                        "SELECT division FROM ncaa_programs WHERE school_id=? "
+                        "ORDER BY CASE division WHEN 'd3' THEN 0 WHEN 'd2' THEN 1 ELSE 2 END LIMIT 1",
+                        (row[0],)
+                    ).fetchone()
+                    if best and best[0] != 'd1':
+                        conn.execute(
+                            "UPDATE ncaa_programs SET division=? WHERE school_id=? AND sport_id != 'ncaafb'",
+                            (best[0], row[0])
+                        )
+                        updated += 1
+                conn.commit()
+            log.info(f'Division pass 2: corrected {updated} schools non-football divisions')
+        except Exception as e:
+            log.error(f'Division pass 2 error: {e}')
         db_set('espn_sync_status','complete')
         db_set('last_espn_sync', datetime.now(timezone.utc).isoformat())
         log.info('NCAA sync complete')
