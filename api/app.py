@@ -674,7 +674,7 @@ def get_groups():
     if err: return jsonify({'error':err}),400
     items = data.get('results',data) if isinstance(data,dict) else data
     if not isinstance(items, list): items = []
-    return jsonify({'groups':sorted([{'id':g['id'],'name':g['name']} for g in items if 'id' in g and 'name' in g],key=lambda x:x['name'])})
+    return jsonify({'groups':sorted([{'id':g['id'],'name':g['name'],'m3u_count':g.get('m3u_account_count',0)} for g in items if 'id' in g and 'name' in g],key=lambda x:x['name'])})
 
 @app.route('/dispatcharr/profiles', methods=['GET'])
 def get_profiles():
@@ -684,6 +684,48 @@ def get_profiles():
     if not isinstance(items, list): items = []
     return jsonify({'profiles':sorted([{'id':p['id'],'name':p['name']} for p in items if 'id' in p and 'name' in p],key=lambda x:x['name'])})
 
+@app.route('/dispatcharr/streamprofiles', methods=['GET'])
+def get_stream_profiles():
+    data,err = dispatcharr_get('/api/core/streamprofiles/', timeout=20)
+    if err: return jsonify({'error':err}),400
+    items = data.get('results',data) if isinstance(data,dict) else data
+    if not isinstance(items, list): items = []
+    profiles = [{'id':p['id'],'name':p['name'],'command':p.get('command',''),
+                 'parameters':p.get('parameters',''),'locked':p.get('locked',False)}
+                for p in items if 'id' in p and 'name' in p]
+    return jsonify({'profiles':sorted(profiles, key=lambda x:(x['locked'],x['name']), reverse=True)})
+
+@app.route('/dispatcharr/streamprofiles', methods=['POST'])
+def create_stream_profile():
+    b = request.get_json(force=True)
+    name = b.get('name','').strip()
+    parameters = b.get('parameters','').strip()
+    if not name or not parameters:
+        return jsonify({'error':'name and parameters required'}),400
+    c = get_creds(); s,err = dispatcharr_session(c)
+    if err: return jsonify({'error':err}),400
+    try:
+        payload = {'name':name,'command':'ffmpeg','parameters':parameters,'is_active':True}
+        r = s.post(f'{c["url"]}/api/core/streamprofiles/',json=payload,timeout=15)
+        r.raise_for_status()
+        d = r.json()
+        return jsonify({'id':d['id'],'name':d['name'],'parameters':d.get('parameters','')})
+    except Exception as e: return jsonify({'error':str(e)}),500
+
+@app.route('/dispatcharr/groups', methods=['POST'])
+def create_group():
+    b = request.get_json(force=True)
+    name = b.get('name','').strip()
+    if not name: return jsonify({'error':'name required'}),400
+    c = get_creds(); s,err = dispatcharr_session(c)
+    if err: return jsonify({'error':err}),400
+    try:
+        r = s.post(f'{c["url"]}/api/channels/groups/',json={'name':name},timeout=15)
+        r.raise_for_status()
+        d = r.json()
+        return jsonify({'id':d['id'],'name':d['name'],'m3u_count':0})
+    except Exception as e: return jsonify({'error':str(e)}),500
+
 @app.route('/dispatcharr/create', methods=['POST'])
 def create_channels():
     c = get_creds(); s,err = dispatcharr_session(c)
@@ -692,6 +734,7 @@ def create_channels():
     mode,sports = b.get('mode','both'),b.get('sports',[])
     num_mode,start = b.get('numberingMode','auto'),int(b.get('startChannel',900))
     group_id,profile_ids_raw = b.get('groupId'),b.get('profileIds')
+    stream_profile_id = b.get('streamProfileId')
     assignments = {a['sportId']:a for a in (b.get('channelAssignments') or [])}
     base,created,errors,ch_num = c['url'],[],[],start
     def make_channel(name,num,stream_url=None,gid=None):
@@ -710,6 +753,7 @@ def create_channels():
             ids = [int(x) for x in profile_ids_raw if str(x).isdigit()]
             if ids: payload['channel_profile_ids'] = ids
         if stream_url: payload['url']=stream_url
+        if stream_profile_id: payload['stream_profile_id']=int(stream_profile_id)
         try:
             r = s.post(f'{base}/api/channels/channels/',json=payload,timeout=15)
             r.raise_for_status(); created.append({'name':name,'number':num})

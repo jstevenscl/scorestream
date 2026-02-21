@@ -129,6 +129,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .profile-ms-item input[type=checkbox]{accent-color:var(--accent,#7c6af7);width:14px;height:14px;cursor:pointer;}
 .profile-ms-all{font-weight:600;color:var(--accent,#7c6af7);}
 .profile-ms-divider{height:1px;background:var(--border,#333);margin:2px 0;}
+.grp-filter-btn{font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid var(--border,#333);background:transparent;color:var(--text-dim);cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;}
+.grp-filter-btn:hover{border-color:var(--accent,#7c6af7);color:var(--accent,#7c6af7);}
+.grp-filter-btn.active{background:var(--accent,#7c6af7);border-color:var(--accent,#7c6af7);color:#fff;}
 .ds-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text-dim);}
 .ds-label.connected{color:var(--accent-green);}
 .ds-label.error{color:var(--accent-red);}
@@ -556,7 +559,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <!-- CHANNEL GROUP & PROFILE -->
       <div class="modal-section">
         <div class="modal-section-title">Channel Defaults</div>
-        <div class="modal-row" style="margin-bottom:6px;">
+
+        <!-- CHANNEL GROUP -->
+        <div class="modal-row" style="margin-bottom:4px;">
           <span class="modal-label" style="min-width:130px;">Channel Group</span>
           <div style="display:flex;gap:6px;flex:1;min-width:0;">
             <select class="modal-input" id="dGroupSelect" style="flex:1;min-width:0;">
@@ -565,6 +570,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
             <button class="modal-btn" onclick="loadDsGroups()" title="Refresh groups" style="padding:4px 10px;font-size:16px;">↻</button>
           </div>
         </div>
+        <!-- Group source filter pills -->
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;padding-left:136px;">
+          <span style="font-size:11px;opacity:0.5;">Show:</span>
+          <button class="grp-filter-btn active" data-filter="dispatcharr" onclick="setGroupFilter('dispatcharr')">Dispatcharr</button>
+          <button class="grp-filter-btn" data-filter="m3u" onclick="setGroupFilter('m3u')">M3U</button>
+          <button class="grp-filter-btn" data-filter="all" onclick="setGroupFilter('all')">Both</button>
+        </div>
+        <!-- New group inline creation -->
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;padding-left:136px;">
+          <input type="text" class="modal-input" id="dNewGroupName" placeholder="New group name..." style="flex:1;font-size:12px;padding:4px 8px;">
+          <button class="modal-btn" onclick="createNewGroup()" style="font-size:12px;padding:4px 10px;white-space:nowrap;">+ Create Group</button>
+        </div>
+        <div id="newGroupResult" style="display:none;font-size:11px;padding-left:136px;margin-bottom:8px;"></div>
+
+        <!-- CHANNEL PROFILE -->
         <div class="modal-row" style="margin-bottom:6px;">
           <span class="modal-label" style="min-width:130px;">Channel Profile</span>
           <div style="display:flex;gap:6px;flex:1;min-width:0;">
@@ -584,6 +604,27 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
             </div>
             <button class="modal-btn" onclick="loadDsProfiles()" title="Refresh profiles" style="padding:4px 10px;font-size:16px;">↻</button>
           </div>
+        </div>
+
+        <!-- STREAM PROFILE -->
+        <div class="modal-row" style="margin-bottom:4px;">
+          <span class="modal-label" style="min-width:130px;">Stream Profile</span>
+          <div style="display:flex;gap:6px;flex:1;min-width:0;">
+            <select class="modal-input" id="dStreamProfileSelect" style="flex:1;min-width:0;">
+              <option value="">— connect to load profiles —</option>
+            </select>
+            <button class="modal-btn" onclick="loadStreamProfiles()" title="Refresh stream profiles" style="padding:4px 10px;font-size:16px;">↻</button>
+          </div>
+        </div>
+        <!-- Custom stream profile creation -->
+        <div id="customStreamPanel" style="display:none;padding-left:136px;margin-bottom:6px;">
+          <div style="font-size:11px;opacity:0.6;margin-bottom:4px;">Custom ffmpeg parameters:</div>
+          <textarea class="modal-input" id="dCustomStreamParams" rows="3" style="width:100%;font-size:11px;font-family:monospace;resize:vertical;" placeholder="-re -fflags +genpts -user_agent {userAgent} -i {streamUrl} -c copy -f mpegts pipe:1"></textarea>
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <input type="text" class="modal-input" id="dCustomStreamName" placeholder="Profile name..." style="flex:1;font-size:12px;padding:4px 8px;">
+            <button class="modal-btn" onclick="createStreamProfile()" style="font-size:12px;padding:4px 10px;white-space:nowrap;">+ Create Profile</button>
+          </div>
+          <div id="customStreamResult" style="font-size:11px;margin-top:4px;"></div>
         </div>
       </div>
 
@@ -1605,6 +1646,7 @@ async function initDsTab(){
       if(d.url&&d.username&&d.has_password){
         loadDsGroups();
         loadDsProfiles();
+        loadStreamProfiles();
       }
     }
   }catch(e){
@@ -1651,7 +1693,7 @@ async function testConnection(){
       el.textContent=`✅ Connected to Dispatcharr${d.version?' (v'+d.version+')':''}`;
       updateDsStatus(true);
       // Auto-load groups and profiles after successful connection
-      loadDsGroups();loadDsProfiles();
+      loadDsGroups();loadDsProfiles();loadStreamProfiles();
     }else{
       el.className='dispatcharr-test-result err';
       el.textContent=`❌ ${d.error||'Could not connect to Dispatcharr'}`;
@@ -1664,6 +1706,10 @@ async function testConnection(){
   }
 }
 
+// Store all groups for client-side filtering
+let _allGroups = [];
+let _groupFilter = 'dispatcharr'; // default: show Dispatcharr-created groups only
+
 async function loadDsGroups(){
   const sel=document.getElementById('dGroupSelect');
   sel.innerHTML='<option value="">Loading...</option>';
@@ -1671,13 +1717,70 @@ async function loadDsGroups(){
     const r=await fetch(`${API_BASE}/dispatcharr/groups`,{signal:AbortSignal.timeout(50000)});
     const d=await r.json();
     if(r.ok&&d.groups?.length){
-      sel.innerHTML='<option value="">— select group —</option>'+d.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+      _allGroups=d.groups;
+      renderGroupSelect();
     }else{
+      _allGroups=[];
       sel.innerHTML='<option value="">— no groups found —</option>';
     }
   }catch(e){sel.innerHTML='<option value="">— connect first —</option>';}
-  // Also rebuild manual rows since group list changed
   buildManualSportRows();
+}
+
+function renderGroupSelect(){
+  const sel=document.getElementById('dGroupSelect');
+  if(!sel)return;
+  const prev=sel.value;
+  let filtered=_allGroups;
+  if(_groupFilter==='dispatcharr') filtered=_allGroups.filter(g=>g.m3u_count===0);
+  else if(_groupFilter==='m3u') filtered=_allGroups.filter(g=>g.m3u_count>0);
+  if(!filtered.length && _groupFilter!=='all'){
+    // fallback: show all if filter yields nothing
+    filtered=_allGroups;
+  }
+  sel.innerHTML='<option value="">— select group —</option>'+
+    filtered.map(g=>`<option value="${g.id}">${g.name}${g.m3u_count>0?' (M3U)':''}</option>`).join('');
+  if(prev) sel.value=prev;
+  buildManualSportRows();
+}
+
+function setGroupFilter(f){
+  _groupFilter=f;
+  document.querySelectorAll('.grp-filter-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.filter===f);
+  });
+  renderGroupSelect();
+}
+
+async function createNewGroup(){
+  const nameEl=document.getElementById('dNewGroupName');
+  const resultEl=document.getElementById('newGroupResult');
+  const name=nameEl?.value?.trim();
+  if(!name){resultEl.style.display='block';resultEl.style.color='var(--accent-red)';resultEl.textContent='Enter a group name first.';return;}
+  resultEl.style.display='block';resultEl.style.color='var(--text-dim)';resultEl.textContent='Creating...';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/groups`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name}),signal:AbortSignal.timeout(15000)
+    });
+    const d=await r.json();
+    if(r.ok&&d.id){
+      resultEl.style.color='var(--accent-green)';
+      resultEl.textContent='✅ Group "'+d.name+'" created';
+      nameEl.value='';
+      // Add to local list and refresh select, auto-select the new group
+      _allGroups.push({id:d.id,name:d.name,m3u_count:0});
+      _allGroups.sort((a,b)=>a.name.localeCompare(b.name));
+      _groupFilter='dispatcharr';
+      document.querySelectorAll('.grp-filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter==='dispatcharr'));
+      renderGroupSelect();
+      document.getElementById('dGroupSelect').value=d.id;
+      setTimeout(()=>{resultEl.style.display='none';},3000);
+    }else{
+      resultEl.style.color='var(--accent-red)';
+      resultEl.textContent='❌ '+(d.error||JSON.stringify(d));
+    }
+  }catch(e){resultEl.style.color='var(--accent-red)';resultEl.textContent='❌ '+e.message;}
 }
 
 async function loadDsProfiles(){
@@ -1762,6 +1865,65 @@ function getSelectedProfileIds(){
   return [...document.querySelectorAll('.profile-cb:checked')].map(cb=>parseInt(cb.value));
 }
 
+// ── Stream Profiles ────────────────────────────────────────────────────────────
+async function loadStreamProfiles(){
+  const sel=document.getElementById('dStreamProfileSelect');
+  if(!sel)return;
+  sel.innerHTML='<option value="">Loading...</option>';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/streamprofiles`,{signal:AbortSignal.timeout(20000)});
+    const d=await r.json();
+    if(r.ok&&d.profiles?.length){
+      sel.innerHTML='<option value="">— default (none) —</option>'+
+        '<option value="__custom__">+ Create custom ffmpeg profile...</option>'+
+        '<optgroup label="Built-in">'+
+          d.profiles.filter(p=>p.locked).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')+
+        '</optgroup>'+
+        (d.profiles.filter(p=>!p.locked).length ?
+          '<optgroup label="Custom">'+
+            d.profiles.filter(p=>!p.locked).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')+
+          '</optgroup>' : '');
+      sel.addEventListener('change', onStreamProfileChange);
+    }else{
+      sel.innerHTML='<option value="">— no profiles found —</option>';
+    }
+  }catch(e){sel.innerHTML='<option value="">— connect first —</option>';}
+}
+
+function onStreamProfileChange(){
+  const sel=document.getElementById('dStreamProfileSelect');
+  const panel=document.getElementById('customStreamPanel');
+  if(!panel)return;
+  panel.style.display=(sel?.value==='__custom__')?'block':'none';
+}
+
+async function createStreamProfile(){
+  const name=document.getElementById('dCustomStreamName')?.value?.trim();
+  const params=document.getElementById('dCustomStreamParams')?.value?.trim();
+  const resultEl=document.getElementById('customStreamResult');
+  if(!name||!params){resultEl.style.color='var(--accent-red)';resultEl.textContent='Name and parameters required.';return;}
+  resultEl.style.color='var(--text-dim)';resultEl.textContent='Creating...';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/streamprofiles`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,parameters:params}),signal:AbortSignal.timeout(15000)
+    });
+    const d=await r.json();
+    if(r.ok&&d.id){
+      resultEl.style.color='var(--accent-green)';
+      resultEl.textContent='✅ Profile "'+d.name+'" created (id='+d.id+')';
+      document.getElementById('dCustomStreamName').value='';
+      // Reload profiles and auto-select the new one
+      await loadStreamProfiles();
+      document.getElementById('dStreamProfileSelect').value=d.id;
+      document.getElementById('customStreamPanel').style.display='none';
+    }else{
+      resultEl.style.color='var(--accent-red)';
+      resultEl.textContent='❌ '+(d.error||JSON.stringify(d));
+    }
+  }catch(e){resultEl.style.color='var(--accent-red)';resultEl.textContent='❌ '+e.message;}
+}
+
 // Channel numbering mode
 function setNumMode(mode){
   dsNumMode=mode;
@@ -1808,6 +1970,8 @@ async function createChannels(mode){
       }));
     }
 
+    const streamProfileVal=document.getElementById('dStreamProfileSelect')?.value||null;
+    const streamProfileId=(streamProfileVal&&streamProfileVal!=='__custom__')?parseInt(streamProfileVal):null;
     const body={
       mode,
       sports,
@@ -1815,6 +1979,7 @@ async function createChannels(mode){
       startChannel:parseInt(document.getElementById('dChannelStart')?.value||'900'),
       groupId,
       profileIds,
+      streamProfileId,
       channelAssignments,
     };
 
