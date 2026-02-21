@@ -478,11 +478,60 @@ def _attempt_espn_sync_inner():
         db_set('espn_sync_status','complete')
         db_set('last_espn_sync', datetime.now(timezone.utc).isoformat())
         log.info('NCAA sync complete')
+        # Persist current DB contents as updated fallback so offline mode stays current
+        cache_espn_to_fallback()
     else:
         db_set('espn_sync_status','failed')
     return all_ok
 
+def cache_espn_to_fallback():
+    """Write current ESPN-synced DB contents into the settings table as a JSON cache.
+    This cache is used by seed_fallback() instead of the hardcoded list when available,
+    keeping the offline fallback complete and up-to-date automatically."""
+    try:
+        with get_db() as conn:
+            schools = conn.execute(
+                "SELECT espn_abbr,full_name,location,color,alt_color,logo_url,espn_id,slug "                "FROM ncaa_schools WHERE sync_source='espn' ORDER BY espn_abbr"
+            ).fetchall()
+            programs = conn.execute(
+                "SELECT s.espn_abbr,p.sport_id,p.gender,p.division,p.nick,p.display_name,p.short_name "                "FROM ncaa_programs p JOIN ncaa_schools s ON s.id=p.school_id "                "WHERE s.sync_source='espn' ORDER BY s.espn_abbr,p.sport_id"
+            ).fetchall()
+            import json
+            db_set('fallback_schools_cache', json.dumps([list(r) for r in schools]))
+            db_set('fallback_programs_cache', json.dumps([list(r) for r in programs]))
+        log.info(f'Fallback cache updated: {len(schools)} schools, {len(programs)} programs')
+    except Exception as e:
+        log.error(f'cache_espn_to_fallback error: {e}')
+
 def seed_fallback():
+    import json
+    # Prefer the ESPN-synced cache (written after each successful sync) over the hardcoded list
+    schools_raw = db_get('fallback_schools_cache','')
+    programs_raw = db_get('fallback_programs_cache','')
+    if schools_raw and programs_raw:
+        try:
+            schools_data = json.loads(schools_raw)
+            programs_data = json.loads(programs_raw)
+            with get_db() as conn:
+                for r in schools_data:
+                    abbr,full_name,loc,color,alt,logo,eid,slug = r
+                    conn.execute(
+                        "INSERT OR IGNORE INTO ncaa_schools(espn_abbr,full_name,location,color,alt_color,logo_url,espn_id,slug,sync_source) "                        "VALUES(?,?,?,?,?,?,?,?,'fallback')",
+                        (abbr,full_name,loc,color,alt,logo,eid,slug))
+                conn.commit()
+                for r in programs_data:
+                    abbr,sport_id,gender,division,nick,display_name,short_name = r
+                    s = conn.execute('SELECT id FROM ncaa_schools WHERE espn_abbr=?',(abbr,)).fetchone()
+                    if s:
+                        conn.execute(
+                            "INSERT OR IGNORE INTO ncaa_programs(school_id,sport_id,gender,division,nick,display_name,short_name) "                            "VALUES(?,?,?,?,?,?,?)",
+                            (s['id'],sport_id,gender,division,nick,display_name,short_name))
+                conn.commit()
+            log.info(f'Fallback seed complete from cache: {len(schools_data)} schools')
+            return
+        except Exception as e:
+            log.warning(f'Fallback cache load failed, using hardcoded list: {e}')
+    # Hardcoded fallback (legacy — used only if no cache exists yet)
     with get_db() as conn:
         for abbr,full_name,location,color in FALLBACK_SCHOOLS:
             conn.execute("INSERT OR IGNORE INTO ncaa_schools(espn_abbr,full_name,location,color,sync_source) VALUES(?,?,?,?,'fallback')",(abbr,full_name,location,color))
@@ -492,7 +541,7 @@ def seed_fallback():
             if s:
                 conn.execute("INSERT OR IGNORE INTO ncaa_programs(school_id,sport_id,gender,division,nick,display_name,short_name) VALUES(?,?,?,?,?,?,?)",(s['id'],sport_id,gender,division,nick,display_name,short_name))
         conn.commit()
-    log.info('Fallback seed complete')
+    log.info('Fallback seed complete from hardcoded list')
 
 # ── Serialisers ────────────────────────────────────────────────────────────────
 def school_to_dict(r):

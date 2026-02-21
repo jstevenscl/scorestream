@@ -1579,11 +1579,15 @@ async function initDsTab(){
       if(d.url&&urlEl)urlEl.value=d.url;
       if(d.username&&userEl)userEl.value=d.username;
       if(passEl)passEl.placeholder=d.has_password?'••••••• (saved)':'••••••••';
-      // Keep cache in sync
       saveDsCache(d.url,d.username);
+      // 3. Auto-load groups and profiles if credentials are fully saved
+      if(d.url&&d.username&&d.has_password){
+        loadDsGroups();
+        loadDsProfiles();
+      }
     }
   }catch(e){
-    // API unreachable — fields already populated from cache above, nothing to do
+    // API unreachable - fields already populated from cache above
   }
   buildManualSportRows();
 }
