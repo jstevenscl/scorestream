@@ -40,26 +40,13 @@ CORE_API_DIVISION_GROUPS = {
         ('d2', 'http://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/2026/types/1/groups/57/teams?limit=500'),
         ('d3', 'http://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/2026/types/1/groups/58/teams?limit=500'),
     ],
-    'ncaamb': [
-        ('d1', 'http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2026/types/2/groups/50/teams?limit=500'),
-        ('d2', 'http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2026/types/2/groups/49/teams?limit=500'),
-        ('d3', 'http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2026/types/2/groups/48/teams?limit=500'),
-    ],
-    'ncaawb': [
-        ('d1', 'http://sports.core.api.espn.com/v2/sports/basketball/leagues/womens-college-basketball/seasons/2026/types/2/groups/50/teams?limit=500'),
-        ('d2', 'http://sports.core.api.espn.com/v2/sports/basketball/leagues/womens-college-basketball/seasons/2026/types/2/groups/49/teams?limit=500'),
-        ('d3', 'http://sports.core.api.espn.com/v2/sports/basketball/leagues/womens-college-basketball/seasons/2026/types/2/groups/48/teams?limit=500'),
-    ],
-    'ncaabase': [
-        ('d1', 'http://sports.core.api.espn.com/v2/sports/baseball/leagues/college-baseball/seasons/2026/types/2/groups/11/teams?limit=500'),
-        ('d2', 'http://sports.core.api.espn.com/v2/sports/baseball/leagues/college-baseball/seasons/2026/types/2/groups/10/teams?limit=500'),
-        ('d3', 'http://sports.core.api.espn.com/v2/sports/baseball/leagues/college-baseball/seasons/2026/types/2/groups/9/teams?limit=500'),
-    ],
-    'ncaasb': [
-        ('d1', 'http://sports.core.api.espn.com/v2/sports/baseball/leagues/college-softball/seasons/2026/types/2/groups/11/teams?limit=500'),
-        ('d2', 'http://sports.core.api.espn.com/v2/sports/baseball/leagues/college-softball/seasons/2026/types/2/groups/10/teams?limit=500'),
-        ('d3', 'http://sports.core.api.espn.com/v2/sports/baseball/leagues/college-softball/seasons/2026/types/2/groups/9/teams?limit=500'),
-    ],
+    # Basketball/Baseball/Softball: ESPN does not expose clean D-II/D-III group endpoints.
+    # Division for these sports is inferred from the school's football division (see sync code).
+    # Only D-I group defined here so we can identify D-I teams; rest default via school lookup.
+    'ncaamb':   [('d1', 'http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2026/types/2/groups/50/teams?limit=500')],
+    'ncaawb':   [('d1', 'http://sports.core.api.espn.com/v2/sports/basketball/leagues/womens-college-basketball/seasons/2026/types/3/groups/50/teams?limit=500')],
+    'ncaabase': [('d1', 'http://sports.core.api.espn.com/v2/sports/baseball/leagues/college-baseball/seasons/2026/types/2/groups/50/teams?limit=500')],
+    'ncaasb':   [('d1', 'http://sports.core.api.espn.com/v2/sports/baseball/leagues/college-softball/seasons/2026/types/2/groups/50/teams?limit=500')],
 }
 
 # Ordered list: d3/d2 checked BEFORE d1 to prevent 'di' matching in 'division-iii' etc.
@@ -410,10 +397,22 @@ def _attempt_espn_sync_inner():
                     short = (t.get('shortDisplayName') or name).strip()
                     logos = t.get('logos',[])
                     logo  = logos[0].get('href','') if logos else ''
-                    # Look up division from core API map
-                    # If sport has no core API groups defined, div_map is empty → default d1
-                    # If sport has groups but team not found → default d1 (reasonable for D-I primacy)
-                    div = div_map.get(eid, 'd1') if div_map else 'd1'
+                    # Determine division:
+                    # 1. If core API map has the team ID → use it (football always has this)
+                    # 2. For non-football: if team is in D-I group map → d1
+                    #    else look up the school's division from their football program
+                    #    else default d1
+                    if eid in div_map:
+                        div = div_map[eid]
+                    elif sport_id != 'ncaafb':
+                        # Look up school division from football programs already synced
+                        row = conn.execute(
+                            'SELECT p.division FROM ncaa_programs p JOIN ncaa_schools s ON s.id=p.school_id WHERE s.espn_abbr=? AND p.sport_id=? ORDER BY p.division LIMIT 1',
+                            (abbr, 'ncaafb')
+                        ).fetchone()
+                        div = row[0] if row else 'd1'
+                    else:
+                        div = 'd1'
                     counts[div] = counts.get(div, 0) + 1
                     conn.execute("""
                         INSERT INTO ncaa_schools(espn_abbr,full_name,location,color,alt_color,
