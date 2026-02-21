@@ -119,6 +119,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .ds-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);flex-shrink:0;}
 .ds-dot.connected{background:var(--accent-green);box-shadow:0 0 6px rgba(0,255,136,0.5);}
 .ds-dot.error{background:var(--accent-red);}
+.ds-dot.configured{background:#f5a623;box-shadow:0 0 6px rgba(245,166,35,0.4);}
 .ds-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text-dim);}
 .ds-label.connected{color:var(--accent-green);}
 .ds-label.error{color:var(--accent-red);}
@@ -321,7 +322,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <button id="sidebarSaveBtn" onclick="manualSave()" style="display:none;width:100%;padding:9px;background:linear-gradient(135deg,rgba(255,107,0,0.2),rgba(255,59,92,0.15));border:1px solid var(--accent2);border-radius:8px;color:var(--accent2);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;margin-bottom:6px;">&#x1F4BE; Save Settings</button>
     <div class="dispatcharr-status" id="dsStatus" onclick="openSettings('dispatcharr')">
       <div class="ds-dot" id="dsDot"></div>
-      <span class="ds-label" id="dsLabel">Dispatcharr: Not configured</span>
+      <span class="ds-label" id="dsLabel">Dispatcharr: Not Configured</span>
     </div>
     <button class="sidebar-btn" onclick="openSettings('sports')">&#x2699;&#xFE0F; Settings</button>
   </div>
@@ -1747,8 +1748,9 @@ function updateDsStatus(connected,st=''){
   const dot=document.getElementById('dsDot'),label=document.getElementById('dsLabel');
   if(!dot||!label)return;
   if(connected){dot.className='ds-dot connected';label.className='ds-label connected';label.textContent='Dispatcharr: Connected';}
-  else if(st==='error'){dot.className='ds-dot error';label.className='ds-label error';label.textContent='Dispatcharr: Error';}
-  else{dot.className='ds-dot';label.className='ds-label';label.textContent='Dispatcharr: Not configured';}
+  else if(st==='error'){dot.className='ds-dot error';label.className='ds-label error';label.textContent='Dispatcharr: Connection Error';}
+  else if(st==='configured'){dot.className='ds-dot configured';label.className='ds-label';label.textContent='Dispatcharr: Configured';}
+  else{dot.className='ds-dot';label.className='ds-label';label.textContent='Dispatcharr: Not Configured';}
 }
 
 // =====================
@@ -1795,6 +1797,19 @@ fetchAllScores();
 startAutoRefresh();
 setRefreshRate(savedRate);
 loadNcaaFromApi(); // fetch live NCAA data from DB; falls back to bundled seed silently
+
+// Check Dispatcharr credentials on load and update sidebar status
+(async function initDsStatus(){
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/credentials`,{signal:AbortSignal.timeout(3000)});
+    if(r.ok){
+      const d=await r.json();
+      if(d.url&&d.username&&d.has_password){
+        updateDsStatus(false,'configured'); // show as configured but not yet tested
+      }
+    }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
