@@ -18,30 +18,20 @@ STREAM_BASE_URL = os.getenv('STREAM_BASE_URL', '')
 
 _sync_lock = threading.Lock()
 
-# Each tuple: (sport_id, gender, division, url)
-# Using ESPN groups parameter to fetch per-division so every team gets correct division tag
+# Each tuple: (sport_id, gender, teams_url, groups_url)
+# teams_url  — fetches all teams for this sport (no division info)
+# groups_url — fetches division tree so we can build espn_id → division map
 ESPN_ENDPOINTS = [
-    # Football
-    ('ncaafb', 'mens', 'd1', 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=900&groups=80'),   # FBS
-    ('ncaafb', 'mens', 'd1', 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=900&groups=81'),   # FCS
-    ('ncaafb', 'mens', 'd2', 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=900&groups=82'),   # D-II
-    ('ncaafb', 'mens', 'd3', 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=900&groups=83'),   # D-III
-    # Mens Basketball
-    ('ncaamb', 'mens', 'd1', 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams?limit=900&groups=50'),
-    ('ncaamb', 'mens', 'd2', 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams?limit=900&groups=49'),
-    ('ncaamb', 'mens', 'd3', 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams?limit=900&groups=48'),
-    # Womens Basketball
-    ('ncaawb', 'womens', 'd1', 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/teams?limit=900&groups=50'),
-    ('ncaawb', 'womens', 'd2', 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/teams?limit=900&groups=49'),
-    ('ncaawb', 'womens', 'd3', 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/teams?limit=900&groups=48'),
-    # Baseball
-    ('ncaabase', 'mens', 'd1', 'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/teams?limit=900&groups=11'),
-    ('ncaabase', 'mens', 'd2', 'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/teams?limit=900&groups=10'),
-    ('ncaabase', 'mens', 'd3', 'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/teams?limit=900&groups=9'),
-    # Softball
-    ('ncaasb', 'womens', 'd1', 'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/teams?limit=900&groups=11'),
-    ('ncaasb', 'womens', 'd2', 'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/teams?limit=900&groups=10'),
-    ('ncaasb', 'womens', 'd3', 'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/teams?limit=900&groups=9'),
+    ('ncaafb',   'mens',   'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=900',
+                           'https://site.api.espn.com/apis/site/v2/sports/football/college-football/groups'),
+    ('ncaamb',   'mens',   'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams?limit=900',
+                           'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/groups'),
+    ('ncaawb',   'womens', 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/teams?limit=900',
+                           'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/groups'),
+    ('ncaabase', 'mens',   'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/teams?limit=900',
+                           'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/groups'),
+    ('ncaasb',   'womens', 'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/teams?limit=900',
+                           'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/groups'),
 ]
 
 # Ordered list: d3/d2 checked BEFORE d1 to prevent 'di' matching in 'division-iii' etc.
@@ -334,13 +324,59 @@ def attempt_espn_sync():
     finally:
      _sync_lock.release()
 
+def build_division_map(groups_url):
+    """Fetch ESPN /groups endpoint and return {espn_team_id: division} map.
+    Walks the group tree: top-level name/abbr determines division.
+    - Group abbr 'd2' or name contains 'Division II'  → d2
+    - Group abbr 'd3' or name contains 'Division III' → d3
+    - Group name 'NCAA Division I' or abbr 'NCAA'     → d1
+    - FBS/FCS children of D-I group                   → d1
+    Teams not found in groups → 'unknown'
+    """
+    div_map = {}
+    try:
+        resp = http.get(groups_url, timeout=8); resp.raise_for_status()
+        data = resp.json()
+        groups = data.get('groups', [])
+
+        def classify_group(name, abbr):
+            n = (name or '').lower()
+            a = (abbr or '').lower()
+            if 'iii' in n or a == 'd3': return 'd3'
+            if 'ii' in n  or a == 'd2': return 'd2'
+            if 'division i' in n or a == 'ncaa' or 'fbs' in n or 'fcs' in n: return 'd1'
+            return None
+
+        def walk(node, parent_div=None):
+            name = node.get('name','')
+            abbr = node.get('abbreviation','')
+            div  = classify_group(name, abbr) or parent_div
+            # Tag all teams at this node
+            for t in node.get('teams', []):
+                tid = str(t.get('id',''))
+                if tid and div:
+                    div_map[tid] = div
+            # Recurse into children
+            for child in node.get('children', []):
+                walk(child, div)
+
+        for g in groups:
+            walk(g)
+        log.info(f'Division map built: {len(div_map)} teams from {groups_url.split("/")[-1]}')
+    except Exception as e:
+        log.warning(f'Groups fetch failed ({groups_url}): {e} — all teams will be d1')
+    return div_map
+
 def _attempt_espn_sync_inner():
     db_set('espn_sync_status','running')
     all_ok = True
-    for sport_id, gender, division, url in ESPN_ENDPOINTS:
+    for sport_id, gender, teams_url, groups_url in ESPN_ENDPOINTS:
         try:
-            log.info(f'ESPN sync: {sport_id} {division}...')
-            resp = http.get(url, timeout=8); resp.raise_for_status()
+            log.info(f'ESPN sync: {sport_id}...')
+            # Step 1: build espn_id → division map from groups endpoint
+            div_map = build_division_map(groups_url)
+            # Step 2: fetch all teams
+            resp = http.get(teams_url, timeout=15); resp.raise_for_status()
             data = resp.json()
             raw = data.get('sports',[{}])[0].get('leagues',[{}])[0].get('teams',[])
             if not raw: raw = data.get('teams',[])
@@ -359,7 +395,9 @@ def _attempt_espn_sync_inner():
                     short = (t.get('shortDisplayName') or name).strip()
                     logos = t.get('logos',[])
                     logo  = logos[0].get('href','') if logos else ''
-                    div   = division  # division comes from the endpoint tuple, not ESPN response
+                    # Look up division from groups map; default d1 if not found
+                    # (ESPN groups only returns partial lists per child, so unmapped = d1)
+                    div = div_map.get(eid, 'd1')
                     conn.execute("""
                         INSERT INTO ncaa_schools(espn_abbr,full_name,location,color,alt_color,
                             logo_url,espn_id,slug,sync_source,last_synced,updated_at)
@@ -384,7 +422,11 @@ def _attempt_espn_sync_inner():
                             last_synced=datetime('now'), updated_at=datetime('now')
                     """, (sid['id'],sport_id,gender,div,nick,name,short,eid))
                 conn.commit()
-            log.info(f'ESPN sync: {sport_id} {division} done ({len(raw)} teams)')
+            counts = {d:0 for d in ['d1','d2','d3','unknown']}
+            for entry in raw:
+                t = entry.get('team',entry); eid = str(t.get('id',''))
+                counts[div_map.get(eid,'d1')] = counts.get(div_map.get(eid,'d1'),0) + 1
+            log.info(f'ESPN sync: {sport_id} done ({len(raw)} teams — {counts})')
         except Exception as e:
             log.error(f'ESPN sync error {sport_id}: {e}'); all_ok = False
     if all_ok:
