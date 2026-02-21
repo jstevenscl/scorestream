@@ -599,7 +599,11 @@ def dispatcharr_session(creds=None):
         r.raise_for_status()
         token = r.json().get('access')
         if not token: return None,'No token returned — check credentials'
-        s.headers.update({'Authorization':f'Bearer {token}'})
+        s.headers.update({
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        })
         return s, None
     except http.exceptions.ConnectionError:
         return None, f'Cannot connect to Dispatcharr at {url}'
@@ -651,23 +655,31 @@ def test_connection():
     except Exception:
         return jsonify({'connected':True})
 
+def dispatcharr_get(endpoint, params=None):
+    """Get a fresh session and make a single authenticated GET. Returns (data, error)."""
+    c = get_creds(); s,err = dispatcharr_session(c)
+    if err: return None, err
+    try:
+        r = s.get(f'{c["url"]}{endpoint}', params=params, timeout=15)
+        if r.headers.get('content-type','').startswith('text/html'):
+            return None, 'Dispatcharr returned HTML — token may have expired. Try reconnecting.'
+        r.raise_for_status()
+        return r.json(), None
+    except Exception as e:
+        return None, str(e)
+
 @app.route('/dispatcharr/groups', methods=['GET'])
 def get_groups():
-    c = get_creds(); s,err = dispatcharr_session(c)
+    data,err = dispatcharr_get('/api/channels/channel-groups/')
     if err: return jsonify({'error':err}),400
-    try:
-        r = s.get(f'{c["url"]}/api/channels/channel-groups/',timeout=15); r.raise_for_status()
-        data = r.json(); items = data.get('results',data) if isinstance(data,dict) else data
-        return jsonify({'groups':sorted([{'id':g['id'],'name':g['name']} for g in items if 'id' in g],key=lambda x:x['name'])})
-    except Exception as e: return jsonify({'error':str(e)}),500
+    items = data.get('results',data) if isinstance(data,dict) else data
+    return jsonify({'groups':sorted([{'id':g['id'],'name':g['name']} for g in items if 'id' in g],key=lambda x:x['name'])})
 
 @app.route('/dispatcharr/profiles', methods=['GET'])
 def get_profiles():
-    c = get_creds(); s,err = dispatcharr_session(c)
+    data,err = dispatcharr_get('/api/channels/channel-profiles/')
     if err: return jsonify({'error':err}),400
-    try:
-        r = s.get(f'{c["url"]}/api/channels/channel-profiles/',timeout=15); r.raise_for_status()
-        data = r.json(); items = data.get('results',data) if isinstance(data,dict) else data
+    items = data.get('results',data) if isinstance(data,dict) else data
         return jsonify({'profiles':sorted([{'id':p['id'],'name':p['name']} for p in items if 'id' in p],key=lambda x:x['name'])})
     except Exception as e: return jsonify({'error':str(e)}),500
 
