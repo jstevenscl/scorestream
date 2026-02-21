@@ -691,14 +691,24 @@ def create_channels():
     b = request.get_json(force=True)
     mode,sports = b.get('mode','both'),b.get('sports',[])
     num_mode,start = b.get('numberingMode','auto'),int(b.get('startChannel',900))
-    group_id,profile_id = b.get('groupId'),b.get('profileId')
+    group_id,profile_ids_raw = b.get('groupId'),b.get('profileIds')
     assignments = {a['sportId']:a for a in (b.get('channelAssignments') or [])}
     base,created,errors,ch_num = c['url'],[],[],start
     def make_channel(name,num,stream_url=None,gid=None):
         payload = {'name':name,'channel_number':num,
                    'tvg_id':name.lower().replace(' ','-').replace('—','').strip('-')}
         if gid or group_id: payload['channel_group_id']=int(gid or group_id)
-        if profile_id: payload['channel_profile_ids']=[int(profile_id)]
+        # profileIds can be 'all', a list of ints, or None/empty
+        if profile_ids_raw == 'all':
+            # Fetch all profile IDs and assign to all
+            pdata,perr = dispatcharr_get('/api/channels/profiles/', timeout=45)
+            if not perr and pdata:
+                items = pdata.get('results',pdata) if isinstance(pdata,dict) else pdata
+                all_ids = [p['id'] for p in items if 'id' in p]
+                if all_ids: payload['channel_profile_ids'] = all_ids
+        elif profile_ids_raw:
+            ids = [int(x) for x in profile_ids_raw if str(x).isdigit()]
+            if ids: payload['channel_profile_ids'] = ids
         if stream_url: payload['url']=stream_url
         try:
             r = s.post(f'{base}/api/channels/channels/',json=payload,timeout=15)

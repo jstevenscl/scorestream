@@ -120,6 +120,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .ds-dot.connected{background:var(--accent-green);box-shadow:0 0 6px rgba(0,255,136,0.5);}
 .ds-dot.error{background:var(--accent-red);}
 .ds-dot.configured{background:#f5a623;box-shadow:0 0 6px rgba(245,166,35,0.4);}
+.profile-multiselect{position:relative;flex:1;min-width:0;}
+.profile-ms-trigger{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--input-bg,#1a1a2e);border:1px solid var(--border,#333);border-radius:4px;cursor:pointer;font-size:13px;color:var(--text,#ccc);min-height:34px;user-select:none;}
+.profile-ms-trigger:hover{border-color:var(--accent,#7c6af7);}
+.profile-ms-dropdown{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--modal-bg,#12122a);border:1px solid var(--border,#333);border-radius:4px;z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+.profile-ms-item{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;font-size:13px;color:var(--text,#ccc);}
+.profile-ms-item:hover{background:rgba(124,106,247,0.12);}
+.profile-ms-item input[type=checkbox]{accent-color:var(--accent,#7c6af7);width:14px;height:14px;cursor:pointer;}
+.profile-ms-all{font-weight:600;color:var(--accent,#7c6af7);}
+.profile-ms-divider{height:1px;background:var(--border,#333);margin:2px 0;}
 .ds-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text-dim);}
 .ds-label.connected{color:var(--accent-green);}
 .ds-label.error{color:var(--accent-red);}
@@ -559,9 +568,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <div class="modal-row" style="margin-bottom:6px;">
           <span class="modal-label" style="min-width:130px;">Channel Profile</span>
           <div style="display:flex;gap:6px;flex:1;min-width:0;">
-            <select class="modal-input" id="dProfileSelect" style="flex:1;min-width:0;">
-              <option value="">— connect to load profiles —</option>
-            </select>
+            <div class="profile-multiselect" id="dProfileMultiselect">
+              <div class="profile-ms-trigger" id="dProfileTrigger" onclick="toggleProfileDropdown()">
+                <span id="dProfileLabel">— connect to load profiles —</span>
+                <span style="margin-left:auto;opacity:0.5;">▾</span>
+              </div>
+              <div class="profile-ms-dropdown" id="dProfileDropdown" style="display:none;">
+                <label class="profile-ms-item profile-ms-all">
+                  <input type="checkbox" id="dProfileAll" onchange="onProfileAllChange(this)">
+                  <span>All Profiles</span>
+                </label>
+                <div class="profile-ms-divider"></div>
+                <div id="dProfileList"><!-- populated by loadDsProfiles --></div>
+              </div>
+            </div>
             <button class="modal-btn" onclick="loadDsProfiles()" title="Refresh profiles" style="padding:4px 10px;font-size:16px;">↻</button>
           </div>
         </div>
@@ -1661,17 +1681,85 @@ async function loadDsGroups(){
 }
 
 async function loadDsProfiles(){
-  const sel=document.getElementById('dProfileSelect');
-  sel.innerHTML='<option value="">Loading...</option>';
+  const list=document.getElementById('dProfileList');
+  const label=document.getElementById('dProfileLabel');
+  if(list) list.innerHTML='<div style="padding:8px 10px;opacity:0.6;font-size:12px;">Loading profiles...</div>';
+  if(label) label.textContent='Loading...';
   try{
     const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(50000)});
     const d=await r.json();
     if(r.ok&&d.profiles?.length){
-      sel.innerHTML='<option value="">— no profile (default) —</option>'+d.profiles.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+      list.innerHTML=d.profiles.map(p=>
+        `<label class="profile-ms-item"><input type="checkbox" class="profile-cb" value="${p.id}" onchange="onProfileCbChange()"><span>${p.name}</span></label>`
+      ).join('');
+      updateProfileLabel();
     }else{
-      sel.innerHTML='<option value="">— no profiles found —</option>';
+      list.innerHTML='<div style="padding:8px 10px;opacity:0.6;font-size:12px;">No profiles found</div>';
+      if(label) label.textContent='— no profiles found —';
     }
-  }catch(e){sel.innerHTML='<option value="">— connect first —</option>';}
+  }catch(e){
+    if(list) list.innerHTML='<div style="padding:8px 10px;opacity:0.6;font-size:12px;">Failed to load</div>';
+    if(label) label.textContent='— connect first —';
+  }
+}
+
+function toggleProfileDropdown(){
+  const dd=document.getElementById('dProfileDropdown');
+  if(!dd)return;
+  const isOpen=dd.style.display!=='none';
+  dd.style.display=isOpen?'none':'block';
+  if(!isOpen){
+    // Close when clicking outside
+    setTimeout(()=>document.addEventListener('click',closeProfileDropdown,{once:true,capture:true}),0);
+  }
+}
+
+function closeProfileDropdown(e){
+  const ms=document.getElementById('dProfileMultiselect');
+  if(ms&&!ms.contains(e.target)){
+    const dd=document.getElementById('dProfileDropdown');
+    if(dd)dd.style.display='none';
+  } else {
+    // re-attach if click was inside
+    setTimeout(()=>document.addEventListener('click',closeProfileDropdown,{once:true,capture:true}),0);
+  }
+}
+
+function onProfileAllChange(allCb){
+  if(allCb.checked){
+    document.querySelectorAll('.profile-cb').forEach(cb=>cb.checked=false);
+  }
+  updateProfileLabel();
+}
+
+function onProfileCbChange(){
+  // Uncheck "All" if any individual is selected
+  const allCb=document.getElementById('dProfileAll');
+  const anyChecked=[...document.querySelectorAll('.profile-cb')].some(cb=>cb.checked);
+  if(allCb&&anyChecked) allCb.checked=false;
+  updateProfileLabel();
+}
+
+function updateProfileLabel(){
+  const allCb=document.getElementById('dProfileAll');
+  const checked=[...document.querySelectorAll('.profile-cb')].filter(cb=>cb.checked);
+  const label=document.getElementById('dProfileLabel');
+  if(!label)return;
+  if(allCb?.checked){
+    label.textContent='All Profiles';
+  } else if(checked.length===0){
+    label.textContent='— default (no profile) —';
+  } else if(checked.length===1){
+    label.textContent=checked[0].closest('label').querySelector('span').textContent;
+  } else {
+    label.textContent=checked.length+' profiles selected';
+  }
+}
+
+function getSelectedProfileIds(){
+  const allCb=document.getElementById('dProfileAll');
+  if(allCb?.checked) return 'all';
+  return [...document.querySelectorAll('.profile-cb:checked')].map(cb=>parseInt(cb.value));
 }
 
 // Channel numbering mode
@@ -1707,7 +1795,7 @@ async function createChannels(mode){
   el.style.display='block';el.className='channel-result';el.textContent='Creating channels...';
   try{
     const groupId=document.getElementById('dGroupSelect')?.value||null;
-    const profileId=document.getElementById('dProfileSelect')?.value||null;
+    const profileIds=getSelectedProfileIds();
     const sports=getAllEnabledSports().map(s=>({id:s.id,name:s.name,emoji:s.emoji}));
 
     let channelAssignments=null;
@@ -1726,7 +1814,7 @@ async function createChannels(mode){
       numberingMode:dsNumMode,
       startChannel:parseInt(document.getElementById('dChannelStart')?.value||'900'),
       groupId,
-      profileId,
+      profileIds,
       channelAssignments,
     };
 
