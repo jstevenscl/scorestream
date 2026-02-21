@@ -680,8 +680,7 @@ def get_profiles():
     data,err = dispatcharr_get('/api/channels/channel-profiles/')
     if err: return jsonify({'error':err}),400
     items = data.get('results',data) if isinstance(data,dict) else data
-        return jsonify({'profiles':sorted([{'id':p['id'],'name':p['name']} for p in items if 'id' in p],key=lambda x:x['name'])})
-    except Exception as e: return jsonify({'error':str(e)}),500
+    return jsonify({'profiles':sorted([{'id':p['id'],'name':p['name']} for p in items if 'id' in p],key=lambda x:x['name'])})
 
 @app.route('/dispatcharr/create', methods=['POST'])
 def create_channels():
