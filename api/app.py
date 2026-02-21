@@ -570,10 +570,16 @@ def save_credentials():
 def test_connection():
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'connected':False,'error':err})
+    # Auth succeeded (JWT token obtained) - treat that as confirmed connection.
+    # The channels endpoint can be slow on remote/cloud Dispatcharr instances.
     try:
-        r = s.get(f'{c["url"]}/api/channels/channels/?limit=1',timeout=15)
-        r.raise_for_status(); return jsonify({'connected':True})
-    except Exception as e: return jsonify({'connected':False,'error':str(e)})
+        r = s.get(c['url']+'/api/accounts/profile/',timeout=15)
+        r.raise_for_status()
+        data = r.json()
+        username = data.get('username') or data.get('user','')
+        return jsonify({'connected':True,'username':username})
+    except Exception:
+        return jsonify({'connected':True})
 
 @app.route('/dispatcharr/groups', methods=['GET'])
 def get_groups():
