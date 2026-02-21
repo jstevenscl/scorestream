@@ -405,10 +405,16 @@ def _attempt_espn_sync_inner():
                     if eid in div_map:
                         div = div_map[eid]
                     elif sport_id != 'ncaafb':
-                        # Look up school division from football programs already synced
+                        # Look up school division from ANY sport already synced for this school.
+                        # Football is most reliable (synced first), but any sport works.
+                        # d2/d3 take priority over d1 in case of mixed programs.
                         row = conn.execute(
-                            'SELECT p.division FROM ncaa_programs p JOIN ncaa_schools s ON s.id=p.school_id WHERE s.espn_abbr=? AND p.sport_id=? ORDER BY p.division LIMIT 1',
-                            (abbr, 'ncaafb')
+                            '''SELECT p.division FROM ncaa_programs p
+                               JOIN ncaa_schools s ON s.id=p.school_id
+                               WHERE s.espn_abbr=?
+                               ORDER BY CASE p.division WHEN 'd3' THEN 0 WHEN 'd2' THEN 1 ELSE 2 END
+                               LIMIT 1''',
+                            (abbr,)
                         ).fetchone()
                         div = row[0] if row else 'd1'
                     else:
