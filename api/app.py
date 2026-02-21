@@ -466,10 +466,31 @@ def _attempt_espn_sync_inner():
                         (row[0],)
                     ).fetchone()
                     if best and best[0] != 'd1':
-                        conn.execute(
-                            "UPDATE ncaa_programs SET division=? WHERE school_id=? AND sport_id != 'ncaafb'",
-                            (best[0], row[0])
-                        )
+                        # For each non-football sport where this school has a d1 record,
+                        # delete the d1 record if a better division record already exists,
+                        # otherwise update it. This avoids UNIQUE constraint violations.
+                        sports = conn.execute(
+                            "SELECT DISTINCT sport_id FROM ncaa_programs WHERE school_id=? AND sport_id != 'ncaafb' AND division='d1'",
+                            (row[0],)
+                        ).fetchall()
+                        for sport_row in sports:
+                            sid = sport_row[0]
+                            existing = conn.execute(
+                                "SELECT id FROM ncaa_programs WHERE school_id=? AND sport_id=? AND division=?",
+                                (row[0], sid, best[0])
+                            ).fetchone()
+                            if existing:
+                                # Better division record already exists — just delete the d1 duplicate
+                                conn.execute(
+                                    "DELETE FROM ncaa_programs WHERE school_id=? AND sport_id=? AND division='d1'",
+                                    (row[0], sid)
+                                )
+                            else:
+                                # No conflict — safe to update
+                                conn.execute(
+                                    "UPDATE ncaa_programs SET division=? WHERE school_id=? AND sport_id=? AND division='d1'",
+                                    (best[0], row[0], sid)
+                                )
                         updated += 1
                 conn.commit()
             log.info(f'Division pass 2: corrected {updated} schools non-football divisions')
