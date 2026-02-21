@@ -1278,8 +1278,8 @@ function setTbDivision(div){
     btn.style.borderColor=active?'var(--accent)':'var(--border)';
     btn.style.color=active?'var(--accent)':'var(--text-dim)';
   });
-  const teams=tbState.teamCache[tbState.activeSport]||[];
-  renderTbTeams(teams);
+  // Reload from API with new division filter (server-side filtering)
+  loadTbSport(tbState.activeSport);
 }
 
 // Enhanced search: checks abbr, name, AND all NCAA_NAMES fields (school, nick, short)
@@ -1311,6 +1311,9 @@ function enrichTeam(abbr, espnName, color, logo){
 }
 
 async function fetchTeamsForSport(sid){
+  // For NCAA sports, use our DB API filtered by sport+division (server-side)
+  if(sid.startsWith('ncaa')) return fetchNcaaTeams(sid, tbState.divisionFilter);
+  // Pro sports: use cache then ESPN
   if(tbState.teamCache[sid]&&tbState.teamCache[sid].length>0)return tbState.teamCache[sid];
   try{
     const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),8000);
@@ -1329,19 +1332,47 @@ async function fetchTeamsForSport(sid){
     tbState.teamCache[sid]=teams;
     return teams;
   }catch(e){
-    // Build fallback from NCAA_NAMES for college sports — covers all major programs
-    // even when ESPN API is unavailable or returns an empty list
-    if(sid.startsWith('ncaa')){
-      const isNcaa = Object.entries(NCAA_NAMES)
-        .filter(([,v])=>v.sports.includes(sid))
-        .map(([abbr,v])=>enrichTeam(abbr, v.short+' '+v.nick, null, null))
-        .sort((a,b)=>a.name.localeCompare(b.name));
-      tbState.teamCache[sid]=isNcaa;
-      return isNcaa;
-    }
-    // Pro sports: use static MOCK_TEAMS
     const teams=(MOCK_TEAMS[sid]||[]).map(t=>enrichTeam(t.abbr,t.name,t.color,null));
     tbState.teamCache[sid]=teams;
+    return teams;
+  }
+}
+
+async function fetchNcaaTeams(sid, division){
+  // Cache key includes division so switching pills doesn't serve stale data
+  const cacheKey = sid + '_' + (division||'all');
+  if(tbState.teamCache[cacheKey] && tbState.teamCache[cacheKey].length>0) return tbState.teamCache[cacheKey];
+  try{
+    const div = (!division || division==='all') ? '' : '&division='+division;
+    const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),8000);
+    const res=await fetch(`${API_BASE}/ncaa/programs?sport=${sid}${div}`,{signal:ctrl.signal});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const programs=data.programs||[];
+    if(!programs.length) throw new Error('empty');
+    const teams=programs.map(p=>({
+      abbr:      (p.espn_abbr||'').toUpperCase(),
+      name:      p.display_name || p.full_name || p.espn_abbr,
+      school:    p.full_name,
+      nick:      p.nick,
+      short:     p.short_name,
+      shortName: p.short_name || p.display_name,
+      color:     p.color || '333333',
+      logo:      p.logo_url || null,
+      division:  p.division || 'unknown',
+      gender:    p.gender,
+    })).sort((a,b)=>a.name.localeCompare(b.name));
+    tbState.teamCache[cacheKey]=teams;
+    return teams;
+  }catch(e){
+    // Fallback: filter NCAA_NAMES by sport, optionally by division
+    console.warn('[NCAA] API fetch failed, using fallback:', e.message);
+    const teams=Object.entries(NCAA_NAMES)
+      .filter(([,v])=>v.sports && v.sports.includes(sid))
+      .filter(([,v])=>!division || division==='all' || v.division===division)
+      .map(([abbr,v])=>enrichTeam(abbr, (v.short||'')+' '+(v.nick||''), v.color||null, v.logo||null))
+      .sort((a,b)=>a.name.localeCompare(b.name));
+    tbState.teamCache[cacheKey]=teams;
     return teams;
   }
 }
@@ -1385,17 +1416,9 @@ function filterTeams(query){
 function renderTbTeams(teams){
   const list=document.getElementById('tbTeamList');if(!list)return;
   const q=tbState.searchQuery;
-  const sid=tbState.activeSport;
-  const div=tbState.divisionFilter;
-  // Apply division filter for NCAA sports (skip if 'all' or pro sport)
-  let filtered=teams;
-  if(sid.startsWith('ncaa') && div && div!=='all'){
-    filtered=filtered.filter(t=>{
-      const extra=NCAA_NAMES[(t.abbr||'').toUpperCase()];
-      return extra && extra.division===div;
-    });
-  }
-  if(q) filtered=filtered.filter(t=>teamMatchesQuery(t,q));
+  // Division filtering is now server-side (fetchNcaaTeams handles it)
+  // Just apply search query client-side
+  let filtered=q?teams.filter(t=>teamMatchesQuery(t,q)):teams;
   if(!filtered.length){list.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-dim);">No teams found for "${q}"</div>`;return;}
   list.innerHTML='';
   filtered.forEach(team=>{
