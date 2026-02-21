@@ -1648,7 +1648,7 @@ async function loadDsGroups(){
   const sel=document.getElementById('dGroupSelect');
   sel.innerHTML='<option value="">Loading...</option>';
   try{
-    const r=await fetch(`${API_BASE}/dispatcharr/groups`,{signal:AbortSignal.timeout(8000)});
+    const r=await fetch(`${API_BASE}/dispatcharr/groups`,{signal:AbortSignal.timeout(50000)});
     const d=await r.json();
     if(r.ok&&d.groups?.length){
       sel.innerHTML='<option value="">— select group —</option>'+d.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
@@ -1664,7 +1664,7 @@ async function loadDsProfiles(){
   const sel=document.getElementById('dProfileSelect');
   sel.innerHTML='<option value="">Loading...</option>';
   try{
-    const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(8000)});
+    const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(50000)});
     const d=await r.json();
     if(r.ok&&d.profiles?.length){
       sel.innerHTML='<option value="">— no profile (default) —</option>'+d.profiles.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');

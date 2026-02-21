@@ -655,12 +655,12 @@ def test_connection():
     except Exception:
         return jsonify({'connected':True})
 
-def dispatcharr_get(endpoint, params=None):
+def dispatcharr_get(endpoint, params=None, timeout=30):
     """Get a fresh session and make a single authenticated GET. Returns (data, error)."""
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return None, err
     try:
-        r = s.get(f'{c["url"]}{endpoint}', params=params, timeout=15)
+        r = s.get(f'{c["url"]}{endpoint}', params=params, timeout=timeout)
         if r.headers.get('content-type','').startswith('text/html'):
             return None, 'Dispatcharr returned HTML — token may have expired. Try reconnecting.'
         r.raise_for_status()
@@ -670,17 +670,19 @@ def dispatcharr_get(endpoint, params=None):
 
 @app.route('/dispatcharr/groups', methods=['GET'])
 def get_groups():
-    data,err = dispatcharr_get('/api/channels/groups/')
+    data,err = dispatcharr_get('/api/channels/groups/', timeout=45)
     if err: return jsonify({'error':err}),400
     items = data.get('results',data) if isinstance(data,dict) else data
-    return jsonify({'groups':sorted([{'id':g['id'],'name':g['name']} for g in items if 'id' in g],key=lambda x:x['name'])})
+    if not isinstance(items, list): items = []
+    return jsonify({'groups':sorted([{'id':g['id'],'name':g['name']} for g in items if 'id' in g and 'name' in g],key=lambda x:x['name'])})
 
 @app.route('/dispatcharr/profiles', methods=['GET'])
 def get_profiles():
-    data,err = dispatcharr_get('/api/channels/profiles/')
+    data,err = dispatcharr_get('/api/channels/profiles/', timeout=45)
     if err: return jsonify({'error':err}),400
     items = data.get('results',data) if isinstance(data,dict) else data
-    return jsonify({'profiles':sorted([{'id':p['id'],'name':p['name']} for p in items if 'id' in p],key=lambda x:x['name'])})
+    if not isinstance(items, list): items = []
+    return jsonify({'profiles':sorted([{'id':p['id'],'name':p['name']} for p in items if 'id' in p and 'name' in p],key=lambda x:x['name'])})
 
 @app.route('/dispatcharr/create', methods=['POST'])
 def create_channels():
