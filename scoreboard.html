@@ -1409,7 +1409,10 @@ async function loadTbSport(sid){
 
 function filterTeams(query){
   tbState.searchQuery=query;
-  const teams=tbState.teamCache[tbState.activeSport]||[];
+  const sid=tbState.activeSport;
+  // NCAA sports use a division-aware cache key (e.g. "ncaafb_d1"), pro sports use sport id only
+  const cacheKey=sid.startsWith('ncaa') ? sid+'_'+(tbState.divisionFilter||'all') : sid;
+  const teams=tbState.teamCache[cacheKey]||tbState.teamCache[sid]||[];
   renderTbTeams(teams);
 }
 
