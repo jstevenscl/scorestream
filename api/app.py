@@ -670,14 +670,14 @@ def dispatcharr_get(endpoint, params=None):
 
 @app.route('/dispatcharr/groups', methods=['GET'])
 def get_groups():
-    data,err = dispatcharr_get('/api/channels/channel-groups/')
+    data,err = dispatcharr_get('/api/channels/groups/')
     if err: return jsonify({'error':err}),400
     items = data.get('results',data) if isinstance(data,dict) else data
     return jsonify({'groups':sorted([{'id':g['id'],'name':g['name']} for g in items if 'id' in g],key=lambda x:x['name'])})
 
 @app.route('/dispatcharr/profiles', methods=['GET'])
 def get_profiles():
-    data,err = dispatcharr_get('/api/channels/channel-profiles/')
+    data,err = dispatcharr_get('/api/channels/profiles/')
     if err: return jsonify({'error':err}),400
     items = data.get('results',data) if isinstance(data,dict) else data
     return jsonify({'profiles':sorted([{'id':p['id'],'name':p['name']} for p in items if 'id' in p],key=lambda x:x['name'])})
