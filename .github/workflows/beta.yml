@@ -1,5 +1,4 @@
 name: Beta — Build on Dev Push
-
 # Triggers on every push to the dev branch
 # Publishes bleeding-edge :beta and :beta-<sha> images to GHCR
 
@@ -9,8 +8,7 @@ on:
       - dev
     paths:
       - 'api/**'
-      - 'renderer/**'
-      - 'ffmpeg/**'
+      - 'stream/**'
       - 'nginx/**'
       - 'scoreboard.html'
 
@@ -73,29 +71,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build & Push — Renderer (beta)
+      - name: Build & Push — Stream Manager (beta)
         uses: docker/build-push-action@v5
         with:
-          context: ./renderer
-          file: ./renderer/Dockerfile
+          context: ./stream
+          file: ./stream/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-renderer:beta
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-renderer:beta-${{ steps.sha.outputs.short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build & Push — FFmpeg (beta)
-        uses: docker/build-push-action@v5
-        with:
-          context: ./ffmpeg
-          file: ./ffmpeg/Dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ffmpeg:beta
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ffmpeg:beta-${{ steps.sha.outputs.short }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta-${{ steps.sha.outputs.short }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -103,11 +88,10 @@ jobs:
         run: |
           echo "### ✅ Beta images pushed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** \`dev\`  |  **SHA:** \`${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`dev\` | **SHA:** \`${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "ghcr.io/${{ env.IMAGE_NAME }}-api:beta" >> $GITHUB_STEP_SUMMARY
           echo "ghcr.io/${{ env.IMAGE_NAME }}-web:beta" >> $GITHUB_STEP_SUMMARY
-          echo "ghcr.io/${{ env.IMAGE_NAME }}-renderer:beta" >> $GITHUB_STEP_SUMMARY
-          echo "ghcr.io/${{ env.IMAGE_NAME }}-ffmpeg:beta" >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/${{ env.IMAGE_NAME }}-stream:beta" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
