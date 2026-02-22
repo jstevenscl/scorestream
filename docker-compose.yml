@@ -1,17 +1,14 @@
 version: "3.8"
-
 # ============================================================
-#  ScoreStream — Docker Compose Stack
-#  Pull from GitHub Container Registry (ghcr.io)
+# ScoreStream — Docker Compose Stack
+# Pull from GitHub Container Registry (ghcr.io)
 #
-#  Set SCORESTREAM_TAG in .env to choose image version:
-#    latest        → stable release
-#    beta          → bleeding edge (built on every dev push)
-#    v0.0.1-beta   → specific version
+# Set SCORESTREAM_TAG in .env to choose image version:
+#   latest → stable release
+#   beta   → bleeding edge (built on every dev push)
+#   v0.0.1-beta → specific version
 # ============================================================
-
 services:
-
   scorestream-web:
     image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-web:${SCORESTREAM_TAG:-latest}
     # To build locally instead of pulling, comment image line above and uncomment below:
@@ -45,8 +42,8 @@ services:
       - TZ=${TZ:-America/Chicago}
       - STREAM_WIDTH=${STREAM_WIDTH:-1920}
       - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
-      - STREAM_FPS=${STREAM_FPS:-30}
-      - SCOREBOARD_URL=http://scorestream-web/
+      - STREAM_FPS=${STREAM_FPS:-10}
+      - SCOREBOARD_URL=http://scorestream-web/?stream
     volumes:
       - renderer_pipe:/pipes
     networks:
@@ -66,7 +63,7 @@ services:
       - TZ=${TZ:-America/Chicago}
       - STREAM_WIDTH=${STREAM_WIDTH:-1920}
       - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
-      - STREAM_FPS=${STREAM_FPS:-30}
+      - STREAM_FPS=${STREAM_FPS:-10}
       - HLS_SEGMENT_DURATION=${HLS_SEGMENT_DURATION:-2}
       - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-10}
     volumes:

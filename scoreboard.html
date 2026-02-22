@@ -2998,6 +2998,30 @@ startAutoRefresh();
 setRefreshRate(savedRate);
 loadNcaaFromApi(); // fetch live NCAA data from DB; falls back to bundled seed silently
 
+// STREAM MODE: if ?stream param present, hide UI chrome and load active scoreboard config
+(async function initStreamMode(){
+  if (!new URLSearchParams(window.location.search).has('stream')) return;
+  // Hide sidebar and topbar
+  const sidebar = document.getElementById('sidebar');
+  const topbar = document.querySelector('.topbar');
+  if (sidebar) sidebar.style.display = 'none';
+  if (topbar) topbar.style.display = 'none';
+  // Fetch active scoreboard from API and override enabled sports
+  try {
+    const r = await fetch(`${API_BASE}/scoreboards/active`, {signal: AbortSignal.timeout(5000)});
+    if (r.ok) {
+      const sb = await r.json();
+      const activeIds = Object.entries(sb.sport_config || {})
+        .filter(([,v]) => v).map(([k]) => k);
+      if (activeIds.length) {
+        state.enabledSports = new Set(activeIds);
+        state.activeSports = new Set(activeIds);
+        renderScoreboard();
+      }
+    }
+  } catch(e) { /* keep defaults if API unreachable */ }
+})();
+
 // Check Dispatcharr credentials on load and update sidebar status
 (async function initDsStatus(){
   try{
