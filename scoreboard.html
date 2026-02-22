@@ -188,6 +188,25 @@ body.stream-mode #clockDisplay{font-size:15px;}
 .games-grid.grid-mode{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
 .games-grid.fullscreen-mode,.games-grid.ticker-mode{grid-template-columns:1fr;}
 .game-card{background:var(--bg-card);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:all 0.25s;animation:cardIn 0.4s ease forwards;}
+.network-badges{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.network-badge{font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.5px;padding:2px 5px;border-radius:3px;white-space:nowrap;text-transform:uppercase;}
+.nb-espn{background:#e71d36;color:#fff;}
+.nb-espn2{background:#b5002e;color:#fff;}
+.nb-espnplus{background:#00adef;color:#fff;}
+.nb-abc{background:#000;color:#fff;border:1px solid #444;}
+.nb-nbc{background:#ff6600;color:#fff;}
+.nb-peacock{background:#00c4b4;color:#fff;}
+.nb-cbs{background:#003366;color:#fff;}
+.nb-fox{background:#f4ac1a;color:#000;}
+.nb-fs1{background:#e6231b;color:#fff;}
+.nb-fs2{background:#c1001f;color:#fff;}
+.nb-tnt{background:#002d6e;color:#fff;}
+.nb-tbs{background:#00a7e1;color:#fff;}
+.nb-mlbtv{background:#002d72;color:#fff;}
+.nb-nhltv{background:#00205b;color:#fff;}
+.nb-nbatv{background:#17408b;color:#fff;}
+.nb-nfln{background:#013369;color:#fff;}
+.nb-default{background:rgba(255,255,255,0.1);color:var(--text-dim);border:1px solid var(--border);}
 @keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 .game-card:hover{border-color:var(--border-bright);background:var(--bg-card-hover);transform:translateY(-1px);box-shadow:0 8px 30px rgba(0,0,0,0.4);}
 .game-card.live{border-color:rgba(0,255,136,0.3);}
@@ -483,6 +502,7 @@ body.stream-mode #clockDisplay{font-size:15px;}
       <button class="snav-btn" data-section="dispatcharr" onclick="switchSection('dispatcharr')">
         <span class="snav-icon">📡</span><span>Integrations</span>
       </button>
+
     </nav>
     <div class="settings-sidebar-footer">
       <span id="saveStatusBadge" style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;transition:opacity 0.4s;opacity:0;"></span>
@@ -789,6 +809,106 @@ body.stream-mode #clockDisplay{font-size:15px;}
     </div>
     </div><!-- /section-dispatcharr -->
 
+    <!-- ── NCAA Teams Management ─────────────────────────────────── -->
+    <div id="section-ncaa" class="settings-section" style="display:none;">
+      <div class="section-header">
+        <div class="section-title">🏫 NCAA Teams</div>
+        <div class="section-subtitle">Search, add, edit, or remove NCAA programs from your database. The ESPN sync populates most teams automatically.</div>
+      </div>
+
+      <!-- Sync status + trigger -->
+      <div id="ncaaSyncBar" style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;">
+        <div style="flex:1;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:2px;">ESPN Sync</div>
+          <div id="ncaaSyncStatus" style="font-size:13px;color:var(--text-secondary);">Checking...</div>
+        </div>
+        <button onclick="triggerNcaaSync()" id="ncaaSyncBtn" style="padding:7px 16px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:7px;color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">↻ Sync Now</button>
+      </div>
+
+      <!-- Filters row -->
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+        <input id="ncaaSearchInput" type="text" placeholder="Search teams..." oninput="ncaaFilterTeams()"
+          style="flex:1;min-width:160px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+        <select id="ncaaSportFilter" onchange="ncaaFilterTeams()"
+          style="padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-size:13px;cursor:pointer;">
+          <option value="">All Sports</option>
+          <option value="ncaafb">Football</option>
+          <option value="ncaamb">Men's Basketball</option>
+          <option value="ncaawb">Women's Basketball</option>
+          <option value="ncaabase">Baseball</option>
+          <option value="ncaasb">Softball</option>
+        </select>
+        <select id="ncaaDivFilter" onchange="ncaaFilterTeams()"
+          style="padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-size:13px;cursor:pointer;">
+          <option value="">All Divisions</option>
+          <option value="d1">D1</option>
+          <option value="d2">D2</option>
+          <option value="d3">D3</option>
+        </select>
+        <button onclick="openNcaaAddModal()" style="padding:8px 16px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">+ Add Team</button>
+      </div>
+
+      <!-- Team count -->
+      <div id="ncaaTeamCount" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;"></div>
+
+      <!-- Teams list -->
+      <div id="ncaaTeamList" style="display:flex;flex-direction:column;gap:6px;max-height:480px;overflow-y:auto;"></div>
+    </div><!-- /section-ncaa -->
+
+    <!-- NCAA Add/Edit Modal -->
+    <div id="ncaaModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;padding:28px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--text-primary);margin-bottom:20px;" id="ncaaModalTitle">Add NCAA Team</div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">School Name *</label>
+            <input id="ncaaModalSchool" type="text" placeholder="e.g. University of Miami"
+              style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+          </div>
+          <div>
+            <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">Abbreviation *</label>
+            <input id="ncaaModalAbbr" type="text" placeholder="e.g. MIA" maxlength="8"
+              style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+          </div>
+          <div>
+            <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">Nickname</label>
+            <input id="ncaaModalNick" type="text" placeholder="e.g. Hurricanes"
+              style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">Sport *</label>
+              <select id="ncaaModalSport" style="width:100%;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-size:13px;cursor:pointer;">
+                <option value="ncaafb">Football</option>
+                <option value="ncaamb">Men's Basketball</option>
+                <option value="ncaawb">Women's Basketball</option>
+                <option value="ncaabase">Baseball</option>
+                <option value="ncaasb">Softball</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">Division</label>
+              <select id="ncaaModalDiv" style="width:100%;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-size:13px;cursor:pointer;">
+                <option value="d1">D1</option>
+                <option value="d2">D2</option>
+                <option value="d3">D3</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">Team Color</label>
+            <input id="ncaaModalColor" type="color" value="#333333"
+              style="width:60px;height:36px;padding:2px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
+          </div>
+        </div>
+        <div id="ncaaModalError" style="display:none;color:var(--accent-red);font-size:12px;margin-top:10px;font-family:'Barlow Condensed',sans-serif;"></div>
+        <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end;">
+          <button onclick="closeNcaaModal()" style="padding:9px 20px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Cancel</button>
+          <button onclick="saveNcaaModal()" id="ncaaModalSaveBtn" style="padding:9px 20px;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);border-radius:8px;color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Save</button>
+        </div>
+      </div>
+    </div>
+
   </div><!-- settings-content -->
 </div><!-- settings-page -->
 
@@ -913,7 +1033,7 @@ function openSbEditor(id){
   _editorDraft={
     name: sb.name,
     sport_config: Object.assign({}, sb.sport_config||{}),
-    team_config: (sb.team_config||[]).slice(),
+    team_config: (sb.team_config && !Array.isArray(sb.team_config)) ? JSON.parse(JSON.stringify(sb.team_config)) : {},
     display_config: Object.assign({}, sb.display_config||{})
   };
 
@@ -1057,7 +1177,7 @@ function renderEditorStep(sbOverride){
         </div>
         <div id="sbTeamList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:340px;overflow-y:auto;"></div>
         <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="sbTeamCount">
-          ✓ ${(_editorDraft.team_config||[]).length} team${(_editorDraft.team_config||[]).length!==1?'s':''} selected for this scoreboard
+          ✓ ${Object.values(_editorDraft.team_config||{}).flat().length} team${Object.values(_editorDraft.team_config||{}).flat().length!==1?'s':''} selected for this scoreboard
         </div>`;
     }
   }
@@ -1163,7 +1283,7 @@ function sbEditorRenderTeams(query=''){
   const listEl = document.getElementById('sbTeamList');
   if(!listEl) return;
   const q = query.toLowerCase().trim();
-  const selected = new Set(_editorDraft.team_config || []);
+  const selected = new Set((_editorDraft.team_config||{})[_sbTeamActiveSport] || []);
   let teams = _sbTeamAllTeams;
   if(q) teams = teams.filter(t=>
     (t.name||'').toLowerCase().includes(q) ||
@@ -1192,15 +1312,22 @@ function sbEditorRenderTeams(query=''){
 }
 
 function sbEditorToggleTeam(key, checked){
-  if(!_editorDraft.team_config) _editorDraft.team_config = [];
+  if(!_editorDraft.team_config || Array.isArray(_editorDraft.team_config)) _editorDraft.team_config = {};
+  const sport = _sbTeamActiveSport;
+  if(!_editorDraft.team_config[sport]) _editorDraft.team_config[sport] = [];
   if(checked){
-    if(!_editorDraft.team_config.includes(key)) _editorDraft.team_config.push(key);
+    if(!_editorDraft.team_config[sport].includes(key)) _editorDraft.team_config[sport].push(key);
   } else {
-    _editorDraft.team_config = _editorDraft.team_config.filter(k=>k!==key);
+    _editorDraft.team_config[sport] = _editorDraft.team_config[sport].filter(k=>k!==key);
+    if(!_editorDraft.team_config[sport].length) delete _editorDraft.team_config[sport];
   }
   // Update count
+  const total = Object.values(_editorDraft.team_config).flat().length;
   const countEl = document.getElementById('sbTeamCount');
-  if(countEl) countEl.textContent = `✓ ${_editorDraft.team_config.length} team${_editorDraft.team_config.length!==1?'s':''} selected for this scoreboard`;
+  if(countEl) countEl.textContent = `✓ ${total} team${total!==1?'s':''} selected for this scoreboard`;
+  // Re-render current sport list to reflect checked state
+  const search = document.getElementById('sbTeamSearch')?.value || '';
+  sbEditorRenderTeams(search);
 }
 
 function sbEditorFilterTeams(query){
@@ -1273,7 +1400,7 @@ async function saveSbEditor(){
   if(result){result.style.color='var(--text-dim)';result.textContent='Saving...';}
   const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name:_editorDraft.name, sport_config:_editorDraft.sport_config, display_config:_editorDraft.display_config})
+    body:JSON.stringify({name:_editorDraft.name, sport_config:_editorDraft.sport_config, display_config:_editorDraft.display_config, team_config:_editorDraft.team_config||{}})
   });
   if(r.ok){
     const d=await r.json();
@@ -1743,7 +1870,7 @@ const DEFAULT_ENABLED=new Set(['nfl','nba','mlb','nhl','ncaamb','ncaabase']);
 //
 // NCAA_CRUD_ENABLED = false  ← set true when admin UI is ready for release
 
-const NCAA_CRUD_ENABLED = false;
+const NCAA_CRUD_ENABLED = true;
 
 const NCAA_NAMES_FALLBACK={
 // ── SEC ──────────────────────────────────────────────────────────────────
@@ -2056,6 +2183,7 @@ function switchSection(section){
   if(section==='sports') buildSportsTab();
   if(section==='teams'){buildTbTabs();loadTbSport(tbState.activeSport||getSPORTS()[0]?.id);}
   if(section==='dispatcharr') initDsTab();
+  if(section==='ncaa') initNcaaSection();
 }
 
 // Legacy compat — old tab references
@@ -2121,8 +2249,14 @@ function parseGame(ev,sport){
   }));
   let stats=[];
   try{stats=(comp?.leaders||[]).slice(0,3).map(l=>({label:l.abbreviation||l.name,value:l.leaders?.[0]?.displayValue||'–'}));}catch(e){}
+  // Extract broadcast networks — national first, then home
+  const bcast=(comp?.broadcasts||[]);
+  const networks=[...new Set(
+    bcast.filter(b=>b.market==='national').flatMap(b=>b.names||[])
+    .concat(bcast.filter(b=>b.market!=='national').flatMap(b=>b.names||[]))
+  )].slice(0,3);
   return{id:ev.id,sport:sport.id,sportName:sport.name,sportColor:sport.color,sportEmoji:sport.emoji,
-    name:ev.name||'',date:ev.date,statusType,periodDesc,teams,stats,
+    name:ev.name||'',date:ev.date,statusType,periodDesc,teams,stats,networks,
     isLive:statusType==='STATUS_IN_PROGRESS',isFinal:statusType==='STATUS_FINAL',isScheduled:statusType==='STATUS_SCHEDULED'};
 }
 
@@ -2244,6 +2378,12 @@ function renderScoreboard(){
     const season=state.seasonMeta[sport.id];
     let games=state.games[sport.id]||[];
     if(season?.isOff&&games.length===0)return;
+    // Team filter: if a custom scoreboard has team_config, apply per-sport filter
+    if(_activeTeamConfig){
+      const sportTeams=_activeTeamConfig[sport.id];
+      if(sportTeams&&sportTeams.length)
+        games=games.filter(g=>g.teams.some(t=>sportTeams.includes(t.name)||sportTeams.includes(t.abbr)));
+    }
     if(state.filterMode==='live')games=games.filter(g=>g.isLive);
     else if(favsOnly)games=games.filter(g=>isGameFavorited(g));
     if(!state.showEnded||!state.endedLeagues.has(sport.id))games=games.filter(g=>!g.isFinal);
@@ -2276,7 +2416,7 @@ function buildTickerCard(g){
   const card=document.createElement('div');card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
   const away=g.teams.find(t=>t.homeAway==='away')||g.teams[0],home=g.teams.find(t=>t.homeAway==='home')||g.teams[1];
   const sh=g.isLive?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`:g.isFinal?'<span class="status-final">FINAL</span>':`<span class="status-upcoming">${formatTime(g.date)}</span>`;
-  card.innerHTML=`<div class="ticker-row"><div style="width:6px;height:18px;border-radius:2px;background:${g.sportColor};flex-shrink:0"></div><div class="ticker-teams">${away?.abbr||'–'} vs ${home?.abbr||'–'}</div><div class="ticker-score">${away?.score??'–'} – ${home?.score??'–'}</div><div class="ticker-period">${sh}</div></div>`;
+  card.innerHTML=`<div class="ticker-row"><div style="width:6px;height:18px;border-radius:2px;background:${g.sportColor};flex-shrink:0"></div><div class="ticker-teams">${away?.abbr||'–'} vs ${home?.abbr||'–'}</div><div class="ticker-score">${away?.score??'–'} – ${home?.score??'–'}</div>${buildNetworkBadges(g.networks)}<div class="ticker-period">${sh}</div></div>`;
   return card;
 }
 
@@ -2291,7 +2431,7 @@ function buildFullCard(g){
   const an=(away?.name||'').replace(/'/g,"\\'"),hn=(home?.name||'').replace(/'/g,"\\'");
   const sh=g.isLive?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`:g.isFinal?'<span class="status-final">FINAL</span>':`<span class="status-upcoming">${formatTime(g.date)}</span>`;
   card.innerHTML=`
-    <div class="card-status">${sh}<span class="game-period" style="color:${g.sportColor}">${g.sportEmoji} ${g.sportName}</span></div>
+    <div class="card-status">${sh}${buildNetworkBadges(g.networks)}<span class="game-period" style="color:${g.sportColor}">${g.sportEmoji} ${g.sportName}</span></div>
     <div class="card-body">
       <div class="teams-container">
         <div class="team-row${aw?' winning':g.isFinal?' losing':''}">
@@ -2311,6 +2451,20 @@ function buildFullCard(g){
       ${buildStats(g)}
     </div>`;
   return card;
+}
+
+const NETWORK_MAP={
+  'ESPN':'espn','ESPN2':'espn2','ESPN+':'espnplus','ESPNU':'espn',
+  'ABC':'abc','NBC':'nbc','Peacock':'peacock','CBS':'cbs',
+  'FOX':'fox','FS1':'fs1','FS2':'fs2',
+  'TNT':'tnt','TBS':'tbs',
+  'MLB.TV':'mlbtv','NHL.TV':'nhltv','NBA TV':'nbatv','NFL Network':'nfln',
+  'NFLN':'nfln','NFL+':'nfln',
+};
+function networkClass(name){return 'nb-'+(NETWORK_MAP[name]||'default');}
+function buildNetworkBadges(networks){
+  if(!networks||!networks.length)return'';
+  return'<div class="network-badges">'+networks.map(n=>`<span class="network-badge ${networkClass(n)}">${n}</span>`).join('')+'</div>';
 }
 
 function teamLogo(team){
@@ -3050,6 +3204,7 @@ function updateDsStatus(connected,st=''){
 let _activeSidebarSlug = '__all__'; // '__all__' = default All Sports view
 let _allSportsEnabledSports = null; // saved state when switching away from All Sports
 let _allSportsActiveSports = null;
+let _activeTeamConfig = null; // null = show all; Set of keys when a scoreboard with team_config is active
 
 async function initSidebarScoreboardSelector(){
   try{
@@ -3084,6 +3239,7 @@ function selectSidebarScoreboard(slug){
   const titleEl=document.getElementById('topbarTitle');
   if(slug==='__all__'){
     // Restore All Sports view
+    _activeTeamConfig=null;
     if(defaultSections)defaultSections.style.display='block';
     if(banner)banner.style.display='none';
     if(titleEl)titleEl.textContent='All Sports Scoreboard';
@@ -3121,6 +3277,9 @@ function selectSidebarScoreboard(slug){
             '<div style="font-size:14px;">Go to Settings → My Scoreboards to add sports to this scoreboard.</div></div>';
           return;
         }
+        // Store team_config as-is (per-sport object) for filtering during render
+        const tc = sb.team_config;
+        _activeTeamConfig = (tc && !Array.isArray(tc) && Object.keys(tc).length) ? tc : null;
         state.enabledSports=new Set(sportIds);
         state.activeSports=new Set(sportIds);
         buildSportToggles();
@@ -3230,6 +3389,213 @@ initSidebarScoreboardSelector(); // populate scoreboard selector pills from API
     }
   }catch(e){}
 })();
+// =====================
+//  NCAA MANAGEMENT
+// =====================
+let _ncaaAllPrograms = [];
+let _ncaaEditingPid  = null; // program id being edited, null = new
+let _ncaaEditingSid  = null; // school id for the program being edited
+
+async function initNcaaSection(){
+  await loadNcaaSyncStatus();
+  await loadNcaaPrograms();
+}
+
+async function loadNcaaSyncStatus(){
+  try{
+    const r=await fetch(`${API_BASE}/ncaa/sync/status`,{signal:AbortSignal.timeout(5000)});
+    if(!r.ok)return;
+    const d=await r.json();
+    const el=document.getElementById('ncaaSyncStatus');
+    if(!el)return;
+    const sc=d.school_count||0, pc=d.program_count||0;
+    const last=d.last_synced?new Date(d.last_synced).toLocaleString():'Never';
+    el.textContent=`${sc.toLocaleString()} schools · ${pc.toLocaleString()} programs · Last synced: ${last}`;
+  }catch(e){}
+}
+
+async function triggerNcaaSync(){
+  const btn=document.getElementById('ncaaSyncBtn');
+  if(btn){btn.textContent='Syncing...';btn.disabled=true;}
+  try{
+    await fetch(`${API_BASE}/ncaa/sync`,{method:'POST',signal:AbortSignal.timeout(10000)});
+    // Poll status for a few seconds to show progress
+    let polls=0;
+    const poll=setInterval(async()=>{
+      await loadNcaaSyncStatus();
+      if(++polls>=6){clearInterval(poll);if(btn){btn.textContent='↻ Sync Now';btn.disabled=false;}await loadNcaaPrograms();}
+    },3000);
+  }catch(e){
+    if(btn){btn.textContent='↻ Sync Now';btn.disabled=false;}
+  }
+}
+
+async function loadNcaaPrograms(){
+  const sport=document.getElementById('ncaaSportFilter')?.value||'';
+  const div=document.getElementById('ncaaDivFilter')?.value||'';
+  const q=document.getElementById('ncaaSearchInput')?.value||'';
+  const listEl=document.getElementById('ncaaTeamList');
+  const countEl=document.getElementById('ncaaTeamCount');
+  if(listEl)listEl.innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:12px;">Loading...</div>';
+  try{
+    let url=`${API_BASE}/ncaa/programs?`;
+    if(sport)url+=`sport=${sport}&`;
+    if(div)url+=`division=${div}&`;
+    if(q)url+=`q=${encodeURIComponent(q)}&`;
+    const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    _ncaaAllPrograms=d.programs||[];
+    if(countEl)countEl.textContent=`${_ncaaAllPrograms.length.toLocaleString()} program${_ncaaAllPrograms.length!==1?'s':''}${sport||div||q?' (filtered)':''}`;
+    renderNcaaList();
+  }catch(e){
+    if(listEl)listEl.innerHTML='<div style="color:var(--accent-red);font-size:13px;padding:12px;">Failed to load teams</div>';
+  }
+}
+
+function ncaaFilterTeams(){
+  // Debounce via timeout
+  clearTimeout(ncaaFilterTeams._t);
+  ncaaFilterTeams._t=setTimeout(loadNcaaPrograms,300);
+}
+
+const NCAA_SPORT_LABELS={ncaafb:'Football',ncaamb:"Men's Basketball",ncaawb:"Women's Basketball",ncaabase:'Baseball',ncaasb:'Softball'};
+
+function renderNcaaList(){
+  const listEl=document.getElementById('ncaaTeamList');
+  if(!listEl)return;
+  if(!_ncaaAllPrograms.length){
+    listEl.innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:16px;text-align:center;">No teams found. Try adjusting filters or syncing from ESPN.</div>';
+    return;
+  }
+  listEl.innerHTML=_ncaaAllPrograms.map(p=>{
+    const sportLabel=NCAA_SPORT_LABELS[p.sport_id]||p.sport_id;
+    const color=p.color?'#'+(p.color.replace('#','')):'#333';
+    const divBadge=p.division?`<span style="font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 5px;border-radius:3px;background:rgba(255,255,255,0.07);color:var(--text-dim);text-transform:uppercase;">${p.division.toUpperCase()}</span>`:'';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;">
+      <div style="width:4px;height:36px;border-radius:2px;background:${color};flex-shrink:0;"></div>
+      ${p.logo_url?`<img src="${p.logo_url}" style="width:28px;height:28px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none'">`:'<div style="width:28px;"></div>'}
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.display_name||p.full_name}</div>
+        <div style="font-size:11px;color:var(--text-dim);display:flex;gap:6px;align-items:center;margin-top:2px;">
+          <span>${sportLabel}</span>${divBadge}
+          ${p.espn_abbr?`<span style="color:var(--accent);font-weight:700;">${p.espn_abbr}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button onclick="openNcaaEditModal(${p.id})" style="padding:5px 11px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Edit</button>
+        <button onclick="deleteNcaaProgram(${p.id},'${(p.display_name||p.full_name).replace(/'/g,"\\'")}',${p.school_id})" style="padding:5px 11px;background:transparent;border:1px solid rgba(255,59,92,0.3);border-radius:6px;color:var(--accent-red);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openNcaaAddModal(){
+  _ncaaEditingPid=null;
+  _ncaaEditingSid=null;
+  document.getElementById('ncaaModalTitle').textContent='Add NCAA Program';
+  document.getElementById('ncaaModalSchool').value='';
+  document.getElementById('ncaaModalAbbr').value='';
+  document.getElementById('ncaaModalNick').value='';
+  document.getElementById('ncaaModalSport').value='ncaafb';
+  document.getElementById('ncaaModalDiv').value='d1';
+  document.getElementById('ncaaModalColor').value='#333333';
+  document.getElementById('ncaaModalError').style.display='none';
+  document.getElementById('ncaaModal').style.display='flex';
+}
+
+function openNcaaEditModal(pid){
+  const p=_ncaaAllPrograms.find(x=>x.id===pid);
+  if(!p)return;
+  _ncaaEditingPid=pid;
+  _ncaaEditingSid=p.school_id;
+  document.getElementById('ncaaModalTitle').textContent='Edit NCAA Program';
+  document.getElementById('ncaaModalSchool').value=p.full_name||p.display_name||'';
+  document.getElementById('ncaaModalAbbr').value=p.espn_abbr||'';
+  document.getElementById('ncaaModalNick').value=p.nick||'';
+  document.getElementById('ncaaModalSport').value=p.sport_id||'ncaafb';
+  document.getElementById('ncaaModalDiv').value=p.division||'d1';
+  document.getElementById('ncaaModalColor').value=p.color?'#'+p.color.replace('#',''):'#333333';
+  document.getElementById('ncaaModalError').style.display='none';
+  document.getElementById('ncaaModal').style.display='flex';
+}
+
+function closeNcaaModal(){
+  document.getElementById('ncaaModal').style.display='none';
+}
+
+async function saveNcaaModal(){
+  const school=(document.getElementById('ncaaModalSchool').value||'').trim();
+  const abbr=(document.getElementById('ncaaModalAbbr').value||'').trim().toUpperCase();
+  const nick=(document.getElementById('ncaaModalNick').value||'').trim();
+  const sport=document.getElementById('ncaaModalSport').value;
+  const div=document.getElementById('ncaaModalDiv').value;
+  const color=document.getElementById('ncaaModalColor').value.replace('#','');
+  const errEl=document.getElementById('ncaaModalError');
+  const saveBtn=document.getElementById('ncaaModalSaveBtn');
+
+  if(!school){errEl.textContent='School name is required.';errEl.style.display='block';return;}
+  if(!abbr){errEl.textContent='Abbreviation is required.';errEl.style.display='block';return;}
+
+  errEl.style.display='none';
+  saveBtn.textContent='Saving...';saveBtn.disabled=true;
+
+  try{
+    if(_ncaaEditingPid){
+      // Update existing program (and its school)
+      await fetch(`${API_BASE}/ncaa/schools/${_ncaaEditingSid}`,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({full_name:school,espn_abbr:abbr,color,alt_color:''}),
+        signal:AbortSignal.timeout(8000)
+      });
+      const pr=await fetch(`${API_BASE}/ncaa/programs/${_ncaaEditingPid}`,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({nick,display_name:school+(nick?' '+nick:''),short_name:nick||abbr,sport_id:sport,division:div,gender:sport.endsWith('wb')||sport.endsWith('sb')?'womens':'mens'}),
+        signal:AbortSignal.timeout(8000)
+      });
+      if(!pr.ok)throw new Error(await pr.text());
+    }else{
+      // Create school first, then program
+      const sr=await fetch(`${API_BASE}/ncaa/schools`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({full_name:school,espn_abbr:abbr,color,location:school}),
+        signal:AbortSignal.timeout(8000)
+      });
+      if(!sr.ok)throw new Error(await sr.text());
+      const sd=await sr.json();
+      const pr=await fetch(`${API_BASE}/ncaa/programs`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({school_id:sd.id,nick,display_name:school+(nick?' '+nick:''),short_name:nick||abbr,sport_id:sport,division:div,gender:sport.endsWith('wb')||sport.endsWith('sb')?'womens':'mens'}),
+        signal:AbortSignal.timeout(8000)
+      });
+      if(!pr.ok)throw new Error(await pr.text());
+    }
+    closeNcaaModal();
+    await loadNcaaPrograms();
+  }catch(e){
+    errEl.textContent='Save failed: '+(e.message||'Unknown error');
+    errEl.style.display='block';
+  }finally{
+    saveBtn.textContent='Save';saveBtn.disabled=false;
+  }
+}
+
+async function deleteNcaaProgram(pid, name, schoolId){
+  if(!confirm(`Delete "${name}"? If this is the school's only program, the school record will also be removed.`))return;
+  try{
+    const r=await fetch(`${API_BASE}/ncaa/programs/${pid}`,{method:'DELETE',signal:AbortSignal.timeout(8000)});
+    if(!r.ok)throw new Error();
+    await loadNcaaPrograms();
+    await loadNcaaSyncStatus();
+  }catch(e){
+    alert('Failed to delete program. Try again.');
+  }
+}
+
 </script>
 </body>
 </html>
