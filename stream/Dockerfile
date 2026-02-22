@@ -28,7 +28,6 @@ COPY package.json .
 RUN npm install --omit=dev
 
 COPY manager.js .
-COPY render.js .
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
