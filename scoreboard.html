@@ -438,12 +438,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <button class="snav-btn active" data-section="scoreboards" onclick="switchSection('scoreboards')">
         <span class="snav-icon">📺</span><span>My Scoreboards</span>
       </button>
-      <button class="snav-btn" data-section="sports" onclick="switchSection('sports')">
-        <span class="snav-icon">🏆</span><span>Sports &amp; Leagues</span>
-      </button>
-      <button class="snav-btn" data-section="teams" onclick="switchSection('teams')">
-        <span class="snav-icon">⭐</span><span>Teams</span>
-      </button>
       <button class="snav-btn" data-section="display" onclick="switchSection('display')">
         <span class="snav-icon">🎨</span><span>Display &amp; Data</span>
       </button>
@@ -482,7 +476,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
           <div class="wizard-step" data-step="2">2. Group</div>
           <div class="wizard-step" data-step="3">3. Profiles</div>
           <div class="wizard-step" data-step="4">4. Stream</div>
-          <div class="wizard-step" data-step="5">5. Review</div>
+          <div class="wizard-step" data-step="5">5. Logo</div>
+          <div class="wizard-step" data-step="6">6. Review</div>
         </div>
         <div id="wizardBody" style="min-height:200px;"></div>
         <div class="wizard-nav">
@@ -498,66 +493,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         SECTION 2: SPORTS & LEAGUES
-    ═══════════════════════════════════════════════════════════ -->
-    <div id="section-sports" class="settings-section">
-      <div class="settings-section-header">
-        <h2>Sports &amp; Leagues</h2>
-        <p>Choose which sports and leagues appear on the default scoreboard.</p>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-title">Pro Leagues</div>
-        <div class="sport-grid" id="sg-pro"></div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-title">NCAA Men's</div>
-        <div class="sport-grid" id="sg-ncaam"></div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-title">NCAA Women's</div>
-        <div class="sport-grid" id="sg-ncaaw"></div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         SECTION 3: TEAMS
-    ═══════════════════════════════════════════════════════════ -->
-    <div id="section-teams" class="settings-section">
-      <div class="settings-section-header">
-        <h2>Teams</h2>
-        <p>Star teams to pin them at the top of your scoreboard.</p>
-      </div>
-      <div class="modal-section">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div class="modal-section-title" style="margin-bottom:0;">Browse &amp; Favorite Teams</div>
-          <div style="display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:0.5px;">
-            LABEL:
-            <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
-              <button id="tbLabelAbbr" onclick="setTbLabelMode('abbr')" style="padding:3px 9px;background:rgba(0,212,255,0.15);border:none;color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">ABBR</button>
-              <button id="tbLabelNick" onclick="setTbLabelMode('nick')" style="padding:3px 9px;background:transparent;border:none;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">NICKNAME</button>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;" id="tbTabs"></div>
-        <div style="position:relative;margin-bottom:10px;">
-          <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;">&#x1F50D;</span>
-          <input type="text" id="tbSearch" placeholder="Search by name, nickname, abbreviation..."
-            style="width:100%;padding:8px 12px 8px 32px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow',sans-serif;font-size:13px;outline:none;box-sizing:border-box;"
-            oninput="filterTeams(this.value)">
-        </div>
-        <div id="tbDivPills" style="display:none;gap:5px;margin-bottom:10px;flex-wrap:wrap;">
-          <button onclick="setTbDivision('d1')"  id="tbDivD1"  style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:rgba(0,212,255,0.12);border-color:var(--accent);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">D-I</button>
-          <button onclick="setTbDivision('d2')"  id="tbDivD2"  style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">D-II</button>
-          <button onclick="setTbDivision('d3')"  id="tbDivD3"  style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">D-III</button>
-          <button onclick="setTbDivision('all')" id="tbDivAll" style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">ALL</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:420px;overflow-y:auto;" id="tbTeamList"></div>
-        <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="tbFavCount">&#x2B50; 0 teams favorited</div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════════
          SECTION 4: DISPLAY & DATA
     ═══════════════════════════════════════════════════════════ -->
     <div id="section-display" class="settings-section">
@@ -902,82 +837,191 @@ async function deleteScoreboard(id){
 }
 
 // ── Scoreboard Editor ──────────────────────────────────────────────────────────
+// ── Scoreboard Editor (guided multi-step flow) ────────────────────────────────
+let _editorStep = 1; // 1=Identity, 2=Sports, 3=Teams
+let _editorDraft = {}; // accumulated changes before saving
+
 function openSbEditor(id){
   const sb=_scoreboards.find(s=>s.id===id);
   if(!sb)return;
   _activeSbId=id;
-  const listView=document.getElementById('sbListView');
-  const pushWiz=document.getElementById('sbPushWizard');
-  if(listView)listView.style.display='none';
-  if(pushWiz)pushWiz.style.display='none';
+  _editorStep=1;
+  // Start draft from saved values
+  _editorDraft={
+    name: sb.name,
+    sport_config: Object.assign({}, sb.sport_config||{}),
+    team_config: (sb.team_config||[]).slice()
+  };
 
-  // Render editor inline
-  const content=document.querySelector('.settings-content');
-  let editorEl=document.getElementById('sbEditorPanel');
-  if(!editorEl){editorEl=document.createElement('div');editorEl.id='sbEditorPanel';content.insertBefore(editorEl,content.firstChild);}
-  editorEl.style.display='block';
-  editorEl.innerHTML=`
-    <div class="sb-editor">
-      <div class="sb-editor-header">
-        <button class="sb-editor-back" onclick="closeSbEditor()">←</button>
-        <div class="sb-editor-title">Edit: ${sb.name}</div>
-      </div>
+  // Hide list and push wizard
+  document.getElementById('sbListView').style.display='none';
+  document.getElementById('sbPushWizard').style.display='none';
+
+  // Lock sidebar nav to prevent navigating away mid-edit
+  document.querySelectorAll('.snav-btn').forEach(b=>{
+    if(b.dataset.section!=='scoreboards') b.style.opacity='0.3';
+    b.style.pointerEvents='none';
+  });
+
+  // Create or reuse editor panel
+  let el=document.getElementById('sbEditorPanel');
+  if(!el){
+    el=document.createElement('div');
+    el.id='sbEditorPanel';
+    document.getElementById('section-scoreboards').insertBefore(el, document.getElementById('sbListView'));
+  }
+  el.style.display='block';
+  renderEditorStep(sb);
+}
+
+function renderEditorStep(sbOverride){
+  const sb=sbOverride||_scoreboards.find(s=>s.id===_activeSbId);
+  if(!sb)return;
+  const el=document.getElementById('sbEditorPanel');
+  if(!el)return;
+
+  const steps=['Identity','Sports & Leagues','Teams'];
+  const stepNav=steps.map((s,i)=>`
+    <div class="sb-editor-step${_editorStep===i+1?' active':_editorStep>i+1?' done':''}"
+         onclick="jumpEditorStep(${i+1})">${i+1}. ${s}</div>`).join('');
+
+  let body='';
+  if(_editorStep===1){
+    body=`
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
-        <input class="wiz-input" id="sbEditName" value="${sb.name}" placeholder="Scoreboard name">
+        <input class="wiz-input" id="sbEditName" value="${_editorDraft.name}" placeholder="e.g. Weekend Sports, NBA Only, My NFL Board">
+        <div class="wiz-sublabel">This name also becomes the channel name when pushed to Dispatcharr</div>
       </div>
-      <div style="margin-bottom:20px;">
-        <div class="wiz-label" style="margin-bottom:12px;">Sports &amp; Leagues</div>
-        <div class="sport-grid" id="sbEditSports"></div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:8px;">
-        <button class="modal-btn" onclick="saveSbEditor()">Save Changes</button>
-        <button class="modal-btn" style="border-color:var(--border);color:var(--text-dim);" onclick="closeSbEditor()">Cancel</button>
-      </div>
-      <div id="sbEditResult" style="margin-top:10px;font-size:12px;"></div>
-    </div>`;
+      <div class="wiz-field" style="margin-top:16px;">
+        <div class="wiz-label">Description (optional)</div>
+        <input class="wiz-input" id="sbEditDesc" value="${sb.description||''}" placeholder="What this scoreboard is for...">
+      </div>`;
+  }
+  else if(_editorStep===2){
+    // Build sports grid from ALL_SPORTS (not getSPORTS — that's filtered by global state)
+    const groups=[
+      {label:'Pro Leagues', sports: ALL_SPORTS.filter(s=>s.group==='pro')},
+      {label:"NCAA Men's",  sports: ALL_SPORTS.filter(s=>s.group==='ncaam')},
+      {label:"NCAA Women's",sports: ALL_SPORTS.filter(s=>s.group==='ncaaw')},
+    ];
+    body=`<div class="wiz-sublabel" style="margin-bottom:16px;">Choose which sports appear on this scoreboard. Each scoreboard has its own independent selection.</div>`;
+    groups.forEach(g=>{
+      if(!g.sports.length)return;
+      body+=`<div class="modal-section-title" style="margin-bottom:8px;">${g.label}</div>
+        <div class="sport-grid" style="margin-bottom:18px;">`;
+      g.sports.forEach(sp=>{
+        const on=!!_editorDraft.sport_config[sp.id];
+        body+=`<label class="sport-setting-row${on?' enabled':''}" style="cursor:pointer;">
+          <div class="sport-setting-info">
+            <span>${sp.emoji||'🏆'}</span>
+            <span class="sport-setting-name">${sp.name}</span>
+          </div>
+          <input type="checkbox" data-sport="${sp.id}" ${on?'checked':''}
+            onchange="this.closest('.sport-setting-row').classList.toggle('enabled',this.checked)"
+            style="cursor:pointer;">
+        </label>`;
+      });
+      body+='</div>';
+    });
+  }
+  else if(_editorStep===3){
+    // Team favorites for this scoreboard (uses global fav system for now)
+    const favs=state.favTeams||new Set();
+    const enabledSportIds=Object.entries(_editorDraft.sport_config).filter(([,v])=>v).map(([k])=>k);
+    if(!enabledSportIds.length){
+      body=`<div style="color:var(--text-dim);font-size:13px;padding:20px 0;">No sports enabled on this scoreboard. Go back to Sports &amp; Leagues to enable some first.</div>`;
+    } else {
+      body=`<div class="wiz-sublabel" style="margin-bottom:16px;">Your starred teams are shared across all scoreboards. This step shows which of your favorites are relevant to this scoreboard's sports.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">`;
+      enabledSportIds.forEach(sid=>{
+        const sport=ALL_SPORTS.find(s=>s.id===sid);
+        if(sport) body+=`<span style="padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);border-radius:12px;font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;color:var(--accent);">${sport.emoji} ${sport.name}</span>`;
+      });
+      body+=`</div>
+        <div style="margin-top:16px;font-size:13px;color:var(--text-secondary);line-height:1.6;">
+          To manage favorite teams, use the <strong>Teams</strong> section in the sidebar (accessible after saving this scoreboard). Your ⭐ favorites will appear pinned at the top of this scoreboard when games are live.
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:8px;font-size:12px;color:var(--accent-green);">
+          ✓ ${favs.size} team${favs.size!==1?'s':''} currently favorited globally
+        </div>`;
+    }
+  }
 
-  // Build sports toggles for this scoreboard
-  const sportConfig=sb.sport_config||{};
-  const sportsEl=document.getElementById('sbEditSports');
-  getSPORTS().forEach(sp=>{
-    const enabled=!!sportConfig[sp.id];
-    const row=document.createElement('label');
-    row.className='sport-setting-row'+(enabled?' enabled':'');
-    row.style.cursor='pointer';
-    row.innerHTML=`<div class="sport-setting-info"><span>${sp.emoji||'🏆'}</span><span class="sport-setting-name">${sp.name}</span></div>
-      <input type="checkbox" data-sport="${sp.id}" ${enabled?'checked':''} onchange="this.closest('.sport-setting-row').classList.toggle('enabled',this.checked)" style="cursor:pointer;">`;
-    sportsEl.appendChild(row);
-  });
+  el.innerHTML=`
+    <div class="sb-editor">
+      <div class="sb-editor-header">
+        <button class="sb-editor-back" onclick="closeSbEditor()" title="Cancel editing">← Cancel</button>
+        <div class="sb-editor-title">✏️ ${sb.name}</div>
+        <button class="modal-btn" onclick="saveSbEditor()" style="margin-left:auto;padding:6px 16px;font-size:11px;">💾 Save</button>
+      </div>
+      <div class="sb-editor-steps">${stepNav}</div>
+      <div id="sbEditorBody" style="min-height:180px;">${body}</div>
+      <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        ${_editorStep>1?'<button class="modal-btn" style="border-color:var(--border);color:var(--text-dim);" onclick="editorNav(-1)">← Back</button>':''}
+        <div style="flex:1;"></div>
+        ${_editorStep<3?'<button class="modal-btn" onclick="editorNav(1)">Next →</button>':''}
+        <button class="modal-btn" onclick="saveSbEditor()" style="background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,102,255,0.2));border-color:var(--accent);">
+          ${_editorStep===3?'✅ Save & Close':'💾 Save'}
+        </button>
+      </div>
+      <div id="sbEditResult" style="margin-top:10px;font-size:12px;min-height:20px;"></div>
+    </div>`;
+}
+
+function jumpEditorStep(n){
+  collectEditorStepData();
+  _editorStep=n;
+  renderEditorStep();
+}
+
+function editorNav(dir){
+  collectEditorStepData();
+  _editorStep=Math.max(1,Math.min(3,_editorStep+dir));
+  renderEditorStep();
+}
+
+function collectEditorStepData(){
+  if(_editorStep===1){
+    const nameEl=document.getElementById('sbEditName');
+    if(nameEl) _editorDraft.name=nameEl.value.trim()||_editorDraft.name;
+  }
+  if(_editorStep===2){
+    document.querySelectorAll('#sbEditorBody input[data-sport]').forEach(cb=>{
+      _editorDraft.sport_config[cb.dataset.sport]=cb.checked;
+    });
+  }
 }
 
 function closeSbEditor(){
   document.getElementById('sbEditorPanel')?.remove();
-  const listView=document.getElementById('sbListView');
-  if(listView)listView.style.display='block';
+  // Re-enable sidebar nav
+  document.querySelectorAll('.snav-btn').forEach(b=>{
+    b.style.opacity='';b.style.pointerEvents='';
+  });
+  document.getElementById('sbListView').style.display='block';
+  _activeSbId=null;
 }
 
 async function saveSbEditor(){
-  const sb=_scoreboards.find(s=>s.id===_activeSbId);
-  if(!sb)return;
-  const name=document.getElementById('sbEditName').value.trim();
-  const sportConfig={};
-  document.querySelectorAll('#sbEditSports input[data-sport]').forEach(cb=>{
-    sportConfig[cb.dataset.sport]=cb.checked;
-  });
+  collectEditorStepData();
+  const result=document.getElementById('sbEditResult');
+  if(result){result.style.color='var(--text-dim)';result.textContent='Saving...';}
   const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name,sport_config:sportConfig})
+    body:JSON.stringify({name:_editorDraft.name, sport_config:_editorDraft.sport_config})
   });
-  const result=document.getElementById('sbEditResult');
   if(r.ok){
     const d=await r.json();
     const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);
     if(idx>=0)_scoreboards[idx]=d;
-    result.style.color='var(--accent-green)';result.textContent='✅ Saved';
-    setTimeout(()=>{closeSbEditor();renderSbCards();},800);
-  }else{result.style.color='var(--accent-red)';result.textContent='❌ Save failed';}
+    if(result){result.style.color='var(--accent-green)';result.textContent='✅ Saved';}
+    setTimeout(()=>{closeSbEditor();renderSbCards();},600);
+  }else{
+    if(result){result.style.color='var(--accent-red)';result.textContent='❌ Save failed';}
+  }
 }
+
 
 // ── Push to Dispatcharr Wizard ─────────────────────────────────────────────────
 function openPushWizard(id){
@@ -1016,7 +1060,7 @@ function closePushWizard(){
 }
 
 function renderWizardStep(){
-  const totalSteps=5;
+  const totalSteps=6;
   // Update step indicators
   document.querySelectorAll('.wizard-step').forEach(s=>{
     const n=parseInt(s.dataset.step);
@@ -1092,38 +1136,65 @@ function renderWizardStep(){
     setTimeout(wizLoadProfiles,100);
   }
   else if(_wizardStep===4){
+    // HLS-correct ffmpeg profile for ScoreStream
+    const hlsParams='-re -fflags +genpts -i {streamUrl} -c copy -f mpegts pipe:1';
     body.innerHTML=`
       <div class="wiz-field">
         <div class="wiz-label">Stream Profile (ffmpeg)</div>
-        <div class="wiz-sublabel" style="margin-bottom:10px;">How Dispatcharr will transcode the ScoreStream HLS feed</div>
+        <div class="wiz-sublabel" style="margin-bottom:6px;">How Dispatcharr pulls and re-streams the ScoreStream HLS feed</div>
+        <div style="padding:10px 12px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--accent-green);">
+          💡 <strong>ScoreStream outputs HLS</strong> — select a profile below or create the recommended one. The default Dispatcharr profile may fail with HLS streams; the "ScoreStream HLS" profile below is pre-configured correctly.
+        </div>
         <div style="display:flex;gap:6px;">
           <select class="wiz-input" id="wiz_streamProf" style="flex:1;" onchange="onWizStreamProfChange()">
             <option value="">— loading —</option>
           </select>
           <button class="modal-btn" onclick="loadStreamProfiles().then(wizPopulateStreamProfiles)" style="padding:8px 12px;">↻</button>
         </div>
-        <div id="wiz_customStreamPanel" style="display:none;margin-top:12px;">
-          <div class="wiz-label">Custom ffmpeg Parameters</div>
-          <textarea class="wiz-input" id="wiz_customParams" rows="3" style="font-family:monospace;font-size:11px;resize:vertical;" placeholder="-re -fflags +genpts -user_agent {userAgent} -i {streamUrl} -c copy -f mpegts pipe:1"></textarea>
-          <div style="display:flex;gap:6px;margin-top:6px;">
-            <input class="wiz-input" id="wiz_customName" placeholder="Profile name..." style="flex:1;">
-            <button class="modal-btn" onclick="wizCreateStreamProfile()" style="padding:8px 12px;white-space:nowrap;">+ Create</button>
+        <div id="wiz_customStreamPanel" style="margin-top:12px;">
+          <div class="wiz-label" style="margin-bottom:6px;">Create Recommended Profile</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;word-break:break-all;">${hlsParams}</div>
+          <div style="display:flex;gap:6px;">
+            <input class="wiz-input" id="wiz_customName" value="ScoreStream HLS" placeholder="Profile name..." style="flex:1;">
+            <button class="modal-btn" onclick="wizCreateHlsProfile()" style="padding:8px 12px;white-space:nowrap;">+ Create &amp; Use</button>
           </div>
-          <div id="wiz_customStreamResult" style="font-size:11px;margin-top:4px;"></div>
+          <div id="wiz_customStreamResult" style="font-size:11px;margin-top:6px;"></div>
         </div>
       </div>
       <div class="wiz-field">
         <div class="wiz-label">Stream URL (auto-generated)</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;">
-          ${sb.slug?`/hls/${sb.slug}.m3u8`:'(slug not set)'}
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;">
+          ${sb.slug?`${window.location.origin}/hls/${sb.slug}.m3u8`:'(STREAM_BASE_URL not configured)'}
         </div>
-        <div class="wiz-sublabel">This URL will be set as the channel's stream source in Dispatcharr</div>
+        <div class="wiz-sublabel">This URL is stored as the stream source in Dispatcharr. If blank, set STREAM_BASE_URL in your docker-compose env.</div>
       </div>`;
     setTimeout(wizPopulateStreamProfiles,100);
   }
   else if(_wizardStep===5){
-    // Save form data from step 1 before rendering review
+    // Logo step
+    body.innerHTML=`
+      <div class="wiz-field">
+        <div class="wiz-label">Channel Logo</div>
+        <div class="wiz-sublabel" style="margin-bottom:12px;">Optional. Assign a logo that appears in Dispatcharr and on IPTV clients.</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+          <div id="wiz_logoPreview" style="width:80px;height:80px;border-radius:10px;border:1px solid var(--border);background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;">
+            ${_wizardData.logoId?'🖼️':'📡'}
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div class="wiz-sublabel" style="margin-bottom:8px;">Enter a public image URL for the logo:</div>
+            <div style="display:flex;gap:6px;">
+              <input class="wiz-input" id="wiz_logoUrl" placeholder="https://example.com/logo.png" style="flex:1;" value="${_wizardData.logoUrl||''}">
+              <button class="modal-btn" onclick="wizPreviewLogo()" style="padding:8px 10px;">Preview</button>
+            </div>
+            <div class="wiz-sublabel" style="margin-top:6px;">Leave blank to skip logo assignment. You can set it later in Dispatcharr directly.</div>
+          </div>
+        </div>
+        <div id="wiz_logoResult" style="font-size:11px;margin-top:4px;"></div>
+      </div>`;
+  }
+  else if(_wizardStep===6){
     const sb2=_scoreboards.find(s=>s.id===_activeSbId)||{};
+    const logoDisplay=_wizardData.logoUrl?`<img src="${_wizardData.logoUrl}" style="height:32px;border-radius:4px;vertical-align:middle;margin-left:8px;" onerror="this.style.display='none'">`:'(none)';
     body.innerHTML=`
       <div style="margin-bottom:16px;">
         <div class="wiz-label" style="margin-bottom:12px;">Review &amp; Confirm</div>
@@ -1134,9 +1205,45 @@ function renderWizardStep(){
         <div class="wiz-review-row"><span class="wiz-review-key">Group</span><span class="wiz-review-val">${_wizardData.groupName||'(none)'}</span></div>
         <div class="wiz-review-row"><span class="wiz-review-key">Profiles</span><span class="wiz-review-val">${_wizardData.profileIds==='all'?'All Profiles':Array.isArray(_wizardData.profileIds)&&_wizardData.profileIds.length?_wizardData.profileIds.length+' selected':'(none)'}</span></div>
         <div class="wiz-review-row"><span class="wiz-review-key">Stream Profile</span><span class="wiz-review-val">${_wizardData.streamProfileName||'(default)'}</span></div>
-        <div class="wiz-review-row"><span class="wiz-review-key">Stream URL</span><span class="wiz-review-val" style="font-family:monospace;font-size:11px;">${sb2.slug?`/hls/${sb2.slug}.m3u8`:'(not set)'}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Logo</span><span class="wiz-review-val">${logoDisplay}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Stream URL</span><span class="wiz-review-val" style="font-family:monospace;font-size:10px;">${sb2.slug?`${window.location.origin}/hls/${sb2.slug}.m3u8`:'(not set — configure STREAM_BASE_URL)'}</span></div>
       </div>`;
   }
+}
+
+// Helper: create the recommended HLS ffmpeg profile and select it
+async function wizCreateHlsProfile(){
+  const name=document.getElementById('wiz_customName')?.value?.trim()||'ScoreStream HLS';
+  const params='-re -fflags +genpts -i {streamUrl} -c copy -f mpegts pipe:1';
+  const res=document.getElementById('wiz_customStreamResult');
+  res.style.color='var(--text-dim)';res.textContent='Creating...';
+  const r=await fetch(`${API_BASE}/dispatcharr/streamprofiles`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name,parameters:params})
+  });
+  const d=await r.json();
+  if(r.ok&&d.id){
+    _cachedStreamProfiles=null;
+    _wizardData.streamProfileId=d.id;
+    _wizardData.streamProfileName=d.name||name;
+    res.style.color='var(--accent-green)';res.textContent=`✅ Profile "${d.name||name}" created and selected`;
+    await loadStreamProfiles();
+    await wizPopulateStreamProfiles();
+    const sel=document.getElementById('wiz_streamProf');
+    if(sel) sel.value=String(d.id);
+  }else{
+    res.style.color='var(--accent-red)';res.textContent='❌ '+(d.error||'Failed — may already exist, select it above');
+  }
+}
+
+function wizPreviewLogo(){
+  const url=document.getElementById('wiz_logoUrl')?.value?.trim();
+  const preview=document.getElementById('wiz_logoPreview');
+  const result=document.getElementById('wiz_logoResult');
+  if(!url){result.textContent='Enter a URL first';return;}
+  preview.innerHTML=`<img src="${url}" style="width:76px;height:76px;object-fit:contain;border-radius:8px;" onerror="this.parentElement.innerHTML='❌';document.getElementById('wiz_logoResult').textContent='Could not load image';">`;
+  _wizardData.logoUrl=url;
+  result.textContent='';
 }
 
 // Step navigation — collect form values before moving
@@ -1160,8 +1267,12 @@ function wizardNav(dir){
     _wizardData.streamProfileId=(val&&val!=='__custom__')?val:'';
     _wizardData.streamProfileName=val&&val!=='__custom__'?sel?.options[sel?.selectedIndex]?.text:'(custom/none)';
   }
+  if(_wizardStep===5){
+    const urlEl=document.getElementById('wiz_logoUrl');
+    if(urlEl) _wizardData.logoUrl=urlEl.value.trim();
+  }
   const newStep=_wizardStep+dir;
-  if(newStep<1||newStep>5)return;
+  if(newStep<1||newStep>6)return;
   _wizardStep=newStep;
   renderWizardStep();
 }
@@ -1175,6 +1286,7 @@ async function executeWizardPush(){
 
   const payload={
     channelName:_wizardData.channelName,
+    logoUrl:_wizardData.logoUrl||null,
     channelNumber:_wizardData.channelNumber?parseInt(_wizardData.channelNumber):null,
     groupId:_wizardData.groupId?parseInt(_wizardData.groupId):null,
     profileIds:_wizardData.profileIds||null,

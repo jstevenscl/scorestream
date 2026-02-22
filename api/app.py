@@ -958,11 +958,24 @@ def scoreboard_push(sid):
     profile_ids_raw = b.get('profileIds', _json.loads(sb['dispatcharr_profile_ids'] or 'null'))
     stream_prof_id  = b.get('streamProfileId') or sb['dispatcharr_stream_profile_id']
     logo_id         = b.get('logoId') or sb['dispatcharr_logo_id']
+    logo_url        = b.get('logoUrl')  # URL-based logo to upload to Dispatcharr
     stream_url      = f'{STREAM_BASE_URL}/hls/{sb["slug"]}.m3u8' if STREAM_BASE_URL else None
 
     existing_channel_id = sb['dispatcharr_channel_id']
     existing_stream_id  = sb['dispatcharr_stream_id']
     base = c['url']
+
+    # If logoUrl provided and no logo_id yet, upload it to Dispatcharr
+    if logo_url and not logo_id:
+        try:
+            logo_r = s.post(f'{base}/api/channels/logos/', json={'url': logo_url, 'name': channel_name}, timeout=15)
+            if logo_r.ok:
+                logo_id = str(logo_r.json().get('id',''))
+                log.info(f'Logo uploaded for scoreboard {sid}: id={logo_id}')
+            else:
+                log.warning(f'Logo upload failed: {logo_r.text[:200]}')
+        except Exception as e:
+            log.warning(f'Logo upload exception: {e}')
 
     # Resolve profile_ids to a list of ints (or None)
     resolved_profile_ids = None
