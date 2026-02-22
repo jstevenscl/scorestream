@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
 
-PIPE_PATH="${PIPE_PATH:-/pipes/scoreboard.rawvideo}"
+STREAM_SLUG="${STREAM_SLUG:-scorestream}"
+PIPE_PATH="${PIPE_PATH:-/pipes/${STREAM_SLUG}.rawvideo}"
 HLS_DIR="${HLS_DIR:-/hls}"
 WIDTH="${STREAM_WIDTH:-1920}"
 HEIGHT="${STREAM_HEIGHT:-1080}"
@@ -22,6 +23,7 @@ until [ -p "$PIPE_PATH" ]; do
 done
 
 echo "[ffmpeg] Pipe ready — starting HLS encoding"
+echo "[ffmpeg] Slug: ${STREAM_SLUG}"
 echo "[ffmpeg] Output directory: ${HLS_DIR}"
 echo "[ffmpeg] Resolution: ${WIDTH}x${HEIGHT} @ ${FPS}fps"
 
@@ -29,15 +31,15 @@ mkdir -p "$HLS_DIR"
 
 # Input is JPEG frames via image2pipe.
 # KEY SETTINGS FOR SMOOTH STREAMING:
-# -use_wallclock_as_timestamps 1  — use real time for PTS, not frame count.
-#   This is critical: since renderer paces frames at real-time intervals,
-#   wall-clock timestamps prevent the player from buffering ahead or stalling.
-# -vf fps=fps=${FPS}  — re-timestamp output to exactly FPS, smoothing
-#   any jitter in frame delivery from the renderer.
-# -g 2*FPS  — keyframe every 2 seconds = one keyframe per HLS segment,
-#   allowing clean segment boundaries and fast channel tune-in.
+# -use_wallclock_as_timestamps 1 — use real time for PTS, not frame count.
+# This is critical: since renderer paces frames at real-time intervals,
+# wall-clock timestamps prevent the player from buffering ahead or stalling.
+# -vf fps=fps=${FPS} — re-timestamp output to exactly FPS, smoothing
+# any jitter in frame delivery from the renderer.
+# -g 2*FPS — keyframe every 2 seconds = one keyframe per HLS segment,
+# allowing clean segment boundaries and fast channel tune-in.
 # -hls_flags delete_segments+append_list+independent_segments
-#   independent_segments: each segment is self-contained (important for DVR/seek)
+# independent_segments: each segment is self-contained (important for DVR/seek)
 exec ffmpeg \
   -f image2pipe \
   -framerate "${FPS}" \
@@ -57,5 +59,5 @@ exec ffmpeg \
   -hls_time "${SEGMENT_DURATION}" \
   -hls_list_size "${PLAYLIST_SIZE}" \
   -hls_flags delete_segments+append_list+independent_segments \
-  -hls_segment_filename "${HLS_DIR}/scorestream_%05d.ts" \
-  "${HLS_DIR}/scorestream.m3u8"
+  -hls_segment_filename "${HLS_DIR}/${STREAM_SLUG}_%05d.ts" \
+  "${HLS_DIR}/${STREAM_SLUG}.m3u8"

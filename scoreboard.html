@@ -113,6 +113,22 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .last-update{text-align:center;font-size:10px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-top:6px;}
 .sidebar-footer{margin-top:auto;padding:12px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--text-dim);text-align:center;letter-spacing:1px;}
 
+/* Scoreboard selector */
+#sbSelectorSection{padding:12px 18px;border-bottom:1px solid var(--border);background:var(--bg-secondary);}
+.sb-selector-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;}
+.sb-selector-pills{display:flex;flex-wrap:wrap;gap:5px;}
+.sb-selector-pill{padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s;color:var(--text-dim);text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;}
+.sb-selector-pill:hover{border-color:var(--accent);color:var(--accent);}
+.sb-selector-pill.active{background:rgba(0,212,255,0.12);border-color:var(--accent);color:var(--accent);}
+.sb-selector-pill.all-sports{border-color:var(--border-bright);}
+.sb-selector-pill.all-sports.active{background:rgba(0,255,136,0.1);border-color:var(--accent-green);color:var(--accent-green);}
+
+/* Preview banner shown in topbar when viewing a custom scoreboard */
+#previewBanner{display:none;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:4px;padding:2px 10px;margin-left:10px;}
+
+/* Sidebar default sections wrapper — hidden when custom scoreboard selected */
+#sidebarDefaultSections{display:block;}
+
 /* Dispatcharr status in sidebar */
 .dispatcharr-status{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;margin-top:6px;cursor:pointer;transition:all 0.2s;}
 .dispatcharr-status:hover{border-color:var(--accent);}
@@ -358,6 +374,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div class="live-badge"><div class="live-dot"></div><span>Live Data</span></div>
   </div>
 
+  <!-- Scoreboard selector — populated on load from API -->
+  <div id="sbSelectorSection">
+    <div class="sb-selector-label">Scoreboard</div>
+    <div class="sb-selector-pills" id="sbSelectorPills">
+      <div class="sb-selector-pill all-sports active" data-slug="__all__" onclick="selectSidebarScoreboard('__all__')">&#x1F4CA; All Sports</div>
+    </div>
+  </div>
+
+  <!-- Default sections: only shown when "All Sports" is selected -->
+  <div id="sidebarDefaultSections">
+
   <div class="sidebar-section">
     <div class="section-label">Display Layout</div>
     <div class="layout-btns">
@@ -399,6 +426,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     </div>
   </div>
 
+  </div><!-- end #sidebarDefaultSections -->
+
   <div class="sidebar-section">
     <button class="refresh-btn" id="refreshBtn"><span>&#x21BB;</span> Refresh Scores</button>
     <div class="last-update" id="lastUpdate">Last updated: --</div>
@@ -416,6 +445,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 <div id="main">
   <div class="topbar">
     <div class="topbar-title" id="topbarTitle">All Sports Scoreboard</div>
+    <div id="previewBanner"></div>
     <div class="topbar-meta">
       <div class="meta-item">Live: <span class="val" id="liveCount">&ndash;</span></div>
       <div class="meta-item">Total: <span class="val" id="totalCount">&ndash;</span></div>
@@ -849,7 +879,8 @@ function openSbEditor(id){
   _editorDraft={
     name: sb.name,
     sport_config: Object.assign({}, sb.sport_config||{}),
-    team_config: (sb.team_config||[]).slice()
+    team_config: (sb.team_config||[]).slice(),
+    display_config: Object.assign({}, sb.display_config||{})
   };
 
   // Hide list and push wizard
@@ -886,6 +917,8 @@ function renderEditorStep(sbOverride){
 
   let body='';
   if(_editorStep===1){
+    const tzOptions=['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','Pacific/Honolulu','Europe/London','Europe/Paris','Europe/Berlin','Asia/Tokyo','Asia/Shanghai','Australia/Sydney'];
+    const currentTz=_editorDraft.display_config.timezone||'America/New_York';
     body=`
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
@@ -895,6 +928,13 @@ function renderEditorStep(sbOverride){
       <div class="wiz-field" style="margin-top:16px;">
         <div class="wiz-label">Description (optional)</div>
         <input class="wiz-input" id="sbEditDesc" value="${sb.description||''}" placeholder="What this scoreboard is for...">
+      </div>
+      <div class="wiz-field" style="margin-top:16px;">
+        <div class="wiz-label">Timezone</div>
+        <select class="wiz-input" id="sbEditTz">
+          ${tzOptions.map(tz=>`<option value="${tz}"${tz===currentTz?' selected':''}>${tz.replace('_',' ')}</option>`).join('')}
+        </select>
+        <div class="wiz-sublabel">Clock displayed on the stream output uses this timezone</div>
       </div>`;
   }
   else if(_editorStep===2){
@@ -1035,6 +1075,8 @@ function collectEditorStepData(){
   if(_editorStep===1){
     const nameEl=document.getElementById('sbEditName');
     if(nameEl) _editorDraft.name=nameEl.value.trim()||_editorDraft.name;
+    const tzEl=document.getElementById('sbEditTz');
+    if(tzEl) _editorDraft.display_config.timezone=tzEl.value;
   }
   if(_editorStep===2){
     document.querySelectorAll('#sbEditorBody input[data-sport]').forEach(cb=>{
@@ -1197,7 +1239,7 @@ async function saveSbEditor(){
   if(result){result.style.color='var(--text-dim)';result.textContent='Saving...';}
   const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name:_editorDraft.name, sport_config:_editorDraft.sport_config})
+    body:JSON.stringify({name:_editorDraft.name, sport_config:_editorDraft.sport_config, display_config:_editorDraft.display_config})
   });
   if(r.ok){
     const d=await r.json();
@@ -2954,11 +2996,96 @@ function updateDsStatus(connected,st=''){
 }
 
 // =====================
+//  SCOREBOARD SELECTOR
+// =====================
+let _activeSidebarSlug = '__all__'; // '__all__' = default All Sports view
+let _allSportsEnabledSports = null; // saved state when switching away from All Sports
+let _allSportsActiveSports = null;
+
+async function initSidebarScoreboardSelector(){
+  try{
+    const r=await fetch(`${API_BASE}/scoreboards`,{signal:AbortSignal.timeout(5000)});
+    if(!r.ok)return;
+    const d=await r.json();
+    const pills=document.getElementById('sbSelectorPills');
+    if(!pills)return;
+    // Render one pill per scoreboard (skip default "ScoreStream" built-in if desired, but show all)
+    const custom=(d.scoreboards||[]);
+    custom.forEach(sb=>{
+      const pill=document.createElement('div');
+      pill.className='sb-selector-pill';
+      pill.dataset.slug=sb.slug;
+      pill.dataset.sbid=sb.id;
+      pill.title=sb.name;
+      pill.textContent='📋 '+sb.name;
+      pill.onclick=()=>selectSidebarScoreboard(sb.slug);
+      pills.appendChild(pill);
+    });
+  }catch(e){}
+}
+
+function selectSidebarScoreboard(slug){
+  _activeSidebarSlug=slug;
+  // Update pill active states
+  document.querySelectorAll('.sb-selector-pill').forEach(p=>{
+    p.classList.toggle('active', p.dataset.slug===slug);
+  });
+  const defaultSections=document.getElementById('sidebarDefaultSections');
+  const banner=document.getElementById('previewBanner');
+  const titleEl=document.getElementById('topbarTitle');
+  if(slug==='__all__'){
+    // Restore All Sports view
+    if(defaultSections)defaultSections.style.display='block';
+    if(banner)banner.style.display='none';
+    if(titleEl)titleEl.textContent='All Sports Scoreboard';
+    // Restore saved sports state
+    if(_allSportsEnabledSports){
+      state.enabledSports=_allSportsEnabledSports;
+      state.activeSports=_allSportsActiveSports;
+      _allSportsEnabledSports=null;
+      _allSportsActiveSports=null;
+    }
+    renderScoreboard();
+  }else{
+    // Save current All Sports state before overriding
+    if(!_allSportsEnabledSports){
+      _allSportsEnabledSports=new Set(state.enabledSports);
+      _allSportsActiveSports=new Set(state.activeSports);
+    }
+    // Hide default sidebar sections
+    if(defaultSections)defaultSections.style.display='none';
+    // Fetch scoreboard config and apply
+    fetch(`${API_BASE}/scoreboards/by-slug/${slug}`,{signal:AbortSignal.timeout(5000)})
+      .then(r=>r.ok?r.json():null)
+      .then(sb=>{
+        if(!sb)return;
+        if(titleEl)titleEl.textContent=sb.name;
+        if(banner){banner.style.display='inline-block';banner.textContent='● PREVIEW';}
+        const sportIds=Object.entries(sb.sport_config||{}).filter(([,v])=>v).map(([k])=>k);
+        if(!sportIds.length){
+          // Unconfigured scoreboard — show message
+          document.getElementById('scoreboard').innerHTML=
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;color:var(--text-dim);font-family:\'Barlow Condensed\',sans-serif;">' +
+            '<div style="font-size:48px;margin-bottom:16px;">⚙️</div>' +
+            '<div style="font-size:22px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Scoreboard Not Configured</div>' +
+            '<div style="font-size:14px;">Go to Settings → My Scoreboards to add sports to this scoreboard.</div></div>';
+          return;
+        }
+        state.enabledSports=new Set(sportIds);
+        state.activeSports=new Set(sportIds);
+        renderScoreboard();
+      })
+      .catch(()=>{});
+  }
+}
+
+// =====================
 //  CLOCK
 // =====================
-function startClock(){
+function startClock(tz){
   const el=document.getElementById('clockDisplay');if(!el)return;
-  setInterval(()=>{const n=new Date();el.innerHTML=`<span>🕐</span> <span class="val">${n.toLocaleTimeString()}</span>`;},1000);
+  const opts=tz?{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}:undefined;
+  setInterval(()=>{const n=new Date();el.innerHTML=`<span>🕐</span> <span class="val">${n.toLocaleTimeString(undefined,opts)}</span>`;},1000);
 }
 
 // =====================
@@ -2991,35 +3118,52 @@ state.refreshRate=savedRate;
 initDisplayControls();
 initAutoSaveToggle();
 buildSportToggles();
-startClock();
+startClock(); // default clock, no timezone — overridden in stream mode
 renderFavSummary();
 fetchAllScores();
 startAutoRefresh();
 setRefreshRate(savedRate);
 loadNcaaFromApi(); // fetch live NCAA data from DB; falls back to bundled seed silently
+initSidebarScoreboardSelector(); // populate scoreboard selector pills from API
 
-// STREAM MODE: if ?stream param present, hide UI chrome and load active scoreboard config
+// STREAM MODE: if ?stream param present, hide UI chrome and load scoreboard by slug
 (async function initStreamMode(){
-  if (!new URLSearchParams(window.location.search).has('stream')) return;
-  // Hide sidebar and topbar
-  const sidebar = document.getElementById('sidebar');
-  const topbar = document.querySelector('.topbar');
-  if (sidebar) sidebar.style.display = 'none';
-  if (topbar) topbar.style.display = 'none';
-  // Fetch active scoreboard from API and override enabled sports
-  try {
-    const r = await fetch(`${API_BASE}/scoreboards/active`, {signal: AbortSignal.timeout(5000)});
-    if (r.ok) {
-      const sb = await r.json();
-      const activeIds = Object.entries(sb.sport_config || {})
-        .filter(([,v]) => v).map(([k]) => k);
-      if (activeIds.length) {
-        state.enabledSports = new Set(activeIds);
-        state.activeSports = new Set(activeIds);
-        renderScoreboard();
+  const params=new URLSearchParams(window.location.search);
+  if(!params.has('stream'))return;
+  // Hide sidebar; keep topbar but hide title/meta — clock stays visible
+  const sidebar=document.getElementById('sidebar');
+  const topbarTitle=document.getElementById('topbarTitle');
+  const topbarMeta=document.querySelector('.topbar-meta');
+  const previewBanner=document.getElementById('previewBanner');
+  if(sidebar)sidebar.style.display='none';
+  if(topbarTitle)topbarTitle.style.display='none';
+  if(topbarMeta)topbarMeta.style.display='none';
+  if(previewBanner)previewBanner.style.display='none';
+  // Fetch scoreboard by slug if provided, otherwise fall back to active
+  const slug=params.get('slug');
+  const url=slug?`${API_BASE}/scoreboards/by-slug/${slug}`:`${API_BASE}/scoreboards/active`;
+  try{
+    const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
+    if(r.ok){
+      const sb=await r.json();
+      // Start clock with scoreboard's timezone if set
+      const tz=sb.display_config&&sb.display_config.timezone?sb.display_config.timezone:null;
+      if(tz)startClock(tz); // restart clock with correct timezone
+      const sportIds=Object.entries(sb.sport_config||{}).filter(([,v])=>v).map(([k])=>k);
+      if(!sportIds.length){
+        // Not configured — show overlay
+        document.getElementById('scoreboard').innerHTML=
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;color:var(--text-dim);font-family:\'Barlow Condensed\',sans-serif;">' +
+          '<div style="font-size:64px;margin-bottom:20px;">⚙️</div>' +
+          '<div style="font-size:28px;font-weight:900;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;color:var(--text-primary);">Not Configured</div>' +
+          '<div style="font-size:15px;">Configure sports in Settings → My Scoreboards</div></div>';
+        return;
       }
+      state.enabledSports=new Set(sportIds);
+      state.activeSports=new Set(sportIds);
+      renderScoreboard();
     }
-  } catch(e) { /* keep defaults if API unreachable */ }
+  }catch(e){ /* keep defaults if API unreachable */ }
 })();
 
 // Check Dispatcharr credentials on load and update sidebar status
