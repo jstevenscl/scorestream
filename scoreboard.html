@@ -328,6 +328,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .sb-action-btn:hover{border-color:var(--accent);color:var(--accent);}
 .sb-action-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.08);}
 .sb-action-btn.danger{border-color:var(--accent-red);color:var(--accent-red);}
+.sb-action-btn.stream-url{border-color:rgba(0,255,136,0.4);color:var(--accent-green);}
+.sb-action-btn.stream-url.copied{background:rgba(0,255,136,0.12);border-color:var(--accent-green);}
 
 /* Scoreboard editor */
 .sb-editor{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
@@ -449,8 +451,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div class="topbar-meta">
       <div class="meta-item">Live: <span class="val" id="liveCount">&ndash;</span></div>
       <div class="meta-item">Total: <span class="val" id="totalCount">&ndash;</span></div>
-      <div class="meta-item" id="clockDisplay"></div>
     </div>
+    <div class="meta-item" id="clockDisplay"></div>
   </div>
   <div id="scoreboard"></div>
 </div>
@@ -834,11 +836,31 @@ function renderSbCards(){
       <div class="sb-card-actions">
         <button class="sb-action-btn primary" onclick="openSbEditor(${sb.id})">Edit</button>
         <button class="sb-action-btn" onclick="duplicateScoreboard(${sb.id})">Duplicate</button>
+        <button class="sb-action-btn stream-url" id="urlbtn-${sb.id}" onclick="copyStreamUrl('${sb.slug}',${sb.id})">📡 Stream URL</button>
         <button class="sb-action-btn primary" onclick="openPushWizard(${sb.id})">${hasChannel?'⟳ Update Channel':'🚀 Push to Dispatcharr'}</button>
         ${!sb.is_default?`<button class="sb-action-btn danger" onclick="deleteScoreboard(${sb.id})">Delete</button>`:''}
       </div>
     </div>`;
   }).join('');
+}
+
+async function copyStreamUrl(slug, id){
+  // Build URL from current window location so it works on any host/port
+  const base = window.location.protocol + '//' + window.location.host;
+  const url = `${base}/hls/${slug}.m3u8`;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch(e) {
+    // Fallback for non-HTTPS contexts
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  const btn = document.getElementById(`urlbtn-${id}`);
+  if(btn){ btn.textContent = '✅ Copied!'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent = '📡 Stream URL'; btn.classList.remove('copied'); }, 2000); }
 }
 
 async function createNewScoreboard(){
