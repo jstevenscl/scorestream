@@ -459,11 +459,52 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
   <div class="settings-content">
 
-    <!-- SECTION: SPORTS & LEAGUES -->
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 1: MY SCOREBOARDS (default/active on open)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="section-scoreboards" class="settings-section active">
+      <div class="settings-section-header">
+        <h2>My Scoreboards</h2>
+        <p>Create and manage named scoreboards. Each can have its own sports, teams, and Dispatcharr channel assignment.</p>
+      </div>
+      <div id="sbListView">
+        <div id="sbCards" class="sb-cards-grid"></div>
+        <button class="modal-btn" onclick="createNewScoreboard()" style="margin-top:14px;padding:10px 24px;">+ New Scoreboard</button>
+      </div>
+      <!-- Push wizard (replaces list view) -->
+      <div id="sbPushWizard" style="display:none;">
+        <div class="wizard-header">
+          <button onclick="closePushWizard()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:22px;line-height:1;padding:0 8px 0 0;">←</button>
+          <h3 id="wizardTitle">Push to Dispatcharr</h3>
+        </div>
+        <div class="wizard-steps">
+          <div class="wizard-step active" data-step="1">1. Channel</div>
+          <div class="wizard-step" data-step="2">2. Group</div>
+          <div class="wizard-step" data-step="3">3. Profiles</div>
+          <div class="wizard-step" data-step="4">4. Stream</div>
+          <div class="wizard-step" data-step="5">5. Review</div>
+        </div>
+        <div id="wizardBody" style="min-height:200px;"></div>
+        <div class="wizard-nav">
+          <button class="modal-btn" id="wizPrevBtn" onclick="wizardNav(-1)" style="display:none;">← Back</button>
+          <div style="flex:1;"></div>
+          <button class="modal-btn" id="wizNextBtn" onclick="wizardNav(1)">Next →</button>
+          <button class="modal-btn" id="wizPushBtn" onclick="executeWizardPush()"
+            style="display:none;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,102,255,0.2));border-color:var(--accent);">
+            🚀 Push to Dispatcharr
+          </button>
+        </div>
+        <div id="wizardResult" style="display:none;margin-top:14px;padding:12px 16px;border-radius:8px;border:1px solid var(--border);font-size:13px;"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 2: SPORTS & LEAGUES
+    ═══════════════════════════════════════════════════════════ -->
     <div id="section-sports" class="settings-section">
       <div class="settings-section-header">
         <h2>Sports &amp; Leagues</h2>
-        <p>Choose which sports and leagues appear on your default scoreboard. Each scoreboard can have its own configuration.</p>
+        <p>Choose which sports and leagues appear on the default scoreboard.</p>
       </div>
       <div class="modal-section">
         <div class="modal-section-title">Pro Leagues</div>
@@ -479,11 +520,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       </div>
     </div>
 
-    <!-- SECTION: TEAMS -->
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 3: TEAMS
+    ═══════════════════════════════════════════════════════════ -->
     <div id="section-teams" class="settings-section">
       <div class="settings-section-header">
         <h2>Teams</h2>
-        <p>Favorite teams to pin them at the top of your scoreboard.</p>
+        <p>Star teams to pin them at the top of your scoreboard.</p>
       </div>
       <div class="modal-section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -514,12 +557,40 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       </div>
     </div>
 
-    <!-- SECTION: DISPLAY & DATA -->
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 4: DISPLAY & DATA
+    ═══════════════════════════════════════════════════════════ -->
     <div id="section-display" class="settings-section">
       <div class="settings-section-header">
         <h2>Display &amp; Data</h2>
-        <p>Appearance, card style, refresh rate, and data source settings.</p>
+        <p>Appearance, auto-save, refresh rate, and data source settings.</p>
       </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Save Mode</div>
+        <div class="modal-row">
+          <div>
+            <div class="modal-label">Auto-save settings</div>
+            <div class="modal-sublabel">When off, a Save button appears so you can review changes before applying.</div>
+          </div>
+          <div class="big-toggle" id="autoSaveToggle" onclick="toggleAutoSave()"></div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Auto-Refresh Rate</div>
+        <div class="rate-pills" id="ratePills">
+          <div class="rate-pill" data-rate="0" onclick="setRefreshRate(0)">Manual only</div>
+          <div class="rate-pill" data-rate="30" onclick="setRefreshRate(30)">30 sec</div>
+          <div class="rate-pill active" data-rate="60" onclick="setRefreshRate(60)">1 min</div>
+          <div class="rate-pill" data-rate="120" onclick="setRefreshRate(120)">2 min</div>
+          <div class="rate-pill" data-rate="300" onclick="setRefreshRate(300)">5 min</div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="rateStatus">Auto-refresh: every 60 seconds</div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Card Typography</div>
         <div class="modal-slider-row">
           <span class="modal-slider-label">Team Abbreviation Size</span>
           <input type="range" min="14" max="28" value="18" id="sl-abbr" oninput="applyDisplay()">
@@ -536,6 +607,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
           <span class="modal-slider-val" id="val-name">11px</span>
         </div>
       </div>
+
       <div class="modal-section">
         <div class="modal-section-title">Team Name Color</div>
         <div class="modal-row">
@@ -562,6 +634,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
           </div>
         </div>
       </div>
+
       <div class="modal-section">
         <div class="modal-section-title">Stats</div>
         <div class="modal-row">
@@ -572,39 +645,27 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
           </div>
         </div>
       </div>
-    </div><!-- end section-display -->
 
-    <!-- SECTION: INTEGRATIONS (Dispatcharr) -->
+      <div class="modal-section">
+        <div class="modal-section-title">Data Source</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">
+          ScoreStream uses the unofficial ESPN Scoreboard API. Data is fetched directly from your browser — no proxy needed.<br><br>
+          <span style="color:var(--text-dim);font-size:11px;">If scores show "demo" it means ESPN blocked the request from your network (CORS). This is normal inside some Docker/reverse proxy setups.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION 5: INTEGRATIONS
+    ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION: INTEGRATIONS (Dispatcharr) -->
     <div id="section-dispatcharr" class="settings-section">
       <div class="settings-section-header">
         <h2>Integrations</h2>
         <p>Connect ScoreStream to Dispatcharr to push live scoreboards as TV channels.</p>
       </div>
 
-      <!-- Settings save mode moved here -->
-      <div class="modal-section">
-        <div class="modal-section-title">App Settings</div>
-        <div class="modal-row">
-          <div>
-            <div class="modal-label">Auto-save settings</div>
-            <div class="modal-sublabel">When off, a Save button appears so you can review changes before applying.</div>
-          </div>
-          <div class="big-toggle" id="autoSaveToggle" onclick="toggleAutoSave()"></div>
-        </div>
-        <div class="modal-row" style="margin-top:8px;">
-          <div>
-            <div class="modal-label">Auto-Refresh Rate</div>
-          </div>
-        </div>
-        <div class="rate-pills" id="ratePills">
-          <div class="rate-pill" data-rate="0" onclick="setRefreshRate(0)">Manual only</div>
-          <div class="rate-pill" data-rate="30" onclick="setRefreshRate(30)">30 sec</div>
-          <div class="rate-pill active" data-rate="60" onclick="setRefreshRate(60)">1 min</div>
-          <div class="rate-pill" data-rate="120" onclick="setRefreshRate(120)">2 min</div>
-          <div class="rate-pill" data-rate="300" onclick="setRefreshRate(300)">5 min</div>
-        </div>
-        <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="rateStatus">Auto-refresh: every 60 seconds</div>
-      </div>
+
 
       <!-- CREDENTIALS -->
       <div class="modal-section">
@@ -753,41 +814,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <div class="channel-result" id="channelResult" style="display:none;"></div>
       </div>
     </div>
-    </div><!-- end section-dispatcharr -->
-
-    <!-- SECTION: SCOREBOARDS -->
-    <div id="section-scoreboards" class="settings-section active">
-      <div class="settings-section-header">
-        <h2>My Scoreboards</h2>
-        <p>Create and manage multiple scoreboards. Each scoreboard can have its own sports, teams, and Dispatcharr channel.</p>
-      </div>
-      <div id="sbListView">
-        <div id="sbCards" class="sb-cards-grid"></div>
-        <button class="modal-btn" onclick="createNewScoreboard()" style="margin-top:12px;padding:10px 20px;">+ New Scoreboard</button>
-      </div>
-      <!-- Push to Dispatcharr wizard -->
-      <div id="sbPushWizard" style="display:none;">
-        <div class="wizard-header">
-          <button onclick="closePushWizard()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px;line-height:1;">←</button>
-          <h3 id="wizardTitle">Push to Dispatcharr</h3>
-        </div>
-        <div class="wizard-steps">
-          <div class="wizard-step active" data-step="1">1. Channel</div>
-          <div class="wizard-step" data-step="2">2. Group</div>
-          <div class="wizard-step" data-step="3">3. Profiles</div>
-          <div class="wizard-step" data-step="4">4. Stream</div>
-          <div class="wizard-step" data-step="5">5. Review</div>
-        </div>
-        <div id="wizardBody"></div>
-        <div class="wizard-nav">
-          <button class="modal-btn" id="wizPrevBtn" onclick="wizardNav(-1)" style="display:none;">← Back</button>
-          <div style="flex:1;"></div>
-          <button class="modal-btn" id="wizNextBtn" onclick="wizardNav(1)">Next →</button>
-          <button class="modal-btn" id="wizPushBtn" onclick="executeWizardPush()" style="display:none;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,102,255,0.2));border-color:var(--accent);">🚀 Push to Dispatcharr</button>
-        </div>
-        <div id="wizardResult" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);font-size:13px;"></div>
-      </div>
-    </div>
+    </div><!-- /section-dispatcharr -->
 
   </div><!-- settings-content -->
 </div><!-- settings-page -->
