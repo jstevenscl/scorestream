@@ -19,7 +19,7 @@ services:
     container_name: scorestream-web
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-8888}:80"
+      - "${WEB_PORT:-7777}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./scoreboard.html:/usr/share/nginx/html/index.html:ro
