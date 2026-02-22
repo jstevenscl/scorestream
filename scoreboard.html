@@ -493,8 +493,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       </div>
     </div>
 
-         SECTION 4: DISPLAY & DATA
-    ═══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 4: DISPLAY & DATA -->
     <div id="section-display" class="settings-section">
       <div class="settings-section-header">
         <h2>Display &amp; Data</h2>
@@ -926,24 +925,52 @@ function renderEditorStep(sbOverride){
     });
   }
   else if(_editorStep===3){
-    // Team favorites for this scoreboard (uses global fav system for now)
-    const favs=state.favTeams||new Set();
     const enabledSportIds=Object.entries(_editorDraft.sport_config).filter(([,v])=>v).map(([k])=>k);
     if(!enabledSportIds.length){
-      body=`<div style="color:var(--text-dim);font-size:13px;padding:20px 0;">No sports enabled on this scoreboard. Go back to Sports &amp; Leagues to enable some first.</div>`;
+      body=`<div style="color:var(--text-dim);font-size:13px;padding:20px 0;">
+        No sports enabled on this scoreboard yet.<br>Go back to <strong>Sports &amp; Leagues</strong> and enable at least one sport first.
+      </div>`;
     } else {
-      body=`<div class="wiz-sublabel" style="margin-bottom:16px;">Your starred teams are shared across all scoreboards. This step shows which of your favorites are relevant to this scoreboard's sports.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">`;
-      enabledSportIds.forEach(sid=>{
-        const sport=ALL_SPORTS.find(s=>s.id===sid);
-        if(sport) body+=`<span style="padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);border-radius:12px;font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;color:var(--accent);">${sport.emoji} ${sport.name}</span>`;
-      });
-      body+=`</div>
-        <div style="margin-top:16px;font-size:13px;color:var(--text-secondary);line-height:1.6;">
-          To manage favorite teams, use the <strong>Teams</strong> section in the sidebar (accessible after saving this scoreboard). Your ⭐ favorites will appear pinned at the top of this scoreboard when games are live.
+      // Build sport tabs from enabled sports only
+      const enabledSports=ALL_SPORTS.filter(s=>enabledSportIds.includes(s.id));
+      const firstSport=enabledSports[0]?.id||'';
+      const tabHtml=enabledSports.map(sp=>`
+        <div class="sb-team-tab${sp.id===firstSport?' active':''}"
+          data-sport="${sp.id}"
+          onclick="sbEditorSwitchTeamTab('${sp.id}')"
+          style="padding:5px 12px;border-radius:20px;border:1px solid ${sp.id===firstSport?'var(--accent)':'var(--border)'};
+            background:${sp.id===firstSport?'rgba(0,212,255,0.1)':'transparent'};
+            color:${sp.id===firstSport?'var(--accent)':'var(--text-dim)'};
+            font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+            letter-spacing:0.5px;cursor:pointer;white-space:nowrap;text-transform:uppercase;">
+          ${sp.emoji} ${sp.name}
+        </div>`).join('');
+
+      body=`
+        <div class="wiz-sublabel" style="margin-bottom:12px;">
+          Select teams to feature on this scoreboard. Featured teams get a highlight badge when their games appear.
+          This is separate from your global ⭐ favorites.
         </div>
-        <div style="margin-top:12px;padding:10px 14px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:8px;font-size:12px;color:var(--accent-green);">
-          ✓ ${favs.size} team${favs.size!==1?'s':''} currently favorited globally
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;" id="sbTeamTabs">
+          ${tabHtml}
+        </div>
+        <div style="position:relative;margin-bottom:10px;">
+          <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;">🔍</span>
+          <input type="text" id="sbTeamSearch" placeholder="Search teams..."
+            style="width:100%;padding:8px 12px 8px 32px;background:var(--bg-card);border:1px solid var(--border);
+              border-radius:8px;color:var(--text-primary);font-family:'Barlow',sans-serif;font-size:13px;
+              outline:none;box-sizing:border-box;"
+            oninput="sbEditorFilterTeams(this.value)">
+        </div>
+        <div id="sbTeamDivPills" style="display:none;gap:5px;margin-bottom:10px;flex-wrap:wrap;">
+          <button onclick="sbEditorSetDiv('d1')" id="sbDivD1" style="padding:3px 10px;border-radius:20px;border:1px solid var(--accent);background:rgba(0,212,255,0.12);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;">D-I</button>
+          <button onclick="sbEditorSetDiv('d2')" id="sbDivD2" style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;">D-II</button>
+          <button onclick="sbEditorSetDiv('d3')" id="sbDivD3" style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;">D-III</button>
+          <button onclick="sbEditorSetDiv('all')" id="sbDivAll" style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;">ALL</button>
+        </div>
+        <div id="sbTeamList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:340px;overflow-y:auto;"></div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="sbTeamCount">
+          ✓ ${(_editorDraft.team_config||[]).length} team${(_editorDraft.team_config||[]).length!==1?'s':''} selected for this scoreboard
         </div>`;
     }
   }
@@ -967,6 +994,16 @@ function renderEditorStep(sbOverride){
       </div>
       <div id="sbEditResult" style="margin-top:10px;font-size:12px;min-height:20px;"></div>
     </div>`;
+
+  // Auto-load team browser when on step 3
+  if(_editorStep===3){
+    const enabledSportIds=Object.entries(_editorDraft.sport_config).filter(([,v])=>v).map(([k])=>k);
+    if(enabledSportIds.length){
+      _sbTeamActiveSport = enabledSportIds[0];
+      _sbTeamDivFilter = 'd1';
+      setTimeout(()=>sbEditorLoadTeams(_sbTeamActiveSport), 50);
+    }
+  }
 }
 
 function jumpEditorStep(n){
@@ -991,7 +1028,124 @@ function collectEditorStepData(){
       _editorDraft.sport_config[cb.dataset.sport]=cb.checked;
     });
   }
+  // Step 3 team_config is updated live via sbEditorToggleTeam, no collection needed
 }
+
+// ── Per-scoreboard team browser ───────────────────────────────────────────────
+let _sbTeamActiveSport = null;
+let _sbTeamDivFilter = 'd1';
+let _sbTeamAllTeams = [];
+
+async function sbEditorSwitchTeamTab(sportId){
+  _sbTeamActiveSport = sportId;
+  // Update tab styles
+  document.querySelectorAll('.sb-team-tab').forEach(t=>{
+    const active = t.dataset.sport === sportId;
+    t.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+    t.style.background = active ? 'rgba(0,212,255,0.1)' : 'transparent';
+    t.style.color = active ? 'var(--accent)' : 'var(--text-dim)';
+  });
+  // Show division pills for NCAA
+  const pillEl = document.getElementById('sbTeamDivPills');
+  if(pillEl) pillEl.style.display = sportId.startsWith('ncaa') ? 'flex' : 'none';
+  await sbEditorLoadTeams(sportId);
+}
+
+async function sbEditorLoadTeams(sportId){
+  const listEl = document.getElementById('sbTeamList');
+  if(!listEl) return;
+  listEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:12px 0;grid-column:1/-1;">Loading...</div>';
+  try {
+    let teams = [];
+    if(sportId.startsWith('ncaa')){
+      teams = await fetchNcaaTeams(sportId, _sbTeamDivFilter);
+    } else {
+      teams = await loadTbSportData(sportId);
+    }
+    _sbTeamAllTeams = teams;
+    const search = document.getElementById('sbTeamSearch')?.value || '';
+    sbEditorRenderTeams(search);
+  } catch(e){
+    listEl.innerHTML = '<div style="color:var(--accent-red);font-size:12px;grid-column:1/-1;">Failed to load teams</div>';
+  }
+}
+
+function sbEditorRenderTeams(query=''){
+  const listEl = document.getElementById('sbTeamList');
+  if(!listEl) return;
+  const q = query.toLowerCase().trim();
+  const selected = new Set(_editorDraft.team_config || []);
+  let teams = _sbTeamAllTeams;
+  if(q) teams = teams.filter(t=>
+    (t.name||'').toLowerCase().includes(q) ||
+    (t.abbr||'').toLowerCase().includes(q) ||
+    (t.shortName||'').toLowerCase().includes(q) ||
+    (t.location||'').toLowerCase().includes(q)
+  );
+  if(!teams.length){
+    listEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:12px 0;grid-column:1/-1;">No teams found</div>';
+    return;
+  }
+  listEl.innerHTML = teams.map(t=>{
+    const key = t.name || t.abbr;
+    const on = selected.has(key);
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 10px;
+      background:${on?'rgba(0,212,255,0.08)':'var(--bg-card)'};
+      border:1px solid ${on?'rgba(0,212,255,0.35)':'var(--border)'};
+      border-radius:8px;cursor:pointer;transition:all 0.15s;">
+      <input type="checkbox" data-team-key="${key.replace(/"/g,'&quot;')}"
+        ${on?'checked':''} onchange="sbEditorToggleTeam('${key.replace(/'/g,"\\'")}',this.checked)"
+        style="accent-color:var(--accent);cursor:pointer;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${t.abbr||t.name}</span>
+      <span style="font-size:10px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name||''}</span>
+    </label>`;
+  }).join('');
+}
+
+function sbEditorToggleTeam(key, checked){
+  if(!_editorDraft.team_config) _editorDraft.team_config = [];
+  if(checked){
+    if(!_editorDraft.team_config.includes(key)) _editorDraft.team_config.push(key);
+  } else {
+    _editorDraft.team_config = _editorDraft.team_config.filter(k=>k!==key);
+  }
+  // Update count
+  const countEl = document.getElementById('sbTeamCount');
+  if(countEl) countEl.textContent = `✓ ${_editorDraft.team_config.length} team${_editorDraft.team_config.length!==1?'s':''} selected for this scoreboard`;
+}
+
+function sbEditorFilterTeams(query){
+  sbEditorRenderTeams(query);
+}
+
+function sbEditorSetDiv(div){
+  _sbTeamDivFilter = div;
+  ['d1','d2','d3','all'].forEach(d=>{
+    const btn = document.getElementById(`sbDiv${d.charAt(0).toUpperCase()+d.slice(1)}`);
+    if(btn){
+      const active = d === div;
+      btn.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+      btn.style.background = active ? 'rgba(0,212,255,0.12)' : 'transparent';
+      btn.style.color = active ? 'var(--accent)' : 'var(--text-dim)';
+    }
+  });
+  if(_sbTeamActiveSport) sbEditorLoadTeams(_sbTeamActiveSport);
+}
+
+// Helper: load pro sport teams via existing tbState cache
+async function loadTbSportData(sid){
+  if(tbState.teamCache[sid]?.length) return tbState.teamCache[sid];
+  // Trigger a load using the existing loadTbSport machinery
+  return new Promise(resolve=>{
+    const origRender = window._sbTeamResolve;
+    window._sbTeamResolve = resolve;
+    loadTbSport(sid).then(()=>{
+      resolve(tbState.teamCache[sid]||[]);
+      window._sbTeamResolve = null;
+    });
+  });
+}
+
 
 function closeSbEditor(){
   document.getElementById('sbEditorPanel')?.remove();
