@@ -304,6 +304,33 @@ def init_db():
         conn.execute('CREATE INDEX IF NOT EXISTS idx_prog_sport_gender ON ncaa_programs(sport_id,gender)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_prog_division ON ncaa_programs(division)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_school_abbr ON ncaa_schools(espn_abbr)')
+        conn.execute("""CREATE TABLE IF NOT EXISTS scoreboards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            slug TEXT NOT NULL UNIQUE,
+            sport_config TEXT NOT NULL DEFAULT '{}',
+            team_config TEXT NOT NULL DEFAULT '[]',
+            display_config TEXT NOT NULL DEFAULT '{}',
+            dispatcharr_channel_id TEXT,
+            dispatcharr_stream_id TEXT,
+            dispatcharr_channel_number INTEGER,
+            dispatcharr_group_id TEXT,
+            dispatcharr_profile_ids TEXT,
+            dispatcharr_stream_profile_id TEXT,
+            dispatcharr_logo_id TEXT,
+            is_default INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')))""")
+        # Migrate existing DBs: add dispatcharr_stream_id if missing
+        try:
+            conn.execute('ALTER TABLE scoreboards ADD COLUMN dispatcharr_stream_id TEXT')
+        except Exception:
+            pass  # column already exists
+        # Seed default scoreboard if none exists
+        existing = conn.execute('SELECT COUNT(*) FROM scoreboards').fetchone()[0]
+        if existing == 0:
+            conn.execute("""INSERT INTO scoreboards(name,slug,is_default,sport_config,team_config,display_config)
+                VALUES('ScoreStream','scorestream',1,'{}','[]','{}')""")
         conn.commit()
     log.info(f'DB ready: {DB_PATH}')
     threading.Thread(target=startup_sync, daemon=True, name='ncaa-sync').start()
@@ -775,6 +802,263 @@ def create_channels():
             make_channel(f'ScoreStream — {sname}',num,f'{STREAM_BASE_URL}/hls/{slug}.m3u8' if STREAM_BASE_URL else None,gid=gid)
             ch_num+=1
     return jsonify({'created':created,'errors':errors})
+
+# ── Scoreboard CRUD ───────────────────────────────────────────────────────────
+def scoreboard_to_dict(r):
+    import json as _json
+    return {
+        'id': r['id'], 'name': r['name'], 'slug': r['slug'],
+        'sport_config': _json.loads(r['sport_config'] or '{}'),
+        'team_config': _json.loads(r['team_config'] or '[]'),
+        'display_config': _json.loads(r['display_config'] or '{}'),
+        'dispatcharr_channel_id': r['dispatcharr_channel_id'],
+        'dispatcharr_stream_id': r['dispatcharr_stream_id'],
+        'dispatcharr_channel_number': r['dispatcharr_channel_number'],
+        'dispatcharr_group_id': r['dispatcharr_group_id'],
+        'dispatcharr_profile_ids': _json.loads(r['dispatcharr_profile_ids'] or 'null'),
+        'dispatcharr_stream_profile_id': r['dispatcharr_stream_profile_id'],
+        'dispatcharr_logo_id': r['dispatcharr_logo_id'],
+        'is_default': bool(r['is_default']),
+        'created_at': r['created_at'], 'updated_at': r['updated_at']
+    }
+
+@app.route('/scoreboards', methods=['GET'])
+def scoreboards_list():
+    with get_db() as conn:
+        rows = conn.execute('SELECT * FROM scoreboards ORDER BY is_default DESC, name').fetchall()
+    return jsonify({'scoreboards': [scoreboard_to_dict(r) for r in rows]})
+
+@app.route('/scoreboards', methods=['POST'])
+def scoreboard_create():
+    import json as _json, re
+    b = request.get_json(force=True)
+    name = b.get('name','').strip()
+    if not name: return jsonify({'error':'name required'}),400
+    slug = re.sub(r'[^a-z0-9]+','-', name.lower()).strip('-') or 'scoreboard'
+    # Ensure slug uniqueness
+    with get_db() as conn:
+        base_slug, i = slug, 1
+        while conn.execute('SELECT id FROM scoreboards WHERE slug=?',(slug,)).fetchone():
+            slug = f'{base_slug}-{i}'; i += 1
+        conn.execute(
+            'INSERT INTO scoreboards(name,slug,sport_config,team_config,display_config) VALUES(?,?,?,?,?)',
+            (name, slug,
+             _json.dumps(b.get('sport_config',{})),
+             _json.dumps(b.get('team_config',[])),
+             _json.dumps(b.get('display_config',{}))))
+        conn.commit()
+        row = conn.execute('SELECT * FROM scoreboards WHERE slug=?',(slug,)).fetchone()
+    return jsonify(scoreboard_to_dict(row)), 201
+
+@app.route('/scoreboards/<int:sid>', methods=['GET'])
+def scoreboard_get(sid):
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+    if not row: return jsonify({'error':'not found'}),404
+    return jsonify(scoreboard_to_dict(row))
+
+@app.route('/scoreboards/<int:sid>', methods=['PUT','PATCH'])
+def scoreboard_update(sid):
+    import json as _json, re
+    b = request.get_json(force=True)
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+        if not row: return jsonify({'error':'not found'}),404
+        fields, vals = [], []
+        for col in ['name','sport_config','team_config','display_config',
+                    'dispatcharr_channel_id','dispatcharr_channel_number',
+                    'dispatcharr_group_id','dispatcharr_stream_profile_id','dispatcharr_logo_id']:
+            if col in b:
+                fields.append(f'{col}=?')
+                val = b[col]
+                if col in ('sport_config','team_config','display_config'):
+                    val = _json.dumps(val)
+                vals.append(val)
+        if 'dispatcharr_profile_ids' in b:
+            fields.append('dispatcharr_profile_ids=?')
+            vals.append(_json.dumps(b['dispatcharr_profile_ids']))
+        # Auto-update slug if name changed and not default
+        if 'name' in b and not row['is_default']:
+            new_slug = re.sub(r'[^a-z0-9]+','-', b['name'].lower()).strip('-')
+            base_slug, i = new_slug, 1
+            while True:
+                existing = conn.execute('SELECT id FROM scoreboards WHERE slug=? AND id!=?',(new_slug,sid)).fetchone()
+                if not existing: break
+                new_slug = f'{base_slug}-{i}'; i += 1
+            fields.append('slug=?'); vals.append(new_slug)
+        if not fields: return jsonify(scoreboard_to_dict(row))
+        fields.append("updated_at=datetime('now')")
+        vals.append(sid)
+        conn.execute(f'UPDATE scoreboards SET {",".join(fields)} WHERE id=?', vals)
+        conn.commit()
+        row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+    return jsonify(scoreboard_to_dict(row))
+
+@app.route('/scoreboards/<int:sid>', methods=['DELETE'])
+def scoreboard_delete(sid):
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+        if not row: return jsonify({'error':'not found'}),404
+        if row['is_default']: return jsonify({'error':'cannot delete default scoreboard'}),400
+        conn.execute('DELETE FROM scoreboards WHERE id=?',(sid,))
+        conn.commit()
+    return jsonify({'deleted':sid})
+
+@app.route('/scoreboards/<int:sid>/duplicate', methods=['POST'])
+def scoreboard_duplicate(sid):
+    import json as _json, re
+    b = request.get_json(force=True) or {}
+    with get_db() as conn:
+        src = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+        if not src: return jsonify({'error':'not found'}),404
+        new_name = b.get('name', src['name'] + ' (Copy)')
+        slug = re.sub(r'[^a-z0-9]+','-', new_name.lower()).strip('-')
+        base_slug, i = slug, 1
+        while conn.execute('SELECT id FROM scoreboards WHERE slug=?',(slug,)).fetchone():
+            slug = f'{base_slug}-{i}'; i += 1
+        conn.execute(
+            'INSERT INTO scoreboards(name,slug,sport_config,team_config,display_config) VALUES(?,?,?,?,?)',
+            (new_name, slug, src['sport_config'], src['team_config'], src['display_config']))
+        conn.commit()
+        row = conn.execute('SELECT * FROM scoreboards WHERE slug=?',(slug,)).fetchone()
+    return jsonify(scoreboard_to_dict(row)), 201
+
+# ── Dispatcharr channel push / update per scoreboard ─────────────────────────
+@app.route('/scoreboards/<int:sid>/push', methods=['POST'])
+def scoreboard_push(sid):
+    """Push or update a scoreboard as a Dispatcharr channel.
+
+    Dispatcharr architecture (confirmed from API schema):
+      - Stream  = the URL source  → POST/PATCH /api/channels/streams/
+      - Channel = the container   → POST/PATCH /api/channels/channels/
+      - Channel references Stream via  streams: [stream_id]
+      - stream_profile_id lives on BOTH stream and channel (stream takes precedence)
+
+    Create flow  (no existing channel_id):
+      1. POST /api/channels/streams/  → get stream_id
+      2. POST /api/channels/channels/ with streams:[stream_id]
+
+    Update flow (existing channel_id stored):
+      1. PATCH /api/channels/streams/{stream_id}/  → update URL if changed
+      2. PATCH /api/channels/channels/{channel_id}/ → update metadata
+    """
+    import json as _json
+    b = request.get_json(force=True)
+    with get_db() as conn:
+        sb = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+    if not sb: return jsonify({'error':'scoreboard not found'}),404
+
+    c = get_creds(); s,err = dispatcharr_session(c)
+    if err: return jsonify({'error':err}),400
+
+    # Wizard values override stored values; stored values are fallback
+    channel_name    = b.get('channelName') or sb['name']
+    channel_number  = b.get('channelNumber') or sb['dispatcharr_channel_number']
+    group_id        = b.get('groupId') or sb['dispatcharr_group_id']
+    profile_ids_raw = b.get('profileIds', _json.loads(sb['dispatcharr_profile_ids'] or 'null'))
+    stream_prof_id  = b.get('streamProfileId') or sb['dispatcharr_stream_profile_id']
+    logo_id         = b.get('logoId') or sb['dispatcharr_logo_id']
+    stream_url      = f'{STREAM_BASE_URL}/hls/{sb["slug"]}.m3u8' if STREAM_BASE_URL else None
+
+    existing_channel_id = sb['dispatcharr_channel_id']
+    existing_stream_id  = sb['dispatcharr_stream_id']
+    base = c['url']
+
+    # Resolve profile_ids to a list of ints (or None)
+    resolved_profile_ids = None
+    if profile_ids_raw == 'all':
+        pdata,perr = dispatcharr_get('/api/channels/profiles/', timeout=45)
+        if not perr and pdata:
+            items = pdata.get('results',pdata) if isinstance(pdata,dict) else pdata
+            resolved_profile_ids = [p['id'] for p in items if 'id' in p] or None
+    elif profile_ids_raw:
+        ids = [int(x) for x in (profile_ids_raw if isinstance(profile_ids_raw,list) else []) if str(x).isdigit()]
+        resolved_profile_ids = ids or None
+
+    try:
+        # ── STEP 1: Stream (the HLS URL source) ──────────────────────────────
+        stream_payload = {
+            'name': channel_name,
+            'is_custom': True,
+        }
+        if stream_url:      stream_payload['url']              = stream_url
+        if group_id:        stream_payload['channel_group']    = int(group_id)
+        if stream_prof_id:  stream_payload['stream_profile_id']= int(stream_prof_id)
+
+        if existing_stream_id:
+            # Update existing stream
+            r = s.patch(f'{base}/api/channels/streams/{existing_stream_id}/',
+                        json=stream_payload, timeout=15)
+            r.raise_for_status()
+            stream_id = existing_stream_id
+            log.info(f'Stream {stream_id} updated for scoreboard {sid}')
+        else:
+            # Create new stream
+            r = s.post(f'{base}/api/channels/streams/', json=stream_payload, timeout=15)
+            r.raise_for_status()
+            stream_id = str(r.json().get('id',''))
+            log.info(f'Stream {stream_id} created for scoreboard {sid}')
+
+        # ── STEP 2: Channel (the container) ──────────────────────────────────
+        channel_payload = {'name': channel_name, 'streams': [int(stream_id)]}
+        if channel_number:          channel_payload['channel_number']  = float(channel_number)
+        if group_id:                channel_payload['channel_group_id']= int(group_id)
+        if stream_prof_id:          channel_payload['stream_profile_id']= int(stream_prof_id)
+        if logo_id:                 channel_payload['logo_id']          = int(logo_id)
+        if resolved_profile_ids:    channel_payload['channel_profile_ids'] = resolved_profile_ids
+
+        if existing_channel_id:
+            # Update existing channel
+            r = s.patch(f'{base}/api/channels/channels/{existing_channel_id}/',
+                        json=channel_payload, timeout=15)
+            r.raise_for_status()
+            channel_id = existing_channel_id
+            action = 'updated'
+            log.info(f'Channel {channel_id} updated for scoreboard {sid}')
+        else:
+            # Create new channel
+            r = s.post(f'{base}/api/channels/channels/', json=channel_payload, timeout=15)
+            r.raise_for_status()
+            channel_id = str(r.json().get('id',''))
+            action = 'created'
+            log.info(f'Channel {channel_id} created for scoreboard {sid}')
+
+        # ── STEP 3: Persist all Dispatcharr IDs back to scoreboard ───────────
+        with get_db() as conn:
+            conn.execute("""UPDATE scoreboards SET
+                dispatcharr_channel_id=?, dispatcharr_stream_id=?,
+                dispatcharr_channel_number=?, dispatcharr_group_id=?,
+                dispatcharr_profile_ids=?, dispatcharr_stream_profile_id=?,
+                dispatcharr_logo_id=?, updated_at=datetime('now')
+                WHERE id=?""",
+                (channel_id, stream_id,
+                 int(channel_number) if channel_number else None,
+                 str(group_id) if group_id else None,
+                 _json.dumps(profile_ids_raw) if profile_ids_raw else None,
+                 str(stream_prof_id) if stream_prof_id else None,
+                 str(logo_id) if logo_id else None,
+                 sid))
+            conn.commit()
+            row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+
+        return jsonify({
+            'action': action,
+            'channel_id': channel_id,
+            'stream_id': stream_id,
+            'channel_number': channel_number,
+            'channel_name': channel_name,
+            'stream_url': stream_url,
+            'scoreboard': scoreboard_to_dict(row)
+        })
+
+    except http.exceptions.HTTPError as e:
+        try: detail = e.response.json()
+        except Exception: detail = e.response.text[:300] if e.response else str(e)
+        log.error(f'Dispatcharr push error for scoreboard {sid}: {detail}')
+        return jsonify({'error': str(detail)}), 500
+    except Exception as e:
+        log.error(f'Push exception for scoreboard {sid}: {e}')
+        return jsonify({'error': str(e)}), 500
 
 # ── NCAA Read endpoints ────────────────────────────────────────────────────────
 @app.route('/ncaa/schools', methods=['GET'])

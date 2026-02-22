@@ -273,6 +273,77 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 /* NCAA team search — full names visible */
 .tb-team-full{font-size:10px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ==================== SETTINGS FULL PAGE ==================== */
+.settings-page{position:fixed;inset:0;z-index:300;display:flex;background:var(--bg-primary);animation:fadeIn 0.2s ease;}
+.settings-sidebar{width:220px;flex-shrink:0;background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+.settings-sidebar-header{padding:22px 18px 16px;border-bottom:1px solid var(--border);}
+.settings-logo{font-size:28px;margin-bottom:4px;}
+.settings-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;letter-spacing:3px;text-transform:uppercase;color:var(--text-primary);}
+.settings-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;}
+.snav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;background:none;border:none;border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;text-align:left;width:100%;}
+.snav-btn:hover{background:var(--bg-card);color:var(--text-secondary);}
+.snav-btn.active{background:rgba(0,212,255,0.1);color:var(--accent);border:1px solid rgba(0,212,255,0.2);}
+.snav-icon{font-size:16px;flex-shrink:0;}
+.settings-sidebar-footer{padding:14px 10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.snav-close{padding:9px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.snav-close:hover{border-color:var(--border-bright);color:var(--text-primary);}
+.settings-content{flex:1;overflow-y:auto;padding:32px 36px;}
+.settings-content::-webkit-scrollbar{width:4px;}
+.settings-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.settings-section{display:none;max-width:760px;}
+.settings-section.active{display:block;}
+.settings-section-header{margin-bottom:28px;}
+.settings-section-header h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;letter-spacing:3px;text-transform:uppercase;color:var(--text-primary);margin:0 0 6px;}
+.settings-section-header p{font-size:13px;color:var(--text-dim);margin:0;}
+
+/* Scoreboard cards */
+.sb-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:16px;}
+.sb-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all 0.2s;position:relative;}
+.sb-card:hover{border-color:var(--border-bright);}
+.sb-card.is-default{border-color:rgba(0,212,255,0.3);}
+.sb-card-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;letter-spacing:1px;color:var(--text-primary);margin-bottom:4px;}
+.sb-card-meta{font-size:11px;color:var(--text-dim);margin-bottom:12px;line-height:1.6;}
+.sb-card-status{display:inline-flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.5px;padding:3px 8px;border-radius:12px;margin-bottom:12px;}
+.sb-card-status.live{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);color:var(--accent-green);}
+.sb-card-status.unpushed{background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-dim);}
+.sb-card-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.sb-action-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;}
+.sb-action-btn:hover{border-color:var(--accent);color:var(--accent);}
+.sb-action-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.08);}
+.sb-action-btn.danger{border-color:var(--accent-red);color:var(--accent-red);}
+
+/* Scoreboard editor */
+.sb-editor{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
+.sb-editor-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.sb-editor-back{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px;padding:4px;border-radius:6px;transition:color 0.15s;}
+.sb-editor-back:hover{color:var(--text-primary);}
+.sb-editor-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:2px;text-transform:uppercase;}
+.sb-editor-steps{display:flex;gap:6px;margin-bottom:24px;overflow-x:auto;padding-bottom:4px;}
+.sb-editor-step{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+.sb-editor-step.active{background:rgba(0,212,255,0.12);border-color:var(--accent);color:var(--accent);}
+.sb-editor-step.done{background:rgba(0,255,136,0.08);border-color:rgba(0,255,136,0.3);color:var(--accent-green);}
+
+/* Push wizard */
+.wizard-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.wizard-header h3{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:2px;text-transform:uppercase;margin:0;}
+.wizard-steps{display:flex;gap:0;margin-bottom:24px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.wizard-step{flex:1;padding:10px 6px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-dim);background:var(--bg-secondary);border-right:1px solid var(--border);transition:all 0.2s;}
+.wizard-step:last-child{border-right:none;}
+.wizard-step.active{background:rgba(0,212,255,0.1);color:var(--accent);}
+.wizard-step.done{background:rgba(0,255,136,0.06);color:var(--accent-green);}
+.wizard-panel{display:none;}
+.wizard-panel.active{display:block;}
+.wizard-nav{display:flex;align-items:center;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+.wiz-field{margin-bottom:16px;}
+.wiz-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;}
+.wiz-input{width:100%;padding:9px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow',sans-serif;font-size:13px;outline:none;box-sizing:border-box;transition:border-color 0.2s;}
+.wiz-input:focus{border-color:var(--accent);}
+.wiz-sublabel{font-size:11px;color:var(--text-dim);margin-top:4px;}
+.wiz-review-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.wiz-review-key{color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;font-size:11px;}
+.wiz-review-val{color:var(--text-primary);font-weight:600;}
+.wiz-update-banner{padding:10px 14px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);border-radius:8px;font-size:12px;color:var(--accent);margin-bottom:16px;}
 </style>
 </head>
 <body>
@@ -336,7 +407,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <div class="ds-dot" id="dsDot"></div>
       <span class="ds-label" id="dsLabel">Dispatcharr: Not Configured</span>
     </div>
-    <button class="sidebar-btn" onclick="openSettings('sports')">&#x2699;&#xFE0F; Settings</button>
+    <button class="sidebar-btn" onclick="openSettings('scoreboards')">&#x2699;&#xFE0F; Settings</button>
   </div>
 
   <div class="sidebar-footer">ScoreStream v0.0.1-beta &middot; ESPN Data</div>
@@ -356,27 +427,44 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="modal-overlay" id="settingsOverlay" style="display:none" onclick="handleModalOverlay(event)">
-<div class="modal">
-  <div class="modal-header">
-    <div class="modal-title">&#x2699;&#xFE0F; Settings</div>
-    <div style="display:flex;align-items:center;gap:10px;">
+<!-- SETTINGS FULL PAGE PANEL -->
+<div class="settings-page" id="settingsPage" style="display:none;">
+  <div class="settings-sidebar">
+    <div class="settings-sidebar-header">
+      <div class="settings-logo">⚙️</div>
+      <div class="settings-title">Settings</div>
+    </div>
+    <nav class="settings-nav">
+      <button class="snav-btn active" data-section="scoreboards" onclick="switchSection('scoreboards')">
+        <span class="snav-icon">📺</span><span>My Scoreboards</span>
+      </button>
+      <button class="snav-btn" data-section="sports" onclick="switchSection('sports')">
+        <span class="snav-icon">🏆</span><span>Sports &amp; Leagues</span>
+      </button>
+      <button class="snav-btn" data-section="teams" onclick="switchSection('teams')">
+        <span class="snav-icon">⭐</span><span>Teams</span>
+      </button>
+      <button class="snav-btn" data-section="display" onclick="switchSection('display')">
+        <span class="snav-icon">🎨</span><span>Display &amp; Data</span>
+      </button>
+      <button class="snav-btn" data-section="dispatcharr" onclick="switchSection('dispatcharr')">
+        <span class="snav-icon">📡</span><span>Integrations</span>
+      </button>
+    </nav>
+    <div class="settings-sidebar-footer">
       <span id="saveStatusBadge" style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;transition:opacity 0.4s;opacity:0;"></span>
       <button id="modalSaveBtn" onclick="manualSave()" style="display:none;padding:5px 14px;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,102,255,0.2));border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Save</button>
-      <button class="modal-close" onclick="closeSettings()">&#x2715;</button>
+      <button class="snav-close" onclick="closeSettings()">✕ Close</button>
     </div>
   </div>
-  <div class="modal-tabs">
-    <button class="modal-tab active" data-tab="sports" onclick="switchTab('sports')">Sports &amp; Leagues</button>
-    <button class="modal-tab" data-tab="teams" onclick="switchTab('teams')">Teams</button>
-    <button class="modal-tab" data-tab="display" onclick="switchTab('display')">Display</button>
-    <button class="modal-tab" data-tab="data" onclick="switchTab('data')">Data &amp; Refresh</button>
-    <button class="modal-tab" data-tab="dispatcharr" onclick="switchTab('dispatcharr')">Dispatcharr</button>
-  </div>
-  <div class="modal-body">
+  <div class="settings-content">
 
-    <!-- TAB: SPORTS -->
-    <div id="tab-sports" class="tab-panel">
+    <!-- SECTION: SPORTS & LEAGUES -->
+    <div id="section-sports" class="settings-section">
+      <div class="settings-section-header">
+        <h2>Sports &amp; Leagues</h2>
+        <p>Choose which sports and leagues appear on your default scoreboard. Each scoreboard can have its own configuration.</p>
+      </div>
       <div class="modal-section">
         <div class="modal-section-title">Pro Leagues</div>
         <div class="sport-grid" id="sg-pro"></div>
@@ -391,8 +479,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       </div>
     </div>
 
-    <!-- TAB: TEAMS -->
-    <div id="tab-teams" class="tab-panel" style="display:none">
+    <!-- SECTION: TEAMS -->
+    <div id="section-teams" class="settings-section">
+      <div class="settings-section-header">
+        <h2>Teams</h2>
+        <p>Favorite teams to pin them at the top of your scoreboard.</p>
+      </div>
       <div class="modal-section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <div class="modal-section-title" style="margin-bottom:0;">Browse &amp; Favorite Teams</div>
@@ -417,32 +509,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
           <button onclick="setTbDivision('d3')"  id="tbDivD3"  style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">D-III</button>
           <button onclick="setTbDivision('all')" id="tbDivAll" style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:0.5px;">ALL</button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:340px;overflow-y:auto;" id="tbTeamList"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:420px;overflow-y:auto;" id="tbTeamList"></div>
         <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="tbFavCount">&#x2B50; 0 teams favorited</div>
-      </div>
-
-      <!-- NCAA TEAM MANAGEMENT — Coming Soon ─────────────────────────────── -->
-      <div style="opacity:0.38;pointer-events:none;user-select:none;" title="Coming in a future release">
-        <div class="modal-section" style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:14px;position:relative;">
-          <div style="position:absolute;top:10px;right:12px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--accent2);background:rgba(255,107,0,0.12);border:1px solid rgba(255,107,0,0.3);padding:2px 8px;border-radius:10px;">COMING SOON</div>
-          <div class="modal-section-title" style="margin-bottom:8px;">Manage NCAA Teams</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;font-family:'Barlow',sans-serif;">
-            Add, edit, or remove schools from the NCAA team database. Changes persist in your config volume and survive container updates.
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:not-allowed;">+ Add School</button>
-            <button style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:not-allowed;">✏ Edit School</button>
-            <button style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:not-allowed;">🗑 Remove School</button>
-            <button style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:not-allowed;">↺ Reseed Defaults</button>
-          </div>
-        </div>
       </div>
     </div>
 
-    <!-- TAB: DISPLAY -->
-    <div id="tab-display" class="tab-panel" style="display:none">
-      <div class="modal-section">
-        <div class="modal-section-title">Card Typography</div>
+    <!-- SECTION: DISPLAY & DATA -->
+    <div id="section-display" class="settings-section">
+      <div class="settings-section-header">
+        <h2>Display &amp; Data</h2>
+        <p>Appearance, card style, refresh rate, and data source settings.</p>
+      </div>
         <div class="modal-slider-row">
           <span class="modal-slider-label">Team Abbreviation Size</span>
           <input type="range" min="14" max="28" value="18" id="sl-abbr" oninput="applyDisplay()">
@@ -495,23 +572,30 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
           </div>
         </div>
       </div>
-    </div>
+    </div><!-- end section-display -->
 
-    <!-- TAB: DATA -->
-    <div id="tab-data" class="tab-panel" style="display:none">
+    <!-- SECTION: INTEGRATIONS (Dispatcharr) -->
+    <div id="section-dispatcharr" class="settings-section">
+      <div class="settings-section-header">
+        <h2>Integrations</h2>
+        <p>Connect ScoreStream to Dispatcharr to push live scoreboards as TV channels.</p>
+      </div>
+
+      <!-- Settings save mode moved here -->
       <div class="modal-section">
-        <div class="modal-section-title">Settings Save Mode</div>
+        <div class="modal-section-title">App Settings</div>
         <div class="modal-row">
           <div>
             <div class="modal-label">Auto-save settings</div>
-            <div class="modal-sublabel">When off, a Save button appears in the header so you can review changes before applying.</div>
+            <div class="modal-sublabel">When off, a Save button appears so you can review changes before applying.</div>
           </div>
           <div class="big-toggle" id="autoSaveToggle" onclick="toggleAutoSave()"></div>
         </div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Auto-Refresh Rate</div>
+        <div class="modal-row" style="margin-top:8px;">
+          <div>
+            <div class="modal-label">Auto-Refresh Rate</div>
+          </div>
+        </div>
         <div class="rate-pills" id="ratePills">
           <div class="rate-pill" data-rate="0" onclick="setRefreshRate(0)">Manual only</div>
           <div class="rate-pill" data-rate="30" onclick="setRefreshRate(30)">30 sec</div>
@@ -521,17 +605,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         </div>
         <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="rateStatus">Auto-refresh: every 60 seconds</div>
       </div>
-      <div class="modal-section">
-        <div class="modal-section-title">Data Source</div>
-        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
-          ScoreStream uses the unofficial ESPN Scoreboard API. Data is fetched directly from your browser &mdash; no proxy needed.<br><br>
-          <span style="color:var(--text-dim);font-size:11px;">If scores show &ldquo;demo&rdquo; it means ESPN blocked the request from your network (CORS). This is normal inside some Docker/reverse proxy setups. Data still loads from a rich fallback dataset.</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: DISPATCHARR -->
-    <div id="tab-dispatcharr" class="tab-panel" style="display:none">
 
       <!-- CREDENTIALS -->
       <div class="modal-section">
@@ -680,10 +753,46 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <div class="channel-result" id="channelResult" style="display:none;"></div>
       </div>
     </div>
+    </div><!-- end section-dispatcharr -->
 
-  </div>
-</div>
-</div>
+    <!-- SECTION: SCOREBOARDS -->
+    <div id="section-scoreboards" class="settings-section active">
+      <div class="settings-section-header">
+        <h2>My Scoreboards</h2>
+        <p>Create and manage multiple scoreboards. Each scoreboard can have its own sports, teams, and Dispatcharr channel.</p>
+      </div>
+      <div id="sbListView">
+        <div id="sbCards" class="sb-cards-grid"></div>
+        <button class="modal-btn" onclick="createNewScoreboard()" style="margin-top:12px;padding:10px 20px;">+ New Scoreboard</button>
+      </div>
+      <!-- Push to Dispatcharr wizard -->
+      <div id="sbPushWizard" style="display:none;">
+        <div class="wizard-header">
+          <button onclick="closePushWizard()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px;line-height:1;">←</button>
+          <h3 id="wizardTitle">Push to Dispatcharr</h3>
+        </div>
+        <div class="wizard-steps">
+          <div class="wizard-step active" data-step="1">1. Channel</div>
+          <div class="wizard-step" data-step="2">2. Group</div>
+          <div class="wizard-step" data-step="3">3. Profiles</div>
+          <div class="wizard-step" data-step="4">4. Stream</div>
+          <div class="wizard-step" data-step="5">5. Review</div>
+        </div>
+        <div id="wizardBody"></div>
+        <div class="wizard-nav">
+          <button class="modal-btn" id="wizPrevBtn" onclick="wizardNav(-1)" style="display:none;">← Back</button>
+          <div style="flex:1;"></div>
+          <button class="modal-btn" id="wizNextBtn" onclick="wizardNav(1)">Next →</button>
+          <button class="modal-btn" id="wizPushBtn" onclick="executeWizardPush()" style="display:none;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,102,255,0.2));border-color:var(--accent);">🚀 Push to Dispatcharr</button>
+        </div>
+        <div id="wizardResult" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);font-size:13px;"></div>
+      </div>
+    </div>
+
+  </div><!-- settings-content -->
+</div><!-- settings-page -->
+
+<!-- Legacy modal overlay removed - settings now uses full-page panel -->
 
 <script>
 // =====================
@@ -696,8 +805,512 @@ const ss={
 };
 
 // =====================
-//  ALL SPORTS
+//  SCOREBOARDS
 // =====================
+let _scoreboards=[];
+let _activeSbId=null;  // scoreboard being edited or pushed
+let _wizardStep=1;
+let _wizardData={};    // accumulated wizard form data
+
+async function loadScoreboards(){
+  const grid=document.getElementById('sbCards');
+  if(!grid)return;
+  grid.innerHTML='<div style="color:var(--text-dim);font-size:13px;">Loading...</div>';
+  try{
+    const r=await fetch(`${API_BASE}/scoreboards`);
+    const d=await r.json();
+    _scoreboards=d.scoreboards||[];
+    renderSbCards();
+  }catch(e){grid.innerHTML='<div style="color:var(--accent-red);font-size:13px;">Failed to load scoreboards</div>';}
+}
+
+function renderSbCards(){
+  const grid=document.getElementById('sbCards');
+  if(!grid)return;
+  if(!_scoreboards.length){grid.innerHTML='<p style="color:var(--text-dim)">No scoreboards yet.</p>';return;}
+  grid.innerHTML=_scoreboards.map(sb=>{
+    const sportCount=Object.values(sb.sport_config||{}).filter(v=>v).length;
+    const hasChannel=!!sb.dispatcharr_channel_id;
+    const chNum=sb.dispatcharr_channel_number?`Ch ${sb.dispatcharr_channel_number}`:'';
+    return `<div class="sb-card${sb.is_default?' is-default':''}" id="sbcard-${sb.id}">
+      ${sb.is_default?'<div style="position:absolute;top:10px;right:10px;font-size:9px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;color:var(--text-dim);background:var(--bg-secondary);padding:2px 7px;border-radius:10px;border:1px solid var(--border);">DEFAULT</div>':''}
+      <div class="sb-card-name">${sb.name}</div>
+      <div class="sb-card-meta">${sportCount} sport${sportCount!==1?'s':''} enabled${sb.slug!==sb.name.toLowerCase()?` · slug: ${sb.slug}`:''}
+      </div>
+      <div class="sb-card-status ${hasChannel?'live':'unpushed'}">
+        ${hasChannel?'🟢 Live'+( chNum?' · '+chNum:''):'⚫ Not pushed to Dispatcharr'}
+      </div>
+      <div class="sb-card-actions">
+        <button class="sb-action-btn primary" onclick="openSbEditor(${sb.id})">Edit</button>
+        <button class="sb-action-btn" onclick="duplicateScoreboard(${sb.id})">Duplicate</button>
+        <button class="sb-action-btn primary" onclick="openPushWizard(${sb.id})">${hasChannel?'⟳ Update Channel':'🚀 Push to Dispatcharr'}</button>
+        ${!sb.is_default?`<button class="sb-action-btn danger" onclick="deleteScoreboard(${sb.id})">Delete</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function createNewScoreboard(){
+  const name=prompt('Scoreboard name:','My Scoreboard');
+  if(!name?.trim())return;
+  const r=await fetch(`${API_BASE}/scoreboards`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
+  if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();openSbEditor(d.id);}
+  else alert('Failed to create scoreboard');
+}
+
+async function duplicateScoreboard(id){
+  const src=_scoreboards.find(s=>s.id===id);
+  const name=prompt('New scoreboard name:',src?.name+' (Copy)');
+  if(!name?.trim())return;
+  const r=await fetch(`${API_BASE}/scoreboards/${id}/duplicate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
+  if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();}
+  else alert('Failed to duplicate scoreboard');
+}
+
+async function deleteScoreboard(id){
+  if(!confirm('Delete this scoreboard? This cannot be undone.'))return;
+  const r=await fetch(`${API_BASE}/scoreboards/${id}`,{method:'DELETE'});
+  if(r.ok){_scoreboards=_scoreboards.filter(s=>s.id!==id);renderSbCards();}
+  else alert('Failed to delete scoreboard');
+}
+
+// ── Scoreboard Editor ──────────────────────────────────────────────────────────
+function openSbEditor(id){
+  const sb=_scoreboards.find(s=>s.id===id);
+  if(!sb)return;
+  _activeSbId=id;
+  const listView=document.getElementById('sbListView');
+  const pushWiz=document.getElementById('sbPushWizard');
+  if(listView)listView.style.display='none';
+  if(pushWiz)pushWiz.style.display='none';
+
+  // Render editor inline
+  const content=document.querySelector('.settings-content');
+  let editorEl=document.getElementById('sbEditorPanel');
+  if(!editorEl){editorEl=document.createElement('div');editorEl.id='sbEditorPanel';content.insertBefore(editorEl,content.firstChild);}
+  editorEl.style.display='block';
+  editorEl.innerHTML=`
+    <div class="sb-editor">
+      <div class="sb-editor-header">
+        <button class="sb-editor-back" onclick="closeSbEditor()">←</button>
+        <div class="sb-editor-title">Edit: ${sb.name}</div>
+      </div>
+      <div class="wiz-field">
+        <div class="wiz-label">Scoreboard Name</div>
+        <input class="wiz-input" id="sbEditName" value="${sb.name}" placeholder="Scoreboard name">
+      </div>
+      <div style="margin-bottom:20px;">
+        <div class="wiz-label" style="margin-bottom:12px;">Sports &amp; Leagues</div>
+        <div class="sport-grid" id="sbEditSports"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="modal-btn" onclick="saveSbEditor()">Save Changes</button>
+        <button class="modal-btn" style="border-color:var(--border);color:var(--text-dim);" onclick="closeSbEditor()">Cancel</button>
+      </div>
+      <div id="sbEditResult" style="margin-top:10px;font-size:12px;"></div>
+    </div>`;
+
+  // Build sports toggles for this scoreboard
+  const sportConfig=sb.sport_config||{};
+  const sportsEl=document.getElementById('sbEditSports');
+  getSPORTS().forEach(sp=>{
+    const enabled=!!sportConfig[sp.id];
+    const row=document.createElement('label');
+    row.className='sport-setting-row'+(enabled?' enabled':'');
+    row.style.cursor='pointer';
+    row.innerHTML=`<div class="sport-setting-info"><span>${sp.emoji||'🏆'}</span><span class="sport-setting-name">${sp.name}</span></div>
+      <input type="checkbox" data-sport="${sp.id}" ${enabled?'checked':''} onchange="this.closest('.sport-setting-row').classList.toggle('enabled',this.checked)" style="cursor:pointer;">`;
+    sportsEl.appendChild(row);
+  });
+}
+
+function closeSbEditor(){
+  document.getElementById('sbEditorPanel')?.remove();
+  const listView=document.getElementById('sbListView');
+  if(listView)listView.style.display='block';
+}
+
+async function saveSbEditor(){
+  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  if(!sb)return;
+  const name=document.getElementById('sbEditName').value.trim();
+  const sportConfig={};
+  document.querySelectorAll('#sbEditSports input[data-sport]').forEach(cb=>{
+    sportConfig[cb.dataset.sport]=cb.checked;
+  });
+  const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}`,{
+    method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name,sport_config:sportConfig})
+  });
+  const result=document.getElementById('sbEditResult');
+  if(r.ok){
+    const d=await r.json();
+    const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);
+    if(idx>=0)_scoreboards[idx]=d;
+    result.style.color='var(--accent-green)';result.textContent='✅ Saved';
+    setTimeout(()=>{closeSbEditor();renderSbCards();},800);
+  }else{result.style.color='var(--accent-red)';result.textContent='❌ Save failed';}
+}
+
+// ── Push to Dispatcharr Wizard ─────────────────────────────────────────────────
+function openPushWizard(id){
+  _activeSbId=id;
+  _wizardStep=1;
+  _wizardData={};
+  const sb=_scoreboards.find(s=>s.id===id);
+  if(!sb)return;
+
+  // Pre-fill from stored Dispatcharr values
+  _wizardData.channelName=sb.dispatcharr_channel_number?sb.name:sb.name;
+  _wizardData.channelNumber=sb.dispatcharr_channel_number||'';
+  _wizardData.groupId=sb.dispatcharr_group_id||'';
+  _wizardData.profileIds=sb.dispatcharr_profile_ids||null;
+  _wizardData.streamProfileId=sb.dispatcharr_stream_profile_id||'';
+  _wizardData.isUpdate=!!sb.dispatcharr_channel_id;
+  _wizardData.existingChannelId=sb.dispatcharr_channel_id||null;
+
+  document.getElementById('sbListView').style.display='none';
+  document.getElementById('sbEditorPanel')?.remove();
+  const wiz=document.getElementById('sbPushWizard');
+  wiz.style.display='block';
+  document.getElementById('wizardTitle').textContent=(_wizardData.isUpdate?'Update':'Push')+ ': '+sb.name;
+  document.getElementById('wizardResult').style.display='none';
+  renderWizardStep();
+
+  // Pre-load Dispatcharr data
+  loadDsGroups();
+  loadStreamProfiles();
+}
+
+function closePushWizard(){
+  document.getElementById('sbPushWizard').style.display='none';
+  document.getElementById('sbListView').style.display='block';
+  _activeSbId=null;
+}
+
+function renderWizardStep(){
+  const totalSteps=5;
+  // Update step indicators
+  document.querySelectorAll('.wizard-step').forEach(s=>{
+    const n=parseInt(s.dataset.step);
+    s.classList.toggle('active',n===_wizardStep);
+    s.classList.toggle('done',n<_wizardStep);
+  });
+  // Prev/Next/Push buttons
+  document.getElementById('wizPrevBtn').style.display=_wizardStep>1?'block':'none';
+  document.getElementById('wizNextBtn').style.display=_wizardStep<totalSteps?'block':'none';
+  document.getElementById('wizPushBtn').style.display=_wizardStep===totalSteps?'block':'none';
+
+  const body=document.getElementById('wizardBody');
+  const sb=_scoreboards.find(s=>s.id===_activeSbId)||{};
+
+  if(_wizardStep===1){
+    body.innerHTML=`
+      ${_wizardData.isUpdate?`<div class="wiz-update-banner">⟳ This scoreboard already has a Dispatcharr channel (Ch ${sb.dispatcharr_channel_number||'?'}). Saving will update the existing channel.</div>`:''}
+      <div class="wiz-field">
+        <div class="wiz-label">Channel Name</div>
+        <input class="wiz-input" id="wiz_channelName" value="${_wizardData.channelName||sb.name}" placeholder="Channel name in Dispatcharr">
+        <div class="wiz-sublabel">This is the name that will appear in Dispatcharr</div>
+      </div>
+      <div class="wiz-field">
+        <div class="wiz-label">Channel Number</div>
+        <input class="wiz-input" id="wiz_channelNum" type="number" value="${_wizardData.channelNumber||''}" placeholder="e.g. 900" style="width:140px;">
+        <div class="wiz-sublabel">The channel number users tune to in Dispatcharr</div>
+      </div>`;
+  }
+  else if(_wizardStep===2){
+    body.innerHTML=`
+      <div class="wiz-field">
+        <div class="wiz-label">Channel Group</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <select class="wiz-input" id="wiz_groupSel" style="flex:1;">
+            <option value="">— loading groups —</option>
+          </select>
+          <button class="modal-btn" onclick="wizRefreshGroups()" style="padding:8px 12px;">↻</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <button class="grp-filter-btn active" data-filter="dispatcharr" onclick="wizSetGroupFilter('dispatcharr',this)">Dispatcharr</button>
+          <button class="grp-filter-btn" data-filter="m3u" onclick="wizSetGroupFilter('m3u',this)">M3U</button>
+          <button class="grp-filter-btn" data-filter="all" onclick="wizSetGroupFilter('all',this)">Both</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input class="wiz-input" id="wiz_newGroupName" placeholder="Create new group..." style="flex:1;">
+          <button class="modal-btn" onclick="wizCreateGroup()" style="padding:8px 12px;white-space:nowrap;">+ Create</button>
+        </div>
+        <div id="wiz_groupResult" style="font-size:11px;margin-top:4px;"></div>
+      </div>`;
+    // Populate group dropdown
+    setTimeout(wizPopulateGroups,100);
+  }
+  else if(_wizardStep===3){
+    body.innerHTML=`
+      <div class="wiz-field">
+        <div class="wiz-label">Channel Profiles</div>
+        <div class="wiz-sublabel" style="margin-bottom:10px;">Select which user groups get access to this channel</div>
+        <div class="profile-multiselect" id="wizProfileMulti">
+          <div class="profile-ms-trigger" onclick="toggleWizProfileDropdown()">
+            <span id="wizProfileLabel">— loading profiles —</span>
+            <span style="margin-left:auto;opacity:0.5;">▾</span>
+          </div>
+          <div class="profile-ms-dropdown" id="wizProfileDropdown" style="display:none;">
+            <label class="profile-ms-item profile-ms-all">
+              <input type="checkbox" id="wizProfileAll" onchange="onWizProfileAllChange(this)">
+              <span>All Profiles</span>
+            </label>
+            <div class="profile-ms-divider"></div>
+            <div id="wizProfileList"></div>
+          </div>
+        </div>
+      </div>`;
+    setTimeout(wizLoadProfiles,100);
+  }
+  else if(_wizardStep===4){
+    body.innerHTML=`
+      <div class="wiz-field">
+        <div class="wiz-label">Stream Profile (ffmpeg)</div>
+        <div class="wiz-sublabel" style="margin-bottom:10px;">How Dispatcharr will transcode the ScoreStream HLS feed</div>
+        <div style="display:flex;gap:6px;">
+          <select class="wiz-input" id="wiz_streamProf" style="flex:1;" onchange="onWizStreamProfChange()">
+            <option value="">— loading —</option>
+          </select>
+          <button class="modal-btn" onclick="loadStreamProfiles().then(wizPopulateStreamProfiles)" style="padding:8px 12px;">↻</button>
+        </div>
+        <div id="wiz_customStreamPanel" style="display:none;margin-top:12px;">
+          <div class="wiz-label">Custom ffmpeg Parameters</div>
+          <textarea class="wiz-input" id="wiz_customParams" rows="3" style="font-family:monospace;font-size:11px;resize:vertical;" placeholder="-re -fflags +genpts -user_agent {userAgent} -i {streamUrl} -c copy -f mpegts pipe:1"></textarea>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <input class="wiz-input" id="wiz_customName" placeholder="Profile name..." style="flex:1;">
+            <button class="modal-btn" onclick="wizCreateStreamProfile()" style="padding:8px 12px;white-space:nowrap;">+ Create</button>
+          </div>
+          <div id="wiz_customStreamResult" style="font-size:11px;margin-top:4px;"></div>
+        </div>
+      </div>
+      <div class="wiz-field">
+        <div class="wiz-label">Stream URL (auto-generated)</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;">
+          ${sb.slug?`/hls/${sb.slug}.m3u8`:'(slug not set)'}
+        </div>
+        <div class="wiz-sublabel">This URL will be set as the channel's stream source in Dispatcharr</div>
+      </div>`;
+    setTimeout(wizPopulateStreamProfiles,100);
+  }
+  else if(_wizardStep===5){
+    // Save form data from step 1 before rendering review
+    const sb2=_scoreboards.find(s=>s.id===_activeSbId)||{};
+    body.innerHTML=`
+      <div style="margin-bottom:16px;">
+        <div class="wiz-label" style="margin-bottom:12px;">Review &amp; Confirm</div>
+        ${_wizardData.isUpdate?'<div class="wiz-update-banner">⟳ This will UPDATE the existing Dispatcharr channel</div>':''}
+        <div class="wiz-review-row"><span class="wiz-review-key">Scoreboard</span><span class="wiz-review-val">${sb2.name}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Channel Name</span><span class="wiz-review-val">${_wizardData.channelName||sb2.name}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Channel #</span><span class="wiz-review-val">${_wizardData.channelNumber||'(auto)'}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Group</span><span class="wiz-review-val">${_wizardData.groupName||'(none)'}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Profiles</span><span class="wiz-review-val">${_wizardData.profileIds==='all'?'All Profiles':Array.isArray(_wizardData.profileIds)&&_wizardData.profileIds.length?_wizardData.profileIds.length+' selected':'(none)'}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Stream Profile</span><span class="wiz-review-val">${_wizardData.streamProfileName||'(default)'}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Stream URL</span><span class="wiz-review-val" style="font-family:monospace;font-size:11px;">${sb2.slug?`/hls/${sb2.slug}.m3u8`:'(not set)'}</span></div>
+      </div>`;
+  }
+}
+
+// Step navigation — collect form values before moving
+function wizardNav(dir){
+  // Collect current step data before advancing
+  if(_wizardStep===1){
+    _wizardData.channelName=document.getElementById('wiz_channelName')?.value||'';
+    _wizardData.channelNumber=document.getElementById('wiz_channelNum')?.value||'';
+  }
+  if(_wizardStep===2){
+    const sel=document.getElementById('wiz_groupSel');
+    _wizardData.groupId=sel?.value||'';
+    _wizardData.groupName=sel?.options[sel?.selectedIndex]?.text||'';
+  }
+  if(_wizardStep===3){
+    _wizardData.profileIds=getWizProfileIds();
+  }
+  if(_wizardStep===4){
+    const sel=document.getElementById('wiz_streamProf');
+    const val=sel?.value;
+    _wizardData.streamProfileId=(val&&val!=='__custom__')?val:'';
+    _wizardData.streamProfileName=val&&val!=='__custom__'?sel?.options[sel?.selectedIndex]?.text:'(custom/none)';
+  }
+  const newStep=_wizardStep+dir;
+  if(newStep<1||newStep>5)return;
+  _wizardStep=newStep;
+  renderWizardStep();
+}
+
+async function executeWizardPush(){
+  const resultEl=document.getElementById('wizardResult');
+  resultEl.style.display='block';
+  resultEl.style.color='var(--text-dim)';
+  resultEl.textContent='⏳ Pushing to Dispatcharr...';
+  document.getElementById('wizPushBtn').disabled=true;
+
+  const payload={
+    channelName:_wizardData.channelName,
+    channelNumber:_wizardData.channelNumber?parseInt(_wizardData.channelNumber):null,
+    groupId:_wizardData.groupId?parseInt(_wizardData.groupId):null,
+    profileIds:_wizardData.profileIds||null,
+    streamProfileId:_wizardData.streamProfileId?parseInt(_wizardData.streamProfileId):null,
+  };
+
+  try{
+    const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}/push`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)
+    });
+    const d=await r.json();
+    if(r.ok){
+      resultEl.style.color='var(--accent-green)';
+      resultEl.textContent=`✅ ${d.action==='updated'?'Channel updated':'Channel created'}: ${d.channel_name}${d.channel_number?' (Ch '+d.channel_number+')':''}`;
+      // Update local scoreboard record
+      if(d.scoreboard){
+        const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);
+        if(idx>=0)_scoreboards[idx]=d.scoreboard;
+      }
+      document.getElementById('wizPushBtn').textContent='✅ Done';
+      setTimeout(()=>{closePushWizard();renderSbCards();},2000);
+    }else{
+      resultEl.style.color='var(--accent-red)';
+      resultEl.textContent='❌ '+(d.error||'Push failed');
+      document.getElementById('wizPushBtn').disabled=false;
+    }
+  }catch(e){
+    resultEl.style.color='var(--accent-red)';
+    resultEl.textContent='❌ '+e.message;
+    document.getElementById('wizPushBtn').disabled=false;
+  }
+}
+
+// Wizard group helpers
+let _wizGroupFilter='dispatcharr';
+function wizPopulateGroups(){
+  const sel=document.getElementById('wiz_groupSel');
+  if(!sel||!_allGroups.length){
+    if(sel)sel.innerHTML='<option value="">— loading... —</option>';
+    loadDsGroups().then(()=>setTimeout(wizPopulateGroups,500));
+    return;
+  }
+  let filtered=_allGroups;
+  if(_wizGroupFilter==='dispatcharr') filtered=_allGroups.filter(g=>g.m3u_count===0);
+  else if(_wizGroupFilter==='m3u') filtered=_allGroups.filter(g=>g.m3u_count>0);
+  if(!filtered.length)filtered=_allGroups;
+  sel.innerHTML='<option value="">— no group —</option>'+
+    filtered.map(g=>`<option value="${g.id}"${_wizardData.groupId==g.id?' selected':''}>${g.name}${g.m3u_count>0?' (M3U)':''}</option>`).join('');
+}
+function wizSetGroupFilter(f,btn){
+  _wizGroupFilter=f;
+  document.querySelectorAll('#wiz_groupSel').length&&wizPopulateGroups();
+  document.querySelectorAll('.grp-filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));
+}
+async function wizRefreshGroups(){ _allGroups=[]; await loadDsGroups(); wizPopulateGroups(); }
+async function wizCreateGroup(){
+  const name=document.getElementById('wiz_newGroupName')?.value?.trim();
+  const res=document.getElementById('wiz_groupResult');
+  if(!name)return;
+  res.style.color='var(--text-dim)';res.textContent='Creating...';
+  const r=await fetch(`${API_BASE}/dispatcharr/groups`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+  const d=await r.json();
+  if(r.ok&&d.id){
+    _allGroups.push({id:d.id,name:d.name,m3u_count:0});
+    _allGroups.sort((a,b)=>a.name.localeCompare(b.name));
+    _wizardData.groupId=d.id;
+    wizPopulateGroups();
+    res.style.color='var(--accent-green)';res.textContent='✅ Group "'+d.name+'" created';
+    document.getElementById('wiz_newGroupName').value='';
+  }else{res.style.color='var(--accent-red)';res.textContent='❌ '+(d.error||'Failed');}
+}
+
+// Wizard profiles helpers
+async function wizLoadProfiles(){
+  const listEl=document.getElementById('wizProfileList');
+  if(!listEl)return;
+  listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">Loading...</div>';
+  const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(50000)});
+  const d=await r.json();
+  if(r.ok&&d.profiles?.length){
+    listEl.innerHTML=d.profiles.map(p=>`<label class="profile-ms-item"><input type="checkbox" class="wiz-profile-cb" value="${p.id}" onchange="onWizProfileCbChange()"><span>${p.name}</span></label>`).join('');
+    // Restore previous selection
+    if(_wizardData.profileIds==='all'){document.getElementById('wizProfileAll').checked=true;}
+    else if(Array.isArray(_wizardData.profileIds)){
+      document.querySelectorAll('.wiz-profile-cb').forEach(cb=>{if(_wizardData.profileIds.includes(parseInt(cb.value)))cb.checked=true;});
+    }
+    updateWizProfileLabel();
+  }else{listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">No profiles found</div>';}
+}
+function toggleWizProfileDropdown(){
+  const dd=document.getElementById('wizProfileDropdown');
+  if(dd)dd.style.display=dd.style.display==='none'?'block':'none';
+}
+function onWizProfileAllChange(cb){
+  if(cb.checked)document.querySelectorAll('.wiz-profile-cb').forEach(c=>c.checked=false);
+  updateWizProfileLabel();
+}
+function onWizProfileCbChange(){
+  if([...document.querySelectorAll('.wiz-profile-cb')].some(c=>c.checked))
+    document.getElementById('wizProfileAll').checked=false;
+  updateWizProfileLabel();
+}
+function updateWizProfileLabel(){
+  const allCb=document.getElementById('wizProfileAll');
+  const checked=[...document.querySelectorAll('.wiz-profile-cb:checked')];
+  const label=document.getElementById('wizProfileLabel');
+  if(!label)return;
+  if(allCb?.checked)label.textContent='All Profiles';
+  else if(checked.length===0)label.textContent='— none selected —';
+  else if(checked.length===1)label.textContent=checked[0].nextElementSibling?.textContent||'1 profile';
+  else label.textContent=`${checked.length} profiles selected`;
+}
+function getWizProfileIds(){
+  const allCb=document.getElementById('wizProfileAll');
+  if(allCb?.checked)return 'all';
+  const ids=[...document.querySelectorAll('.wiz-profile-cb:checked')].map(c=>parseInt(c.value));
+  return ids.length?ids:null;
+}
+
+// Wizard stream profile helpers
+async function wizPopulateStreamProfiles(){
+  const sel=document.getElementById('wiz_streamProf');
+  if(!sel)return;
+  if(!_cachedStreamProfiles?.length){
+    await loadStreamProfiles();
+  }
+  if(!_cachedStreamProfiles?.length){sel.innerHTML='<option value="">— none available —</option>';return;}
+  sel.innerHTML='<option value="">— default (none) —</option>'+
+    '<option value="__custom__">+ Create custom ffmpeg profile...</option>'+
+    '<optgroup label="Built-in">'+_cachedStreamProfiles.filter(p=>p.locked).map(p=>`<option value="${p.id}"${_wizardData.streamProfileId==p.id?' selected':''}>${p.name}</option>`).join('')+'</optgroup>'+
+    (_cachedStreamProfiles.filter(p=>!p.locked).length?
+      '<optgroup label="Custom">'+_cachedStreamProfiles.filter(p=>!p.locked).map(p=>`<option value="${p.id}"${_wizardData.streamProfileId==p.id?' selected':''}>${p.name}</option>`).join('')+'</optgroup>':'');
+  sel.onchange=onWizStreamProfChange;
+}
+function onWizStreamProfChange(){
+  const sel=document.getElementById('wiz_streamProf');
+  const panel=document.getElementById('wiz_customStreamPanel');
+  if(panel)panel.style.display=sel?.value==='__custom__'?'block':'none';
+}
+async function wizCreateStreamProfile(){
+  const name=document.getElementById('wiz_customName')?.value?.trim();
+  const params=document.getElementById('wiz_customParams')?.value?.trim();
+  const res=document.getElementById('wiz_customStreamResult');
+  if(!name||!params){res.style.color='var(--accent-red)';res.textContent='Name and parameters required.';return;}
+  res.style.color='var(--text-dim)';res.textContent='Creating...';
+  const r=await fetch(`${API_BASE}/dispatcharr/streamprofiles`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,parameters:params})});
+  const d=await r.json();
+  if(r.ok&&d.id){
+    _cachedStreamProfiles=null; // clear cache
+    res.style.color='var(--accent-green)';res.textContent='✅ Created: '+d.name;
+    _wizardData.streamProfileId=d.id;
+    _wizardData.streamProfileName=d.name;
+    await wizPopulateStreamProfiles();
+    document.getElementById('wiz_customStreamPanel').style.display='none';
+  }else{res.style.color='var(--accent-red)';res.textContent='❌ '+(d.error||'Failed');}
+}
+
+// Cache for stream profiles used across settings and wizard
+let _cachedStreamProfiles=null;
+const _origLoadStreamProfiles=typeof loadStreamProfiles!=='undefined'?loadStreamProfiles:null;
+
+
 const ALL_SPORTS=[
   // Pro
   {id:'nfl',   name:'NFL',                  group:'pro',   color:'#4169e1',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'},
@@ -1013,28 +1626,38 @@ function startAutoRefresh(){
 // =====================
 //  SETTINGS MODAL
 // =====================
-function openSettings(tab='sports'){
-  document.getElementById('settingsOverlay').style.display='flex';
+// =====================
+//  SETTINGS PAGE
+// =====================
+function openSettings(section='scoreboards'){
+  document.getElementById('settingsPage').style.display='flex';
+  document.body.style.overflow='hidden';
   updateSaveUI();
   initAutoSaveToggle();
-  switchTab(tab);
-  buildSportsTab();
-  updateTbFavCount();
+  switchSection(section);
 }
 
 function closeSettings(){
   if(_dirty) flushSave();
-  document.getElementById('settingsOverlay').style.display='none';
+  document.getElementById('settingsPage').style.display='none';
+  document.body.style.overflow='';
 }
-function handleModalOverlay(e){if(e.target===document.getElementById('settingsOverlay'))closeSettings();}
 
-function switchTab(tab){
-  document.querySelectorAll('.modal-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
-  const panel=document.getElementById(`tab-${tab}`);if(panel)panel.style.display='block';
-  if(tab==='teams'){buildTbTabs();loadTbSport(tbState.activeSport||getSPORTS()[0]?.id);}
-  if(tab==='dispatcharr'){initDsTab();}
+function switchSection(section){
+  document.querySelectorAll('.snav-btn').forEach(b=>b.classList.toggle('active',b.dataset.section===section));
+  document.querySelectorAll('.settings-section').forEach(s=>s.classList.remove('active'));
+  const panel=document.getElementById(`section-${section}`);
+  if(panel) panel.classList.add('active');
+  // Section-specific init
+  if(section==='scoreboards') loadScoreboards();
+  if(section==='sports') buildSportsTab();
+  if(section==='teams'){buildTbTabs();loadTbSport(tbState.activeSport||getSPORTS()[0]?.id);}
+  if(section==='dispatcharr') initDsTab();
 }
+
+// Legacy compat — old tab references
+function switchTab(tab){ switchSection(tab==='display'?'display':tab==='data'?'display':tab); }
+function handleModalOverlay(e){}
 
 // =====================
 //  SPORTS SETTINGS TAB
@@ -1868,26 +2491,23 @@ function getSelectedProfileIds(){
 // ── Stream Profiles ────────────────────────────────────────────────────────────
 async function loadStreamProfiles(){
   const sel=document.getElementById('dStreamProfileSelect');
-  if(!sel)return;
-  sel.innerHTML='<option value="">Loading...</option>';
+  if(sel)sel.innerHTML='<option value="">Loading...</option>';
   try{
     const r=await fetch(`${API_BASE}/dispatcharr/streamprofiles`,{signal:AbortSignal.timeout(20000)});
     const d=await r.json();
     if(r.ok&&d.profiles?.length){
-      sel.innerHTML='<option value="">— default (none) —</option>'+
-        '<option value="__custom__">+ Create custom ffmpeg profile...</option>'+
-        '<optgroup label="Built-in">'+
-          d.profiles.filter(p=>p.locked).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')+
-        '</optgroup>'+
-        (d.profiles.filter(p=>!p.locked).length ?
-          '<optgroup label="Custom">'+
-            d.profiles.filter(p=>!p.locked).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')+
-          '</optgroup>' : '');
-      sel.addEventListener('change', onStreamProfileChange);
+      _cachedStreamProfiles=d.profiles;
+      if(sel){
+        sel.innerHTML='<option value="">— default (none) —</option>'+
+          '<option value="__custom__">+ Create custom ffmpeg profile...</option>'+
+          '<optgroup label="Built-in">'+d.profiles.filter(p=>p.locked).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')+'</optgroup>'+
+          (d.profiles.filter(p=>!p.locked).length?'<optgroup label="Custom">'+d.profiles.filter(p=>!p.locked).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')+'</optgroup>':'');
+        sel.onchange=onStreamProfileChange;
+      }
     }else{
-      sel.innerHTML='<option value="">— no profiles found —</option>';
+      if(sel)sel.innerHTML='<option value="">— no profiles found —</option>';
     }
-  }catch(e){sel.innerHTML='<option value="">— connect first —</option>';}
+  }catch(e){if(sel)sel.innerHTML='<option value="">— connect first —</option>';}
 }
 
 function onStreamProfileChange(){
