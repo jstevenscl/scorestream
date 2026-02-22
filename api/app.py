@@ -11,6 +11,18 @@ import requests as http
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger(__name__)
 app = Flask(__name__)
+
+# ── Stream manager notify ─────────────────────────────────────────────────────
+STREAM_MANAGER_URL = os.getenv('STREAM_MANAGER_URL', 'http://scorestream-stream:3001')
+
+def notify_stream_manager():
+    """Fire-and-forget POST /reload to stream manager. Non-blocking."""
+    def _notify():
+        try:
+            http.post(f'{STREAM_MANAGER_URL}/reload', timeout=3)
+        except Exception:
+            pass  # Manager may not be running in all environments
+    threading.Thread(target=_notify, daemon=True).start()
 CORS(app)
 
 DB_PATH         = os.getenv('DB_PATH', '/config/scorestream.db')
@@ -848,23 +860,8 @@ def scoreboard_create():
              _json.dumps(b.get('display_config',{}))))
         conn.commit()
         row = conn.execute('SELECT * FROM scoreboards WHERE slug=?',(slug,)).fetchone()
+    notify_stream_manager()
     return jsonify(scoreboard_to_dict(row)), 201
-
-@app.route('/scoreboards/active', methods=['GET'])
-def scoreboard_active():
-    with get_db() as conn:
-        row = conn.execute('SELECT * FROM scoreboards WHERE is_default=1').fetchone()
-    if not row:
-        return jsonify({'error': 'no active scoreboard'}), 404
-    return jsonify(scoreboard_to_dict(row))
-
-@app.route('/scoreboards/by-slug/<slug>', methods=['GET'])
-def scoreboard_by_slug(slug):
-    with get_db() as conn:
-        row = conn.execute('SELECT * FROM scoreboards WHERE slug=?', (slug,)).fetchone()
-    if not row:
-        return jsonify({'error': 'not found'}), 404
-    return jsonify(scoreboard_to_dict(row))
 
 @app.route('/scoreboards/<int:sid>', methods=['GET'])
 def scoreboard_get(sid):
@@ -908,6 +905,7 @@ def scoreboard_update(sid):
         conn.execute(f'UPDATE scoreboards SET {",".join(fields)} WHERE id=?', vals)
         conn.commit()
         row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+    notify_stream_manager()
     return jsonify(scoreboard_to_dict(row))
 
 @app.route('/scoreboards/<int:sid>', methods=['DELETE'])
@@ -918,6 +916,7 @@ def scoreboard_delete(sid):
         if row['is_default']: return jsonify({'error':'cannot delete default scoreboard'}),400
         conn.execute('DELETE FROM scoreboards WHERE id=?',(sid,))
         conn.commit()
+    notify_stream_manager()
     return jsonify({'deleted':sid})
 
 @app.route('/scoreboards/<int:sid>/duplicate', methods=['POST'])
@@ -937,6 +936,7 @@ def scoreboard_duplicate(sid):
             (new_name, slug, src['sport_config'], src['team_config'], src['display_config']))
         conn.commit()
         row = conn.execute('SELECT * FROM scoreboards WHERE slug=?',(slug,)).fetchone()
+    notify_stream_manager()
     return jsonify(scoreboard_to_dict(row)), 201
 
 # ── Dispatcharr channel push / update per scoreboard ─────────────────────────

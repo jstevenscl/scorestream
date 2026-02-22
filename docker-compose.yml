@@ -1,23 +1,21 @@
 version: "3.8"
 # ============================================================
 # ScoreStream — Docker Compose Stack
-# Pull from GitHub Container Registry (ghcr.io)
 #
-# Set SCORESTREAM_TAG in .env to choose image version:
-#   latest → stable release
-#   beta   → bleeding edge (built on every dev push)
-#   v0.0.1-beta → specific version
+# Three services total:
+#   scorestream-web    — nginx (serves UI + HLS + proxies API)
+#   scorestream-api    — Flask API (scoreboards, Dispatcharr)
+#   scorestream-stream — Stream manager (Puppeteer + ffmpeg)
+#                        Automatically streams every scoreboard in the DB.
+#                        No compose changes needed when adding scoreboards.
 #
-# Each scoreboard gets its own renderer+ffmpeg pair.
-# To add a new scoreboard stream:
-#   1. Add a renderer+ffmpeg pair below following the same pattern
-#   2. Set STREAM_SLUG to the scoreboard's slug (from Settings → My Scoreboards)
-#   3. Set SCOREBOARD_URL to http://scorestream-web/?stream&slug=<slug>
-#   4. Add a unique named pipe volume for the pair
+# Set SCORESTREAM_TAG in .env:
+#   beta   -> dev builds (default for testing)
+#   latest -> stable release
 # ============================================================
 services:
   scorestream-web:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-web:${SCORESTREAM_TAG:-latest}
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-web:${SCORESTREAM_TAG:-beta}
     container_name: scorestream-web
     restart: unless-stopped
     ports:
@@ -36,7 +34,7 @@ services:
       start_period: 10s
 
   scorestream-api:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-api:${SCORESTREAM_TAG:-latest}
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-api:${SCORESTREAM_TAG:-beta}
     container_name: scorestream-api
     restart: unless-stopped
     environment:
@@ -45,100 +43,41 @@ services:
       - DISPATCHARR_USER=${DISPATCHARR_USER}
       - DISPATCHARR_PASS=${DISPATCHARR_PASS}
       - STREAM_BASE_URL=${STREAM_BASE_URL}
+      - STREAM_MANAGER_URL=http://scorestream-stream:3001
       - CONFIG_PATH=/config/config.json
     volumes:
       - ./config:/config
     networks:
       - scorestream-net
 
-  # -- Scoreboard: scorestream (slug: scorestream) -------------------------------
-  scorestream-renderer:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-renderer:${SCORESTREAM_TAG:-latest}
-    container_name: scorestream-renderer
+  scorestream-stream:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-stream:${SCORESTREAM_TAG:-beta}
+    container_name: scorestream-stream
     restart: unless-stopped
     environment:
       - TZ=${TZ:-America/New_York}
       - STREAM_WIDTH=${STREAM_WIDTH:-1920}
       - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
       - STREAM_FPS=${STREAM_FPS:-10}
-      - SCOREBOARD_URL=http://scorestream-web/?stream&slug=scorestream
-      - PIPE_PATH=/pipes/scorestream.rawvideo
+      - WEB_BASE=http://scorestream-web
+      - DB_PATH=/config/scorestream.db
+      - HLS_DIR=/hls
+      - PIPES_DIR=/tmp/pipes
+      - MANAGER_PORT=3001
+      - HLS_SEGMENT_DURATION=${HLS_SEGMENT_DURATION:-2}
+      - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-10}
     volumes:
-      - pipe_scorestream:/pipes
+      - ./config:/config:ro
+      - hls_segments:/hls
     networks:
       - scorestream-net
     depends_on:
       scorestream-web:
         condition: service_healthy
     shm_size: 512mb
-
-  scorestream-ffmpeg:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-ffmpeg:${SCORESTREAM_TAG:-latest}
-    container_name: scorestream-ffmpeg
-    restart: unless-stopped
-    environment:
-      - TZ=${TZ:-America/New_York}
-      - STREAM_WIDTH=${STREAM_WIDTH:-1920}
-      - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
-      - STREAM_FPS=${STREAM_FPS:-10}
-      - STREAM_SLUG=scorestream
-      - PIPE_PATH=/pipes/scorestream.rawvideo
-      - HLS_SEGMENT_DURATION=${HLS_SEGMENT_DURATION:-2}
-      - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-10}
-    volumes:
-      - pipe_scorestream:/pipes:ro
-      - hls_segments:/hls
-    networks:
-      - scorestream-net
-    depends_on:
-      - scorestream-renderer
-
-  # -- Scoreboard: test2 (slug: test2) ------------------------------------------
-  scorestream-renderer-test2:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-renderer:${SCORESTREAM_TAG:-latest}
-    container_name: scorestream-renderer-test2
-    restart: unless-stopped
-    environment:
-      - TZ=${TZ:-America/New_York}
-      - STREAM_WIDTH=${STREAM_WIDTH:-1920}
-      - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
-      - STREAM_FPS=${STREAM_FPS:-10}
-      - SCOREBOARD_URL=http://scorestream-web/?stream&slug=test2
-      - PIPE_PATH=/pipes/test2.rawvideo
-    volumes:
-      - pipe_test2:/pipes
-    networks:
-      - scorestream-net
-    depends_on:
-      scorestream-web:
-        condition: service_healthy
-    shm_size: 512mb
-
-  scorestream-ffmpeg-test2:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-ffmpeg:${SCORESTREAM_TAG:-latest}
-    container_name: scorestream-ffmpeg-test2
-    restart: unless-stopped
-    environment:
-      - TZ=${TZ:-America/New_York}
-      - STREAM_WIDTH=${STREAM_WIDTH:-1920}
-      - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
-      - STREAM_FPS=${STREAM_FPS:-10}
-      - STREAM_SLUG=test2
-      - PIPE_PATH=/pipes/test2.rawvideo
-      - HLS_SEGMENT_DURATION=${HLS_SEGMENT_DURATION:-2}
-      - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-10}
-    volumes:
-      - pipe_test2:/pipes:ro
-      - hls_segments:/hls
-    networks:
-      - scorestream-net
-    depends_on:
-      - scorestream-renderer-test2
 
 volumes:
   hls_segments:
-  pipe_scorestream:
-  pipe_test2:
 
 networks:
   scorestream-net:
