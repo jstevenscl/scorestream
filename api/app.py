@@ -863,6 +863,20 @@ def scoreboard_create():
     notify_stream_manager()
     return jsonify(scoreboard_to_dict(row)), 201
 
+@app.route('/scoreboards/active', methods=['GET'])
+def scoreboard_active():
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM scoreboards WHERE is_default=1').fetchone()
+    if not row: return jsonify({'error':'no active scoreboard'}),404
+    return jsonify(scoreboard_to_dict(row))
+
+@app.route('/scoreboards/by-slug/<slug>', methods=['GET'])
+def scoreboard_by_slug(slug):
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM scoreboards WHERE slug=?',(slug,)).fetchone()
+    if not row: return jsonify({'error':'not found'}),404
+    return jsonify(scoreboard_to_dict(row))
+
 @app.route('/scoreboards/<int:sid>', methods=['GET'])
 def scoreboard_get(sid):
     with get_db() as conn:
