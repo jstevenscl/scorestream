@@ -928,6 +928,21 @@ def scoreboard_delete(sid):
         row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
         if not row: return jsonify({'error':'not found'}),404
         if row['is_default']: return jsonify({'error':'cannot delete default scoreboard'}),400
+        # Clean up Dispatcharr channel and stream before removing from DB
+        channel_id = row['dispatcharr_channel_id']
+        stream_id  = row['dispatcharr_stream_id']
+        if channel_id or stream_id:
+            try:
+                c = get_creds()
+                s, err = dispatcharr_session(c)
+                if not err:
+                    base = c['url']
+                    if channel_id:
+                        s.delete(f'{base}/api/channels/channels/{channel_id}/', timeout=10)
+                    if stream_id:
+                        s.delete(f'{base}/api/channels/streams/{stream_id}/', timeout=10)
+            except Exception as e:
+                log.warning(f'Dispatcharr cleanup failed for scoreboard {sid}: {e}')
         conn.execute('DELETE FROM scoreboards WHERE id=?',(sid,))
         conn.commit()
     notify_stream_manager()

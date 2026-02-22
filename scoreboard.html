@@ -157,6 +157,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .topbar{padding:12px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg-secondary);}
 .topbar-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;letter-spacing:2px;text-transform:uppercase;}
 .topbar-meta{display:flex;align-items:center;gap:14px;}
+/* Stream mode — topbar elements scaled up for readability at 1920x1080 */
+body.stream-mode .topbar{padding:14px 28px;}
+body.stream-mode .topbar-title{font-size:26px;}
+body.stream-mode .topbar-meta{font-size:15px;gap:20px;}
+body.stream-mode .topbar-meta .val{font-size:15px;}
+body.stream-mode #clockDisplay{font-size:15px;}
 .meta-item{font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;display:flex;align-items:center;gap:5px;}
 .meta-item .val{color:var(--accent);}
 #scoreboard{flex:1;overflow-y:auto;padding:18px 22px;}
@@ -172,6 +178,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .league-season-badge{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid;white-space:nowrap;}
 .league-season-badge.pre{color:#ff9500;border-color:rgba(255,149,0,0.45);background:rgba(255,149,0,0.08);}
 .league-season-badge.post{color:#ff6b00;border-color:rgba(255,107,0,0.45);background:rgba(255,107,0,0.1);animation:postGlow 2.5s ease-in-out infinite;}
+.league-season-badge.off{color:var(--text-dim);border-color:var(--border);background:transparent;}
 @keyframes postGlow{0%,100%{box-shadow:0 0 0 rgba(255,107,0,0);}50%{box-shadow:0 0 8px rgba(255,107,0,0.35);}}
 .league-star-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;filter:grayscale(1) opacity(0.3);transition:all 0.2s;margin-left:2px;}
 .league-star-btn:hover{filter:grayscale(0) opacity(0.7);transform:scale(1.15);}
@@ -881,7 +888,12 @@ async function duplicateScoreboard(id){
 }
 
 async function deleteScoreboard(id){
-  if(!confirm('Delete this scoreboard? This cannot be undone.'))return;
+  const sb=_scoreboards.find(s=>s.id===id);
+  const hasChannel=sb&&sb.dispatcharr_channel_id;
+  const msg=hasChannel
+    ?`Delete "${sb.name}"? This will also remove its Dispatcharr channel and stream. This cannot be undone.`
+    :`Delete "${sb?.name||'this scoreboard'}"? This cannot be undone.`;
+  if(!confirm(msg))return;
   const r=await fetch(`${API_BASE}/scoreboards/${id}`,{method:'DELETE'});
   if(r.ok){_scoreboards=_scoreboards.filter(s=>s.id!==id);renderSbCards();}
   else alert('Failed to delete scoreboard');
@@ -1809,7 +1821,7 @@ function loadActiveSports(enabled){
 }
 function saveActiveSports(){ss.set('ss_active_sports',JSON.stringify([...state.activeSports]));}
 
-const _enabledSports=loadEnabledSports();
+const _enabledSports = new Set(ALL_SPORTS.map(s => s.id)); // All Sports view always shows all sports
 const state={
   layout:'grid',
   enabledSports:_enabledSports,
@@ -2145,6 +2157,21 @@ async function fetchSport(sport){
     const sName=data.season?.displayName||data.leagues?.[0]?.season?.displayName||'';
     state.seasonMeta[sport.id]=getSeasonMeta(sType,sName);
     let games=(data.events||[]).map(ev=>parseGame(ev,sport));
+    // Date-aware off-season override: if ESPN returns a future schedule with no
+    // live, final, or near-term games (within 14 days), treat as off-season.
+    if(games.length>0){
+      const now=Date.now();
+      const fourteenDaysFromNow=now+(14*24*60*60*1000);
+      const hasCurrentActivity=games.some(g=>
+        g.isLive ||
+        g.isFinal ||
+        new Date(g.date).getTime()<=fourteenDaysFromNow
+      );
+      if(!hasCurrentActivity){
+        state.seasonMeta[sport.id]={key:'off',label:'Off Season',isOff:true};
+        games=[];
+      }
+    }
     const sportDays=state.daysPerSport[sport.id]||1;
     if(state.showEnded&&state.endedLeagues.has(sport.id)&&sportDays>0){
       const fetches=[];
@@ -2231,7 +2258,7 @@ function renderScoreboard(){
     if(!games.length)return;anyGame=true;
     const isFavL=state.favLeagues.has(sport.id);
     let sbadge='';
-    if(season&&(season.key==='pre'||season.key==='post'))sbadge=`<span class="league-season-badge ${season.key}">${season.label}</span>`;
+    if(season&&season.key!=='reg')sbadge=`<span class="league-season-badge ${season.key}">${season.label}</span>`;
     const sec=document.createElement('div');sec.className=`league-section${isFavL?' fav-league':''}`;
     sec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:${isFavL?'#ffd700':sport.color}"></div><div class="league-name">${sport.emoji} ${sport.name}</div>${sbadge}<button class="league-star-btn ${isFavL?'starred':''}" onclick="toggleFavLeague('${sport.id}')">⭐</button><div class="league-game-count">${games.length} game${games.length!==1?'s':''}</div></div>`;
     const grid=document.createElement('div');grid.className=`games-grid ${state.layout}-mode`;
@@ -3060,13 +3087,14 @@ function selectSidebarScoreboard(slug){
     if(defaultSections)defaultSections.style.display='block';
     if(banner)banner.style.display='none';
     if(titleEl)titleEl.textContent='All Sports Scoreboard';
-    // Restore saved sports state
+    // Restore saved sports state, or default to ALL sports enabled
     if(_allSportsEnabledSports){
       state.enabledSports=_allSportsEnabledSports;
       state.activeSports=_allSportsActiveSports;
       _allSportsEnabledSports=null;
       _allSportsActiveSports=null;
     }
+    buildSportToggles();
     renderScoreboard();
   }else{
     // Save current All Sports state before overriding
@@ -3095,6 +3123,7 @@ function selectSidebarScoreboard(slug){
         }
         state.enabledSports=new Set(sportIds);
         state.activeSports=new Set(sportIds);
+        buildSportToggles();
         renderScoreboard();
       })
       .catch(()=>{});
@@ -3104,10 +3133,14 @@ function selectSidebarScoreboard(slug){
 // =====================
 //  CLOCK
 // =====================
+let _clockInterval = null;
 function startClock(tz){
   const el=document.getElementById('clockDisplay');if(!el)return;
+  if(_clockInterval)clearInterval(_clockInterval);
   const opts=tz?{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}:undefined;
-  setInterval(()=>{const n=new Date();el.innerHTML=`<span>🕐</span> <span class="val">${n.toLocaleTimeString(undefined,opts)}</span>`;},1000);
+  const tick=()=>{const n=new Date();el.innerHTML=`<span>🕐</span> <span class="val">${n.toLocaleTimeString(undefined,opts)}</span>`;};
+  tick(); // fire immediately so clock shows before first interval
+  _clockInterval=setInterval(tick,1000);
 }
 
 // =====================
@@ -3148,32 +3181,29 @@ setRefreshRate(savedRate);
 loadNcaaFromApi(); // fetch live NCAA data from DB; falls back to bundled seed silently
 initSidebarScoreboardSelector(); // populate scoreboard selector pills from API
 
-// STREAM MODE: if ?stream param present, hide UI chrome and load scoreboard by slug
+// STREAM MODE: if ?stream param present, hide sidebar only — topbar stays fully visible
 (async function initStreamMode(){
   const params=new URLSearchParams(window.location.search);
   if(!params.has('stream'))return;
-  // Hide sidebar; keep topbar but hide title/meta — clock stays visible
+  // Hide sidebar, add stream-mode class for CSS scaling
   const sidebar=document.getElementById('sidebar');
-  const topbarTitle=document.getElementById('topbarTitle');
-  const topbarMeta=document.querySelector('.topbar-meta');
-  const previewBanner=document.getElementById('previewBanner');
   if(sidebar)sidebar.style.display='none';
-  if(topbarTitle)topbarTitle.style.display='none';
-  if(topbarMeta)topbarMeta.style.display='none';
-  if(previewBanner)previewBanner.style.display='none';
-  // Fetch scoreboard by slug if provided, otherwise fall back to active
+  document.body.classList.add('stream-mode');
+  // Fetch scoreboard by slug (or active fallback)
   const slug=params.get('slug');
   const url=slug?`${API_BASE}/scoreboards/by-slug/${slug}`:`${API_BASE}/scoreboards/active`;
   try{
     const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
     if(r.ok){
       const sb=await r.json();
-      // Start clock with scoreboard's timezone if set
-      const tz=sb.display_config&&sb.display_config.timezone?sb.display_config.timezone:null;
-      if(tz)startClock(tz); // restart clock with correct timezone
+      // Update topbar title to scoreboard name
+      const titleEl=document.getElementById('topbarTitle');
+      if(titleEl)titleEl.textContent=sb.name||'ScoreStream';
+      // Restart clock with scoreboard timezone if set
+      const tz=(sb.display_config&&sb.display_config.timezone)||null;
+      startClock(tz);
       const sportIds=Object.entries(sb.sport_config||{}).filter(([,v])=>v).map(([k])=>k);
       if(!sportIds.length){
-        // Not configured — show overlay
         document.getElementById('scoreboard').innerHTML=
           '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;color:var(--text-dim);font-family:\'Barlow Condensed\',sans-serif;">' +
           '<div style="font-size:64px;margin-bottom:20px;">⚙️</div>' +
@@ -3185,7 +3215,7 @@ initSidebarScoreboardSelector(); // populate scoreboard selector pills from API
       state.activeSports=new Set(sportIds);
       renderScoreboard();
     }
-  }catch(e){ /* keep defaults if API unreachable */ }
+  }catch(e){}
 })();
 
 // Check Dispatcharr credentials on load and update sidebar status
