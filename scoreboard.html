@@ -898,17 +898,30 @@ function renderEditorStep(sbOverride){
       </div>`;
   }
   else if(_editorStep===2){
-    // Build sports grid from ALL_SPORTS (not getSPORTS — that's filtered by global state)
     const groups=[
-      {label:'Pro Leagues', sports: ALL_SPORTS.filter(s=>s.group==='pro')},
-      {label:"NCAA Men's",  sports: ALL_SPORTS.filter(s=>s.group==='ncaam')},
-      {label:"NCAA Women's",sports: ALL_SPORTS.filter(s=>s.group==='ncaaw')},
+      {key:'pro',   label:'Pro Leagues',   sports: ALL_SPORTS.filter(s=>s.group==='pro')},
+      {key:'ncaam', label:"NCAA Men's",    sports: ALL_SPORTS.filter(s=>s.group==='ncaam')},
+      {key:'ncaaw', label:"NCAA Women's",  sports: ALL_SPORTS.filter(s=>s.group==='ncaaw')},
     ];
     body=`<div class="wiz-sublabel" style="margin-bottom:16px;">Choose which sports appear on this scoreboard. Each scoreboard has its own independent selection.</div>`;
     groups.forEach(g=>{
       if(!g.sports.length)return;
-      body+=`<div class="modal-section-title" style="margin-bottom:8px;">${g.label}</div>
-        <div class="sport-grid" style="margin-bottom:18px;">`;
+      const allOn=g.sports.every(sp=>!!_editorDraft.sport_config[sp.id]);
+      body+=`
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="modal-section-title" style="margin-bottom:0;">${g.label}</div>
+          <button onclick="sbEditorToggleGroup('${g.key}')"
+            id="sbGroupBtn_${g.key}"
+            style="padding:3px 12px;border-radius:12px;border:1px solid ${allOn?'var(--accent)':'var(--border)'};
+              background:${allOn?'rgba(0,212,255,0.12)':'transparent'};
+              color:${allOn?'var(--accent)':'var(--text-dim)'};
+              font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;
+              letter-spacing:0.5px;text-transform:uppercase;"
+            data-all="${allOn?'1':'0'}">
+            ${allOn?'✓ All Selected':'Select All'}
+          </button>
+        </div>
+        <div class="sport-grid" data-group="${g.key}" style="margin-bottom:18px;">`;
       g.sports.forEach(sp=>{
         const on=!!_editorDraft.sport_config[sp.id];
         body+=`<label class="sport-setting-row${on?' enabled':''}" style="cursor:pointer;">
@@ -917,7 +930,7 @@ function renderEditorStep(sbOverride){
             <span class="sport-setting-name">${sp.name}</span>
           </div>
           <input type="checkbox" data-sport="${sp.id}" ${on?'checked':''}
-            onchange="this.closest('.sport-setting-row').classList.toggle('enabled',this.checked)"
+            onchange="this.closest('.sport-setting-row').classList.toggle('enabled',this.checked);sbEditorUpdateGroupBtn('${g.key}')"
             style="cursor:pointer;">
         </label>`;
       });
@@ -1131,19 +1144,40 @@ function sbEditorSetDiv(div){
   });
   if(_sbTeamActiveSport) sbEditorLoadTeams(_sbTeamActiveSport);
 }
+// Select All / Deselect All for a sport group
+function sbEditorToggleGroup(groupKey){
+  const grid = document.querySelector(`.sport-grid[data-group="${groupKey}"]`);
+  if(!grid) return;
+  const checkboxes = grid.querySelectorAll('input[data-sport]');
+  const allChecked = [...checkboxes].every(cb=>cb.checked);
+  const newState = !allChecked;
+  checkboxes.forEach(cb=>{
+    cb.checked = newState;
+    cb.closest('.sport-setting-row').classList.toggle('enabled', newState);
+    _editorDraft.sport_config[cb.dataset.sport] = newState;
+  });
+  sbEditorUpdateGroupBtn(groupKey);
+}
+
+function sbEditorUpdateGroupBtn(groupKey){
+  const grid = document.querySelector(`.sport-grid[data-group="${groupKey}"]`);
+  const btn = document.getElementById(`sbGroupBtn_${groupKey}`);
+  if(!grid || !btn) return;
+  const checkboxes = grid.querySelectorAll('input[data-sport]');
+  const allOn = [...checkboxes].every(cb=>cb.checked);
+  btn.textContent = allOn ? '✓ All Selected' : 'Select All';
+  btn.style.borderColor = allOn ? 'var(--accent)' : 'var(--border)';
+  btn.style.background = allOn ? 'rgba(0,212,255,0.12)' : 'transparent';
+  btn.style.color = allOn ? 'var(--accent)' : 'var(--text-dim)';
+  btn.dataset.all = allOn ? '1' : '0';
+}
 
 // Helper: load pro sport teams via existing tbState cache
 async function loadTbSportData(sid){
-  if(tbState.teamCache[sid]?.length) return tbState.teamCache[sid];
-  // Trigger a load using the existing loadTbSport machinery
-  return new Promise(resolve=>{
-    const origRender = window._sbTeamResolve;
-    window._sbTeamResolve = resolve;
-    loadTbSport(sid).then(()=>{
-      resolve(tbState.teamCache[sid]||[]);
-      window._sbTeamResolve = null;
-    });
-  });
+  // fetchTeamsForSport is the pure data function (no DOM side effects).
+  // Never call loadTbSport() here — that writes to the old Teams tab DOM
+  // elements which don't exist inside the scoreboard editor.
+  return fetchTeamsForSport(sid);
 }
 
 
