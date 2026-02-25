@@ -188,31 +188,33 @@ body.stream-mode #clockDisplay{font-size:15px;}
 .games-grid.grid-mode{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
 .games-grid.fullscreen-mode,.games-grid.ticker-mode{grid-template-columns:1fr;}
 .game-card{background:var(--bg-card);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:all 0.25s;animation:cardIn 0.4s ease forwards;}
-.network-badges{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
-.network-badge{font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.5px;padding:2px 5px;border-radius:3px;white-space:nowrap;text-transform:uppercase;}
-.nb-espn{background:#e71d36;color:#fff;}
-.nb-espn2{background:#b5002e;color:#fff;}
-.nb-espnplus{background:#00adef;color:#fff;}
-.nb-abc{background:#000;color:#fff;border:1px solid #444;}
-.nb-nbc{background:#ff6600;color:#fff;}
-.nb-peacock{background:#00c4b4;color:#fff;}
-.nb-cbs{background:#003366;color:#fff;}
-.nb-fox{background:#f4ac1a;color:#000;}
-.nb-fs1{background:#e6231b;color:#fff;}
-.nb-fs2{background:#c1001f;color:#fff;}
-.nb-tnt{background:#002d6e;color:#fff;}
-.nb-tbs{background:#00a7e1;color:#fff;}
+.network-badges{display:flex;gap:3px;align-items:center;flex-shrink:0;}
+.network-badge{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:0.5px;padding:2px 6px;border-radius:4px;white-space:nowrap;text-transform:uppercase;line-height:1.4;}
+.nb-espn{background:#cc0000;color:#fff;}
+.nb-espn2{background:#990000;color:#fff;}
+.nb-espnplus{background:#009ddc;color:#fff;}
+.nb-abc{background:#1a1a1a;color:#fff;border:1px solid #555;}
+.nb-nbc{background:#dd4f00;color:#fff;}
+.nb-peacock{background:#00b3a4;color:#fff;}
+.nb-cbs{background:#1a4a8a;color:#fff;}
+.nb-fox{background:#e8a800;color:#000;}
+.nb-fs1{background:#cc1a00;color:#fff;}
+.nb-fs2{background:#aa1500;color:#fff;}
+.nb-tnt{background:#1a3a7a;color:#fff;}
+.nb-tbs{background:#0080b8;color:#fff;}
 .nb-mlbtv{background:#002d72;color:#fff;}
 .nb-nhltv{background:#00205b;color:#fff;}
 .nb-nbatv{background:#17408b;color:#fff;}
 .nb-nfln{background:#013369;color:#fff;}
-.nb-default{background:rgba(255,255,255,0.1);color:var(--text-dim);border:1px solid var(--border);}
+.nb-default{background:rgba(255,255,255,0.12);color:#ccc;border:1px solid rgba(255,255,255,0.2);}
+.nb-local{background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.15);}
+.nb-rsn{background:rgba(255,255,255,0.08);color:#999;border:1px solid rgba(255,255,255,0.15);font-style:italic;}
 @keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 .game-card:hover{border-color:var(--border-bright);background:var(--bg-card-hover);transform:translateY(-1px);box-shadow:0 8px 30px rgba(0,0,0,0.4);}
 .game-card.live{border-color:rgba(0,255,136,0.3);}
 .game-card.favorited{border-color:rgba(255,215,0,0.35);background:linear-gradient(180deg,rgba(255,215,0,0.04) 0%,var(--bg-card) 60%);}
 .game-card.is-final{opacity:0.82;}.game-card.is-final:hover{opacity:1;}
-.card-status{padding:5px 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2);}
+.card-status{padding:5px 13px;display:flex;align-items:center;justify-content:space-between;gap:6px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2);}
 .status-live{display:flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--accent-green);}
 .status-live-dot{width:6px;height:6px;background:var(--accent-green);border-radius:50%;animation:pulse-green 1.5s infinite;}
 @keyframes pulse-green{0%,100%{opacity:1;}50%{opacity:0.4;}}
@@ -2249,12 +2251,25 @@ function parseGame(ev,sport){
   }));
   let stats=[];
   try{stats=(comp?.leaders||[]).slice(0,3).map(l=>({label:l.abbreviation||l.name,value:l.leaders?.[0]?.displayValue||'–'}));}catch(e){}
-  // Extract broadcast networks — national first, then home
+  // Extract broadcast networks — resolve to canonical names, collapse regionals to RSN
   const bcast=(comp?.broadcasts||[]);
-  const networks=[...new Set(
+  const allNames=[...new Set(
     bcast.filter(b=>b.market==='national').flatMap(b=>b.names||[])
     .concat(bcast.filter(b=>b.market!=='national').flatMap(b=>b.names||[]))
-  )].slice(0,3);
+  )];
+  const resolvedLabels=[], seenLabels=new Set();
+  let hasRSN=false;
+  allNames.forEach(n=>{
+    const r=resolveNetwork(n);
+    if(r){
+      if(!seenLabels.has(r.label)){seenLabels.add(r.label);resolvedLabels.push(r.label);}
+    } else {
+      hasRSN=true; // regional/local — bucket as RSN
+    }
+  });
+  // Show up to 2 resolved nationals, then RSN if any regionals exist and no nationals filled the slots
+  if(hasRSN && resolvedLabels.length<2) resolvedLabels.push('RSN');
+  const networks=resolvedLabels.slice(0,2);
   return{id:ev.id,sport:sport.id,sportName:sport.name,sportColor:sport.color,sportEmoji:sport.emoji,
     name:ev.name||'',date:ev.date,statusType,periodDesc,teams,stats,networks,
     isLive:statusType==='STATUS_IN_PROGRESS',isFinal:statusType==='STATUS_FINAL',isScheduled:statusType==='STATUS_SCHEDULED'};
@@ -2453,18 +2468,66 @@ function buildFullCard(g){
   return card;
 }
 
-const NETWORK_MAP={
-  'ESPN':'espn','ESPN2':'espn2','ESPN+':'espnplus','ESPNU':'espn',
-  'ABC':'abc','NBC':'nbc','Peacock':'peacock','CBS':'cbs',
-  'FOX':'fox','FS1':'fs1','FS2':'fs2',
-  'TNT':'tnt','TBS':'tbs',
-  'MLB.TV':'mlbtv','NHL.TV':'nhltv','NBA TV':'nbatv','NFL Network':'nfln',
-  'NFLN':'nfln','NFL+':'nfln',
-};
-function networkClass(name){return 'nb-'+(NETWORK_MAP[name]||'default');}
+// Network families — maps any variant to a canonical display name + CSS class
+// Anything not matched gets bucketed as RSN (regional sports network)
+const NETWORK_FAMILIES=[
+  {match:/^ESPN\+/i,        label:'ESPN+',    cls:'espnplus'},
+  {match:/^ESPN2$/i,        label:'ESPN2',    cls:'espn2'},
+  {match:/^ESPNU$/i,        label:'ESPNU',    cls:'espn'},
+  {match:/^ESPN$/i,         label:'ESPN',     cls:'espn'},
+  {match:/^espn/i,          label:'ESPN',     cls:'espn'},
+  {match:/^ABC$/i,          label:'ABC',      cls:'abc'},
+  {match:/^NBC$/i,          label:'NBC',      cls:'nbc'},
+  {match:/^NBC Sports/i,    label:'NBC',      cls:'nbc'},
+  {match:/^Peacock/i,       label:'Peacock',  cls:'peacock'},
+  {match:/^CBS$/i,          label:'CBS',      cls:'cbs'},
+  {match:/CBS Sports/i,     label:'CBSSN',    cls:'cbs'},
+  {match:/^Paramount/i,     label:'CBS',      cls:'cbs'},
+  {match:/^FOX$/i,          label:'FOX',      cls:'fox'},
+  {match:/^Fox/i,         label:'FOX',      cls:'fox'},
+  {match:/^FS1$/i,          label:'FS1',      cls:'fs1'},
+  {match:/^FS2$/i,          label:'FS2',      cls:'fs2'},
+  {match:/^TNT$/i,          label:'TNT',      cls:'tnt'},
+  {match:/^TBS$/i,          label:'TBS',      cls:'tbs'},
+  {match:/^truTV$/i,        label:'truTV',    cls:'tnt'},
+  {match:/^NBA TV$/i,       label:'NBA TV',   cls:'nbatv'},
+  {match:/^NBA League Pass/i,label:'League Pass',cls:'nbatv'},
+  {match:/^MLB\.?TV$/i,     label:'MLB.TV',   cls:'mlbtv'},
+  {match:/^MLB Net/i,       label:'MLB Net',  cls:'mlbtv'},
+  {match:/^MLBN$/i,         label:'MLB Net',  cls:'mlbtv'},
+  {match:/^NHL\.?TV$/i,     label:'NHL.TV',   cls:'nhltv'},
+  {match:/^NFL Network/i,   label:'NFL Net',  cls:'nfln'},
+  {match:/^Victory\+/i,     label:'Victory+', cls:'default'},
+  {match:/^Gray Media/i,    label:'Local TV',  cls:'local'},
+  {match:/^Arizona.s Family/i, label:'Local TV', cls:'local'},
+  {match:/^Prime/i,         label:'Prime',    cls:'default'},
+  {match:/^Apple TV/i,      label:'Apple TV', cls:'default'},
+  {match:/^Max$/i,          label:'Max',      cls:'default'},
+  {match:/^SEC Network/i,   label:'SEC Net',  cls:'espn'},
+  {match:/^ACC Network/i,   label:'ACC Net',  cls:'espn'},
+  {match:/^Big Ten/i,       label:'BTN',      cls:'default'},
+  {match:/^BTN$/i,          label:'BTN',      cls:'default'},
+  {match:/^TSN/i,           label:'TSN',      cls:'default'},
+  {match:/^Sportsnet/i,     label:'SN',       cls:'default'},
+];
+
+function resolveNetwork(name){
+  for(const f of NETWORK_FAMILIES){
+    if(f.match.test(name)) return {label:f.label, cls:'nb-'+f.cls};
+  }
+  return null; // regional/local — will be bucketed as RSN
+}
+
+function networkClass(name){
+  return resolveNetwork(name)?.cls || 'nb-default';
+}
 function buildNetworkBadges(networks){
   if(!networks||!networks.length)return'';
-  return'<div class="network-badges">'+networks.map(n=>`<span class="network-badge ${networkClass(n)}">${n}</span>`).join('')+'</div>';
+  return'<div class="network-badges">'+networks.map(n=>{
+    // networks array contains resolved labels — look up class by label
+    const cls = resolveNetwork(n)?.cls || (n==='RSN'?'nb-rsn':'nb-default');
+    return `<span class="network-badge ${cls}">${n}</span>`;
+  }).join('')+'</div>';
 }
 
 function teamLogo(team){

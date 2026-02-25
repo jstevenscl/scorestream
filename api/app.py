@@ -321,7 +321,7 @@ def init_db():
             name TEXT NOT NULL,
             slug TEXT NOT NULL UNIQUE,
             sport_config TEXT NOT NULL DEFAULT '{}',
-            team_config TEXT NOT NULL DEFAULT '[]',
+            team_config TEXT NOT NULL DEFAULT '{}',
             display_config TEXT NOT NULL DEFAULT '{}',
             dispatcharr_channel_id TEXT,
             dispatcharr_stream_id TEXT,
@@ -821,7 +821,7 @@ def scoreboard_to_dict(r):
     return {
         'id': r['id'], 'name': r['name'], 'slug': r['slug'],
         'sport_config': _json.loads(r['sport_config'] or '{}'),
-        'team_config': _json.loads(r['team_config'] or '[]'),
+        'team_config': _json.loads(r['team_config'] or '{}'),
         'display_config': _json.loads(r['display_config'] or '{}'),
         'dispatcharr_channel_id': r['dispatcharr_channel_id'],
         'dispatcharr_stream_id': r['dispatcharr_stream_id'],
@@ -856,7 +856,7 @@ def scoreboard_create():
             'INSERT INTO scoreboards(name,slug,sport_config,team_config,display_config) VALUES(?,?,?,?,?)',
             (name, slug,
              _json.dumps(b.get('sport_config',{})),
-             _json.dumps(b.get('team_config',[])),
+             _json.dumps(b.get('team_config',{})),
              _json.dumps(b.get('display_config',{}))))
         conn.commit()
         row = conn.execute('SELECT * FROM scoreboards WHERE slug=?',(slug,)).fetchone()
