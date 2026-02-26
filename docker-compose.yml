@@ -72,8 +72,7 @@ services:
     networks:
       - scorestream-net
     depends_on:
-      scorestream-web:
-        condition: service_healthy
+      - scorestream-web
     shm_size: 512mb
 
 volumes:

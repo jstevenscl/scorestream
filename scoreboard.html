@@ -163,6 +163,41 @@ body.stream-mode .topbar-title{font-size:26px;}
 body.stream-mode .topbar-meta{font-size:15px;gap:20px;}
 body.stream-mode .topbar-meta .val{font-size:15px;}
 body.stream-mode #clockDisplay{font-size:15px;}
+
+/* ── Stream Canvas Layout ─────────────────────────────────────── */
+body.stream-mode #main{overflow:hidden;height:100vh;}
+body.stream-mode #scoreboard{padding:0;overflow:hidden;flex:1;position:relative;display:flex;flex-direction:column;}
+body.stream-mode .league-star-btn{display:none;}
+body.stream-mode .star-btn{display:none;}
+body.stream-mode .game-card{cursor:default;animation:none;}
+body.stream-mode .game-card:hover{transform:none;box-shadow:none;border-color:var(--border);}
+body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
+
+#stream-canvas{flex:1;overflow:hidden;position:relative;}
+#stream-pages{width:100%;height:100%;position:relative;}
+.stream-page{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  padding:10px 14px;box-sizing:border-box;
+  overflow:hidden;
+  opacity:0;transition:opacity 0.5s ease;
+  pointer-events:none;
+}
+.stream-page.active{opacity:1;pointer-events:auto;}
+
+#stream-pagination{
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;padding:6px 0;min-height:26px;flex-shrink:0;
+}
+.stream-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:rgba(255,255,255,0.2);
+  transition:background 0.3s,transform 0.3s;
+}
+.stream-dot.active{background:rgba(255,255,255,0.8);transform:scale(1.35);}
+
+/* Score update flash — subtle highlight when value changes */
+.score-updated{animation:scoreFlash 0.6s ease forwards;}
+@keyframes scoreFlash{0%{color:var(--accent-green);}100%{color:inherit;}}
 .meta-item{font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;display:flex;align-items:center;gap:5px;}
 .meta-item .val{color:var(--accent);}
 #scoreboard{flex:1;overflow-y:auto;padding:18px 22px;}
@@ -3459,7 +3494,276 @@ renderFavSummary();
   setRefreshRate(30);
   startAutoRefresh();
   loadNcaaFromApi();
+
+  // Replace scoreboard with fixed canvas layout
+  initStreamCanvas();
 })();
+
+// =====================
+//  STREAM CANVAS
+// =====================
+
+// Stream canvas state
+let _streamPages = [];      // array of arrays of game elements
+let _streamCurrentPage = 0;
+let _streamPageTimer = null;
+let _streamScaleX = 1;
+let _streamScaleY = 1;
+let _streamInterval = 15;   // seconds between page rotations
+
+function getStreamSettings() {
+  // Read from localStorage or use defaults
+  // Will be replaced by API settings fetch in future
+  const stored = (() => { try { return JSON.parse(localStorage.getItem('ss_stream_settings') || '{}'); } catch(e){ return {}; } })();
+  return {
+    interval: stored.interval || 15,
+    cardScale: stored.cardScale || 1.0,
+  };
+}
+
+function initStreamCanvas() {
+  const sb = document.getElementById('scoreboard');
+  if (!sb) return;
+
+  const settings = getStreamSettings();
+  _streamInterval = settings.interval;
+
+  // Build canvas structure
+  sb.innerHTML = '<div id="stream-canvas"><div id="stream-pages"></div></div><div id="stream-pagination"></div>';
+
+  // Initial render
+  renderStreamCanvas();
+}
+
+function renderStreamCanvas() {
+  const pagesEl = document.getElementById('stream-pages');
+  const paginationEl = document.getElementById('stream-pagination');
+  if (!pagesEl) return;
+
+  const settings = getStreamSettings();
+  const scale = settings.cardScale;
+
+  // Collect all games across enabled sports in order
+  const allSections = [];
+  const sports = getSPORTS();
+
+  sports.forEach(sport => {
+    let games = state.games[sport.id] || [];
+    if (!games.length) return;
+
+    // Apply team filter
+    if (_activeTeamConfig) {
+      const sportTeams = _activeTeamConfig[sport.id];
+      if (sportTeams && sportTeams.length)
+        games = games.filter(g => g.teams.some(t => sportTeams.includes(t.name) || sportTeams.includes(t.abbr)));
+    }
+
+    // Apply live/ended filters same as main render
+    if (!state.showEnded || !state.endedLeagues.has(sport.id))
+      games = games.filter(g => !g.isFinal);
+
+    if (!games.length) return;
+    allSections.push({ sport, games });
+  });
+
+  if (!allSections.length) {
+    pagesEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:22px;letter-spacing:2px;">NO GAMES RIGHT NOW</div>';
+    if (paginationEl) paginationEl.innerHTML = '';
+    return;
+  }
+
+  // Measure available space
+  const canvas = document.getElementById('stream-canvas');
+  const availH = canvas ? canvas.clientHeight : (window.innerHeight - 80);
+  const availW = canvas ? canvas.clientWidth : window.innerWidth;
+
+  // Card approximate height at current scale (header + 2 teams + padding)
+  const cardH = Math.round(130 * scale);
+  const sectionHeaderH = 36; // league-header height
+  const gridGap = 9;
+  const colMinW = Math.round(300 * scale);
+  const cols = Math.max(1, Math.floor((availW - 28) / (colMinW + gridGap)));
+
+  // Build section blocks — figure out how many rows each section needs
+  // then paginate by fitting as many sections as possible per page
+  let pages = [];
+  let currentPageSections = [];
+  let currentPageH = 0;
+
+  allSections.forEach(({ sport, games }) => {
+    const rows = Math.ceil(games.length / cols);
+    const sectionH = sectionHeaderH + gridGap + (rows * cardH) + ((rows - 1) * gridGap) + 26; // 26 = section margin
+
+    if (currentPageSections.length > 0 && currentPageH + sectionH > availH) {
+      // This section doesn't fit — start a new page
+      pages.push(currentPageSections);
+      currentPageSections = [];
+      currentPageH = 0;
+    }
+
+    // If section alone is taller than page, we still put it on its own page
+    currentPageSections.push({ sport, games });
+    currentPageH += sectionH;
+  });
+
+  if (currentPageSections.length > 0) pages.push(currentPageSections);
+
+  _streamPages = pages;
+
+  // Render pages DOM
+  pagesEl.innerHTML = '';
+  pages.forEach((sections, pageIdx) => {
+    const pageEl = document.createElement('div');
+    pageEl.className = 'stream-page' + (pageIdx === _streamCurrentPage ? ' active' : '');
+    pageEl.dataset.page = pageIdx;
+
+    sections.forEach(({ sport, games }) => {
+      // Sport section header
+      const season = state.seasonMeta[sport.id];
+      let sbadge = '';
+      if (season && season.key !== 'reg') sbadge = `<span class="league-season-badge ${season.key}">${season.label}</span>`;
+      const sec = document.createElement('div');
+      sec.className = 'league-section';
+      sec.dataset.sportId = sport.id;
+      sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${sport.color}"></div><div class="league-name">${sport.emoji} ${sport.name}</div>${sbadge}<div class="league-game-count">${games.length} game${games.length !== 1 ? 's' : ''}</div></div>`;
+
+      const grid = document.createElement('div');
+      grid.className = 'games-grid grid-mode';
+      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      if (scale !== 1.0) {
+        grid.style.setProperty('--card-score-size', Math.round(34 * scale) + 'px');
+        grid.style.setProperty('--card-abbr-size', Math.round(18 * scale) + 'px');
+        grid.style.setProperty('--card-name-size', Math.round(11 * scale) + 'px');
+      }
+
+      games.forEach(g => {
+        const card = buildFullCard(g);
+        card.dataset.gameId = g.id;
+        grid.appendChild(card);
+      });
+
+      sec.appendChild(grid);
+      pageEl.appendChild(sec);
+    });
+
+    pagesEl.appendChild(pageEl);
+  });
+
+  // Render pagination dots (only if more than 1 page)
+  if (paginationEl) {
+    if (pages.length > 1) {
+      paginationEl.innerHTML = pages.map((_, i) =>
+        `<div class="stream-dot${i === _streamCurrentPage ? ' active' : ''}" data-page="${i}"></div>`
+      ).join('');
+    } else {
+      paginationEl.innerHTML = '';
+    }
+  }
+
+  // Start/restart page rotation timer
+  if (_streamPageTimer) clearInterval(_streamPageTimer);
+  if (pages.length > 1) {
+    _streamPageTimer = setInterval(advanceStreamPage, _streamInterval * 1000);
+  }
+}
+
+function advanceStreamPage() {
+  const pages = document.querySelectorAll('.stream-page');
+  if (pages.length <= 1) return;
+
+  const nextPage = (_streamCurrentPage + 1) % pages.length;
+
+  // Fade out current
+  pages[_streamCurrentPage].classList.remove('active');
+  // Fade in next
+  pages[nextPage].classList.add('active');
+
+  _streamCurrentPage = nextPage;
+
+  // Update dots
+  document.querySelectorAll('.stream-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === _streamCurrentPage);
+  });
+}
+
+// Override renderScoreboard in stream mode to do in-place updates
+const _origRenderScoreboard = renderScoreboard;
+function renderScoreboard() {
+  if (!document.body.classList.contains('stream-mode') || !document.getElementById('stream-canvas')) {
+    _origRenderScoreboard();
+    return;
+  }
+  // Stream mode: update scores in-place without re-rendering the whole canvas
+  updateStreamScoresInPlace();
+}
+
+function updateStreamScoresInPlace() {
+  const sports = getSPORTS();
+  let hasNewGames = false;
+
+  sports.forEach(sport => {
+    let games = state.games[sport.id] || [];
+    if (_activeTeamConfig) {
+      const sportTeams = _activeTeamConfig[sport.id];
+      if (sportTeams && sportTeams.length)
+        games = games.filter(g => g.teams.some(t => sportTeams.includes(t.name) || sportTeams.includes(t.abbr)));
+    }
+    if (!state.showEnded || !state.endedLeagues.has(sport.id))
+      games = games.filter(g => !g.isFinal);
+
+    games.forEach(g => {
+      const cardEl = document.querySelector(`.stream-page [data-game-id="${g.id}"]`);
+      if (!cardEl) {
+        // New game appeared — need full re-render
+        hasNewGames = true;
+        return;
+      }
+
+      // Update scores in-place
+      const teamRows = cardEl.querySelectorAll('.team-row');
+      const away = g.teams.find(t => t.homeAway === 'away') || g.teams[0];
+      const home = g.teams.find(t => t.homeAway === 'home') || g.teams[1];
+
+      [away, home].forEach((team, idx) => {
+        if (!team || !teamRows[idx]) return;
+        const scoreEl = teamRows[idx].querySelector('.team-score');
+        if (scoreEl) {
+          const newScore = g.isScheduled ? '–' : (team.score ?? '–');
+          if (scoreEl.textContent !== String(newScore)) {
+            scoreEl.textContent = newScore;
+            scoreEl.classList.remove('score-updated');
+            void scoreEl.offsetWidth; // reflow to restart animation
+            scoreEl.classList.add('score-updated');
+          }
+        }
+      });
+
+      // Update status bar
+      const statusEl = cardEl.querySelector('.card-status');
+      if (statusEl) {
+        const sh = g.isLive
+          ? `<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`
+          : g.isFinal ? '<span class="status-final">FINAL</span>'
+          : `<span class="status-upcoming">${formatTime(g.date)}</span>`;
+        const networkBadges = buildNetworkBadges(g.networks);
+        const sportLabel = `<span class="game-period" style="color:${g.sportColor}">${g.sportEmoji} ${g.sportName}</span>`;
+        statusEl.innerHTML = sh + networkBadges + sportLabel;
+      }
+
+      // Update live border
+      cardEl.classList.toggle('live', g.isLive);
+      cardEl.classList.toggle('is-final', g.isFinal);
+    });
+  });
+
+  // If new games appeared or games disappeared, do a full canvas re-render
+  if (hasNewGames) {
+    renderStreamCanvas();
+  }
+
+  // Update topbar counts
+  updateTopbar();
+}
 
 // Check Dispatcharr credentials on load and update sidebar status
 (async function initDsStatus(){
