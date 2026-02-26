@@ -3397,47 +3397,68 @@ initAutoSaveToggle();
 buildSportToggles();
 startClock(); // default clock, no timezone — overridden in stream mode
 renderFavSummary();
-fetchAllScores();
-startAutoRefresh();
-setRefreshRate(savedRate);
-loadNcaaFromApi(); // fetch live NCAA data from DB; falls back to bundled seed silently
-initSidebarScoreboardSelector(); // populate scoreboard selector pills from API
 
-// STREAM MODE: if ?stream param present, hide sidebar only — topbar stays fully visible
+// STREAM MODE: configure scoreboard filters BEFORE fetching scores so the correct
+// sport/team filters are applied from the very first fetch
 (async function initStreamMode(){
   const params=new URLSearchParams(window.location.search);
-  if(!params.has('stream'))return;
-  // Hide sidebar, add stream-mode class for CSS scaling
+  if(!params.has('stream')){
+    // Normal mode — fetch scores immediately as before
+    fetchAllScores();
+    startAutoRefresh();
+    setRefreshRate(savedRate);
+    loadNcaaFromApi();
+    initSidebarScoreboardSelector();
+    return;
+  }
+
+  // Stream mode — hide sidebar, add CSS class
   const sidebar=document.getElementById('sidebar');
   if(sidebar)sidebar.style.display='none';
   document.body.classList.add('stream-mode');
-  // Fetch scoreboard by slug (or active fallback)
+
+  // Fetch scoreboard config FIRST so filters are set before any score fetching
   const slug=params.get('slug');
   const url=slug?`${API_BASE}/scoreboards/by-slug/${slug}`:`${API_BASE}/scoreboards/active`;
   try{
     const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
     if(r.ok){
       const sb=await r.json();
-      // Update topbar title to scoreboard name
+      // Update topbar title
       const titleEl=document.getElementById('topbarTitle');
       if(titleEl)titleEl.textContent=sb.name||'ScoreStream';
-      // Restart clock with scoreboard timezone if set
+      // Set clock timezone
       const tz=(sb.display_config&&sb.display_config.timezone)||null;
       startClock(tz);
       const sportIds=Object.entries(sb.sport_config||{}).filter(([,v])=>v).map(([k])=>k);
       if(!sportIds.length){
         document.getElementById('scoreboard').innerHTML=
-          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;color:var(--text-dim);font-family:\'Barlow Condensed\',sans-serif;">' +
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;">' +
           '<div style="font-size:64px;margin-bottom:20px;">⚙️</div>' +
           '<div style="font-size:28px;font-weight:900;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;color:var(--text-primary);">Not Configured</div>' +
           '<div style="font-size:15px;">Configure sports in Settings → My Scoreboards</div></div>';
         return;
       }
+      // Apply sport filter before fetching
       state.enabledSports=new Set(sportIds);
       state.activeSports=new Set(sportIds);
-      renderScoreboard();
+      // Apply team filter
+      if(sb.team_config&&!Array.isArray(sb.team_config)&&Object.keys(sb.team_config).length>0){
+        _activeTeamConfig=sb.team_config;
+      } else {
+        _activeTeamConfig=null;
+      }
     }
-  }catch(e){}
+  }catch(e){
+    console.warn('[stream] Failed to load scoreboard config:',e.message);
+  }
+
+  // Now fetch scores with correct filters already applied
+  await fetchAllScores();
+  // Stream mode uses 30s refresh
+  setRefreshRate(30);
+  startAutoRefresh();
+  loadNcaaFromApi();
 })();
 
 // Check Dispatcharr credentials on load and update sidebar status
