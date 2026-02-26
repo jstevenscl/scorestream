@@ -2400,6 +2400,11 @@ function updateTopbar(){
 }
 
 function renderScoreboard(){
+  // Stream mode: do in-place updates instead of full re-render
+  if(document.body.classList.contains('stream-mode')&&document.getElementById('stream-canvas')){
+    updateStreamScoresInPlace();
+    return;
+  }
   const sb=document.getElementById('scoreboard');if(!sb)return;sb.innerHTML='';
   const hasFavs=state.favTeams.size>0||state.favLeagues.size>0;
   const favsOnly=state.filterMode==='favorites';
@@ -3684,17 +3689,6 @@ function advanceStreamPage() {
   document.querySelectorAll('.stream-dot').forEach((d, i) => {
     d.classList.toggle('active', i === _streamCurrentPage);
   });
-}
-
-// Override renderScoreboard in stream mode to do in-place updates
-const _origRenderScoreboard = renderScoreboard;
-function renderScoreboard() {
-  if (!document.body.classList.contains('stream-mode') || !document.getElementById('stream-canvas')) {
-    _origRenderScoreboard();
-    return;
-  }
-  // Stream mode: update scores in-place without re-rendering the whole canvas
-  updateStreamScoresInPlace();
 }
 
 function updateStreamScoresInPlace() {
