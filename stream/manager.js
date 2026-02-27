@@ -285,25 +285,12 @@ async function touchStream(slug) {
 }
 
 // ── Idle watcher ──────────────────────────────────────────────────────────────
-// Checks both lastTouch (from m3u8/ts requests) AND most recent .ts file mtime
-// VLC fetches segments then plays silently — segment file mtime tracks playback
+// Pure touch-based — lastTouch is reset by every m3u8 and .ts request from players
 function startIdleWatcher() {
   setInterval(async () => {
     const now = Date.now();
     for (const [slug, s] of streams.entries()) {
       if (!s.running) continue;
-
-      // Check most recent .ts segment mtime as proxy for active playback
-      try {
-        const files = fs.readdirSync(HLS_DIR)
-          .filter(f => f.startsWith(slug + '_') && f.endsWith('.ts'))
-          .map(f => ({ f, mtime: fs.statSync(path.join(HLS_DIR, f)).mtimeMs }))
-          .sort((a, b) => b.mtime - a.mtime);
-        if (files.length > 0 && files[0].mtime > (s.lastTouch || 0)) {
-          s.lastTouch = files[0].mtime;
-        }
-      } catch (_) {}
-
       const idle = (now - (s.lastTouch || 0)) / 1000;
       if (idle >= IDLE_TIMEOUT) {
         console.log(`[manager][${slug}] Idle ${idle.toFixed(0)}s — stopping`);
@@ -321,6 +308,7 @@ function startHttpServer() {
     const m3u8Match = req.url.match(/^\/hls\/([^/.]+)\.m3u8$/);
     if (m3u8Match) {
       const slug = m3u8Match[1];
+      console.log(`[manager][${slug}] .m3u8 request received`);
       await touchStream(slug);
 
       const filePath = path.join(HLS_DIR, `${slug}.m3u8`);
@@ -349,7 +337,12 @@ function startHttpServer() {
     if (tsMatch) {
       const slug = tsMatch[1];
       const s = streams.get(slug);
-      if (s) s.lastTouch = Date.now();
+      if (s) {
+        s.lastTouch = Date.now();
+        console.log(`[manager][${slug}] .ts touch reset — ${req.url}`);
+      } else {
+        console.log(`[manager][${slug}] .ts request but no stream running`);
+      }
 
       const tsPath = path.join(HLS_DIR, path.basename(req.url));
       try {
