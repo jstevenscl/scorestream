@@ -1,24 +1,25 @@
 'use strict';
 
-const http      = require('http');
-const fs        = require('fs');
-const path      = require('path');
-const { spawn } = require('child_process');
-const puppeteer = require('puppeteer-core');
-const Database  = require('better-sqlite3');
+const http          = require('http');
+const fs            = require('fs');
+const path          = require('path');
+const { spawn, spawnSync } = require('child_process');
+const puppeteer     = require('puppeteer-core');
+const Database      = require('better-sqlite3');
 
 // ── Config ───────────────────────────────────────────────────────────────────
-const DB_PATH      = process.env.DB_PATH                  || '/config/scorestream.db';
-const HLS_DIR      = process.env.HLS_DIR                  || '/hls';
-const WEB_BASE     = process.env.WEB_BASE                 || 'http://scorestream-web';
-const MANAGER_PORT = parseInt(process.env.MANAGER_PORT    || '3001');
-const WIDTH        = parseInt(process.env.STREAM_WIDTH    || '1920');
-const HEIGHT       = parseInt(process.env.STREAM_HEIGHT   || '1080');
-const FPS          = parseInt(process.env.STREAM_FPS      || '10');
+const DB_PATH      = process.env.DB_PATH               || '/config/scorestream.db';
+const HLS_DIR      = process.env.HLS_DIR               || '/hls';
+const PIPES_DIR    = process.env.PIPES_DIR             || '/tmp/pipes';
+const WEB_BASE     = process.env.WEB_BASE              || 'http://scorestream-web';
+const MANAGER_PORT = parseInt(process.env.MANAGER_PORT || '3001');
+const WIDTH        = parseInt(process.env.STREAM_WIDTH  || '1920');
+const HEIGHT       = parseInt(process.env.STREAM_HEIGHT || '1080');
+const FPS          = parseInt(process.env.STREAM_FPS    || '10');
 const SEG_DURATION = parseInt(process.env.HLS_SEGMENT_DURATION || '4');
 const PLAYLIST_SIZE= parseInt(process.env.HLS_PLAYLIST_SIZE    || '6');
 const IDLE_TIMEOUT = parseInt(process.env.STREAM_IDLE_TIMEOUT  || '60');
-const BITRATE      = process.env.STREAM_BITRATE           || '2000k';
+const BITRATE      = process.env.STREAM_BITRATE        || '2000k';
 
 // ── State ────────────────────────────────────────────────────────────────────
 const streams = new Map();
@@ -42,14 +43,24 @@ function getAllSlugs() {
     const rows = db.prepare('SELECT slug FROM scoreboards').all();
     db.close();
     return rows.map(r => r.slug);
-  } catch (e) {
-    return [];
-  }
+  } catch (e) { return []; }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+function pipePath(slug) {
+  return path.join(PIPES_DIR, `${slug}.webm`);
+}
+
+function createPipe(slug) {
+  const p = pipePath(slug);
+  if (fs.existsSync(p)) try { fs.unlinkSync(p); } catch(_) {}
+  const r = spawnSync('mkfifo', [p]);
+  if (r.status !== 0) throw new Error(`mkfifo failed: ${r.stderr}`);
+  return p;
 }
 
 function cleanHlsFiles(slug) {
@@ -70,8 +81,46 @@ async function startStream(slug) {
 
   try {
     cleanHlsFiles(slug);
+    ensureDir(PIPES_DIR);
+    const pipe = createPipe(slug);
+
+    // Start ffmpeg reading from the named pipe (webm input)
+    const ffmpegArgs = [
+      '-loglevel', 'warning',
+      '-re',
+      '-i', pipe,
+      '-vf', `fps=${FPS},scale=${WIDTH}:${HEIGHT}:force_original_aspect_ratio=decrease,pad=${WIDTH}:${HEIGHT}:(ow-iw)/2:(oh-ih)/2`,
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-tune', 'zerolatency',
+      '-b:v', BITRATE,
+      '-pix_fmt', 'yuv420p',
+      '-g', String(FPS * SEG_DURATION),
+      '-sc_threshold', '0',
+      '-f', 'hls',
+      '-hls_time', String(SEG_DURATION),
+      '-hls_list_size', String(PLAYLIST_SIZE),
+      '-hls_flags', 'delete_segments+append_list+independent_segments',
+      '-hls_segment_filename', path.join(HLS_DIR, `${slug}_%05d.ts`),
+      path.join(HLS_DIR, `${slug}.m3u8`),
+    ];
+
+    console.log(`[manager][${slug}] Starting ffmpeg`);
+    const ffmpeg = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'ignore', 'pipe'] });
+
+    ffmpeg.stderr.on('data', d => {
+      const line = d.toString().trim();
+      if (line) console.error(`[ffmpeg][${slug}] ${line}`);
+    });
+
+    ffmpeg.on('exit', (code, sig) => {
+      if (streams.get(slug)?.running) {
+        console.log(`[manager][${slug}] ffmpeg exited (${code}/${sig})`);
+      }
+    });
 
     // Launch browser
+    console.log(`[manager][${slug}] Launching browser`);
     const browser = await puppeteer.launch({
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
       headless: true,
@@ -97,67 +146,14 @@ async function startStream(slug) {
     }
     console.log(`[manager][${slug}] Page loaded`);
 
-    // Start ffmpeg — reads JPEG frames from stdin, writes HLS
-    const ffmpegArgs = [
-      '-loglevel', 'warning',
-      '-f', 'image2pipe',
-      '-framerate', String(FPS),
-      '-i', 'pipe:0',
-      '-vf', `scale=${WIDTH}:${HEIGHT}:force_original_aspect_ratio=decrease,pad=${WIDTH}:${HEIGHT}:(ow-iw)/2:(oh-ih)/2`,
-      '-c:v', 'libx264',
-      '-preset', 'veryfast',
-      '-tune', 'zerolatency',
-      '-b:v', BITRATE,
-      '-pix_fmt', 'yuv420p',
-      '-g', String(FPS * SEG_DURATION),
-      '-sc_threshold', '0',
-      '-f', 'hls',
-      '-hls_time', String(SEG_DURATION),
-      '-hls_list_size', String(PLAYLIST_SIZE),
-      '-hls_flags', 'delete_segments+append_list+independent_segments',
-      '-hls_segment_filename', path.join(HLS_DIR, `${slug}_%05d.ts`),
-      path.join(HLS_DIR, `${slug}.m3u8`),
-    ];
+    // Start screencast writing to named pipe
+    // ffmpeg is already waiting to read from the pipe
+    console.log(`[manager][${slug}] Starting screencast → ${pipe}`);
+    const recorder = await page.screencast({ path: pipe });
 
-    console.log(`[manager][${slug}] Starting ffmpeg`);
-    const ffmpeg = spawn('ffmpeg', ffmpegArgs, { stdio: ['pipe', 'ignore', 'pipe'] });
-
-    ffmpeg.stderr.on('data', d => {
-      const line = d.toString().trim();
-      if (line) console.error(`[ffmpeg][${slug}] ${line}`);
-    });
-
-    ffmpeg.on('exit', (code, sig) => {
-      const s = streams.get(slug);
-      if (s && s.running) {
-        console.log(`[manager][${slug}] ffmpeg exited (${code}/${sig})`);
-      }
-    });
-
-    // Handle ffmpeg stdin errors gracefully
-    ffmpeg.stdin.on('error', e => {
-      if (e.code !== 'EPIPE') console.error(`[manager][${slug}] ffmpeg stdin error: ${e.message}`);
-    });
-
-    // Wait for ffmpeg to be ready by waiting briefly
-    await new Promise(r => setTimeout(r, 1000));
-
-    // Start screencast — Puppeteer 22 streams frames as a readable
-    console.log(`[manager][${slug}] Starting screencast`);
-    const screencast = await page.screencast({
-      speed: 1,
-      crop: { width: WIDTH, height: HEIGHT, x: 0, y: 0 },
-      format: 'jpeg',
-      quality: 80,
-    });
-
-    // Pipe screencast frames into ffmpeg stdin
-    screencast.on('error', e => console.error(`[manager][${slug}] Screencast error: ${e.message}`));
-    screencast.pipe(ffmpeg.stdin, { end: false });
-
-    // Wait for first segment to appear
+    // Wait for first HLS segment
     const m3u8Path = path.join(HLS_DIR, `${slug}.m3u8`);
-    const deadline = Date.now() + 15000;
+    const deadline = Date.now() + 20000;
     while (!fs.existsSync(m3u8Path) && Date.now() < deadline) {
       await new Promise(r => setTimeout(r, 500));
     }
@@ -172,7 +168,8 @@ async function startStream(slug) {
       browser,
       page,
       ffmpeg,
-      screencast,
+      recorder,
+      pipe,
     });
 
     console.log(`[manager][${slug}] ✅ Stream live → /hls/${slug}.m3u8`);
@@ -181,8 +178,10 @@ async function startStream(slug) {
     console.error(`[manager][${slug}] Failed to start: ${e.message}`);
     const s = streams.get(slug);
     if (s) {
+      if (s.recorder) try { await s.recorder.stop(); } catch(_) {}
       if (s.ffmpeg) try { s.ffmpeg.kill(); } catch(_) {}
       if (s.browser) try { await s.browser.close(); } catch(_) {}
+      if (s.pipe) try { fs.unlinkSync(s.pipe); } catch(_) {}
     }
     streams.delete(slug);
   }
@@ -197,7 +196,7 @@ async function stopStream(slug) {
   s.running = false;
   streams.delete(slug);
 
-  if (s.screencast) try { s.screencast.destroy(); } catch(_) {}
+  if (s.recorder) try { await s.recorder.stop(); } catch(_) {}
 
   if (s.ffmpeg) {
     await new Promise(resolve => {
@@ -208,6 +207,7 @@ async function stopStream(slug) {
   }
 
   if (s.browser) try { await s.browser.close(); } catch(_) {}
+  if (s.pipe) try { fs.unlinkSync(s.pipe); } catch(_) {}
 
   console.log(`[manager][${slug}] Stopped`);
 }
@@ -215,10 +215,7 @@ async function stopStream(slug) {
 // ── Touch ─────────────────────────────────────────────────────────────────────
 async function touchStream(slug) {
   const s = streams.get(slug);
-  if (s) {
-    s.lastTouch = Date.now();
-    return;
-  }
+  if (s) { s.lastTouch = Date.now(); return; }
   if (!slugExists(slug)) {
     console.log(`[manager][${slug}] Unknown slug — ignoring`);
     return;
@@ -253,7 +250,7 @@ function startHttpServer() {
       await touchStream(slug);
 
       const filePath = path.join(HLS_DIR, `${slug}.m3u8`);
-      const deadline = Date.now() + 15000;
+      const deadline = Date.now() + 20000;
       while (!fs.existsSync(filePath) && Date.now() < deadline) {
         await new Promise(r => setTimeout(r, 300));
       }
@@ -278,10 +275,7 @@ function startHttpServer() {
     if (tsMatch) {
       const slug = tsMatch[1];
       const s = streams.get(slug);
-      if (s) {
-        s.lastTouch = Date.now();
-        console.log(`[manager][${slug}] .ts touch`);
-      }
+      if (s) { s.lastTouch = Date.now(); }
       const tsPath = path.join(HLS_DIR, path.basename(req.url));
       try {
         const data = fs.readFileSync(tsPath);
@@ -340,6 +334,7 @@ async function main() {
   console.log(`[manager] Idle timeout: ${IDLE_TIMEOUT}s`);
 
   ensureDir(HLS_DIR);
+  ensureDir(PIPES_DIR);
 
   startHttpServer();
   startIdleWatcher();
