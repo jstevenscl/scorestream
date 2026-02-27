@@ -32,7 +32,7 @@ const FPS          = parseInt(process.env.STREAM_FPS    || '10');
 const JPEG_QUALITY = parseInt(process.env.JPEG_QUALITY  || '85');
 const SEG_DURATION = parseInt(process.env.HLS_SEGMENT_DURATION || '2');
 const PLAYLIST_SIZE= parseInt(process.env.HLS_PLAYLIST_SIZE    || '10');
-const IDLE_TIMEOUT = parseInt(process.env.STREAM_IDLE_TIMEOUT  || '30'); // seconds
+const IDLE_TIMEOUT = parseInt(process.env.STREAM_IDLE_TIMEOUT  || '45'); // seconds
 
 // ── State ────────────────────────────────────────────────────────────────────
 // Map of slug → { browser, page, ffmpeg, pipeStream, stopFrameLoop, running, lastTouch }
