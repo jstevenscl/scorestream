@@ -32,7 +32,7 @@ const FPS          = parseInt(process.env.STREAM_FPS    || '10');
 const JPEG_QUALITY = parseInt(process.env.JPEG_QUALITY  || '85');
 const SEG_DURATION = parseInt(process.env.HLS_SEGMENT_DURATION || '2');
 const PLAYLIST_SIZE= parseInt(process.env.HLS_PLAYLIST_SIZE    || '10');
-const IDLE_TIMEOUT = parseInt(process.env.STREAM_IDLE_TIMEOUT  || '10'); // seconds
+const IDLE_TIMEOUT = parseInt(process.env.STREAM_IDLE_TIMEOUT  || '30'); // seconds
 
 // ── State ────────────────────────────────────────────────────────────────────
 // Map of slug → { browser, page, ffmpeg, pipeStream, stopFrameLoop, running, lastTouch }
@@ -356,9 +356,9 @@ async function syncStreams() {
 function startHttpServer() {
   const server = http.createServer(async (req, res) => {
 
-    // POST /stream/touch/hls/:slug.m3u8  (called by nginx mirror)
-    // The URI passed is the original request URI e.g. /hls/mlb.m3u8
-    const touchMatch = req.url.match(/^\/stream\/touch\/hls\/([^/.]+)\.m3u8/);
+    // POST /stream/touch/hls/:slug.m3u8 or :slug_NNNNN.ts (called by nginx mirror)
+    // The URI passed is the original request URI e.g. /hls/mlb.m3u8 or /hls/mlb_00001.ts
+    const touchMatch = req.url.match(/^\/stream\/touch\/hls\/([^/_]+)(?:_\d+\.ts|\.m3u8)$/);
     if (touchMatch) {
       const slug = touchMatch[1];
       res.writeHead(204);
