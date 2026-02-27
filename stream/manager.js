@@ -362,8 +362,12 @@ function startHttpServer() {
       const slug = m3u8Match[1];
       // Touch stream (start if needed, reset idle timer)
       await touchStream(slug);
-      // Serve the m3u8 file from disk
+      // Serve the m3u8 file from disk — wait up to 8s for ffmpeg to create it
       const filePath = path.join(HLS_DIR, `${slug}.m3u8`);
+      const deadline = Date.now() + 8000;
+      while (!fs.existsSync(filePath) && Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 250));
+      }
       try {
         const data = fs.readFileSync(filePath);
         res.writeHead(200, {
@@ -373,8 +377,8 @@ function startHttpServer() {
         });
         res.end(data);
       } catch (e) {
-        // File not ready yet — return 404, player will retry
-        res.writeHead(404);
+        // Still not ready — return 503 so player retries
+        res.writeHead(503);
         res.end();
       }
       return;
