@@ -1227,8 +1227,16 @@ function renderEditorStep(sbOverride){
           Select teams to feature on this scoreboard. Featured teams get a highlight badge when their games appear.
           This is separate from your global ⭐ favorites.
         </div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;" id="sbTeamTabs">
-          ${tabHtml}
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;overflow-x:auto;padding-bottom:4px;flex:1;" id="sbTeamTabs">
+            ${tabHtml}
+          </div>
+          <button id="sbSelectAllBtn" onclick="sbEditorSelectAllTeams()"
+            style="flex-shrink:0;padding:4px 12px;border-radius:20px;border:1px solid var(--border);
+              background:transparent;color:var(--text-dim);font-family:'Share Tech Mono',monospace;
+              font-size:10px;cursor:pointer;letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap;">
+            Select All
+          </button>
         </div>
         <div style="position:relative;margin-bottom:10px;">
           <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;">🔍</span>
@@ -1392,6 +1400,16 @@ function sbEditorRenderTeams(query=''){
     listEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:12px 0;grid-column:1/-1;">No teams found</div>';
     return;
   }
+  // Update Select All button label based on whether all visible teams are selected
+  const selectAllBtn = document.getElementById('sbSelectAllBtn');
+  if(selectAllBtn){
+    const allKeys = (_sbTeamAllTeams||[]).map(t => t.name || t.abbr);
+    const allSelected = allKeys.length > 0 && allKeys.every(k => selected.has(k));
+    selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All';
+    selectAllBtn.style.borderColor = allSelected ? 'var(--accent)' : 'var(--border)';
+    selectAllBtn.style.color = allSelected ? 'var(--accent)' : 'var(--text-dim)';
+    selectAllBtn.style.background = allSelected ? 'rgba(0,212,255,0.08)' : 'transparent';
+  }
   listEl.innerHTML = teams.map(t=>{
     const key = t.name || t.abbr;
     const on = selected.has(key);
@@ -1429,6 +1447,26 @@ function sbEditorToggleTeam(key, checked){
 
 function sbEditorFilterTeams(query){
   sbEditorRenderTeams(query);
+}
+
+function sbEditorSelectAllTeams(){
+  if(!_sbTeamAllTeams || !_sbTeamAllTeams.length) return;
+  if(!_editorDraft.team_config || Array.isArray(_editorDraft.team_config)) _editorDraft.team_config = {};
+  const sport = _sbTeamActiveSport;
+  const selected = new Set((_editorDraft.team_config[sport]) || []);
+  const allKeys = _sbTeamAllTeams.map(t => t.name || t.abbr);
+  const allSelected = allKeys.every(k => selected.has(k));
+  if(allSelected){
+    // Deselect all for this sport
+    delete _editorDraft.team_config[sport];
+  } else {
+    // Select all for this sport
+    _editorDraft.team_config[sport] = [...allKeys];
+  }
+  const total = Object.values(_editorDraft.team_config).flat().length;
+  const countEl = document.getElementById('sbTeamCount');
+  if(countEl) countEl.textContent = `✓ ${total} team${total!==1?'s':''} selected for this scoreboard`;
+  sbEditorRenderTeams(document.getElementById('sbTeamSearch')?.value || '');
 }
 
 function sbEditorSetDiv(div){
@@ -2080,8 +2118,67 @@ function loadDisplay(){try{const d=ss.get('ss_display');if(d)Object.assign(state
 // =====================
 //  FAVORITES
 // =====================
-function toggleFavTeam(n){if(state.favTeams.has(n))state.favTeams.delete(n);else state.favTeams.add(n);saveFavs();renderScoreboard();renderFavSummary();}
-function toggleFavLeague(id){if(state.favLeagues.has(id))state.favLeagues.delete(id);else state.favLeagues.add(id);saveFavLeagues();renderScoreboard();renderFavSummary();}
+function toggleFavTeam(n){
+  if(state.favTeams.has(n)) state.favTeams.delete(n); else state.favTeams.add(n);
+  if(_activeSidebarSbId){
+    // Per-scoreboard: save to team_config via API
+    // Rebuild team_config from current favTeams grouped by sport
+    if(!_activeTeamConfig) _activeTeamConfig = {};
+    // Find which sport this team belongs to and update
+    ALL_SPORTS.forEach(sp => {
+      const games = state.games[sp.id] || [];
+      const hasTeam = games.some(g => g.teams.some(t => t.name === n || t.abbr === n));
+      if(hasTeam){
+        if(!_activeTeamConfig[sp.id]) _activeTeamConfig[sp.id] = [];
+        if(state.favTeams.has(n)){
+          if(!_activeTeamConfig[sp.id].includes(n)) _activeTeamConfig[sp.id].push(n);
+        } else {
+          _activeTeamConfig[sp.id] = _activeTeamConfig[sp.id].filter(t => t !== n);
+        }
+      }
+    });
+    saveSbTeamConfig();
+  } else {
+    saveFavs();
+  }
+  renderScoreboard(); renderFavSummary();
+}
+function toggleFavLeague(id){
+  if(state.favLeagues.has(id)) state.favLeagues.delete(id); else state.favLeagues.add(id);
+  if(_activeSidebarSbId){
+    // Per-scoreboard: save favLeagues to display_config.favLeagues via API
+    saveSbFavLeagues();
+  } else {
+    saveFavLeagues();
+  }
+  renderScoreboard(); renderFavSummary();
+}
+
+// Save per-scoreboard team_config to API
+function saveSbTeamConfig(){
+  if(!_activeSidebarSbId) return;
+  fetch(`${API_BASE}/scoreboards/${_activeSidebarSbId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ team_config: _activeTeamConfig || {} })
+  }).catch(e => console.warn('[favs] Failed to save team_config:', e.message));
+}
+
+// Save per-scoreboard league favorites to display_config.favLeagues via API
+function saveSbFavLeagues(){
+  if(!_activeSidebarSbId) return;
+  // Merge with existing display_config
+  const sb = _scoreboards.find(s => s.id === _activeSidebarSbId);
+  const dc = Object.assign({}, sb ? (sb.display_config || {}) : {});
+  dc.favLeagues = [...state.favLeagues];
+  // Update local cache
+  if(sb) sb.display_config = dc;
+  fetch(`${API_BASE}/scoreboards/${_activeSidebarSbId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ display_config: dc })
+  }).catch(e => console.warn('[favs] Failed to save favLeagues:', e.message));
+}
 function isGameFavorited(g){if(state.favLeagues.has(g.sport))return true;return g.teams.some(t=>state.favTeams.has(t.name)||state.favTeams.has(t.abbr));}
 
 function renderFavSummary(){
@@ -2900,7 +2997,19 @@ function renderTbTeams(teams){
       const nm=team.name;
       if(state.favTeams.has(nm)){state.favTeams.delete(nm);state.favTeams.delete(team.abbr);state.favTeams.delete(team.shortName);}
       else state.favTeams.add(nm);
-      saveFavs();updateTbFavCount();renderTbTeams(teams);
+      if(_activeSidebarSbId){
+        if(!_activeTeamConfig) _activeTeamConfig={};
+        if(!_activeTeamConfig[tbState.activeSport]) _activeTeamConfig[tbState.activeSport]=[];
+        if(state.favTeams.has(nm)){
+          if(!_activeTeamConfig[tbState.activeSport].includes(nm)) _activeTeamConfig[tbState.activeSport].push(nm);
+        } else {
+          _activeTeamConfig[tbState.activeSport]=_activeTeamConfig[tbState.activeSport].filter(t=>t!==nm&&t!==team.abbr&&t!==team.shortName);
+        }
+        saveSbTeamConfig();
+      } else {
+        saveFavs();
+      }
+      updateTbFavCount();renderTbTeams(teams);
     };
     list.appendChild(card);
   });
@@ -3398,10 +3507,13 @@ function updateDsStatus(connected,st=''){
 //  SCOREBOARD SELECTOR
 // =====================
 let _activeSidebarSlug = '__all__'; // '__all__' = default All Sports view
-let _allSportsEnabledSports = null; // saved state when switching away from All Sports
+let _activeSidebarSbId = null;       // numeric ID of active custom scoreboard (null = All Sports)
+let _allSportsEnabledSports = null;  // saved state when switching away from All Sports
 let _allSportsActiveSports = null;
+let _allSportsFavTeams = null;       // saved global favorites when switching to custom scoreboard
+let _allSportsFavLeagues = null;
 let _activeTeamConfig = null;
-let _activeFinalsCfg = null;  // per-sport finals config from scoreboard display_config // null = show all; Set of keys when a scoreboard with team_config is active
+let _activeFinalsCfg = null;  // per-sport finals config from scoreboard display_config
 
 async function initSidebarScoreboardSelector(){
   try{
@@ -3438,6 +3550,7 @@ function selectSidebarScoreboard(slug){
     // Restore All Sports view
     _activeTeamConfig=null;
     _activeFinalsCfg=null;
+    _activeSidebarSbId=null;
     if(defaultSections)defaultSections.style.display='block';
     if(banner)banner.style.display='none';
     if(titleEl)titleEl.textContent='All Sports Scoreboard';
@@ -3448,6 +3561,9 @@ function selectSidebarScoreboard(slug){
       _allSportsEnabledSports=null;
       _allSportsActiveSports=null;
     }
+    // Restore global localStorage favorites
+    if(_allSportsFavTeams !== null){ state.favTeams=_allSportsFavTeams; _allSportsFavTeams=null; }
+    if(_allSportsFavLeagues !== null){ state.favLeagues=_allSportsFavLeagues; _allSportsFavLeagues=null; }
     buildSportToggles();
     renderScoreboard();
   }else{
@@ -3480,6 +3596,20 @@ function selectSidebarScoreboard(slug){
         _activeTeamConfig = (tc && !Array.isArray(tc) && Object.keys(tc).length) ? tc : null;
         // Store finals config for this scoreboard
         _activeFinalsCfg = (sb.display_config && sb.display_config.finals) || null;
+        // Track active scoreboard ID for per-scoreboard favorites
+        _activeSidebarSbId = sb.id;
+        // Save global favorites before overriding with scoreboard favorites
+        if(_allSportsFavTeams === null){ _allSportsFavTeams = new Set(state.favTeams); }
+        if(_allSportsFavLeagues === null){ _allSportsFavLeagues = new Set(state.favLeagues); }
+        // Load per-scoreboard favorites from team_config (all teams across sports)
+        const sbFavTeams = new Set();
+        if(tc && !Array.isArray(tc)){
+          Object.values(tc).forEach(teams => { if(Array.isArray(teams)) teams.forEach(t => sbFavTeams.add(t)); });
+        }
+        state.favTeams = sbFavTeams;
+        // Load per-scoreboard league favorites from display_config.favLeagues
+        const sbFavLeagues = new Set((sb.display_config && sb.display_config.favLeagues) || []);
+        state.favLeagues = sbFavLeagues;
         state.enabledSports=new Set(sportIds);
         state.activeSports=new Set(sportIds);
         buildSportToggles();
@@ -3588,6 +3718,14 @@ renderFavSummary();
       }
       // Store finals config for this scoreboard
       _activeFinalsCfg = (sb.display_config && sb.display_config.finals) || null;
+      // Load per-scoreboard favorites from team_config
+      const streamFavTeams = new Set();
+      const stc = sb.team_config;
+      if(stc && !Array.isArray(stc)){
+        Object.values(stc).forEach(teams => { if(Array.isArray(teams)) teams.forEach(t => streamFavTeams.add(t)); });
+      }
+      state.favTeams = streamFavTeams;
+      state.favLeagues = new Set((sb.display_config && sb.display_config.favLeagues) || []);
     }
   }catch(e){
     console.warn('[stream] Failed to load scoreboard config:',e.message);
