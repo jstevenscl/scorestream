@@ -323,13 +323,28 @@ async function touchStream(slug) {
   setImmediate(() => startStream(slug));
 }
 
-// ── Idle watcher — kills streams with no recent touch ───────────────────────
+// ── Idle watcher — kills streams with no recent HLS activity ────────────────
+// Checks m3u8 file mtime — if no segment written in IDLE_TIMEOUT seconds AND
+// no client touch received, the stream is considered idle and stopped.
 function startIdleWatcher() {
   setInterval(async () => {
     const now = Date.now();
     for (const [slug, s] of streams.entries()) {
       if (!s.running) continue;
-      const idleSecs = (now - (s.lastTouch || 0)) / 1000;
+
+      // Check playlist file modification time as a proxy for active playback
+      let lastActivity = s.lastTouch || 0;
+      try {
+        const m3u8 = path.join(HLS_DIR, `${slug}.m3u8`);
+        const stat = fs.statSync(m3u8);
+        const fileMtime = stat.mtimeMs;
+        if (fileMtime > lastActivity) {
+          lastActivity = fileMtime;
+          s.lastTouch = fileMtime; // update so next check uses file time
+        }
+      } catch (_) {}
+
+      const idleSecs = (now - lastActivity) / 1000;
       if (idleSecs >= IDLE_TIMEOUT) {
         console.log(`[manager][${slug}] Idle for ${idleSecs.toFixed(1)}s — stopping`);
         await stopStream(slug);
