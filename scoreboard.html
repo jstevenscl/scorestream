@@ -1129,7 +1129,7 @@ function renderEditorStep(sbOverride){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <div class="wiz-label">Card Scale</div>
-            <select class="wiz-input" id="sbEditCardScale">
+            <select class="wiz-input" id="sbEditCardScale" onchange="sbPreviewCardScale(this.value)">
               <option value="0.8"  ${String(_editorDraft.display_config.stream_card_scale||'')==='0.8'?'selected':''}>Small (80%)</option>
               <option value="0.9"  ${String(_editorDraft.display_config.stream_card_scale||'')==='0.9'?'selected':''}>Compact (90%)</option>
               <option value="1.0"  ${String(_editorDraft.display_config.stream_card_scale||'1.0')==='1.0'?'selected':''}>Normal (100%)</option>
@@ -1151,7 +1151,67 @@ function renderEditorStep(sbOverride){
             <div class="wiz-sublabel">How long each page shows before rotating</div>
           </div>
         </div>
+
+        <div style="margin-top:16px;">
+          <div class="wiz-label" style="margin-bottom:8px;">Card Scale Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(live)</span></div>
+          <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px 14px 10px;overflow:hidden;">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
+            <div id="sbCardScaleWrap" style="overflow:hidden;">
+              <div id="sbCardScaleInner" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;transform-origin:top left;transition:transform 0.2s ease;width:580px;">
+                <div class="game-card live" style="pointer-events:none;">
+                  <div class="card-status">
+                    <div class="status-live"><div class="status-live-dot"></div>3rd · 7:42</div>
+                    <span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,100,50,0.9);letter-spacing:0.5px;">ESPN</span>
+                    <span class="game-period" style="color:#e05555;">🏒 NHL</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="teams-container">
+                      <div class="team-row">
+                        <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#003087,#00539b);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:9px;color:white;">TOR</div>
+                        <div class="team-name-block"><div class="team-abbr">TOR</div><div class="team-full-name">Toronto Maple Leafs · Away</div></div>
+                        <div class="team-score">2</div>
+                      </div>
+                      <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:2px 0;"></div>
+                      <div class="team-row winning">
+                        <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#c8102e,#a00d24);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:9px;color:white;">DET</div>
+                        <div class="team-name-block"><div class="team-abbr">DET</div><div class="team-full-name">Detroit Red Wings · Home</div></div>
+                        <div class="team-score" style="color:white;">4</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="game-card" style="pointer-events:none;">
+                  <div class="card-status">
+                    <span class="status-upcoming">7:30 PM</span>
+                    <span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,180,0,0.9);letter-spacing:0.5px;">TNT</span>
+                    <span class="game-period" style="color:#c9a227;">🏀 NBA</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="teams-container">
+                      <div class="team-row">
+                        <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#006bb6,#004f8a);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:9px;color:white;">NYK</div>
+                        <div class="team-name-block"><div class="team-abbr">NYK</div><div class="team-full-name">New York Knicks · Away</div></div>
+                        <div class="team-score">–</div>
+                      </div>
+                      <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:2px 0;"></div>
+                      <div class="team-row">
+                        <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#ce1141,#a00d32);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:9px;color:white;">MIA</div>
+                        <div class="team-name-block"><div class="team-abbr">MIA</div><div class="team-full-name">Miami Heat · Home</div></div>
+                        <div class="team-score">–</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>`;
+  // Init preview to current scale after render
+  setTimeout(()=>{
+    const sel=document.getElementById('sbEditCardScale');
+    if(sel) sbPreviewCardScale(sel.value);
+  },0);
   }
   else if(_editorStep===2){
     const groups=[
@@ -1480,6 +1540,20 @@ function sbEditorToggleTeam(key, checked){
   // Re-render current sport list to reflect checked state
   const search = document.getElementById('sbTeamSearch')?.value || '';
   sbEditorRenderTeams(search);
+}
+
+function sbPreviewCardScale(val){
+  const scale = parseFloat(val) || 1.0;
+  const inner = document.getElementById('sbCardScaleInner');
+  const wrap  = document.getElementById('sbCardScaleWrap');
+  if(!inner || !wrap) return;
+  inner.style.transform = `scale(${scale})`;
+  // Shrink the wrapper height to match so it doesn't leave a gap
+  const naturalH = inner.offsetHeight;
+  wrap.style.height = Math.round(naturalH * scale) + 'px';
+  // Update score/abbr font sizes to match what the stream renderer does
+  inner.style.setProperty('--card-score-size', Math.round(34 * scale) + 'px');
+  inner.style.setProperty('--card-abbr-size',  Math.round(18 * scale) + 'px');
 }
 
 function sbEditorFilterTeams(query){
@@ -2559,6 +2633,10 @@ async function fetchAllScores(){
   if(btn){btn.innerHTML='↻ Fetching...';btn.style.opacity='0.6';}
   // Skip loading skeleton in stream mode — it wipes the stream canvas causing flicker
   if(!document.body.classList.contains('stream-mode')) showLoadingState();
+  // In stream mode: also refresh scoreboard config to pick up saved settings changes
+  if(document.body.classList.contains('stream-mode') && _activeStreamSlug) {
+    await refreshStreamConfig();
+  }
   await Promise.all(getAllEnabledSports().map(s=>fetchSport(s)));
   refreshSportToggles();updateTopbar();renderScoreboard();
   const el=document.getElementById('lastUpdate');
@@ -3512,6 +3590,7 @@ function updateDsStatus(connected,st=''){
 // =====================
 let _activeSidebarSlug = '__all__'; // '__all__' = default All Sports view
 let _activeStreamDisplayConfig = null; // display_config of active stream scoreboard
+let _activeStreamSlug = null;           // slug of the active stream scoreboard for config refresh
 let _activeSidebarSbId = null;       // numeric ID of active custom scoreboard (null = All Sports)
 let _allSportsEnabledSports = null;  // saved state when switching away from All Sports
 let _allSportsActiveSports = null;
@@ -3682,6 +3761,7 @@ renderFavSummary();
 
   // Fetch scoreboard config FIRST so filters are set before any score fetching
   const slug=params.get('slug');
+  _activeStreamSlug = slug || '__active__';
   const url=slug?`${API_BASE}/scoreboards/by-slug/${slug}`:`${API_BASE}/scoreboards/active`;
   try{
     const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
@@ -3744,6 +3824,42 @@ let _streamPageTimer = null;
 let _streamScaleX = 1;
 let _streamScaleY = 1;
 let _streamInterval = 15;   // seconds between page rotations
+
+// Re-fetch scoreboard config during stream refresh cycle to pick up saved settings changes
+async function refreshStreamConfig() {
+  if(!_activeStreamSlug) return;
+  const url = _activeStreamSlug === '__active__'
+    ? `${API_BASE}/scoreboards/active`
+    : `${API_BASE}/scoreboards/by-slug/${_activeStreamSlug}`;
+  try {
+    const r = await fetch(url, {signal: AbortSignal.timeout(4000)});
+    if(!r.ok) return;
+    const sb = await r.json();
+    const dc = sb.display_config || {};
+    const prevScale    = _activeStreamDisplayConfig?.stream_card_scale;
+    const prevRotation = _activeStreamDisplayConfig?.stream_rotation_secs;
+    _activeStreamDisplayConfig = dc;
+
+    // If card scale changed, re-render canvas with new scale
+    const newScale = dc.stream_card_scale;
+    if(newScale != null && newScale !== prevScale) {
+      console.log(`[stream] Card scale changed ${prevScale} → ${newScale}, re-rendering`);
+      renderStreamCanvas();
+    }
+    // If rotation interval changed, restart the page timer
+    const newRotation = dc.stream_rotation_secs;
+    if(newRotation != null && newRotation !== prevRotation) {
+      console.log(`[stream] Rotation interval changed ${prevRotation}s → ${newRotation}s, restarting timer`);
+      _streamInterval = newRotation;
+      if(_streamPageTimer) { clearInterval(_streamPageTimer); _streamPageTimer = null; }
+      if(_streamInterval > 0) {
+        _streamPageTimer = setInterval(advanceStreamPage, _streamInterval * 1000);
+      }
+    }
+  } catch(e) {
+    // Non-fatal — stream continues with current settings
+  }
+}
 
 function getStreamSettings() {
   // In stream mode: read from the scoreboard's display_config
