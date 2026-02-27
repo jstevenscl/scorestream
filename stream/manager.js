@@ -356,6 +356,29 @@ async function syncStreams() {
 function startHttpServer() {
   const server = http.createServer(async (req, res) => {
 
+    // GET /hls/:slug_NNNNN.ts — proxied from nginx, touch stream to reset idle timer
+    const tsMatch = req.url.match(/^\/hls\/([^/_]+)_\d+\.ts$/);
+    if (tsMatch) {
+      const slug = tsMatch[1];
+      const s = streams.get(slug);
+      if (s) s.lastTouch = Date.now();
+      // Serve the .ts file from disk
+      const tsPath = path.join(HLS_DIR, path.basename(req.url));
+      try {
+        const data = fs.readFileSync(tsPath);
+        res.writeHead(200, {
+          'Content-Type': 'video/mp2t',
+          'Cache-Control': 'no-cache',
+          'Access-Control-Allow-Origin': '*',
+        });
+        res.end(data);
+      } catch (e) {
+        res.writeHead(404);
+        res.end();
+      }
+      return;
+    }
+
     // GET /hls/:slug.m3u8 — proxied from nginx, touch stream and serve file
     const m3u8Match = req.url.match(/^\/hls\/([^/.]+)\.m3u8$/);
     if (m3u8Match) {
