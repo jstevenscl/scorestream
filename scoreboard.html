@@ -1273,8 +1273,36 @@ function collectEditorStepData(){
     document.querySelectorAll('#sbEditorBody input[data-sport]').forEach(cb=>{
       _editorDraft.sport_config[cb.dataset.sport]=cb.checked;
     });
+    // Collect finals config
+    if (!_editorDraft.display_config.finals) _editorDraft.display_config.finals = {};
+    document.querySelectorAll('#sbEditorBody input[data-finals-sport]').forEach(cb=>{
+      const sid = cb.dataset.finalsSport;
+      if (!_editorDraft.display_config.finals[sid]) _editorDraft.display_config.finals[sid] = { show: false, days: 1 };
+      _editorDraft.display_config.finals[sid].show = cb.checked;
+    });
+    document.querySelectorAll('#sbEditorBody select[data-finals-days]').forEach(sel=>{
+      const sid = sel.dataset.finalsDays;
+      if (!_editorDraft.display_config.finals[sid]) _editorDraft.display_config.finals[sid] = { show: false, days: 1 };
+      _editorDraft.display_config.finals[sid].days = parseInt(sel.value);
+    });
   }
   // Step 3 team_config is updated live via sbEditorToggleTeam, no collection needed
+}
+
+// ── Finals editor helpers ─────────────────────────────────────────────────────
+function sbEditorToggleFinals(sportId, checked) {
+  if (!_editorDraft.display_config.finals) _editorDraft.display_config.finals = {};
+  if (!_editorDraft.display_config.finals[sportId]) _editorDraft.display_config.finals[sportId] = { show: false, days: 1 };
+  _editorDraft.display_config.finals[sportId].show = checked;
+  // Dim/enable days selector
+  const label = document.getElementById(`sbFinalsDaysLabel_${sportId}`);
+  if (label) { label.style.opacity = checked ? '1' : '0.4'; label.style.pointerEvents = checked ? '' : 'none'; }
+}
+
+function sbEditorSetFinalsDays(sportId, days) {
+  if (!_editorDraft.display_config.finals) _editorDraft.display_config.finals = {};
+  if (!_editorDraft.display_config.finals[sportId]) _editorDraft.display_config.finals[sportId] = { show: false, days: 1 };
+  _editorDraft.display_config.finals[sportId].days = parseInt(days);
 }
 
 // ── Per-scoreboard team browser ───────────────────────────────────────────────
@@ -2363,6 +2391,14 @@ async function fetchSport(sport){
       const results=await Promise.all(fetches);
       results.forEach(d=>{if(!d)return;(d.events||[]).forEach(ev=>{const g=parseGame(ev,sport);if(g.isFinal&&!games.find(x=>x.id===g.id))games.push(g);});});
     }
+    // Custom scoreboard finals: fetch based on per-sport display_config.finals
+    if(_activeFinalsCfg && _activeFinalsCfg[sport.id]?.show){
+      const days=_activeFinalsCfg[sport.id].days||1;
+      const fetches=[];
+      for(let i=1;i<=days;i++)fetches.push(fetch(buildHistoricalUrl(sport,i)).then(r=>r.ok?r.json():null).catch(()=>null));
+      const results=await Promise.all(fetches);
+      results.forEach(d=>{if(!d)return;(d.events||[]).forEach(ev=>{const g=parseGame(ev,sport);if(g.isFinal&&!games.find(x=>x.id===g.id))games.push(g);});});
+    }
     games.sort((a,b)=>(a.isLive?0:a.isScheduled?1:2)-(b.isLive?0:b.isScheduled?1:2));
     state.games[sport.id]=games;state.usingMock=false;
   }catch(e){
@@ -2451,14 +2487,33 @@ function renderScoreboard(){
         games=[...nf,...ff,...nff];
       }
     }
-    if(!games.length)return;anyGame=true;
+    const liveUpcomingGames = games.filter(g => !g.isFinal);
+    const customFinalGames = _activeFinalsCfg && _activeFinalsCfg[sport.id]?.show
+      ? (state.games[sport.id]||[]).filter(g => g.isFinal)
+      : [];
+
+    if(!liveUpcomingGames.length && !customFinalGames.length)return;
+    if(liveUpcomingGames.length) anyGame=true;
     const isFavL=state.favLeagues.has(sport.id);
-    let sbadge='';
-    if(season&&season.key!=='reg')sbadge=`<span class="league-season-badge ${season.key}">${season.label}</span>`;
-    const sec=document.createElement('div');sec.className=`league-section${isFavL?' fav-league':''}`;
-    sec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:${isFavL?'#ffd700':sport.color}"></div><div class="league-name">${sport.emoji} ${sport.name}</div>${sbadge}<button class="league-star-btn ${isFavL?'starred':''}" onclick="toggleFavLeague('${sport.id}')">⭐</button><div class="league-game-count">${games.length} game${games.length!==1?'s':''}</div></div>`;
-    const grid=document.createElement('div');grid.className=`games-grid ${state.layout}-mode`;
-    games.forEach(g=>grid.appendChild(buildGameCard(g)));sec.appendChild(grid);sb.appendChild(sec);
+
+    // Render live/upcoming section
+    if(liveUpcomingGames.length){
+      let sbadge='';
+      if(season&&season.key!=='reg')sbadge=`<span class="league-season-badge ${season.key}">${season.label}</span>`;
+      const sec=document.createElement('div');sec.className=`league-section${isFavL?' fav-league':''}`;
+      sec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:${isFavL?'#ffd700':sport.color}"></div><div class="league-name">${sport.emoji} ${sport.name}</div>${sbadge}<button class="league-star-btn ${isFavL?'starred':''}" onclick="toggleFavLeague('${sport.id}')">⭐</button><div class="league-game-count">${liveUpcomingGames.length} game${liveUpcomingGames.length!==1?'s':''}</div></div>`;
+      const grid=document.createElement('div');grid.className=`games-grid ${state.layout}-mode`;
+      liveUpcomingGames.forEach(g=>grid.appendChild(buildGameCard(g)));sec.appendChild(grid);sb.appendChild(sec);
+    }
+
+    // Render finals section for custom scoreboard
+    if(customFinalGames.length){
+      anyGame=true;
+      const finSec=document.createElement('div');finSec.className='league-section';
+      finSec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:#ffb400"></div><div class="league-name">${sport.emoji} ${sport.name} — Final Games</div><span class="league-season-badge" style="background:rgba(255,180,0,0.15);color:#ffb400;border-color:rgba(255,180,0,0.3);">FINAL</span><div class="league-game-count">${customFinalGames.length} game${customFinalGames.length!==1?'s':''}</div></div>`;
+      const finGrid=document.createElement('div');finGrid.className=`games-grid ${state.layout}-mode`;
+      customFinalGames.forEach(g=>finGrid.appendChild(buildGameCard(g)));finSec.appendChild(finGrid);sb.appendChild(finSec);
+    }
   });
 
   if(!anyGame&&!sb.querySelector('.pinned-section')){
@@ -3308,7 +3363,8 @@ function updateDsStatus(connected,st=''){
 let _activeSidebarSlug = '__all__'; // '__all__' = default All Sports view
 let _allSportsEnabledSports = null; // saved state when switching away from All Sports
 let _allSportsActiveSports = null;
-let _activeTeamConfig = null; // null = show all; Set of keys when a scoreboard with team_config is active
+let _activeTeamConfig = null;
+let _activeFinalsCfg = null;  // per-sport finals config from scoreboard display_config // null = show all; Set of keys when a scoreboard with team_config is active
 
 async function initSidebarScoreboardSelector(){
   try{
@@ -3344,6 +3400,7 @@ function selectSidebarScoreboard(slug){
   if(slug==='__all__'){
     // Restore All Sports view
     _activeTeamConfig=null;
+    _activeFinalsCfg=null;
     if(defaultSections)defaultSections.style.display='block';
     if(banner)banner.style.display='none';
     if(titleEl)titleEl.textContent='All Sports Scoreboard';
@@ -3384,10 +3441,13 @@ function selectSidebarScoreboard(slug){
         // Store team_config as-is (per-sport object) for filtering during render
         const tc = sb.team_config;
         _activeTeamConfig = (tc && !Array.isArray(tc) && Object.keys(tc).length) ? tc : null;
+        // Store finals config for this scoreboard
+        _activeFinalsCfg = (sb.display_config && sb.display_config.finals) || null;
         state.enabledSports=new Set(sportIds);
         state.activeSports=new Set(sportIds);
         buildSportToggles();
-        renderScoreboard();
+        // Re-fetch scores to get finals data if needed
+        fetchAllScores();
       })
       .catch(()=>{});
   }
@@ -3489,6 +3549,8 @@ renderFavSummary();
       } else {
         _activeTeamConfig=null;
       }
+      // Store finals config for this scoreboard
+      _activeFinalsCfg = (sb.display_config && sb.display_config.finals) || null;
     }
   }catch(e){
     console.warn('[stream] Failed to load scoreboard config:',e.message);
@@ -3564,12 +3626,20 @@ function renderStreamCanvas() {
         games = games.filter(g => g.teams.some(t => sportTeams.includes(t.name) || sportTeams.includes(t.abbr)));
     }
 
-    // Apply live/ended filters same as main render
-    if (!state.showEnded || !state.endedLeagues.has(sport.id))
-      games = games.filter(g => !g.isFinal);
+    // Separate live/upcoming from finals
+    const liveUpcoming = games.filter(g => !g.isFinal);
+    const finalGames = games.filter(g => g.isFinal);
 
-    if (!games.length) return;
-    allSections.push({ sport, games });
+    // Show live/upcoming section
+    if (liveUpcoming.length > 0) allSections.push({ sport, games: liveUpcoming });
+
+    // Show finals section if custom scoreboard has finals enabled for this sport
+    if (finalGames.length > 0 && _activeFinalsCfg && _activeFinalsCfg[sport.id]?.show) {
+      allSections.push({ sport, games: finalGames, isFinalSection: true });
+    } else if (!_activeFinalsCfg && state.showEnded && state.endedLeagues.has(sport.id) && finalGames.length > 0) {
+      // Normal mode with showEnded toggled on
+      allSections.push({ sport, games: finalGames, isFinalSection: true });
+    }
   });
 
   if (!allSections.length) {
@@ -3627,11 +3697,13 @@ function renderStreamCanvas() {
       // Sport section header
       const season = state.seasonMeta[sport.id];
       let sbadge = '';
-      if (season && season.key !== 'reg') sbadge = `<span class="league-season-badge ${season.key}">${season.label}</span>`;
+      if (season && season.key !== 'reg' && !isFinalSection) sbadge = `<span class="league-season-badge ${season.key}">${season.label}</span>`;
+      if (isFinalSection) sbadge = `<span class="league-season-badge" style="background:rgba(255,180,0,0.15);color:#ffb400;border-color:rgba(255,180,0,0.3);">FINAL</span>`;
       const sec = document.createElement('div');
       sec.className = 'league-section';
       sec.dataset.sportId = sport.id;
-      sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${sport.color}"></div><div class="league-name">${sport.emoji} ${sport.name}</div>${sbadge}<div class="league-game-count">${games.length} game${games.length !== 1 ? 's' : ''}</div></div>`;
+      const sectionLabel = isFinalSection ? `${sport.emoji} ${sport.name} — Final Games` : `${sport.emoji} ${sport.name}`;
+      sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${isFinalSection ? '#ffb400' : sport.color}"></div><div class="league-name">${sectionLabel}</div>${sbadge}<div class="league-game-count">${games.length} game${games.length !== 1 ? 's' : ''}</div></div>`;
 
       const grid = document.createElement('div');
       grid.className = 'games-grid grid-mode';
