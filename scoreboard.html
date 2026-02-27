@@ -1167,6 +1167,38 @@ function renderEditorStep(sbOverride){
       });
       body+='</div>';
     });
+
+    // ── Final Games section ──────────────────────────────────────────────────
+    const enabledForFinals = ALL_SPORTS.filter(sp => !!_editorDraft.sport_config[sp.id]);
+    if (enabledForFinals.length) {
+      const finals = _editorDraft.display_config.finals || {};
+      body += `<div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+        <div class="modal-section-title" style="margin-bottom:4px;">📋 Final Games</div>
+        <div class="wiz-sublabel" style="margin-bottom:14px;">Show completed games for each sport. Only enabled sports are listed.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">`;
+      enabledForFinals.forEach(sp => {
+        const cfg = finals[sp.id] || { show: false, days: 1 };
+        body += `<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border);">
+            <span style="font-size:15px;">${sp.emoji}</span>
+            <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-primary);">${sp.name}</span>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <span style="font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">Show Finals</span>
+              <input type="checkbox" data-finals-sport="${sp.id}" ${cfg.show ? 'checked' : ''}
+                onchange="sbEditorToggleFinals('${sp.id}', this.checked)"
+                style="cursor:pointer;accent-color:var(--accent);width:15px;height:15px;">
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;" id="sbFinalsDaysLabel_${sp.id}">
+              <span style="font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">Days Back</span>
+              <select data-finals-days="${sp.id}"
+                style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:'Share Tech Mono',monospace;font-size:11px;padding:3px 6px;cursor:pointer;"
+                onchange="sbEditorSetFinalsDays('${sp.id}', this.value)">
+                ${[1,2,3,5,7].map(d => `<option value="${d}" ${cfg.days == d ? 'selected' : ''}>${d} day${d>1?'s':''}</option>`).join('')}
+              </select>
+            </label>
+          </div>`;
+      });
+      body += `</div></div>`;
+    }
   }
   else if(_editorStep===3){
     const enabledSportIds=Object.entries(_editorDraft.sport_config).filter(([,v])=>v).map(([k])=>k);
@@ -2438,8 +2470,13 @@ function updateTopbar(){
 
 function renderScoreboard(){
   // Stream mode: do in-place updates instead of full re-render
-  if(document.body.classList.contains('stream-mode')&&document.getElementById('stream-canvas')){
-    updateStreamScoresInPlace();
+  if(document.body.classList.contains('stream-mode')){
+    if(document.getElementById('stream-canvas')){
+      updateStreamScoresInPlace();
+    } else {
+      // Canvas not yet initialized — run full init
+      initStreamCanvas();
+    }
     return;
   }
   const sb=document.getElementById('scoreboard');if(!sb)return;sb.innerHTML='';
@@ -3563,7 +3600,8 @@ renderFavSummary();
   startAutoRefresh();
   loadNcaaFromApi();
 
-  // Replace scoreboard with fixed canvas layout
+  // Replace scoreboard with fixed canvas layout — must run AFTER fetchAllScores
+  // so games are in state.games before renderStreamCanvas is called
   initStreamCanvas();
 })();
 
@@ -3666,7 +3704,7 @@ function renderStreamCanvas() {
   let currentPageSections = [];
   let currentPageH = 0;
 
-  allSections.forEach(({ sport, games }) => {
+  allSections.forEach(({ sport, games, isFinalSection }) => {
     const rows = Math.ceil(games.length / cols);
     const sectionH = sectionHeaderH + gridGap + (rows * cardH) + ((rows - 1) * gridGap) + 26; // 26 = section margin
 
@@ -3678,7 +3716,7 @@ function renderStreamCanvas() {
     }
 
     // If section alone is taller than page, we still put it on its own page
-    currentPageSections.push({ sport, games });
+    currentPageSections.push({ sport, games, isFinalSection });
     currentPageH += sectionH;
   });
 
@@ -3693,7 +3731,7 @@ function renderStreamCanvas() {
     pageEl.className = 'stream-page' + (pageIdx === _streamCurrentPage ? ' active' : '');
     pageEl.dataset.page = pageIdx;
 
-    sections.forEach(({ sport, games }) => {
+    sections.forEach(({ sport, games, isFinalSection }) => {
       // Sport section header
       const season = state.seasonMeta[sport.id];
       let sbadge = '';
