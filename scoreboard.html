@@ -2379,7 +2379,8 @@ async function fetchSport(sport){
 async function fetchAllScores(){
   const btn=document.getElementById('refreshBtn');
   if(btn){btn.innerHTML='↻ Fetching...';btn.style.opacity='0.6';}
-  showLoadingState();
+  // Skip loading skeleton in stream mode — it wipes the stream canvas causing flicker
+  if(!document.body.classList.contains('stream-mode')) showLoadingState();
   await Promise.all(getAllEnabledSports().map(s=>fetchSport(s)));
   refreshSportToggles();updateTopbar();renderScoreboard();
   const el=document.getElementById('lastUpdate');
