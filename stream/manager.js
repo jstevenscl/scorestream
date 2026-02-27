@@ -323,28 +323,13 @@ async function touchStream(slug) {
   setImmediate(() => startStream(slug));
 }
 
-// ── Idle watcher — kills streams with no recent HLS activity ────────────────
-// Checks m3u8 file mtime — if no segment written in IDLE_TIMEOUT seconds AND
-// no client touch received, the stream is considered idle and stopped.
+// ── Idle watcher — kills streams with no recent client touch ────────────────
 function startIdleWatcher() {
   setInterval(async () => {
     const now = Date.now();
     for (const [slug, s] of streams.entries()) {
       if (!s.running) continue;
-
-      // Check playlist file modification time as a proxy for active playback
-      let lastActivity = s.lastTouch || 0;
-      try {
-        const m3u8 = path.join(HLS_DIR, `${slug}.m3u8`);
-        const stat = fs.statSync(m3u8);
-        const fileMtime = stat.mtimeMs;
-        if (fileMtime > lastActivity) {
-          lastActivity = fileMtime;
-          s.lastTouch = fileMtime; // update so next check uses file time
-        }
-      } catch (_) {}
-
-      const idleSecs = (now - lastActivity) / 1000;
+      const idleSecs = (now - (s.lastTouch || 0)) / 1000;
       if (idleSecs >= IDLE_TIMEOUT) {
         console.log(`[manager][${slug}] Idle for ${idleSecs.toFixed(1)}s — stopping`);
         await stopStream(slug);
@@ -371,14 +356,27 @@ async function syncStreams() {
 function startHttpServer() {
   const server = http.createServer(async (req, res) => {
 
-    // POST /stream/touch/hls/:slug.m3u8 or :slug_NNNNN.ts (called by nginx mirror)
-    // The URI passed is the original request URI e.g. /hls/mlb.m3u8 or /hls/mlb_00001.ts
-    const touchMatch = req.url.match(/^\/stream\/touch\/hls\/([^/_]+)(?:_\d+\.ts|\.m3u8)$/);
-    if (touchMatch) {
-      const slug = touchMatch[1];
-      res.writeHead(204);
-      res.end();
+    // GET /hls/:slug.m3u8 — proxied from nginx, touch stream and serve file
+    const m3u8Match = req.url.match(/^\/hls\/([^/.]+)\.m3u8$/);
+    if (m3u8Match) {
+      const slug = m3u8Match[1];
+      // Touch stream (start if needed, reset idle timer)
       await touchStream(slug);
+      // Serve the m3u8 file from disk
+      const filePath = path.join(HLS_DIR, `${slug}.m3u8`);
+      try {
+        const data = fs.readFileSync(filePath);
+        res.writeHead(200, {
+          'Content-Type': 'application/vnd.apple.mpegurl',
+          'Cache-Control': 'no-cache',
+          'Access-Control-Allow-Origin': '*',
+        });
+        res.end(data);
+      } catch (e) {
+        // File not ready yet — return 404, player will retry
+        res.writeHead(404);
+        res.end();
+      }
       return;
     }
 
