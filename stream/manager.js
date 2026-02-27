@@ -134,6 +134,14 @@ async function startStream(slug) {
       }
     });
 
+    // Handle ffmpeg stdin errors gracefully
+    ffmpeg.stdin.on('error', e => {
+      if (e.code !== 'EPIPE') console.error(`[manager][${slug}] ffmpeg stdin error: ${e.message}`);
+    });
+
+    // Wait for ffmpeg to be ready by waiting briefly
+    await new Promise(r => setTimeout(r, 1000));
+
     // Start screencast — Puppeteer 22 streams frames as a readable
     console.log(`[manager][${slug}] Starting screencast`);
     const screencast = await page.screencast({
@@ -144,10 +152,8 @@ async function startStream(slug) {
     });
 
     // Pipe screencast frames into ffmpeg stdin
-    screencast.pipe(ffmpeg.stdin);
-
     screencast.on('error', e => console.error(`[manager][${slug}] Screencast error: ${e.message}`));
-    ffmpeg.stdin.on('error', e => console.error(`[manager][${slug}] ffmpeg stdin error: ${e.message}`));
+    screencast.pipe(ffmpeg.stdin, { end: false });
 
     // Wait for first segment to appear
     const m3u8Path = path.join(HLS_DIR, `${slug}.m3u8`);
