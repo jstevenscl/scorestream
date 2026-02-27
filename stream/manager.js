@@ -1,15 +1,14 @@
 /**
- * ScoreStream — Stream Manager
+ * ScoreStream — Stream Manager (On-Demand)
  *
- * Reads scoreboards from SQLite DB and maintains one renderer+ffmpeg
- * pair per scoreboard. Exposes POST /reload so the API can trigger
- * an immediate resync when scoreboards are created, updated, or deleted.
+ * Streams start only when a player requests the HLS playlist.
+ * nginx mirrors every .m3u8 request to POST /stream/touch/:slug.
+ * If no touch received for IDLE_TIMEOUT seconds, stream is killed.
  *
- * Architecture:
- *   - One Puppeteer instance per scoreboard slug → writes JPEG frames to named pipe
- *   - One ffmpeg process per scoreboard slug → reads pipe → writes HLS segments
- *   - Pipes live in PIPES_DIR (container-internal tmpfs, no Docker volume needed)
- *   - HLS output goes to HLS_DIR (shared volume with scorestream-web)
+ * Endpoints:
+ *   POST /stream/touch/:slug  — start stream if not running, reset idle timer
+ *   POST /reload              — re-sync stream list from DB (stops orphaned streams)
+ *   GET  /status              — JSON status of all running streams
  */
 
 'use strict';
@@ -21,28 +20,29 @@ const { spawn }  = require('child_process');
 const puppeteer  = require('puppeteer-core');
 const Database   = require('better-sqlite3');
 
-// ── Config ────────────────────────────────────────────────────────────────────
-const DB_PATH        = process.env.DB_PATH        || '/config/scorestream.db';
-const PIPES_DIR      = process.env.PIPES_DIR      || '/tmp/pipes';
-const HLS_DIR        = process.env.HLS_DIR        || '/hls';
-const WEB_BASE       = process.env.WEB_BASE       || 'http://scorestream-web';
-const MANAGER_PORT   = parseInt(process.env.MANAGER_PORT || '3001');
-const WIDTH          = parseInt(process.env.STREAM_WIDTH  || '1920');
-const HEIGHT         = parseInt(process.env.STREAM_HEIGHT || '1080');
-const FPS            = parseInt(process.env.STREAM_FPS    || '10');
-const JPEG_QUALITY   = parseInt(process.env.JPEG_QUALITY  || '85');
-const SEG_DURATION   = parseInt(process.env.HLS_SEGMENT_DURATION || '2');
-const PLAYLIST_SIZE  = parseInt(process.env.HLS_PLAYLIST_SIZE    || '10');
+// ── Config ──────────────────────────────────────────────────────────────────
+const DB_PATH      = process.env.DB_PATH        || '/config/scorestream.db';
+const PIPES_DIR    = process.env.PIPES_DIR      || '/tmp/pipes';
+const HLS_DIR      = process.env.HLS_DIR        || '/hls';
+const WEB_BASE     = process.env.WEB_BASE       || 'http://scorestream-web';
+const MANAGER_PORT = parseInt(process.env.MANAGER_PORT || '3001');
+const WIDTH        = parseInt(process.env.STREAM_WIDTH  || '1920');
+const HEIGHT       = parseInt(process.env.STREAM_HEIGHT || '1080');
+const FPS          = parseInt(process.env.STREAM_FPS    || '10');
+const JPEG_QUALITY = parseInt(process.env.JPEG_QUALITY  || '85');
+const SEG_DURATION = parseInt(process.env.HLS_SEGMENT_DURATION || '2');
+const PLAYLIST_SIZE= parseInt(process.env.HLS_PLAYLIST_SIZE    || '10');
+const IDLE_TIMEOUT = parseInt(process.env.STREAM_IDLE_TIMEOUT  || '10'); // seconds
 
-// ── State ─────────────────────────────────────────────────────────────────────
-// Map of slug → { browser, page, ffmpeg, frameTimer, running }
+// ── State ────────────────────────────────────────────────────────────────────
+// Map of slug → { browser, page, ffmpeg, pipeStream, stopFrameLoop, running, lastTouch }
 const streams = new Map();
 
-// ── DB helpers ────────────────────────────────────────────────────────────────
+// ── DB helpers ───────────────────────────────────────────────────────────────
 function getScoreboards() {
   try {
     const db = new Database(DB_PATH, { readonly: true, fileMustExist: true });
-    const rows = db.prepare('SELECT slug, sport_config FROM scoreboards').all();
+    const rows = db.prepare('SELECT slug FROM scoreboards').all();
     db.close();
     return rows;
   } catch (e) {
@@ -51,7 +51,18 @@ function getScoreboards() {
   }
 }
 
-// ── Pipe helpers ──────────────────────────────────────────────────────────────
+function slugExists(slug) {
+  try {
+    const db = new Database(DB_PATH, { readonly: true, fileMustExist: true });
+    const row = db.prepare('SELECT slug FROM scoreboards WHERE slug = ?').get(slug);
+    db.close();
+    return !!row;
+  } catch (e) {
+    return false;
+  }
+}
+
+// ── Dir / pipe helpers ───────────────────────────────────────────────────────
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
@@ -63,7 +74,6 @@ function pipePath(slug) {
 function createPipe(slug) {
   const p = pipePath(slug);
   if (!fs.existsSync(p)) {
-    // mkfifo via sync child process
     const { spawnSync } = require('child_process');
     const r = spawnSync('mkfifo', [p]);
     if (r.status !== 0) throw new Error(`mkfifo failed for ${p}`);
@@ -73,11 +83,10 @@ function createPipe(slug) {
 }
 
 function removePipe(slug) {
-  const p = pipePath(slug);
-  try { fs.unlinkSync(p); } catch (_) {}
+  try { fs.unlinkSync(pipePath(slug)); } catch (_) {}
 }
 
-// ── ffmpeg ────────────────────────────────────────────────────────────────────
+// ── ffmpeg ───────────────────────────────────────────────────────────────────
 function startFfmpeg(slug) {
   const pipe = pipePath(slug);
   const args = [
@@ -107,7 +116,6 @@ function startFfmpeg(slug) {
   const proc = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
   proc.stderr.on('data', d => {
-    // Only log ffmpeg errors, not the noisy progress lines
     const line = d.toString();
     if (line.includes('error') || line.includes('Error')) {
       console.error(`[ffmpeg][${slug}] ${line.trim()}`);
@@ -126,7 +134,7 @@ function startFfmpeg(slug) {
   return proc;
 }
 
-// ── Puppeteer renderer ────────────────────────────────────────────────────────
+// ── Puppeteer renderer ───────────────────────────────────────────────────────
 async function startRenderer(slug) {
   const url = `${WEB_BASE}/?stream&slug=${slug}`;
   console.log(`[manager][${slug}] Launching browser → ${url}`);
@@ -157,7 +165,7 @@ async function startRenderer(slug) {
   return { browser, page };
 }
 
-// ── Frame capture loop ────────────────────────────────────────────────────────
+// ── Frame capture loop ───────────────────────────────────────────────────────
 function startFrameLoop(slug, page, pipeStream) {
   const FRAME_MS = Math.round(1000 / FPS);
   let running = true;
@@ -169,7 +177,6 @@ function startFrameLoop(slug, page, pipeStream) {
     while (running && streams.get(slug)?.running) {
       const now = Date.now();
 
-      // Drift correction
       if (nextFrameAt < now - FRAME_MS * 2) {
         const behind = Math.floor((now - nextFrameAt) / FRAME_MS);
         nextFrameAt += behind * FRAME_MS;
@@ -222,21 +229,20 @@ function startFrameLoop(slug, page, pipeStream) {
   return () => { running = false; };
 }
 
-// ── Start one stream ──────────────────────────────────────────────────────────
+// ── Start one stream ─────────────────────────────────────────────────────────
 async function startStream(slug) {
   if (streams.has(slug)) {
     console.log(`[manager][${slug}] Already running — skipping`);
     return;
   }
 
-  console.log(`[manager][${slug}] Starting stream`);
-  streams.set(slug, { running: true });
+  console.log(`[manager][${slug}] Starting stream (on-demand)`);
+  streams.set(slug, { running: true, lastTouch: Date.now() });
 
   try {
     createPipe(slug);
     const ffmpegProc = startFfmpeg(slug);
 
-    // Give ffmpeg a moment to open the pipe for reading
     await new Promise(r => setTimeout(r, 1000));
 
     const { browser, page } = await startRenderer(slug);
@@ -245,6 +251,7 @@ async function startStream(slug) {
 
     streams.set(slug, {
       running: true,
+      lastTouch: Date.now(),
       browser,
       page,
       ffmpeg: ffmpegProc,
@@ -259,7 +266,7 @@ async function startStream(slug) {
   }
 }
 
-// ── Stop one stream ───────────────────────────────────────────────────────────
+// ── Stop one stream ──────────────────────────────────────────────────────────
 async function stopStream(slug) {
   const s = streams.get(slug);
   if (!s) return;
@@ -269,12 +276,10 @@ async function stopStream(slug) {
 
   if (s.stopFrameLoop) s.stopFrameLoop();
 
-  // Close pipe stream so ffmpeg gets EOF and finishes current segment
   if (s.pipeStream) {
     try { s.pipeStream.end(); } catch (_) {}
   }
 
-  // Give ffmpeg up to 5s to finish its current segment cleanly
   if (s.ffmpeg) {
     await new Promise(resolve => {
       const timer = setTimeout(() => { s.ffmpeg.kill('SIGKILL'); resolve(); }, 5000);
@@ -292,27 +297,54 @@ async function stopStream(slug) {
   console.log(`[manager][${slug}] Stopped`);
 }
 
-// ── Restart one stream ────────────────────────────────────────────────────────
+// ── Restart one stream ───────────────────────────────────────────────────────
 async function restartStream(slug) {
   await stopStream(slug);
   await startStream(slug);
 }
 
-// ── Sync streams with DB ──────────────────────────────────────────────────────
+// ── Touch a stream (on-demand trigger) ──────────────────────────────────────
+// Called by nginx mirror on every .m3u8 request
+async function touchStream(slug) {
+  const s = streams.get(slug);
+  if (s) {
+    // Already running — just update last touch time
+    s.lastTouch = Date.now();
+    return;
+  }
+
+  // Not running — verify slug exists in DB then start
+  if (!slugExists(slug)) {
+    console.log(`[manager][${slug}] Touch received but slug not in DB — ignoring`);
+    return;
+  }
+
+  // Start in background so nginx mirror doesn't wait
+  setImmediate(() => startStream(slug));
+}
+
+// ── Idle watcher — kills streams with no recent touch ───────────────────────
+function startIdleWatcher() {
+  setInterval(async () => {
+    const now = Date.now();
+    for (const [slug, s] of streams.entries()) {
+      if (!s.running) continue;
+      const idleSecs = (now - (s.lastTouch || 0)) / 1000;
+      if (idleSecs >= IDLE_TIMEOUT) {
+        console.log(`[manager][${slug}] Idle for ${idleSecs.toFixed(1)}s — stopping`);
+        await stopStream(slug);
+      }
+    }
+  }, 5000);
+}
+
+// ── Sync with DB (called by /reload) ────────────────────────────────────────
+// Only stops streams for deleted scoreboards — does NOT auto-start anything
 async function syncStreams() {
   const rows = getScoreboards();
   const dbSlugs = new Set(rows.map(r => r.slug));
-  const runningSlugs = new Set(streams.keys());
 
-  // Start streams for new scoreboards
-  for (const slug of dbSlugs) {
-    if (!runningSlugs.has(slug)) {
-      await startStream(slug);
-    }
-  }
-
-  // Stop streams for deleted scoreboards
-  for (const slug of runningSlugs) {
+  for (const slug of streams.keys()) {
     if (!dbSlugs.has(slug)) {
       console.log(`[manager] Scoreboard "${slug}" removed from DB — stopping stream`);
       await stopStream(slug);
@@ -320,66 +352,69 @@ async function syncStreams() {
   }
 }
 
-// ── HTTP server for /reload trigger ──────────────────────────────────────────
+// ── HTTP server ──────────────────────────────────────────────────────────────
 function startHttpServer() {
   const server = http.createServer(async (req, res) => {
+
+    // POST /stream/touch/hls/:slug.m3u8  (called by nginx mirror)
+    // The URI passed is the original request URI e.g. /hls/mlb.m3u8
+    const touchMatch = req.url.match(/^\/stream\/touch\/hls\/([^/.]+)\.m3u8/);
+    if (touchMatch) {
+      const slug = touchMatch[1];
+      res.writeHead(204);
+      res.end();
+      await touchStream(slug);
+      return;
+    }
+
+    // POST /reload — sync DB, stop orphaned streams
     if (req.method === 'POST' && req.url === '/reload') {
       console.log('[manager] Reload triggered by API');
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));
-      // Run sync after responding so the API doesn't wait on us
       setImmediate(syncStreams);
-    } else {
-      res.writeHead(404);
-      res.end();
+      return;
     }
+
+    // GET /status — show running streams
+    if (req.method === 'GET' && req.url === '/status') {
+      const status = {};
+      for (const [slug, s] of streams.entries()) {
+        status[slug] = {
+          running: s.running,
+          idleSecs: s.lastTouch ? ((Date.now() - s.lastTouch) / 1000).toFixed(1) : null,
+        };
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ streams: status, count: streams.size }));
+      return;
+    }
+
+    res.writeHead(404);
+    res.end();
   });
 
   server.listen(MANAGER_PORT, '0.0.0.0', () => {
-    console.log(`[manager] HTTP reload endpoint listening on :${MANAGER_PORT}`);
+    console.log(`[manager] HTTP server listening on :${MANAGER_PORT}`);
   });
 }
 
-// ── Startup ───────────────────────────────────────────────────────────────────
+// ── Startup ──────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('[manager] ScoreStream Stream Manager starting');
+  console.log('[manager] ScoreStream Stream Manager starting (on-demand mode)');
   console.log(`[manager] DB: ${DB_PATH}`);
   console.log(`[manager] HLS output: ${HLS_DIR}`);
   console.log(`[manager] Resolution: ${WIDTH}x${HEIGHT} @ ${FPS}fps`);
+  console.log(`[manager] Idle timeout: ${IDLE_TIMEOUT}s`);
 
   ensureDir(PIPES_DIR);
   ensureDir(HLS_DIR);
 
   startHttpServer();
+  startIdleWatcher();
 
-  // Wait for scorestream-web to be ready before starting streams
-  console.log('[manager] Waiting for scorestream-web to be healthy...');
-  let ready = false;
-  for (let i = 0; i < 60; i++) {
-    try {
-      await new Promise((resolve, reject) => {
-        const req = http.get(`${WEB_BASE}/health`, res => {
-          resolve(res.statusCode === 200);
-        });
-        req.on('error', reject);
-        req.setTimeout(2000, () => { req.destroy(); reject(new Error('timeout')); });
-      });
-      ready = true;
-      break;
-    } catch (_) {
-      await new Promise(r => setTimeout(r, 2000));
-    }
-  }
+  console.log('[manager] Ready — streams will start on first player request');
 
-  if (!ready) {
-    console.error('[manager] scorestream-web never became healthy — starting anyway');
-  } else {
-    console.log('[manager] scorestream-web is healthy');
-  }
-
-  await syncStreams();
-
-  // Graceful shutdown
   process.on('SIGTERM', async () => {
     console.log('[manager] SIGTERM — shutting down all streams');
     for (const slug of [...streams.keys()]) {
