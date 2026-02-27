@@ -167,7 +167,6 @@ body.stream-mode #clockDisplay{font-size:15px;}
 /* ── Stream Canvas Layout ─────────────────────────────────────── */
 body.stream-mode #main{overflow:hidden;height:100vh;}
 body.stream-mode #scoreboard{padding:0;overflow:hidden;flex:1;position:relative;display:flex;flex-direction:column;}
-body.stream-mode .league-star-btn{display:none;}
 body.stream-mode .star-btn{display:none;}
 body.stream-mode .game-card{cursor:default;animation:none;}
 body.stream-mode .game-card:hover{transform:none;box-shadow:none;border-color:var(--border);}
@@ -215,10 +214,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
 .league-season-badge.post{color:#ff6b00;border-color:rgba(255,107,0,0.45);background:rgba(255,107,0,0.1);animation:postGlow 2.5s ease-in-out infinite;}
 .league-season-badge.off{color:var(--text-dim);border-color:var(--border);background:transparent;}
 @keyframes postGlow{0%,100%{box-shadow:0 0 0 rgba(255,107,0,0);}50%{box-shadow:0 0 8px rgba(255,107,0,0.35);}}
-.league-star-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;filter:grayscale(1) opacity(0.3);transition:all 0.2s;margin-left:2px;}
-.league-star-btn:hover{filter:grayscale(0) opacity(0.7);transform:scale(1.15);}
-.league-star-btn.starred{filter:grayscale(0) opacity(1) drop-shadow(0 0 3px rgba(255,215,0,0.5));}
-.league-section.fav-league .league-name{color:#ffd700;}
+
 .games-grid{display:grid;gap:9px;}
 .games-grid.grid-mode{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
 .games-grid.fullscreen-mode,.games-grid.ticker-mode{grid-template-columns:1fr;}
@@ -1031,7 +1027,7 @@ async function createNewScoreboard(){
   const name=prompt('Scoreboard name:','My Scoreboard');
   if(!name?.trim())return;
   const r=await fetch(`${API_BASE}/scoreboards`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
-  if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();openSbEditor(d.id);}
+  if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();initSidebarScoreboardSelector();openSbEditor(d.id);}
   else alert('Failed to create scoreboard');
 }
 
@@ -1040,7 +1036,7 @@ async function duplicateScoreboard(id){
   const name=prompt('New scoreboard name:',src?.name+' (Copy)');
   if(!name?.trim())return;
   const r=await fetch(`${API_BASE}/scoreboards/${id}/duplicate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
-  if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();}
+  if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();initSidebarScoreboardSelector();}
   else alert('Failed to duplicate scoreboard');
 }
 
@@ -1052,7 +1048,7 @@ async function deleteScoreboard(id){
     :`Delete "${sb?.name||'this scoreboard'}"? This cannot be undone.`;
   if(!confirm(msg))return;
   const r=await fetch(`${API_BASE}/scoreboards/${id}`,{method:'DELETE'});
-  if(r.ok){_scoreboards=_scoreboards.filter(s=>s.id!==id);renderSbCards();}
+  if(r.ok){_scoreboards=_scoreboards.filter(s=>s.id!==id);renderSbCards();initSidebarScoreboardSelector();}
   else alert('Failed to delete scoreboard');
 }
 
@@ -1126,7 +1122,36 @@ function renderEditorStep(sbOverride){
           ${tzOptions.map(tz=>`<option value="${tz}"${tz===currentTz?' selected':''}>${tz.replace('_',' ')}</option>`).join('')}
         </select>
         <div class="wiz-sublabel">Clock displayed on the stream output uses this timezone</div>
-      </div>`;
+      </div>
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+        <div class="modal-section-title" style="margin-bottom:4px;">📺 Stream Output</div>
+        <div class="wiz-sublabel" style="margin-bottom:14px;">Per-scoreboard stream display settings. Resolution and bitrate are set globally via Docker environment variables.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div class="wiz-label">Card Scale</div>
+            <select class="wiz-input" id="sbEditCardScale">
+              <option value="0.8"  ${String(_editorDraft.display_config.stream_card_scale||'')==='0.8'?'selected':''}>Small (80%)</option>
+              <option value="0.9"  ${String(_editorDraft.display_config.stream_card_scale||'')==='0.9'?'selected':''}>Compact (90%)</option>
+              <option value="1.0"  ${String(_editorDraft.display_config.stream_card_scale||'1.0')==='1.0'?'selected':''}>Normal (100%)</option>
+              <option value="1.1"  ${String(_editorDraft.display_config.stream_card_scale||'')==='1.1'?'selected':''}>Large (110%)</option>
+              <option value="1.2"  ${String(_editorDraft.display_config.stream_card_scale||'')==='1.2'?'selected':''}>X-Large (120%)</option>
+            </select>
+            <div class="wiz-sublabel">Game card size on stream</div>
+          </div>
+          <div>
+            <div class="wiz-label">Page Rotation</div>
+            <select class="wiz-input" id="sbEditRotation">
+              <option value="15" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='15'?'selected':''}>15 seconds</option>
+              <option value="20" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='20'?'selected':''}>20 seconds</option>
+              <option value="30" ${String(_editorDraft.display_config.stream_rotation_secs||'30')==='30'?'selected':''}>30 seconds</option>
+              <option value="45" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='45'?'selected':''}>45 seconds</option>
+              <option value="60" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='60'?'selected':''}>60 seconds</option>
+              <option value="0"  ${String(_editorDraft.display_config.stream_rotation_secs||'')==='0'?'selected':''}>No rotation</option>
+            </select>
+            <div class="wiz-sublabel">How long each page shows before rotating</div>
+          </div>
+        </div>
+      </div>\`;
   }
   else if(_editorStep===2){
     const groups=[
@@ -1307,6 +1332,10 @@ function collectEditorStepData(){
     if(nameEl) _editorDraft.name=nameEl.value.trim()||_editorDraft.name;
     const tzEl=document.getElementById('sbEditTz');
     if(tzEl) _editorDraft.display_config.timezone=tzEl.value;
+    const scaleEl=document.getElementById('sbEditCardScale');
+    if(scaleEl) _editorDraft.display_config.stream_card_scale=parseFloat(scaleEl.value);
+    const rotEl=document.getElementById('sbEditRotation');
+    if(rotEl) _editorDraft.display_config.stream_rotation_secs=parseInt(rotEl.value);
   }
   if(_editorStep===2){
     document.querySelectorAll('#sbEditorBody input[data-sport]').forEach(cb=>{
@@ -1562,7 +1591,7 @@ async function saveSbEditor(){
     const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);
     if(idx>=0)_scoreboards[idx]=d;
     if(result){result.style.color='var(--accent-green)';result.textContent='✅ Saved';}
-    setTimeout(()=>{closeSbEditor();renderSbCards();},600);
+    setTimeout(()=>{closeSbEditor();renderSbCards();initSidebarScoreboardSelector();},600);
   }else{
     if(result){result.style.color='var(--accent-red)';result.textContent='❌ Save failed';}
   }
@@ -2112,7 +2141,6 @@ const state={
   filterMode:'all',
   games:{},
   favTeams:loadFavs(),
-  favLeagues:loadFavLeagues(),
   showEnded:false,
   daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7},
   endedLeagues:new Set(ALL_SPORTS.map(s=>s.id)),
@@ -2129,9 +2157,7 @@ function getSPORTS(){return ALL_SPORTS.filter(s=>state.enabledSports.has(s.id)&&
 function getAllEnabledSports(){return ALL_SPORTS.filter(s=>state.enabledSports.has(s.id));}
 
 function loadFavs(){try{return new Set(JSON.parse(ss.get('ss_favs')||'[]'));}catch(e){return new Set();}}
-function loadFavLeagues(){try{return new Set(JSON.parse(ss.get('ss_fav_leagues')||'[]'));}catch(e){return new Set();}}
 function saveFavs(){ss.set('ss_favs',JSON.stringify([...state.favTeams]));}
-function saveFavLeagues(){ss.set('ss_fav_leagues',JSON.stringify([...state.favLeagues]));}
 function saveDisplay(){ss.set('ss_display',JSON.stringify(state.display));}
 function loadDisplay(){try{const d=ss.get('ss_display');if(d)Object.assign(state.display,JSON.parse(d));}catch(e){}}
 
@@ -2147,23 +2173,14 @@ function toggleFavTeam(n){
   }
   renderScoreboard(); renderFavSummary();
 }
-function toggleFavLeague(id){
-  if(state.favLeagues.has(id)) state.favLeagues.delete(id); else state.favLeagues.add(id);
-  if(_activeSidebarSbId){
-    saveSbFavs();  // save both favTeams and favLeagues together
-  } else {
-    saveFavLeagues();
-  }
-  renderScoreboard(); renderFavSummary();
-}
 
-// Save per-scoreboard favTeams + favLeagues to display_config via API (never touches team_config)
+
+// Save per-scoreboard favTeams to display_config via API (never touches team_config)
 function saveSbFavs(){
   if(!_activeSidebarSbId) return;
   const sb = _scoreboards.find(s => s.id === _activeSidebarSbId);
   const dc = Object.assign({}, sb ? (sb.display_config || {}) : {});
   dc.favTeams = [...state.favTeams];
-  dc.favLeagues = [...state.favLeagues];
   if(sb) sb.display_config = dc;
   fetch(`${API_BASE}/scoreboards/${_activeSidebarSbId}`, {
     method: 'PATCH',
@@ -2171,12 +2188,16 @@ function saveSbFavs(){
     body: JSON.stringify({ display_config: dc })
   }).catch(e => console.warn('[favs] Failed to save sb favs:', e.message));
 }
-function isGameFavorited(g){if(state.favLeagues.has(g.sport))return true;return g.teams.some(t=>state.favTeams.has(t.name)||state.favTeams.has(t.abbr));}
+function isGameFavorited(g){return g.teams.some(t=>state.favTeams.has(t.name)||state.favTeams.has(t.abbr));}
+function clearAllFavTeams(){
+  state.favTeams.clear();
+  if(_activeSidebarSbId){ saveSbFavs(); } else { saveFavs(); }
+  renderScoreboard(); renderFavSummary();
+}
 
 function renderFavSummary(){
   const c=document.getElementById('favSummary');if(!c)return;
   const tags=[];
-  state.favLeagues.forEach(lid=>{const s=ALL_SPORTS.find(x=>x.id===lid);if(!s)return;tags.push(`<div class="fav-tag" onclick="toggleFavLeague('${lid}')">${s.emoji} ${s.name} <span class="remove-fav">✕</span></div>`);});
   state.favTeams.forEach(t=>{const safe=t.replace(/'/g,"\\'");tags.push(`<div class="fav-tag" onclick="toggleFavTeam('${safe}')">⭐ ${t} <span class="remove-fav">✕</span></div>`);});
   c.innerHTML=tags.length?tags.join(''):'<div class="no-favs-hint">Star a team or league to pin it here</div>';
 }
@@ -2569,7 +2590,7 @@ function renderScoreboard(){
     return;
   }
   const sb=document.getElementById('scoreboard');if(!sb)return;sb.innerHTML='';
-  const hasFavs=state.favTeams.size>0||state.favLeagues.size>0;
+  const hasFavs=state.favTeams.size>0;
   const favsOnly=state.filterMode==='favorites';
   const sports=getSPORTS();
 
@@ -2585,7 +2606,7 @@ function renderScoreboard(){
     });
     if(pinned.length){
       const sec=document.createElement('div');sec.className='pinned-section';
-      sec.innerHTML=`<div class="pinned-header"><div class="pinned-stripe"></div><div class="pinned-title">⭐ My Teams</div><div class="pinned-count">${pinned.length} game${pinned.length!==1?'s':''}</div></div>`;
+      sec.innerHTML=`<div class="pinned-header"><div class="pinned-stripe"></div><div class="pinned-title">⭐ My Teams</div><div class="pinned-count">${pinned.length} game${pinned.length!==1?'s':''}</div><button onclick="clearAllFavTeams()" title="Clear all favorited teams" style="margin-left:auto;background:none;border:1px solid var(--border);border-radius:12px;color:var(--text-dim);font-size:10px;font-family:'Share Tech Mono',monospace;padding:2px 8px;cursor:pointer;letter-spacing:0.5px;">✕ Clear All</button></div>`;
       const grid=document.createElement('div');grid.className=`games-grid ${state.layout}-mode`;
       pinned.forEach(g=>grid.appendChild(buildGameCard(g)));sec.appendChild(grid);sb.appendChild(sec);
     }
@@ -2620,14 +2641,12 @@ function renderScoreboard(){
 
     if(!liveUpcomingGames.length && !customFinalGames.length)return;
     if(liveUpcomingGames.length) anyGame=true;
-    const isFavL=state.favLeagues.has(sport.id);
-
     // Render live/upcoming section
     if(liveUpcomingGames.length){
       let sbadge='';
       if(season&&season.key!=='reg')sbadge=`<span class="league-season-badge ${season.key}">${season.label}</span>`;
-      const sec=document.createElement('div');sec.className=`league-section${isFavL?' fav-league':''}`;
-      sec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:${isFavL?'#ffd700':sport.color}"></div><div class="league-name">${sport.emoji} ${sport.name}</div>${sbadge}<button class="league-star-btn ${isFavL?'starred':''}" onclick="toggleFavLeague('${sport.id}')">⭐</button><div class="league-game-count">${liveUpcomingGames.length} game${liveUpcomingGames.length!==1?'s':''}</div></div>`;
+      const sec=document.createElement('div');sec.className='league-section';
+      sec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:${sport.color}"></div><div class="league-name">${sport.emoji} ${sport.name}</div>${sbadge}<div class="league-game-count">${liveUpcomingGames.length} game${liveUpcomingGames.length!==1?'s':''}</div></div>`;
       const grid=document.createElement('div');grid.className=`games-grid ${state.layout}-mode`;
       liveUpcomingGames.forEach(g=>grid.appendChild(buildGameCard(g)));sec.appendChild(grid);sb.appendChild(sec);
     }
@@ -3492,11 +3511,11 @@ function updateDsStatus(connected,st=''){
 //  SCOREBOARD SELECTOR
 // =====================
 let _activeSidebarSlug = '__all__'; // '__all__' = default All Sports view
+let _activeStreamDisplayConfig = null; // display_config of active stream scoreboard
 let _activeSidebarSbId = null;       // numeric ID of active custom scoreboard (null = All Sports)
 let _allSportsEnabledSports = null;  // saved state when switching away from All Sports
 let _allSportsActiveSports = null;
 let _allSportsFavTeams = null;       // saved global favorites when switching to custom scoreboard
-let _allSportsFavLeagues = null;
 let _activeTeamConfig = null;
 let _activeFinalsCfg = null;  // per-sport finals config from scoreboard display_config
 
@@ -3548,7 +3567,6 @@ function selectSidebarScoreboard(slug){
     }
     // Restore global localStorage favorites
     if(_allSportsFavTeams !== null){ state.favTeams=_allSportsFavTeams; _allSportsFavTeams=null; }
-    if(_allSportsFavLeagues !== null){ state.favLeagues=_allSportsFavLeagues; _allSportsFavLeagues=null; }
     buildSportToggles();
     renderScoreboard();
   }else{
@@ -3585,10 +3603,8 @@ function selectSidebarScoreboard(slug){
         _activeSidebarSbId = sb.id;
         // Save global favorites before overriding with scoreboard favorites
         if(_allSportsFavTeams === null){ _allSportsFavTeams = new Set(state.favTeams); }
-        if(_allSportsFavLeagues === null){ _allSportsFavLeagues = new Set(state.favLeagues); }
         // Load per-scoreboard favorites from display_config (independent of team_config)
         state.favTeams = new Set((sb.display_config && sb.display_config.favTeams) || []);
-        state.favLeagues = new Set((sb.display_config && sb.display_config.favLeagues) || []);
         state.enabledSports=new Set(sportIds);
         state.activeSports=new Set(sportIds);
         buildSportToggles();
@@ -3695,11 +3711,11 @@ renderFavSummary();
       } else {
         _activeTeamConfig=null;
       }
-      // Store finals config for this scoreboard
+      // Store finals config and full display_config for this scoreboard
       _activeFinalsCfg = (sb.display_config && sb.display_config.finals) || null;
+      _activeStreamDisplayConfig = sb.display_config || null;
       // Load per-scoreboard favorites from display_config (independent of team_config)
       state.favTeams = new Set((sb.display_config && sb.display_config.favTeams) || []);
-      state.favLeagues = new Set((sb.display_config && sb.display_config.favLeagues) || []);
     }
   }catch(e){
     console.warn('[stream] Failed to load scoreboard config:',e.message);
@@ -3730,12 +3746,15 @@ let _streamScaleY = 1;
 let _streamInterval = 15;   // seconds between page rotations
 
 function getStreamSettings() {
-  // Read from localStorage or use defaults
-  // Will be replaced by API settings fetch in future
+  // In stream mode: read from the scoreboard's display_config
+  // In sidebar preview: fall back to localStorage defaults
+  const dc = _activeStreamDisplayConfig || {};
   const stored = (() => { try { return JSON.parse(localStorage.getItem('ss_stream_settings') || '{}'); } catch(e){ return {}; } })();
   return {
-    interval: stored.interval || 15,
-    cardScale: stored.cardScale || 1.0,
+    interval:  dc.stream_rotation_secs != null ? dc.stream_rotation_secs : (stored.interval || 30),
+    cardScale: dc.stream_card_scale    != null ? dc.stream_card_scale    : (stored.cardScale || 1.0),
+    resolution: dc.stream_resolution  || '1920x1080',
+    bitrate:    dc.stream_bitrate      || '2000k',
   };
 }
 
