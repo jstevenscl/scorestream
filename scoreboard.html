@@ -1125,7 +1125,17 @@ function renderEditorStep(sbOverride){
       </div>
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
         <div class="modal-section-title" style="margin-bottom:4px;">📺 Stream Output</div>
-        <div class="wiz-sublabel" style="margin-bottom:14px;">Per-scoreboard stream display settings. Resolution and bitrate are set globally via Docker environment variables.</div>
+        <div class="wiz-sublabel" style="margin-bottom:14px;">Per-scoreboard stream display settings.</div>
+        <div style="margin-bottom:12px;">
+          <div class="wiz-label">Output Resolution</div>
+          <select class="wiz-input" id="sbEditResolution" style="max-width:220px;">
+            <option value="1920x1080" ${(_editorDraft.display_config.stream_resolution||'1920x1080')==='1920x1080'?'selected':''}>1920 × 1080 (1080p)</option>
+            <option value="1280x720"  ${(_editorDraft.display_config.stream_resolution||'')==='1280x720'?'selected':''}>1280 × 720 (720p)</option>
+            <option value="1280x1080" ${(_editorDraft.display_config.stream_resolution||'')==='1280x1080'?'selected':''}>1280 × 1080 (4:3 HD)</option>
+            <option value="3840x2160" ${(_editorDraft.display_config.stream_resolution||'')==='3840x2160'?'selected':''}>3840 × 2160 (4K)</option>
+          </select>
+          <div class="wiz-sublabel">The stream renderer runs at 1920×1080 — this scales content to fill the target resolution.</div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <div class="wiz-label">Card Scale</div>
@@ -1395,6 +1405,8 @@ function collectEditorStepData(){
     if(tzEl) _editorDraft.display_config.timezone=tzEl.value;
     const scaleEl=document.getElementById('sbEditCardScale');
     if(scaleEl) _editorDraft.display_config.stream_card_scale=parseFloat(scaleEl.value)/100;
+    const resEl=document.getElementById('sbEditResolution');
+    if(resEl) _editorDraft.display_config.stream_resolution=resEl.value;
     const rotEl=document.getElementById('sbEditRotation');
     if(rotEl) _editorDraft.display_config.stream_rotation_secs=parseInt(rotEl.value);
   }
@@ -2461,6 +2473,8 @@ function closeSettings(){
   if(_dirty) flushSave();
   document.getElementById('settingsPage').style.display='none';
   document.body.style.overflow='';
+  // Always return to All Sports view when closing settings
+  selectSidebarScoreboard('__all__');
 }
 
 function switchSection(section){
@@ -2738,13 +2752,24 @@ function renderScoreboard(){
       liveUpcomingGames.forEach(g=>grid.appendChild(buildGameCard(g)));sec.appendChild(grid);sb.appendChild(sec);
     }
 
-    // Render finals section for custom scoreboard
+    // Render finals sections for custom scoreboard — grouped by date
     if(customFinalGames.length){
       anyGame=true;
-      const finSec=document.createElement('div');finSec.className='league-section';
-      finSec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:#ffb400"></div><div class="league-name">${sport.emoji} ${sport.name} — Final Games</div><span class="league-season-badge" style="background:rgba(255,180,0,0.15);color:#ffb400;border-color:rgba(255,180,0,0.3);">FINAL</span><div class="league-game-count">${customFinalGames.length} game${customFinalGames.length!==1?'s':''}</div></div>`;
-      const finGrid=document.createElement('div');finGrid.className=`games-grid ${state.layout}-mode`;
-      customFinalGames.forEach(g=>finGrid.appendChild(buildGameCard(g)));finSec.appendChild(finGrid);sb.appendChild(finSec);
+      // Group by date
+      const byDate={};
+      customFinalGames.forEach(g=>{
+        const d=g.date?new Date(g.date).toLocaleDateString('en-CA'):'unknown';
+        if(!byDate[d])byDate[d]=[];
+        byDate[d].push(g);
+      });
+      Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).forEach(dateKey=>{
+        const dGames=byDate[dateKey];
+        const dateLabel=dateKey!=='unknown'?' · '+new Date(dateKey+'T12:00:00').toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}):'';
+        const finSec=document.createElement('div');finSec.className='league-section';
+        finSec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:#ffb400"></div><div class="league-name">${sport.emoji} ${sport.name} — Finals${dateLabel}</div><div class="league-game-count">${dGames.length} game${dGames.length!==1?'s':''}</div></div>`;
+        const finGrid=document.createElement('div');finGrid.className=`games-grid ${state.layout}-mode`;
+        dGames.forEach(g=>finGrid.appendChild(buildGameCard(g)));finSec.appendChild(finGrid);sb.appendChild(finSec);
+      });
     }
   });
 
@@ -3616,8 +3641,8 @@ async function initSidebarScoreboardSelector(){
     const d=await r.json();
     const pills=document.getElementById('sbSelectorPills');
     if(!pills)return;
-    // Clear existing custom pills first (keep static "All Sports" pill which is in HTML)
-    pills.querySelectorAll('.sb-selector-pill').forEach(p=>p.remove());
+    // Clear existing CUSTOM pills only (keep static "All Sports" pill which has class all-sports)
+    pills.querySelectorAll('.sb-selector-pill:not(.all-sports)').forEach(p=>p.remove());
     const custom=(d.scoreboards||[]);
     custom.forEach(sb=>{
       const pill=document.createElement('div');
@@ -3646,6 +3671,13 @@ function selectSidebarScoreboard(slug){
     _activeTeamConfig=null;
     _activeFinalsCfg=null;
     _activeSidebarSbId=null;
+    // Reset card scale to default
+    const sbEl=document.getElementById('scoreboard');
+    if(sbEl){
+      sbEl.style.removeProperty('--card-score-size');
+      sbEl.style.removeProperty('--card-abbr-size');
+      sbEl.style.removeProperty('--card-name-size');
+    }
     if(defaultSections)defaultSections.style.display='block';
     if(banner)banner.style.display='none';
     if(titleEl)titleEl.textContent='All Sports Scoreboard';
@@ -3698,6 +3730,14 @@ function selectSidebarScoreboard(slug){
         state.favTeams = new Set((sb.display_config && sb.display_config.favTeams) || []);
         state.enabledSports=new Set(sportIds);
         state.activeSports=new Set(sportIds);
+        // Apply stream card scale to preview
+        const previewScale = sb.display_config?.stream_card_scale || 1.0;
+        const sbEl = document.getElementById('scoreboard');
+        if(sbEl){
+          sbEl.style.setProperty('--card-score-size', Math.round(34 * previewScale) + 'px');
+          sbEl.style.setProperty('--card-abbr-size', Math.round(18 * previewScale) + 'px');
+          sbEl.style.setProperty('--card-name-size', Math.round(11 * previewScale) + 'px');
+        }
         buildSportToggles();
         // Re-fetch scores to get finals data if needed
         fetchAllScores();
@@ -3808,6 +3848,8 @@ renderFavSummary();
       _activeStreamDisplayConfig = sb.display_config || null;
       // Load per-scoreboard favorites from display_config (independent of team_config)
       state.favTeams = new Set((sb.display_config && sb.display_config.favTeams) || []);
+      // Apply resolution scaling to #main
+      applyStreamResolution(sb.display_config?.stream_resolution || '1920x1080');
     }
   }catch(e){
     console.warn('[stream] Failed to load scoreboard config:',e.message);
@@ -3852,6 +3894,8 @@ async function refreshStreamConfig() {
     const prevRotation = _activeStreamDisplayConfig?.stream_rotation_secs;
     _activeStreamDisplayConfig = dc;
     _activeFinalsCfg = dc.finals || null;  // keep finals config in sync
+    // Re-apply resolution if it changed
+    applyStreamResolution(dc.stream_resolution || '1920x1080');
 
     // If card scale changed, re-render canvas with new scale
     const newScale = dc.stream_card_scale;
@@ -3872,6 +3916,33 @@ async function refreshStreamConfig() {
   } catch(e) {
     // Non-fatal — stream continues with current settings
   }
+}
+
+function applyStreamResolution(resolution) {
+  // The renderer's Puppeteer window is always 1920x1080.
+  // We scale #main content to simulate the target resolution within that viewport.
+  const main = document.getElementById('main');
+  if (!main) return;
+  const [w, h] = (resolution || '1920x1080').split('x').map(Number);
+  const scaleX = 1920 / (w || 1920);
+  const scaleY = 1080 / (h || 1080);
+  // Use uniform scale (preserve aspect ratio) — scale down if target < 1920x1080
+  // or up for 4K (content gets larger/fewer columns at 4K target = higher density look)
+  if (w === 1920 && h === 1080) {
+    // Default — no transform needed
+    main.style.transform = '';
+    main.style.transformOrigin = '';
+    main.style.width = '';
+    main.style.height = '';
+  } else {
+    const scale = Math.min(scaleX, scaleY);
+    main.style.transform = `scale(${scale})`;
+    main.style.transformOrigin = 'top left';
+    // Set explicit dimensions so the scaled content fills the viewport
+    main.style.width = (1920 / scale) + 'px';
+    main.style.height = (1080 / scale) + 'px';
+  }
+  console.log(`[stream] Resolution ${resolution} → scale ${Math.min(scaleX,scaleY).toFixed(3)}`);
 }
 
 function getStreamSettings() {
@@ -3931,12 +4002,23 @@ function renderStreamCanvas() {
     // Show live/upcoming section
     if (liveUpcoming.length > 0) allSections.push({ sport, games: liveUpcoming });
 
-    // Show finals section if custom scoreboard has finals enabled for this sport
-    if (finalGames.length > 0 && _activeFinalsCfg && _activeFinalsCfg[sport.id]?.show) {
-      allSections.push({ sport, games: finalGames, isFinalSection: true });
-    } else if (!_activeFinalsCfg && state.showEnded && state.endedLeagues.has(sport.id) && finalGames.length > 0) {
-      // Normal mode with showEnded toggled on
-      allSections.push({ sport, games: finalGames, isFinalSection: true });
+    // Show finals sections — grouped by date so each day gets its own section
+    const showFinals = (finalGames.length > 0) && (
+      (_activeFinalsCfg && _activeFinalsCfg[sport.id]?.show) ||
+      (!_activeFinalsCfg && state.showEnded && state.endedLeagues.has(sport.id))
+    );
+    if (showFinals) {
+      // Group by date string (YYYY-MM-DD)
+      const byDate = {};
+      finalGames.forEach(g => {
+        const d = g.date ? new Date(g.date).toLocaleDateString('en-CA') : 'unknown'; // en-CA = YYYY-MM-DD
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(g);
+      });
+      // Sort dates descending (most recent first)
+      Object.keys(byDate).sort((a, b) => b.localeCompare(a)).forEach(dateKey => {
+        allSections.push({ sport, games: byDate[dateKey], isFinalSection: true, finalDate: dateKey });
+      });
     }
   });
 
@@ -4000,16 +4082,19 @@ function renderStreamCanvas() {
     pageEl.className = 'stream-page' + (pageIdx === _streamCurrentPage ? ' active' : '');
     pageEl.dataset.page = pageIdx;
 
-    sections.forEach(({ sport, games, isFinalSection }) => {
+    sections.forEach(({ sport, games, isFinalSection, finalDate }) => {
       // Sport section header
       const season = state.seasonMeta[sport.id];
       let sbadge = '';
       if (season && season.key !== 'reg' && !isFinalSection) sbadge = `<span class="league-season-badge ${season.key}">${season.label}</span>`;
-      if (isFinalSection) sbadge = `<span class="league-season-badge" style="background:rgba(255,180,0,0.15);color:#ffb400;border-color:rgba(255,180,0,0.3);">FINAL</span>`;
       const sec = document.createElement('div');
       sec.className = 'league-section';
       sec.dataset.sportId = sport.id;
-      const sectionLabel = isFinalSection ? `${sport.emoji} ${sport.name} — Final Games` : `${sport.emoji} ${sport.name}`;
+      let sectionLabel = `${sport.emoji} ${sport.name}`;
+      if (isFinalSection) {
+        const dateLabel = finalDate && finalDate !== 'unknown' ? ' · ' + new Date(finalDate + 'T12:00:00').toLocaleDateString([], {month:'short', day:'numeric'}) : '';
+        sectionLabel = `${sport.emoji} ${sport.name} — Finals${dateLabel}`;
+      }
       sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${isFinalSection ? '#ffb400' : sport.color}"></div><div class="league-name">${sectionLabel}</div>${sbadge}<div class="league-game-count">${games.length} game${games.length !== 1 ? 's' : ''}</div></div>`;
 
       const grid = document.createElement('div');
@@ -4082,8 +4167,10 @@ function updateStreamScoresInPlace() {
       if (sportTeams && sportTeams.length)
         games = games.filter(g => g.teams.some(t => sportTeams.includes(t.name) || sportTeams.includes(t.abbr)));
     }
-    if (!state.showEnded || !state.endedLeagues.has(sport.id))
-      games = games.filter(g => !g.isFinal);
+    // Only filter out finals if they're not configured to show for this sport
+    const showFinalForSport = (_activeFinalsCfg && _activeFinalsCfg[sport.id]?.show) ||
+                              (state.showEnded && state.endedLeagues.has(sport.id));
+    if (!showFinalForSport) games = games.filter(g => !g.isFinal);
 
     games.forEach(g => {
       const cardEl = document.querySelector(`.stream-page [data-game-id="${g.id}"]`);
