@@ -4179,26 +4179,44 @@ function renderStreamCanvas() {
   const cols = Math.max(1, Math.floor((availW - pagePad) / (colMinW + gridGap)));
   console.log(`[stream] availH=${availH} availW=${availW} cols=${cols} scale=${scale} cardH=${cardH}`);
 
-  // Build section blocks — figure out how many rows each section needs
-  // then paginate by fitting as many sections as possible per page
+  // Build section blocks — paginate by filling each page from top to bottom.
+  // Large sections (e.g. 95 finals) are SPLIT across pages so live games
+  // and finals flow together continuously rather than live on p1, all finals on p2.
   let pages = [];
   let currentPageSections = [];
   let currentPageH = 0;
 
-  allSections.forEach(({ sport, games, isFinalSection }) => {
-    const rows = Math.ceil(games.length / cols);
-    const sectionH = sectionHeaderH + gridGap + (rows * cardH) + ((rows - 1) * gridGap) + 26; // 26 = section margin
+  allSections.forEach(({ sport, games, isFinalSection, finalDate }) => {
+    let remainingGames = games;
 
-    if (currentPageSections.length > 0 && currentPageH + sectionH > availH) {
-      // This section doesn't fit — start a new page
-      pages.push(currentPageSections);
-      currentPageSections = [];
-      currentPageH = 0;
+    while (remainingGames.length > 0) {
+      // How much vertical space is left on the current page?
+      const spaceLeft = availH - currentPageH;
+      // Minimum to show: header + 1 row of cards
+      const minH = sectionHeaderH + gridGap + cardH + 26;
+
+      // If we're starting fresh page OR there's room for at least one row, fill it
+      if (currentPageSections.length === 0 || spaceLeft >= minH) {
+        // How many rows fit in remaining space?
+        const usableSpace = currentPageSections.length === 0 ? availH : spaceLeft;
+        const rowsFit = Math.max(1, Math.floor((usableSpace - sectionHeaderH - gridGap - 26) / (cardH + gridGap)));
+        const gamesFit = rowsFit * cols;
+        const chunk = remainingGames.slice(0, gamesFit);
+        const isContinued = chunk !== games && games.length > gamesFit && remainingGames.length < games.length && remainingGames.length > 0;
+        const isFirstChunk = remainingGames.length === games.length - chunk.length && games.length === remainingGames.length + chunk.length;
+        remainingGames = remainingGames.slice(gamesFit);
+        const continued = remainingGames.length > 0; // more chunks will follow on next pages
+
+        currentPageSections.push({ sport, games: chunk, isFinalSection, finalDate, continued });
+        const actualRows = Math.ceil(chunk.length / cols);
+        currentPageH += sectionHeaderH + gridGap + (actualRows * cardH) + ((actualRows - 1) * gridGap) + 26;
+      } else {
+        // Not enough room for even one row — flush current page and start fresh
+        pages.push(currentPageSections);
+        currentPageSections = [];
+        currentPageH = 0;
+      }
     }
-
-    // If section alone is taller than page, we still put it on its own page
-    currentPageSections.push({ sport, games, isFinalSection });
-    currentPageH += sectionH;
   });
 
   if (currentPageSections.length > 0) pages.push(currentPageSections);
@@ -4212,7 +4230,7 @@ function renderStreamCanvas() {
     pageEl.className = 'stream-page' + (pageIdx === _streamCurrentPage ? ' active' : '');
     pageEl.dataset.page = pageIdx;
 
-    sections.forEach(({ sport, games, isFinalSection, finalDate }) => {
+    sections.forEach(({ sport, games, isFinalSection, finalDate, continued }) => {
       // Sport section header
       const season = state.seasonMeta[sport.id];
       let sbadge = '';
@@ -4225,7 +4243,10 @@ function renderStreamCanvas() {
         const dateLabel = finalDate && finalDate !== 'unknown' ? ' · ' + new Date(finalDate + 'T12:00:00').toLocaleDateString([], {month:'short', day:'numeric'}) : '';
         sectionLabel = `${sport.emoji} ${sport.name} — Finals${dateLabel}`;
       }
-      sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${isFinalSection ? '#ffb400' : sport.color}"></div><div class="league-name">${sectionLabel}</div>${sbadge}<div class="league-game-count">${games.length} game${games.length !== 1 ? 's' : ''}</div></div>`;
+      const countLabel = continued
+        ? `${games.length} games (more →)`
+        : `${games.length} game${games.length !== 1 ? 's' : ''}`;
+      sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${isFinalSection ? '#ffb400' : sport.color}"></div><div class="league-name">${sectionLabel}</div>${sbadge}<div class="league-game-count">${countLabel}</div></div>`;
 
       const grid = document.createElement('div');
       grid.className = 'games-grid grid-mode';
