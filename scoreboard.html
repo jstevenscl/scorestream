@@ -1129,14 +1129,15 @@ function renderEditorStep(sbOverride){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <div class="wiz-label">Card Scale</div>
-            <select class="wiz-input" id="sbEditCardScale" onchange="sbPreviewCardScale(this.value)">
-              <option value="0.8"  ${String(_editorDraft.display_config.stream_card_scale||'')==='0.8'?'selected':''}>Small (80%)</option>
-              <option value="0.9"  ${String(_editorDraft.display_config.stream_card_scale||'')==='0.9'?'selected':''}>Compact (90%)</option>
-              <option value="1.0"  ${String(_editorDraft.display_config.stream_card_scale||'1.0')==='1.0'?'selected':''}>Normal (100%)</option>
-              <option value="1.1"  ${String(_editorDraft.display_config.stream_card_scale||'')==='1.1'?'selected':''}>Large (110%)</option>
-              <option value="1.2"  ${String(_editorDraft.display_config.stream_card_scale||'')==='1.2'?'selected':''}>X-Large (120%)</option>
-            </select>
-            <div class="wiz-sublabel">Game card size on stream</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" class="wiz-input" id="sbEditCardScale"
+                min="50" max="300" step="5"
+                value="${Math.round((parseFloat(_editorDraft.display_config.stream_card_scale)||1.0)*100)}"
+                oninput="sbPreviewCardScale(this.value/100)"
+                style="width:80px;text-align:center;">
+              <span style="color:var(--text-dim);font-size:12px;">%</span>
+            </div>
+            <div class="wiz-sublabel">Game card size on stream (50–300%)</div>
           </div>
           <div>
             <div class="wiz-label">Page Rotation</div>
@@ -1157,7 +1158,7 @@ function renderEditorStep(sbOverride){
           <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px 14px 10px;overflow:hidden;">
             <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
             <div id="sbCardScaleWrap" style="overflow:hidden;">
-              <div id="sbCardScaleInner" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;transform-origin:top left;transition:transform 0.2s ease;width:580px;">
+              <div id="sbCardScaleInner" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;transform-origin:top left;transition:transform 0.2s ease;">
                 <div class="game-card live" style="pointer-events:none;">
                   <div class="card-status">
                     <div class="status-live"><div class="status-live-dot"></div>3rd · 7:42</div>
@@ -1210,7 +1211,7 @@ function renderEditorStep(sbOverride){
   // Init preview to current scale after render
   setTimeout(()=>{
     const sel=document.getElementById('sbEditCardScale');
-    if(sel) sbPreviewCardScale(sel.value);
+    if(sel) sbPreviewCardScale(parseFloat(sel.value)/100);
   },0);
   }
   else if(_editorStep===2){
@@ -1393,7 +1394,7 @@ function collectEditorStepData(){
     const tzEl=document.getElementById('sbEditTz');
     if(tzEl) _editorDraft.display_config.timezone=tzEl.value;
     const scaleEl=document.getElementById('sbEditCardScale');
-    if(scaleEl) _editorDraft.display_config.stream_card_scale=parseFloat(scaleEl.value);
+    if(scaleEl) _editorDraft.display_config.stream_card_scale=parseFloat(scaleEl.value)/100;
     const rotEl=document.getElementById('sbEditRotation');
     if(rotEl) _editorDraft.display_config.stream_rotation_secs=parseInt(rotEl.value);
   }
@@ -1547,11 +1548,19 @@ function sbPreviewCardScale(val){
   const inner = document.getElementById('sbCardScaleInner');
   const wrap  = document.getElementById('sbCardScaleWrap');
   if(!inner || !wrap) return;
-  inner.style.transform = `scale(${scale})`;
-  // Shrink the wrapper height to match so it doesn't leave a gap
+  // Reset transform first to measure natural size
+  inner.style.transform = '';
+  inner.style.removeProperty('--card-score-size');
+  inner.style.removeProperty('--card-abbr-size');
+  const naturalW = inner.offsetWidth;
   const naturalH = inner.offsetHeight;
+  // Apply scale
+  inner.style.transform = `scale(${scale})`;
+  inner.style.transformOrigin = 'top left';
+  // Resize wrapper to match scaled dimensions (prevents gap / overflow)
+  wrap.style.width  = Math.round(naturalW * scale) + 'px';
   wrap.style.height = Math.round(naturalH * scale) + 'px';
-  // Update score/abbr font sizes to match what the stream renderer does
+  // Update font sizes to match stream renderer
   inner.style.setProperty('--card-score-size', Math.round(34 * scale) + 'px');
   inner.style.setProperty('--card-abbr-size',  Math.round(18 * scale) + 'px');
 }
@@ -2749,7 +2758,8 @@ function buildGameCard(g){return state.layout==='ticker'?buildTickerCard(g):buil
 function buildTickerCard(g){
   const card=document.createElement('div');card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
   const away=g.teams.find(t=>t.homeAway==='away')||g.teams[0],home=g.teams.find(t=>t.homeAway==='home')||g.teams[1];
-  const sh=g.isLive?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`:g.isFinal?'<span class="status-final">FINAL</span>':`<span class="status-upcoming">${formatTime(g.date)}</span>`;
+  const finalDate = g.isFinal && g.date ? formatDate(g.date) : '';
+  const sh=g.isLive?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`:g.isFinal?`<span class="status-final">FINAL${finalDate?' · '+finalDate:''}</span>`:`<span class="status-upcoming">${formatTime(g.date)}</span>`;
   card.innerHTML=`<div class="ticker-row"><div style="width:6px;height:18px;border-radius:2px;background:${g.sportColor};flex-shrink:0"></div><div class="ticker-teams">${away?.abbr||'–'} vs ${home?.abbr||'–'}</div><div class="ticker-score">${away?.score??'–'} – ${home?.score??'–'}</div>${buildNetworkBadges(g.networks)}<div class="ticker-period">${sh}</div></div>`;
   return card;
 }
@@ -2863,6 +2873,7 @@ function buildStats(g){
 }
 
 function formatTime(d){if(!d)return'TBD';try{return new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return'TBD';}}
+function formatDate(d){if(!d)return'';try{const dt=new Date(d);const today=new Date();const yesterday=new Date(today);yesterday.setDate(today.getDate()-1);if(dt.toDateString()===today.toDateString())return'Today';if(dt.toDateString()===yesterday.toDateString())return'Yesterday';return dt.toLocaleDateString([],{month:'short',day:'numeric'});}catch(e){return '';}}
 
 // =====================
 //  TEAM BROWSER
@@ -3605,7 +3616,8 @@ async function initSidebarScoreboardSelector(){
     const d=await r.json();
     const pills=document.getElementById('sbSelectorPills');
     if(!pills)return;
-    // Render one pill per scoreboard (skip default "ScoreStream" built-in if desired, but show all)
+    // Clear existing custom pills first (keep static "All Sports" pill which is in HTML)
+    pills.querySelectorAll('.sb-selector-pill').forEach(p=>p.remove());
     const custom=(d.scoreboards||[]);
     custom.forEach(sb=>{
       const pill=document.createElement('div');
@@ -3839,6 +3851,7 @@ async function refreshStreamConfig() {
     const prevScale    = _activeStreamDisplayConfig?.stream_card_scale;
     const prevRotation = _activeStreamDisplayConfig?.stream_rotation_secs;
     _activeStreamDisplayConfig = dc;
+    _activeFinalsCfg = dc.finals || null;  // keep finals config in sync
 
     // If card scale changed, re-render canvas with new scale
     const newScale = dc.stream_card_scale;
@@ -3884,8 +3897,8 @@ function initStreamCanvas() {
   // Build canvas structure
   sb.innerHTML = '<div id="stream-canvas"><div id="stream-pages"></div></div><div id="stream-pagination"></div>';
 
-  // Initial render
-  renderStreamCanvas();
+  // Defer render by one frame so the DOM is laid out and clientHeight/Width are valid
+  requestAnimationFrame(() => renderStreamCanvas());
 }
 
 function renderStreamCanvas() {
@@ -3933,17 +3946,26 @@ function renderStreamCanvas() {
     return;
   }
 
-  // Measure available space
+  // Measure available space — use window dimensions as reliable fallback
+  // canvas.clientHeight can be 0 if layout hasn't painted yet
   const canvas = document.getElementById('stream-canvas');
-  const availH = canvas ? canvas.clientHeight : (window.innerHeight - 80);
-  const availW = canvas ? canvas.clientWidth : window.innerWidth;
+  const topbarH = document.getElementById('topbar')?.offsetHeight || 64;
+  const paginationH = 28; // dot bar at bottom
+  const availH = (canvas && canvas.clientHeight > 50)
+    ? canvas.clientHeight
+    : (window.innerHeight - topbarH - paginationH - 16);
+  const availW = (canvas && canvas.clientWidth > 100)
+    ? canvas.clientWidth
+    : (window.innerWidth - 28);
 
   // Card approximate height at current scale (header + 2 teams + padding)
   const cardH = Math.round(130 * scale);
   const sectionHeaderH = 36; // league-header height
   const gridGap = 9;
+  const pagePad = 28; // padding inside page
   const colMinW = Math.round(300 * scale);
-  const cols = Math.max(1, Math.floor((availW - 28) / (colMinW + gridGap)));
+  const cols = Math.max(1, Math.floor((availW - pagePad) / (colMinW + gridGap)));
+  console.log(`[stream] availH=${availH} availW=${availW} cols=${cols} scale=${scale} cardH=${cardH}`);
 
   // Build section blocks — figure out how many rows each section needs
   // then paginate by fitting as many sections as possible per page
