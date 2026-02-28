@@ -1255,53 +1255,42 @@ function renderEditorStep(sbOverride){
           <div class="wiz-sublabel">Stored for reference. To change output resolution, update <code style="font-family:monospace;font-size:10px;color:var(--accent);">STREAM_WIDTH</code> / <code style="font-family:monospace;font-size:10px;color:var(--accent);">STREAM_HEIGHT</code> in your Docker stack env vars and restart the stream container.</div>
         </div>
         <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-          <div class="wiz-label" style="margin-bottom:10px;">Card Typography</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-              <div class="wiz-label" data-tip="Size of the team abbreviation (e.g. LAL, BOS) on stream cards">Abbreviation Size</div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <input type="range" min="14" max="28" step="1"
-                  value="${_editorDraft.display_config.card_abbr_size || 18}"
-                  id="sbEditAbbrSize"
-                  oninput="document.getElementById('sbEditAbbrSizeVal').textContent=this.value+'px'"
-                  style="flex:1;">
-                <span id="sbEditAbbrSizeVal" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);min-width:32px;">${_editorDraft.display_config.card_abbr_size || 18}px</span>
+          <div class="modal-section-title" style="font-size:11px;margin-bottom:10px;letter-spacing:2px;">CARD TYPOGRAPHY</div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Size of the team abbreviation (e.g. LAL, BOS) on stream cards">Abbreviation Size</span>
+            <input type="range" min="14" max="28" step="1"
+              value="${_editorDraft.display_config.card_abbr_size || 18}"
+              id="sbEditAbbrSize"
+              oninput="document.getElementById('sbEditAbbrSizeVal').textContent=this.value+'px';sbPreviewCardScale(document.getElementById('sbEditCardScale').value/100)">
+            <span class="modal-slider-val" id="sbEditAbbrSizeVal">${_editorDraft.display_config.card_abbr_size || 18}px</span>
+          </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Size of the score numbers on stream cards">Score Size</span>
+            <input type="range" min="24" max="52" step="1"
+              value="${_editorDraft.display_config.card_score_size || 34}"
+              id="sbEditScoreSize"
+              oninput="document.getElementById('sbEditScoreSizeVal').textContent=this.value+'px';sbPreviewCardScale(document.getElementById('sbEditCardScale').value/100)">
+            <span class="modal-slider-val" id="sbEditScoreSizeVal">${_editorDraft.display_config.card_score_size || 34}px</span>
+          </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Size of the full team name shown below the abbreviation">Team Name Size</span>
+            <input type="range" min="9" max="16" step="1"
+              value="${_editorDraft.display_config.card_name_size || 11}"
+              id="sbEditNameSize"
+              oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px';sbPreviewCardScale(document.getElementById('sbEditCardScale').value/100)">
+            <span class="modal-slider-val" id="sbEditNameSizeVal">${_editorDraft.display_config.card_name_size || 11}px</span>
+          </div>
+          <div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="Color of the full team name subtitle text on stream cards">Team Name Color</span>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
+              <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+                <div id="sbEditNameColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.card_name_color || '#3d5a78'};"></div>
+                <input type="color" id="sbEditNameColor"
+                  value="${_editorDraft.display_config.card_name_color || '#3d5a78'}"
+                  style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                  oninput="document.getElementById('sbEditNameColorSwatch').style.background=this.value;document.getElementById('sbEditNameColorVal').textContent=this.value;sbPreviewCardScale(document.getElementById('sbEditCardScale').value/100)">
               </div>
-            </div>
-            <div>
-              <div class="wiz-label" data-tip="Size of the score numbers on stream cards">Score Size</div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <input type="range" min="24" max="52" step="1"
-                  value="${_editorDraft.display_config.card_score_size || 34}"
-                  id="sbEditScoreSize"
-                  oninput="document.getElementById('sbEditScoreSizeVal').textContent=this.value+'px'"
-                  style="flex:1;">
-                <span id="sbEditScoreSizeVal" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);min-width:32px;">${_editorDraft.display_config.card_score_size || 34}px</span>
-              </div>
-            </div>
-            <div>
-              <div class="wiz-label" data-tip="Size of the full team name text below the abbreviation">Team Name Size</div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <input type="range" min="9" max="16" step="1"
-                  value="${_editorDraft.display_config.card_name_size || 11}"
-                  id="sbEditNameSize"
-                  oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px'"
-                  style="flex:1;">
-                <span id="sbEditNameSizeVal" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);min-width:32px;">${_editorDraft.display_config.card_name_size || 11}px</span>
-              </div>
-            </div>
-            <div>
-              <div class="wiz-label" data-tip="Color of the team name subtitle text on stream cards">Team Name Color</div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <div style="position:relative;width:32px;height:24px;border-radius:5px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;">
-                  <div id="sbEditNameColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.card_name_color || '#3d5a78'};"></div>
-                  <input type="color" id="sbEditNameColor"
-                    value="${_editorDraft.display_config.card_name_color || '#3d5a78'}"
-                    style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
-                    oninput="document.getElementById('sbEditNameColorSwatch').style.background=this.value;document.getElementById('sbEditNameColorVal').textContent=this.value;">
-                </div>
-                <span id="sbEditNameColorVal" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);">${_editorDraft.display_config.card_name_color || '#3d5a78'}</span>
-              </div>
+              <span class="modal-slider-val" id="sbEditNameColorVal">${_editorDraft.display_config.card_name_color || '#3d5a78'}</span>
             </div>
           </div>
         </div>
@@ -1760,9 +1749,15 @@ function sbPreviewCardScale(val){
   // Resize wrapper to match scaled dimensions (prevents gap / overflow)
   wrap.style.width  = Math.round(naturalW * scale) + 'px';
   wrap.style.height = Math.round(naturalH * scale) + 'px';
-  // Update font sizes to match stream renderer
-  inner.style.setProperty('--card-score-size', Math.round(34 * scale) + 'px');
-  inner.style.setProperty('--card-abbr-size',  Math.round(18 * scale) + 'px');
+  // Update font sizes to match stream renderer — use editor's typography values as base
+  const abbrBase  = parseInt(document.getElementById('sbEditAbbrSize')?.value  || 18);
+  const scoreBase = parseInt(document.getElementById('sbEditScoreSize')?.value || 34);
+  const nameBase  = parseInt(document.getElementById('sbEditNameSize')?.value  || 11);
+  const nameColor = document.getElementById('sbEditNameColor')?.value || '#3d5a78';
+  inner.style.setProperty('--card-score-size', Math.round(scoreBase * scale) + 'px');
+  inner.style.setProperty('--card-abbr-size',  Math.round(abbrBase  * scale) + 'px');
+  inner.style.setProperty('--card-name-size',  Math.round(nameBase  * scale) + 'px');
+  inner.style.setProperty('--card-name-color', nameColor);
 }
 
 function sbEditorFilterTeams(query){
@@ -4327,11 +4322,12 @@ function renderStreamCanvas() {
       const grid = document.createElement('div');
       grid.className = 'games-grid grid-mode';
       grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-      if (scale !== 1.0) {
-        grid.style.setProperty('--card-score-size', Math.round(34 * scale) + 'px');
-        grid.style.setProperty('--card-abbr-size', Math.round(18 * scale) + 'px');
-        grid.style.setProperty('--card-name-size', Math.round(11 * scale) + 'px');
-      }
+      // Always apply typography from state.display (populated from display_config),
+      // scaled by card scale. This ensures user's saved size/color settings show in stream.
+      grid.style.setProperty('--card-score-size', Math.round(state.display.scoreSize * scale) + 'px');
+      grid.style.setProperty('--card-abbr-size',  Math.round(state.display.abbrSize  * scale) + 'px');
+      grid.style.setProperty('--card-name-size',  Math.round(state.display.nameSize  * scale) + 'px');
+      grid.style.setProperty('--card-name-color', state.display.nameColor);
 
       games.forEach(g => {
         const card = buildFullCard(g);
