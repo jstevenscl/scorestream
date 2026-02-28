@@ -1254,6 +1254,58 @@ function renderEditorStep(sbOverride){
           </select>
           <div class="wiz-sublabel">Stored for reference. To change output resolution, update <code style="font-family:monospace;font-size:10px;color:var(--accent);">STREAM_WIDTH</code> / <code style="font-family:monospace;font-size:10px;color:var(--accent);">STREAM_HEIGHT</code> in your Docker stack env vars and restart the stream container.</div>
         </div>
+        <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+          <div class="wiz-label" style="margin-bottom:10px;">Card Typography</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <div class="wiz-label" data-tip="Size of the team abbreviation (e.g. LAL, BOS) on stream cards">Abbreviation Size</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="range" min="14" max="28" step="1"
+                  value="${_editorDraft.display_config.card_abbr_size || 18}"
+                  id="sbEditAbbrSize"
+                  oninput="document.getElementById('sbEditAbbrSizeVal').textContent=this.value+'px'"
+                  style="flex:1;">
+                <span id="sbEditAbbrSizeVal" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);min-width:32px;">${_editorDraft.display_config.card_abbr_size || 18}px</span>
+              </div>
+            </div>
+            <div>
+              <div class="wiz-label" data-tip="Size of the score numbers on stream cards">Score Size</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="range" min="24" max="52" step="1"
+                  value="${_editorDraft.display_config.card_score_size || 34}"
+                  id="sbEditScoreSize"
+                  oninput="document.getElementById('sbEditScoreSizeVal').textContent=this.value+'px'"
+                  style="flex:1;">
+                <span id="sbEditScoreSizeVal" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);min-width:32px;">${_editorDraft.display_config.card_score_size || 34}px</span>
+              </div>
+            </div>
+            <div>
+              <div class="wiz-label" data-tip="Size of the full team name text below the abbreviation">Team Name Size</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="range" min="9" max="16" step="1"
+                  value="${_editorDraft.display_config.card_name_size || 11}"
+                  id="sbEditNameSize"
+                  oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px'"
+                  style="flex:1;">
+                <span id="sbEditNameSizeVal" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);min-width:32px;">${_editorDraft.display_config.card_name_size || 11}px</span>
+              </div>
+            </div>
+            <div>
+              <div class="wiz-label" data-tip="Color of the team name subtitle text on stream cards">Team Name Color</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="position:relative;width:32px;height:24px;border-radius:5px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;">
+                  <div id="sbEditNameColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.card_name_color || '#3d5a78'};"></div>
+                  <input type="color" id="sbEditNameColor"
+                    value="${_editorDraft.display_config.card_name_color || '#3d5a78'}"
+                    style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                    oninput="document.getElementById('sbEditNameColorSwatch').style.background=this.value;document.getElementById('sbEditNameColorVal').textContent=this.value;">
+                </div>
+                <span id="sbEditNameColorVal" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);">${_editorDraft.display_config.card_name_color || '#3d5a78'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <div class="wiz-label" data-tip="Scales all game cards larger or smaller in the stream output. 100% = default size. Higher % = bigger cards, fewer columns.">Card Scale</div>
@@ -1268,15 +1320,14 @@ function renderEditorStep(sbOverride){
             <div class="wiz-sublabel">Game card size on stream (50–300%)</div>
           </div>
           <div>
-            <div class="wiz-label" data-tip="When there are more games than fit on one screen, the stream automatically pages through them. This controls how long each page is shown before advancing.">Page Rotation</div>
-            <select class="wiz-input" id="sbEditRotation">
-              <option value="15" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='15'?'selected':''}>15 seconds</option>
-              <option value="20" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='20'?'selected':''}>20 seconds</option>
-              <option value="30" ${String(_editorDraft.display_config.stream_rotation_secs||'30')==='30'?'selected':''}>30 seconds</option>
-              <option value="45" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='45'?'selected':''}>45 seconds</option>
-              <option value="60" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='60'?'selected':''}>60 seconds</option>
-              <option value="0"  ${String(_editorDraft.display_config.stream_rotation_secs||'')==='0'?'selected':''}>No rotation</option>
-            </select>
+            <div class="wiz-label" data-tip="When there are more games than fit on one screen, the stream automatically pages through them. This controls how long each page is shown before advancing. Set to 0 to disable auto-rotation.">Page Rotation</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" class="wiz-input" id="sbEditRotation"
+                min="0" max="300" step="1"
+                value="${_editorDraft.display_config.stream_rotation_secs ?? 15}"
+                style="width:80px;text-align:center;">
+              <span style="color:var(--text-dim);font-size:12px;">sec (0 = no rotation)</span>
+            </div>
             <div class="wiz-sublabel">How long each page shows before rotating</div>
           </div>
           <div>
@@ -1536,6 +1587,14 @@ function collectEditorStepData(){
     if(resEl) _editorDraft.display_config.stream_resolution=resEl.value;
     const layoutEl=document.getElementById('sbEditLayout');
     if(layoutEl) _editorDraft.display_config.stream_layout=layoutEl.value;
+    const abbrSzEl=document.getElementById('sbEditAbbrSize');
+    if(abbrSzEl) _editorDraft.display_config.card_abbr_size=parseInt(abbrSzEl.value);
+    const scoreSzEl=document.getElementById('sbEditScoreSize');
+    if(scoreSzEl) _editorDraft.display_config.card_score_size=parseInt(scoreSzEl.value);
+    const nameSzEl=document.getElementById('sbEditNameSize');
+    if(nameSzEl) _editorDraft.display_config.card_name_size=parseInt(nameSzEl.value);
+    const nameColEl=document.getElementById('sbEditNameColor');
+    if(nameColEl) _editorDraft.display_config.card_name_color=nameColEl.value;
     const rotEl=document.getElementById('sbEditRotation');
     if(rotEl) _editorDraft.display_config.stream_rotation_secs=parseInt(rotEl.value);
   }
@@ -2555,6 +2614,14 @@ function setNameColor(c){
 
 function initDisplayControls(){
   loadDisplay();
+  // In stream mode the renderer has empty localStorage — override from display_config
+  if(_activeStreamDisplayConfig){
+    const dc=_activeStreamDisplayConfig;
+    if(dc.card_abbr_size  != null) state.display.abbrSize  = dc.card_abbr_size;
+    if(dc.card_score_size != null) state.display.scoreSize = dc.card_score_size;
+    if(dc.card_name_size  != null) state.display.nameSize  = dc.card_name_size;
+    if(dc.card_name_color != null) state.display.nameColor = dc.card_name_color;
+  }
   const root=document.documentElement;
   root.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
   root.style.setProperty('--card-score-size',state.display.scoreSize+'px');
@@ -3987,6 +4054,9 @@ renderFavSummary();
       applyStreamResolution(sb.display_config?.stream_resolution || '1920x1080');
       // Apply per-scoreboard layout
       state.layout = sb.display_config?.stream_layout || 'grid';
+      // Re-apply display settings now that display_config is loaded
+      // (initDisplayControls ran at page load before this, with empty display_config)
+      initDisplayControls();
     }
   }catch(e){
     console.warn('[stream] Failed to load scoreboard config:',e.message);
@@ -4036,6 +4106,12 @@ async function refreshStreamConfig() {
     // Re-apply layout if it changed
     const newLayout = dc.stream_layout || 'grid';
     if(newLayout !== state.layout){ state.layout = newLayout; renderStreamCanvas(); }
+    // Re-apply typography if it changed
+    const root=document.documentElement;
+    if(dc.card_abbr_size  != null) root.style.setProperty('--card-abbr-size',  dc.card_abbr_size  + 'px');
+    if(dc.card_score_size != null) root.style.setProperty('--card-score-size', dc.card_score_size + 'px');
+    if(dc.card_name_size  != null) root.style.setProperty('--card-name-size',  dc.card_name_size  + 'px');
+    if(dc.card_name_color != null) root.style.setProperty('--card-name-color', dc.card_name_color);
 
     // If card scale changed, re-render canvas with new scale
     const newScale = dc.stream_card_scale;
