@@ -1134,7 +1134,7 @@ function renderEditorStep(sbOverride){
             <option value="1280x1080" ${(_editorDraft.display_config.stream_resolution||'')==='1280x1080'?'selected':''}>1280 × 1080 (4:3 HD)</option>
             <option value="3840x2160" ${(_editorDraft.display_config.stream_resolution||'')==='3840x2160'?'selected':''}>3840 × 2160 (4K)</option>
           </select>
-          <div class="wiz-sublabel">The stream renderer runs at 1920×1080 — this scales content to fill the target resolution.</div>
+          <div class="wiz-sublabel">Stored for reference. To change output resolution, update <code style="font-family:monospace;font-size:10px;color:var(--accent);">STREAM_WIDTH</code> / <code style="font-family:monospace;font-size:10px;color:var(--accent);">STREAM_HEIGHT</code> in your Docker stack env vars and restart the stream container.</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
@@ -3919,30 +3919,19 @@ async function refreshStreamConfig() {
 }
 
 function applyStreamResolution(resolution) {
-  // The renderer's Puppeteer window is always 1920x1080.
-  // We scale #main content to simulate the target resolution within that viewport.
+  // Resolution is stored in display_config and passed to the renderer via URL param.
+  // The renderer (Puppeteer) uses STREAM_WIDTH / STREAM_HEIGHT env vars to set viewport.
+  // This function has NO effect on the DOM — resolution is a renderer-level setting.
+  // We do NOT apply any CSS transform here because scaling #main causes clipping/distortion.
+  // The resolution value is read by the renderer's launch script via ?res= query param.
   const main = document.getElementById('main');
-  if (!main) return;
-  const [w, h] = (resolution || '1920x1080').split('x').map(Number);
-  const scaleX = 1920 / (w || 1920);
-  const scaleY = 1080 / (h || 1080);
-  // Use uniform scale (preserve aspect ratio) — scale down if target < 1920x1080
-  // or up for 4K (content gets larger/fewer columns at 4K target = higher density look)
-  if (w === 1920 && h === 1080) {
-    // Default — no transform needed
+  if (main) {
     main.style.transform = '';
     main.style.transformOrigin = '';
     main.style.width = '';
     main.style.height = '';
-  } else {
-    const scale = Math.min(scaleX, scaleY);
-    main.style.transform = `scale(${scale})`;
-    main.style.transformOrigin = 'top left';
-    // Set explicit dimensions so the scaled content fills the viewport
-    main.style.width = (1920 / scale) + 'px';
-    main.style.height = (1080 / scale) + 'px';
   }
-  console.log(`[stream] Resolution ${resolution} → scale ${Math.min(scaleX,scaleY).toFixed(3)}`);
+  console.log(`[stream] Resolution config: ${resolution} (applied by renderer viewport)`);
 }
 
 function getStreamSettings() {
