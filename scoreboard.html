@@ -421,9 +421,98 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
 .wiz-review-key{color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;font-size:11px;}
 .wiz-review-val{color:var(--text-primary);font-weight:600;}
 .wiz-update-banner{padding:10px 14px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);border-radius:8px;font-size:12px;color:var(--accent);margin-bottom:16px;}
+
+/* ═══════════════════════════════════
+   TOOLTIP SYSTEM
+═══════════════════════════════════ */
+#tt{
+  position:fixed;z-index:99999;pointer-events:none;
+  background:var(--bg-card);border:1px solid var(--border-bright);
+  border-radius:7px;padding:7px 10px;max-width:220px;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:500;
+  color:var(--text-secondary);line-height:1.45;letter-spacing:0.2px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.5);
+  opacity:0;transition:opacity 0.15s ease;
+  white-space:normal;word-break:break-word;
+}
+#tt.visible{opacity:1;}
+#tt .tt-arrow{
+  position:absolute;width:7px;height:7px;background:var(--bg-card);
+  border-left:1px solid var(--border-bright);border-top:1px solid var(--border-bright);
+  transform:rotate(45deg);bottom:-4px;left:12px;
+}
+#tt.arrow-top .tt-arrow{bottom:auto;top:-4px;transform:rotate(225deg);}
 </style>
 </head>
 <body>
+<div id="tt"><div class="tt-arrow"></div></div>
+<script>
+(function(){
+  const tt = document.getElementById('tt');
+  const arrow = tt.querySelector('.tt-arrow');
+  let hideTimer;
+
+  function show(el) {
+    const tip = el.getAttribute('data-tip');
+    if (!tip) return;
+    clearTimeout(hideTimer);
+    tt.childNodes[0].textContent = '';
+    tt.firstElementChild.previousSibling && (tt.firstElementChild.previousSibling.textContent = tip);
+    // Set text (first text node before arrow div)
+    tt.innerHTML = tip + '<div class="tt-arrow"></div>';
+
+    const r = el.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const ttW = 220, ttH = 70; // approximate
+
+    // Try placing above first, fall back to below
+    let top, left;
+    const spaceAbove = r.top;
+    const spaceBelow = vh - r.bottom;
+    const arrowDiv = tt.querySelector('.tt-arrow');
+
+    if (spaceAbove >= ttH + 12 || spaceAbove > spaceBelow) {
+      // Place above
+      top = r.top - ttH - 10;
+      tt.classList.remove('arrow-top');
+    } else {
+      // Place below
+      top = r.bottom + 10;
+      tt.classList.add('arrow-top');
+    }
+
+    left = Math.max(8, Math.min(r.left, vw - ttW - 8));
+    // Arrow horizontal pos
+    const arrowLeft = Math.max(8, r.left + r.width/2 - left - 4);
+    arrowDiv.style.left = arrowLeft + 'px';
+
+    tt.style.top  = top + 'px';
+    tt.style.left = left + 'px';
+    tt.style.maxWidth = ttW + 'px';
+    tt.classList.add('visible');
+  }
+
+  function hide() {
+    hideTimer = setTimeout(() => tt.classList.remove('visible'), 80);
+  }
+
+  // Use delegation — works on dynamically-added elements too
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el) show(el);
+  });
+  document.addEventListener('mouseout', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el) hide();
+  });
+  // Touch support
+  document.addEventListener('touchstart', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el) { show(el); setTimeout(() => tt.classList.remove('visible'), 2500); }
+  }, {passive:true});
+})();
+</script>
+
 <div id="app">
 <aside id="sidebar">
   <div class="sidebar-header">
@@ -449,18 +538,18 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
   <div class="sidebar-section">
     <div class="section-label">Display Layout</div>
     <div class="layout-btns">
-      <button class="layout-btn" data-layout="fullscreen"><div class="icon">&#x2B1B;</div><div class="lbl">Full</div></button>
-      <button class="layout-btn active" data-layout="grid"><div class="icon">&#x229E;</div><div class="lbl">Grid</div></button>
-      <button class="layout-btn" data-layout="ticker"><div class="icon">&#x25AC;</div><div class="lbl">Ticker</div></button>
+      <button class="layout-btn" data-layout="fullscreen" data-tip="Full layout — single wide column, one game per row. Best for a few featured games."><div class="icon">&#x2B1B;</div><div class="lbl">Full</div></button>
+      <button class="layout-btn active" data-layout="grid" data-tip="Grid layout — multiple columns of game cards. Best for showing many games at once."><div class="icon">&#x229E;</div><div class="lbl">Grid</div></button>
+      <button class="layout-btn" data-layout="ticker" data-tip="Ticker layout — compact single-line rows. Best for fitting the most games on screen."><div class="icon">&#x25AC;</div><div class="lbl">Ticker</div></button>
     </div>
   </div>
 
   <div class="sidebar-section">
     <div class="section-label">Filter</div>
     <div class="pill-toggle">
-      <div class="pill-opt active" data-opt="filter" data-val="all">All</div>
-      <div class="pill-opt" data-opt="filter" data-val="live">Live</div>
-      <div class="pill-opt" data-opt="filter" data-val="favorites">&#x2B50; Mine</div>
+      <div class="pill-opt active" data-opt="filter" data-val="all" data-tip="Show all games — live, upcoming, and finals (if enabled below)">All</div>
+      <div class="pill-opt" data-opt="filter" data-val="live" data-tip="Show only games that are currently in progress">Live</div>
+      <div class="pill-opt" data-opt="filter" data-val="favorites" data-tip="Show only games featuring teams you've starred">&#x2B50; Mine</div>
     </div>
   </div>
 
@@ -472,7 +561,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
   <div class="sidebar-section" id="endedSection">
     <div class="section-label">Ended Games</div>
     <div class="ended-master-row">
-      <span class="ended-label">&#x1F3C1; Show Final Games</span>
+      <span class="ended-label" data-tip="Fetch and display completed games from prior days. Expand each sport below to control how many days back to show.">&#x1F3C1; Show Final Games</span>
       <div class="big-toggle" id="endedMasterToggle" onclick="toggleEndedMaster()"></div>
     </div>
     <div id="endedControls" style="display:none">
@@ -605,7 +694,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
 
       <div class="modal-section">
         <div class="modal-section-title">Auto-Refresh Rate</div>
-        <div class="rate-pills" id="ratePills">
+        <div class="rate-pills" id="ratePills" data-tip="How often scores automatically refresh from ESPN. Lower = more up-to-date but more network requests.">
           <div class="rate-pill" data-rate="0" onclick="setRefreshRate(0)">Manual only</div>
           <div class="rate-pill" data-rate="30" onclick="setRefreshRate(30)">30 sec</div>
           <div class="rate-pill active" data-rate="60" onclick="setRefreshRate(60)">1 min</div>
@@ -618,17 +707,17 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
       <div class="modal-section">
         <div class="modal-section-title">Card Typography</div>
         <div class="modal-slider-row">
-          <span class="modal-slider-label">Team Abbreviation Size</span>
+          <span class="modal-slider-label" data-tip="Size of the 2-3 letter team abbreviation (e.g. LAL, BOS) on each game card">Team Abbreviation Size</span>
           <input type="range" min="14" max="28" value="18" id="sl-abbr" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-abbr">18px</span>
         </div>
         <div class="modal-slider-row">
-          <span class="modal-slider-label">Score Size</span>
+          <span class="modal-slider-label" data-tip="Size of the score numbers displayed on each game card">Score Size</span>
           <input type="range" min="24" max="52" value="34" id="sl-score" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-score">34px</span>
         </div>
         <div class="modal-slider-row">
-          <span class="modal-slider-label">Team Name Size</span>
+          <span class="modal-slider-label" data-tip="Size of the full team name shown in small text below the abbreviation (e.g. 'Los Angeles Lakers · Away')">Team Name Size</span>
           <input type="range" min="9" max="16" value="11" id="sl-name" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-name">11px</span>
         </div>
@@ -638,7 +727,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
         <div class="modal-section-title">Team Name Color</div>
         <div class="modal-row">
           <div>
-            <div class="modal-label">Name / Subtitle Color</div>
+            <div class="modal-label" data-tip="Color of the full team name and subtitle text shown below the abbreviation on game cards">Name / Subtitle Color</div>
             <div class="modal-sublabel">The small text below the abbreviation</div>
           </div>
           <div class="color-row" style="margin:0;">
@@ -657,6 +746,35 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
             <div onclick="setNameColor('#b0c4de')" style="width:24px;height:24px;border-radius:5px;background:#b0c4de;cursor:pointer;border:2px solid var(--border);" title="Light blue"></div>
             <div onclick="setNameColor('#e8f0fe')" style="width:24px;height:24px;border-radius:5px;background:#e8f0fe;cursor:pointer;border:2px solid var(--border);" title="White"></div>
             <div onclick="setNameColor('#00d4ff')" style="width:24px;height:24px;border-radius:5px;background:#00d4ff;cursor:pointer;border:2px solid var(--border);" title="Accent cyan"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Live Preview</div>
+        <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;max-width:320px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">CARD PREVIEW</div>
+          <div class="game-card live" id="displayPreviewCard" style="pointer-events:none;max-width:290px;">
+            <div class="card-status">
+              <div class="status-live"><div class="status-live-dot"></div>Q4 · 2:15</div>
+              <span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,100,50,0.9);letter-spacing:0.5px;">ESPN</span>
+              <span class="game-period" style="color:#c9082a;">🏀 NBA</span>
+            </div>
+            <div class="card-body">
+              <div class="teams-container">
+                <div class="team-row">
+                  <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#552583,#f9a01b);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:9px;color:white;">LAL</div>
+                  <div class="team-name-block"><div class="team-abbr">LAL</div><div class="team-full-name">Los Angeles Lakers · Away</div></div>
+                  <div class="team-score">108</div>
+                </div>
+                <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:2px 0;"></div>
+                <div class="team-row winning">
+                  <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#007A33,#BA9A00);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:9px;color:white;">BOS</div>
+                  <div class="team-name-block"><div class="team-abbr">BOS</div><div class="team-full-name">Boston Celtics · Home</div></div>
+                  <div class="team-score" style="color:white;">112</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1127,7 +1245,7 @@ function renderEditorStep(sbOverride){
         <div class="modal-section-title" style="margin-bottom:4px;">📺 Stream Output</div>
         <div class="wiz-sublabel" style="margin-bottom:14px;">Per-scoreboard stream display settings.</div>
         <div style="margin-bottom:12px;">
-          <div class="wiz-label">Output Resolution</div>
+          <div class="wiz-label" data-tip="Stored for reference only. To change the actual output resolution, update STREAM_WIDTH and STREAM_HEIGHT in your Docker stack and restart the stream container.">Output Resolution</div>
           <select class="wiz-input" id="sbEditResolution" style="max-width:220px;">
             <option value="1920x1080" ${(_editorDraft.display_config.stream_resolution||'1920x1080')==='1920x1080'?'selected':''}>1920 × 1080 (1080p)</option>
             <option value="1280x720"  ${(_editorDraft.display_config.stream_resolution||'')==='1280x720'?'selected':''}>1280 × 720 (720p)</option>
@@ -1138,7 +1256,7 @@ function renderEditorStep(sbOverride){
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
-            <div class="wiz-label">Card Scale</div>
+            <div class="wiz-label" data-tip="Scales all game cards larger or smaller in the stream output. 100% = default size. Higher % = bigger cards, fewer columns.">Card Scale</div>
             <div style="display:flex;align-items:center;gap:8px;">
               <input type="number" class="wiz-input" id="sbEditCardScale"
                 min="50" max="300" step="5"
@@ -1150,7 +1268,7 @@ function renderEditorStep(sbOverride){
             <div class="wiz-sublabel">Game card size on stream (50–300%)</div>
           </div>
           <div>
-            <div class="wiz-label">Page Rotation</div>
+            <div class="wiz-label" data-tip="When there are more games than fit on one screen, the stream automatically pages through them. This controls how long each page is shown before advancing.">Page Rotation</div>
             <select class="wiz-input" id="sbEditRotation">
               <option value="15" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='15'?'selected':''}>15 seconds</option>
               <option value="20" ${String(_editorDraft.display_config.stream_rotation_secs||'')==='20'?'selected':''}>20 seconds</option>
@@ -1160,6 +1278,15 @@ function renderEditorStep(sbOverride){
               <option value="0"  ${String(_editorDraft.display_config.stream_rotation_secs||'')==='0'?'selected':''}>No rotation</option>
             </select>
             <div class="wiz-sublabel">How long each page shows before rotating</div>
+          </div>
+          <div>
+            <div class="wiz-label" data-tip="Card layout style used in the HLS stream output. Grid = multi-column cards (default). Full = single wide column. Ticker = compact single-line rows.">Stream Layout</div>
+            <select class="wiz-input" id="sbEditLayout">
+              <option value="grid"       ${(_editorDraft.display_config.stream_layout||'grid')==='grid'      ?'selected':''}>Grid (cards)</option>
+              <option value="fullscreen" ${(_editorDraft.display_config.stream_layout||'')==='fullscreen'    ?'selected':''}>Full (one column)</option>
+              <option value="ticker"     ${(_editorDraft.display_config.stream_layout||'')==='ticker'        ?'selected':''}>Ticker (compact rows)</option>
+            </select>
+            <div class="wiz-sublabel">Card layout used in the stream output</div>
           </div>
         </div>
 
@@ -1407,6 +1534,8 @@ function collectEditorStepData(){
     if(scaleEl) _editorDraft.display_config.stream_card_scale=parseFloat(scaleEl.value)/100;
     const resEl=document.getElementById('sbEditResolution');
     if(resEl) _editorDraft.display_config.stream_resolution=resEl.value;
+    const layoutEl=document.getElementById('sbEditLayout');
+    if(layoutEl) _editorDraft.display_config.stream_layout=layoutEl.value;
     const rotEl=document.getElementById('sbEditRotation');
     if(rotEl) _editorDraft.display_config.stream_rotation_secs=parseInt(rotEl.value);
   }
@@ -2314,14 +2443,14 @@ function buildEndedLeagueToggles(){
       </div>
       <div class="ended-league-slider-wrap">
         <div class="league-days-row">
-          <span class="league-days-label">Days back:</span>
+          <span class="league-days-label" data-tip="How many days of completed games to fetch for this sport (1 = yesterday only, 7 = past week)">Days back:</span>
           <input type="range" min="1" max="7" value="${days}" id="days-slider-${sport.id}" oninput="onLeagueDaysChange('${sport.id}',this.value)">
           <span class="league-days-val" id="days-val-${sport.id}">${days}d</span>
         </div>
         <div class="ended-filter-row">
-          <div class="ended-filter-pill ${filter==='all'?'active':''}" onclick="setEndedFilter('${sport.id}','all')" id="efp-all-${sport.id}">All</div>
-          <div class="ended-filter-pill fav ${filter==='favs-first'?'active fav':''}" onclick="setEndedFilter('${sport.id}','favs-first')" id="efp-first-${sport.id}">⭐ First</div>
-          <div class="ended-filter-pill fav ${filter==='favs-only'?'active fav':''}" onclick="setEndedFilter('${sport.id}','favs-only')" id="efp-only-${sport.id}">⭐ Only</div>
+          <div class="ended-filter-pill ${filter==='all'?'active':''}" onclick="setEndedFilter('${sport.id}','all')" id="efp-all-${sport.id}" data-tip="Show all completed games for this sport">All</div>
+          <div class="ended-filter-pill fav ${filter==='favs-first'?'active fav':''}" onclick="setEndedFilter('${sport.id}','favs-first')" id="efp-first-${sport.id}" data-tip="Show all completed games but put your starred teams at the top">⭐ First</div>
+          <div class="ended-filter-pill fav ${filter==='favs-only'?'active fav':''}" onclick="setEndedFilter('${sport.id}','favs-only')" id="efp-only-${sport.id}" data-tip="Only show completed games where one of your starred teams played">⭐ Only</div>
         </div>
       </div>`;
     c.appendChild(row);
@@ -2488,6 +2617,7 @@ function switchSection(section){
   if(section==='teams'){buildTbTabs();loadTbSport(tbState.activeSport||getSPORTS()[0]?.id);}
   if(section==='dispatcharr') initDsTab();
   if(section==='ncaa') initNcaaSection();
+  if(section==='display') initDisplayControls();
 }
 
 // Legacy compat — old tab references
@@ -2736,9 +2866,13 @@ function renderScoreboard(){
       }
     }
     const liveUpcomingGames = games.filter(g => !g.isFinal);
+    // Custom scoreboard: finals come from _activeFinalsCfg
+    // All Sports: finals come from games (which already passed the showEnded filter above)
     const customFinalGames = _activeFinalsCfg && _activeFinalsCfg[sport.id]?.show
       ? (state.games[sport.id]||[]).filter(g => g.isFinal)
-      : [];
+      : (!_activeFinalsCfg && state.showEnded && state.endedLeagues.has(sport.id))
+        ? games.filter(g => g.isFinal)
+        : [];
 
     if(!liveUpcomingGames.length && !customFinalGames.length)return;
     if(liveUpcomingGames.length) anyGame=true;
@@ -2758,7 +2892,8 @@ function renderScoreboard(){
       // Group by date
       const byDate={};
       customFinalGames.forEach(g=>{
-        const d=g.date?new Date(g.date).toLocaleDateString('en-CA'):'unknown';
+        const _bd=g.date?new Date(g.date):null;
+        const d=_bd?`${_bd.getFullYear()}-${String(_bd.getMonth()+1).padStart(2,'0')}-${String(_bd.getDate()).padStart(2,'0')}`:'unknown';
         if(!byDate[d])byDate[d]=[];
         byDate[d].push(g);
       });
@@ -3706,7 +3841,7 @@ function selectSidebarScoreboard(slug){
       .then(sb=>{
         if(!sb)return;
         if(titleEl)titleEl.textContent=sb.name;
-        if(banner){banner.style.display='inline-block';banner.textContent='● PREVIEW';}
+        if(banner){banner.style.display='inline-block';banner.textContent='● PREVIEW';banner.setAttribute('data-tip','You are previewing a custom scoreboard. Scores are live but layout and filters reflect this board\'s settings. The HLS stream uses the same config.');}
         const sportIds=Object.entries(sb.sport_config||{}).filter(([,v])=>v).map(([k])=>k);
         if(!sportIds.length){
           // Unconfigured scoreboard — show message
@@ -3850,6 +3985,8 @@ renderFavSummary();
       state.favTeams = new Set((sb.display_config && sb.display_config.favTeams) || []);
       // Apply resolution scaling to #main
       applyStreamResolution(sb.display_config?.stream_resolution || '1920x1080');
+      // Apply per-scoreboard layout
+      state.layout = sb.display_config?.stream_layout || 'grid';
     }
   }catch(e){
     console.warn('[stream] Failed to load scoreboard config:',e.message);
@@ -3896,6 +4033,9 @@ async function refreshStreamConfig() {
     _activeFinalsCfg = dc.finals || null;  // keep finals config in sync
     // Re-apply resolution if it changed
     applyStreamResolution(dc.stream_resolution || '1920x1080');
+    // Re-apply layout if it changed
+    const newLayout = dc.stream_layout || 'grid';
+    if(newLayout !== state.layout){ state.layout = newLayout; renderStreamCanvas(); }
 
     // If card scale changed, re-render canvas with new scale
     const newScale = dc.stream_card_scale;
@@ -4000,7 +4140,8 @@ function renderStreamCanvas() {
       // Group by date string (YYYY-MM-DD)
       const byDate = {};
       finalGames.forEach(g => {
-        const d = g.date ? new Date(g.date).toLocaleDateString('en-CA') : 'unknown'; // en-CA = YYYY-MM-DD
+        const _gd = g.date ? new Date(g.date) : null;
+        const d = _gd ? `${_gd.getFullYear()}-${String(_gd.getMonth()+1).padStart(2,'0')}-${String(_gd.getDate()).padStart(2,'0')}` : 'unknown';
         if (!byDate[d]) byDate[d] = [];
         byDate[d].push(g);
       });
