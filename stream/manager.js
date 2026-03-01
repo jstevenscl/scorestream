@@ -264,6 +264,18 @@ function startHttpServer() {
       while (!fs.existsSync(filePath) && Date.now() < deadline) {
         await new Promise(r => setTimeout(r, 200));
       }
+      // Also wait for at least 2 .ts segments to exist before responding.
+      // VLC immediately fetches segments listed in the playlist — if they don't
+      // exist yet it errors out and requires a second press. 2 segments = 4s buffer
+      // which is enough for VLC to start playback cleanly on the first press.
+      const tsDeadline = Date.now() + 8000;
+      while (Date.now() < tsDeadline) {
+        const tsFiles = fs.existsSync(HLS_DIR)
+          ? fs.readdirSync(HLS_DIR).filter(f => f.startsWith(slug + '_') && f.endsWith('.ts'))
+          : [];
+        if (tsFiles.length >= 2) break;
+        await new Promise(r => setTimeout(r, 200));
+      }
       try {
         const data = fs.readFileSync(filePath);
         res.writeHead(200, { 'Content-Type':'application/vnd.apple.mpegurl',

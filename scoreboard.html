@@ -1737,7 +1737,10 @@ function sbPreviewCardScale(val){
   const inner = document.getElementById('sbCardScaleInner');
   const wrap  = document.getElementById('sbCardScaleWrap');
   if(!inner || !wrap) return;
-  // Reset transform first to measure natural size
+  // Reset wrapper size FIRST so inner collapses to its true natural size before measuring
+  wrap.style.width  = '';
+  wrap.style.height = '';
+  // Now remove transform — inner will collapse correctly because wrapper no longer constrains it
   inner.style.transform = '';
   inner.style.removeProperty('--card-score-size');
   inner.style.removeProperty('--card-abbr-size');
