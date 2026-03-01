@@ -1,15 +1,14 @@
 /**
  * ScoreStream — Stream Manager (On-Demand)
  *
- * Architecture:
- *  - At startup, pre-bakes a "loading" HLS bundle for every known slug.
- *    The pre-bake writes real .ts segments + a live-style m3u8 (no ENDLIST)
- *    so VLC treats it as a live stream from the first request.
- *  - When VLC requests a slug, touchStream() starts live ffmpeg + Puppeteer
- *    in the background. ffmpeg continues segment numbering from where pre-bake
- *    left off (append_list), so VLC sees a seamless rolling playlist.
- *  - FPS=1 by default. The scoreboard clock ticks once/sec — 1fps captures
- *    every meaningful change at minimal CPU cost.
+ * Flow:
+ *  1. Startup: pre-bake PREROLL_SEGMENTS of loading screen into HLS for every
+ *     known slug. VLC gets a valid live playlist instantly on first press.
+ *  2. On first VLC request: start live ffmpeg from segment 0 (owns the playlist
+ *     fully — no stitching). Start Puppeteer in background.
+ *  3. Pre-roll gives ~12s of buffer. Live ffmpeg writes new segments into the
+ *     same file names, naturally taking over as the playlist rolls forward.
+ *  4. Puppeteer screenshots replace frame.jpg; ffmpeg picks them up each loop.
  */
 
 'use strict';
@@ -36,9 +35,11 @@ const PLAYLIST_SIZE= parseInt(process.env.HLS_PLAYLIST_SIZE    || '4');
 const IDLE_TIMEOUT = parseInt(process.env.STREAM_IDLE_TIMEOUT  || '60');
 const SCREENSHOT_MS= Math.round(1000 / FPS);
 
-// Number of pre-roll segments encoded at startup per slug.
-// These are real .ts files VLC can play immediately on first press.
-const PREROLL_SEGMENTS = 3;
+// Pre-roll: how many loading-screen segments to encode at startup.
+// At 1fps, SEG_DURATION=2: each segment = 2s. 6 segments = 12s of buffer.
+// Live ffmpeg takes ~3-4s to write its first segment, so 6 gives plenty of
+// headroom before VLC exhausts pre-roll and needs live segments.
+const PREROLL_SEGMENTS = 6;
 
 // ── State ───────────────────────────────────────────────────────────────────
 const streams = new Map();
@@ -94,18 +95,15 @@ function writeStartingFrame(slug) {
   }
 }
 
-// ── Pre-bake: encode real .ts segments + write live-style m3u8 ───────────────
-// Key insight: we do NOT use ffmpeg's HLS muxer here because it always writes
-// #EXT-X-ENDLIST which makes VLC treat the stream as finished VOD.
-// Instead we encode individual .ts segments with ffmpeg's mpegts muxer,
-// then hand-write a live m3u8 (no ENDLIST, rolling window) ourselves.
-// The live ffmpeg pass uses append_list starting at segment PREROLL_SEGMENTS,
-// so VLC sees a continuous sequence with no gaps or discontinuities.
+// ── Pre-bake ─────────────────────────────────────────────────────────────────
+// Encodes PREROLL_SEGMENTS individual .ts files from the loading frame,
+// then writes a live-style m3u8 (no ENDLIST) so VLC treats it as a live stream.
+// Live ffmpeg starts from segment 0 and naturally overwrites these files as it
+// rolls forward — no sequence stitching needed.
 function prebakeHLS(slug) {
-  const frame  = framePath(slug);
-  const m3u8   = path.join(HLS_DIR, `${slug}.m3u8`);
+  const m3u8 = path.join(HLS_DIR, `${slug}.m3u8`);
 
-  // Clean stale files
+  // Clean any stale HLS files for this slug
   try {
     fs.readdirSync(HLS_DIR)
       .filter(f => f.startsWith(slug + '_') && f.endsWith('.ts'))
@@ -113,7 +111,13 @@ function prebakeHLS(slug) {
     if (fs.existsSync(m3u8)) fs.unlinkSync(m3u8);
   } catch (_) {}
 
-  // Encode each pre-roll segment individually as raw mpegts
+  const frame = framePath(slug);
+  if (!fs.existsSync(frame)) {
+    console.warn(`[manager][${slug}] No frame for pre-bake — skipping`);
+    return;
+  }
+
+  // Encode each segment individually with mpegts muxer
   for (let i = 0; i < PREROLL_SEGMENTS; i++) {
     const seg = path.join(HLS_DIR, `${slug}_${String(i).padStart(5, '0')}.ts`);
     try {
@@ -126,34 +130,34 @@ function prebakeHLS(slug) {
         { stdio: 'pipe' }
       );
     } catch (e) {
-      console.error(`[manager][${slug}] Segment ${i} encode failed: ${e.message}`);
+      console.error(`[manager][${slug}] Seg ${i} encode failed: ${e.message}`);
       return;
     }
   }
 
-  // Write a live-style m3u8 — no ENDLIST, window = PLAYLIST_SIZE most recent segs.
-  // Start window at the last PLAYLIST_SIZE pre-roll segments (or all if fewer).
+  // Write live m3u8 — NO ENDLIST so VLC keeps polling
+  // Show only the last PLAYLIST_SIZE segments in the window
   const windowStart = Math.max(0, PREROLL_SEGMENTS - PLAYLIST_SIZE);
-  const seqNum      = windowStart; // EXT-X-MEDIA-SEQUENCE matches first seg in window
-  let playlist = [
+  const lines = [
     '#EXTM3U',
     '#EXT-X-VERSION:3',
     `#EXT-X-TARGETDURATION:${SEG_DURATION}`,
-    `#EXT-X-MEDIA-SEQUENCE:${seqNum}`,
+    `#EXT-X-MEDIA-SEQUENCE:${windowStart}`,
   ];
   for (let i = windowStart; i < PREROLL_SEGMENTS; i++) {
-    playlist.push(`#EXTINF:${SEG_DURATION}.000000,`);
-    playlist.push(`${slug}_${String(i).padStart(5, '0')}.ts`);
+    lines.push(`#EXTINF:${SEG_DURATION}.000000,`);
+    lines.push(`${slug}_${String(i).padStart(5, '0')}.ts`);
   }
-  fs.writeFileSync(m3u8, playlist.join('\n') + '\n');
+  fs.writeFileSync(m3u8, lines.join('\n') + '\n');
 
-  console.log(`[manager][${slug}] Pre-baked ${PREROLL_SEGMENTS} segments (live playlist)`);
   prebaked.add(slug);
+  console.log(`[manager][${slug}] Pre-baked ${PREROLL_SEGMENTS} segs → ${PREROLL_SEGMENTS * SEG_DURATION}s buffer`);
 }
 
 // ── ffmpeg (live) ────────────────────────────────────────────────────────────
-// Starts at segment PREROLL_SEGMENTS so numbering is continuous with pre-bake.
-// append_list merges with the existing playlist; delete_segments cleans old ones.
+// Starts from segment 0. As it writes segments 0,1,2... it naturally overwrites
+// the pre-baked files, and its playlist updates roll the window forward.
+// VLC transitions from pre-bake to live seamlessly as the sequence advances.
 function startFfmpeg(slug) {
   const frame = framePath(slug);
   const args = [
@@ -167,14 +171,12 @@ function startFfmpeg(slug) {
     '-f', 'hls',
     '-hls_time', String(SEG_DURATION),
     '-hls_list_size', String(PLAYLIST_SIZE),
-    '-hls_flags', 'delete_segments+append_list+independent_segments',
-    '-hls_start_number_source', 'generic',
-    '-start_number', String(PREROLL_SEGMENTS),   // continue from pre-bake
+    '-hls_flags', 'delete_segments+independent_segments',
     '-hls_segment_filename', path.join(HLS_DIR, `${slug}_%05d.ts`),
     path.join(HLS_DIR, `${slug}.m3u8`)
   ];
 
-  console.log(`[manager][${slug}] Starting live ffmpeg (seg start=${PREROLL_SEGMENTS})`);
+  console.log(`[manager][${slug}] Starting live ffmpeg`);
   const proc = spawn('ffmpeg', args, { stdio: ['ignore', 'ignore', 'pipe'] });
   proc.stderr.on('data', d => {
     const l = d.toString().trim();
@@ -239,8 +241,7 @@ function startScreenshotLoop(slug, page) {
         count++;
         if (count === 1) console.log(`[manager][${slug}] First live frame — pre-roll replaced`);
         if (count % 300 === 0) {
-          const secs = ((Date.now() - t0) / 1000).toFixed(0);
-          console.log(`[manager][${slug}] ${count} frames in ${secs}s`);
+          console.log(`[manager][${slug}] ${count} frames in ${((Date.now()-t0)/1000).toFixed(0)}s`);
         }
       } catch (err) {
         console.error(`[manager][${slug}] Screenshot error: ${err.message}`);
@@ -267,6 +268,8 @@ async function startStream(slug) {
       console.log(`[manager][${slug}] On-demand pre-bake (new slug)`);
       prebakeHLS(slug);
     }
+
+    // Live ffmpeg starts from seg 0 — naturally overwrites pre-baked files
     const ffmpegProc = startFfmpeg(slug);
     streams.get(slug).ffmpeg = ffmpegProc;
 
@@ -305,7 +308,7 @@ async function stopStream(slug) {
   if (s.browser) { try { await s.browser.close(); } catch (_) {} }
   try { fs.rmSync(frameDir(slug), { recursive: true, force: true }); } catch (_) {}
   streams.delete(slug);
-  prebaked.delete(slug); // force re-prebake on next request
+  prebaked.delete(slug);
   console.log(`[manager][${slug}] Stopped`);
 }
 
@@ -343,7 +346,6 @@ function startHttpServer() {
       const filePath = path.join(HLS_DIR, `${slug}.m3u8`);
       await touchStream(slug);
 
-      // Pre-baked → instant response, no waiting
       if (fs.existsSync(filePath)) {
         try {
           const data = fs.readFileSync(filePath);
@@ -357,8 +359,8 @@ function startHttpServer() {
         return;
       }
 
-      // Fallback for new slugs created after startup (blocking wait)
-      const deadline = Date.now() + 15000;
+      // New slug — wait for pre-bake to complete
+      const deadline = Date.now() + 20000;
       while (!fs.existsSync(filePath) && Date.now() < deadline) {
         await new Promise(r => setTimeout(r, 200));
       }
