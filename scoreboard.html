@@ -646,6 +646,37 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
         <div id="sbCards" class="sb-cards-grid"></div>
         <button class="modal-btn" onclick="createNewScoreboard()" style="margin-top:14px;padding:10px 24px;">+ New Scoreboard</button>
       </div>
+      <!-- Quick-update modal for existing Dispatcharr channels -->
+      <div id="sbQuickUpdate" style="display:none;max-width:480px;margin:0 auto;">
+        <div class="wizard-header">
+          <button onclick="closeQuickUpdate()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:22px;line-height:1;padding:0 8px 0 0;">←</button>
+          <h3 id="quickUpdateTitle">Update Channel</h3>
+        </div>
+        <div style="padding:4px 0 16px;font-size:12px;color:var(--accent);">⟳ Updating existing Dispatcharr channel</div>
+        <div class="wiz-field">
+          <div class="wiz-label">Channel Name</div>
+          <input class="wiz-input" id="qu_channelName" placeholder="Channel name in Dispatcharr">
+        </div>
+        <div class="wiz-field">
+          <div class="wiz-label">Channel Number</div>
+          <input class="wiz-input" id="qu_channelNum" type="number" placeholder="e.g. 900" style="width:140px;">
+        </div>
+        <div class="wiz-field">
+          <div class="wiz-label">Channel Group</div>
+          <div style="display:flex;gap:6px;">
+            <select class="wiz-input" id="qu_groupSel" style="flex:1;">
+              <option value="">— loading groups —</option>
+            </select>
+            <button class="modal-btn" onclick="quRefreshGroups()" style="padding:8px 12px;">↻</button>
+          </div>
+        </div>
+        <div id="quResult" style="display:none;margin:12px 0;font-size:13px;"></div>
+        <div style="display:flex;gap:8px;margin-top:20px;">
+          <button class="modal-btn" onclick="closeQuickUpdate()" style="flex:1;">Cancel</button>
+          <button class="modal-btn primary" id="quSaveBtn" onclick="executeQuickUpdate()" style="flex:2;">💾 Save Changes</button>
+        </div>
+      </div>
+
       <!-- Push wizard (replaces list view) -->
       <div id="sbPushWizard" style="display:none;">
         <div class="wizard-header">
@@ -1188,9 +1219,10 @@ function openSbEditor(id){
     display_config: Object.assign({}, sb.display_config||{})
   };
 
-  // Hide list and push wizard
+  // Hide list, push wizard, and quick update
   document.getElementById('sbListView').style.display='none';
   document.getElementById('sbPushWizard').style.display='none';
+  document.getElementById('sbQuickUpdate').style.display='none';
 
   // Lock sidebar nav to prevent navigating away mid-edit
   document.querySelectorAll('.snav-btn').forEach(b=>{
@@ -1737,10 +1769,7 @@ function sbPreviewCardScale(val){
   const inner = document.getElementById('sbCardScaleInner');
   const wrap  = document.getElementById('sbCardScaleWrap');
   if(!inner || !wrap) return;
-  // Reset wrapper size FIRST so inner collapses to its true natural size before measuring
-  wrap.style.width  = '';
-  wrap.style.height = '';
-  // Now remove transform — inner will collapse correctly because wrapper no longer constrains it
+  // Reset transform first to measure natural size
   inner.style.transform = '';
   inner.style.removeProperty('--card-score-size');
   inner.style.removeProperty('--card-abbr-size');
@@ -1882,25 +1911,31 @@ async function saveSbEditor(){
 // ── Push to Dispatcharr Wizard ─────────────────────────────────────────────────
 function openPushWizard(id){
   _activeSbId=id;
-  _wizardStep=1;
-  _wizardData={};
   const sb=_scoreboards.find(s=>s.id===id);
   if(!sb)return;
 
-  // Pre-fill from stored Dispatcharr values
-  _wizardData.channelName=sb.dispatcharr_channel_number?sb.name:sb.name;
+  // Existing channel → quick update (name, number, group only)
+  if(sb.dispatcharr_channel_id){
+    openQuickUpdate(id);
+    return;
+  }
+
+  // New channel → full wizard
+  _wizardStep=1;
+  _wizardData={};
+  _wizardData.channelName=sb.name;
   _wizardData.channelNumber=sb.dispatcharr_channel_number||'';
   _wizardData.groupId=sb.dispatcharr_group_id||'';
   _wizardData.profileIds=sb.dispatcharr_profile_ids||null;
   _wizardData.streamProfileId=sb.dispatcharr_stream_profile_id||'';
-  _wizardData.isUpdate=!!sb.dispatcharr_channel_id;
-  _wizardData.existingChannelId=sb.dispatcharr_channel_id||null;
+  _wizardData.isUpdate=false;
+  _wizardData.existingChannelId=null;
 
   document.getElementById('sbListView').style.display='none';
   document.getElementById('sbEditorPanel')?.remove();
   const wiz=document.getElementById('sbPushWizard');
   wiz.style.display='block';
-  document.getElementById('wizardTitle').textContent=(_wizardData.isUpdate?'Update':'Push')+ ': '+sb.name;
+  document.getElementById('wizardTitle').textContent='Push to Dispatcharr: '+sb.name;
   document.getElementById('wizardResult').style.display='none';
   renderWizardStep();
 
@@ -1909,8 +1944,103 @@ function openPushWizard(id){
   loadStreamProfiles();
 }
 
+// ── Quick Update (existing channels) ─────────────────────────────────────────
+function openQuickUpdate(id){
+  _activeSbId=id;
+  const sb=_scoreboards.find(s=>s.id===id);
+  if(!sb)return;
+
+  document.getElementById('sbListView').style.display='none';
+  document.getElementById('sbEditorPanel')?.remove();
+  document.getElementById('sbQuickUpdate').style.display='block';
+  document.getElementById('quickUpdateTitle').textContent='Update: '+sb.name;
+
+  // Pre-fill current values
+  document.getElementById('qu_channelName').value=sb.name||'';
+  document.getElementById('qu_channelNum').value=sb.dispatcharr_channel_number||'';
+  document.getElementById('quResult').style.display='none';
+  document.getElementById('quSaveBtn').disabled=false;
+  document.getElementById('quSaveBtn').textContent='💾 Save Changes';
+
+  // Load groups and pre-select current
+  quLoadGroups();
+}
+
+function closeQuickUpdate(){
+  document.getElementById('sbQuickUpdate').style.display='none';
+  document.getElementById('sbListView').style.display='block';
+  _activeSbId=null;
+}
+
+async function quLoadGroups(){
+  const sel=document.getElementById('qu_groupSel');
+  if(!sel)return;
+  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/groups`);
+    const d=await r.json();
+    const items=(d.results||d||[]).filter(g=>g.id);
+    sel.innerHTML='<option value="">— No group —</option>'+
+      items.map(g=>`<option value="${g.id}"${String(g.id)===String(sb?.dispatcharr_group_id)?'selected':''}>${g.name}</option>`).join('');
+  }catch(e){
+    sel.innerHTML='<option value="">— Failed to load —</option>';
+  }
+}
+
+function quRefreshGroups(){ quLoadGroups(); }
+
+async function executeQuickUpdate(){
+  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  if(!sb)return;
+  const resultEl=document.getElementById('quResult');
+  const btn=document.getElementById('quSaveBtn');
+  resultEl.style.display='block';
+  resultEl.style.color='var(--text-dim)';
+  resultEl.textContent='⏳ Saving...';
+  btn.disabled=true;
+
+  const sel=document.getElementById('qu_groupSel');
+  const payload={
+    channelName:document.getElementById('qu_channelName').value.trim()||sb.name,
+    channelNumber:document.getElementById('qu_channelNum').value?parseInt(document.getElementById('qu_channelNum').value):null,
+    groupId:sel?.value?parseInt(sel.value):null,
+    // Pass through existing values so they are not cleared
+    profileIds:sb.dispatcharr_profile_ids||null,
+    streamProfileId:sb.dispatcharr_stream_profile_id?parseInt(sb.dispatcharr_stream_profile_id):null,
+  };
+
+  try{
+    const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}/push`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)
+    });
+    const d=await r.json();
+    if(r.ok){
+      resultEl.style.color='var(--accent-green)';
+      resultEl.textContent=`✅ Channel updated: ${d.channel_name}${d.channel_number?' (Ch '+d.channel_number+')':''}`;
+      btn.textContent='✅ Done';
+      if(d.scoreboard){
+        const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);
+        if(idx>=0)_scoreboards[idx]=d.scoreboard;
+      }
+      setTimeout(()=>{closeQuickUpdate();renderSbCards();},1500);
+    }else{
+      resultEl.style.color='var(--accent-red)';
+      resultEl.textContent='❌ '+(d.error||'Update failed');
+      btn.disabled=false;
+      btn.textContent='💾 Save Changes';
+    }
+  }catch(e){
+    resultEl.style.color='var(--accent-red)';
+    resultEl.textContent='❌ '+e.message;
+    btn.disabled=false;
+    btn.textContent='💾 Save Changes';
+  }
+}
+
 function closePushWizard(){
   document.getElementById('sbPushWizard').style.display='none';
+  document.getElementById('sbQuickUpdate').style.display='none';
   document.getElementById('sbListView').style.display='block';
   _activeSbId=null;
 }
