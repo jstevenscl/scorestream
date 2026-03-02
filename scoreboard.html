@@ -647,12 +647,12 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
         <button class="modal-btn" onclick="createNewScoreboard()" style="margin-top:14px;padding:10px 24px;">+ New Scoreboard</button>
       </div>
       <!-- Quick-update modal for existing Dispatcharr channels -->
-      <div id="sbQuickUpdate" style="display:none;max-width:480px;margin:0 auto;">
+      <div id="sbQuickUpdate" style="display:none;max-width:520px;margin:0 auto;">
         <div class="wizard-header">
           <button onclick="closeQuickUpdate()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:22px;line-height:1;padding:0 8px 0 0;">←</button>
           <h3 id="quickUpdateTitle">Update Channel</h3>
         </div>
-        <div style="padding:4px 0 16px;font-size:12px;color:var(--accent);">⟳ Updating existing Dispatcharr channel</div>
+        <div style="padding:4px 0 14px;font-size:12px;color:var(--accent);">⟳ Updating existing Dispatcharr channel</div>
         <div class="wiz-field">
           <div class="wiz-label">Channel Name</div>
           <input class="wiz-input" id="qu_channelName" placeholder="Channel name in Dispatcharr">
@@ -665,10 +665,41 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
           <div class="wiz-label">Channel Group</div>
           <div style="display:flex;gap:6px;">
             <select class="wiz-input" id="qu_groupSel" style="flex:1;">
-              <option value="">— loading groups —</option>
+              <option value="">— loading... —</option>
             </select>
             <button class="modal-btn" onclick="quRefreshGroups()" style="padding:8px 12px;">↻</button>
           </div>
+        </div>
+        <div class="wiz-field">
+          <div class="wiz-label">Channel Profiles</div>
+          <div class="profile-multiselect" id="quProfileMulti">
+            <div class="profile-ms-trigger" onclick="toggleQuProfileDropdown()">
+              <span id="quProfileLabel">— loading... —</span>
+              <span style="margin-left:auto;opacity:0.5;">▾</span>
+            </div>
+            <div class="profile-ms-dropdown" id="quProfileDropdown" style="display:none;">
+              <label class="profile-ms-item profile-ms-all">
+                <input type="checkbox" id="quProfileAll" onchange="onQuProfileAllChange(this)">
+                <span>All Profiles</span>
+              </label>
+              <div class="profile-ms-divider"></div>
+              <div id="quProfileList"></div>
+            </div>
+          </div>
+        </div>
+        <div class="wiz-field">
+          <div class="wiz-label">Stream Profile (ffmpeg)</div>
+          <select class="wiz-input" id="qu_streamProf" style="width:100%;">
+            <option value="">— loading... —</option>
+          </select>
+        </div>
+        <div class="wiz-field">
+          <div class="wiz-label">Logo URL <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(optional)</span></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="wiz-input" id="qu_logoUrl" placeholder="https://example.com/logo.png" style="flex:1;">
+            <img id="qu_logoPreview" src="" style="height:32px;border-radius:4px;display:none;" onerror="this.style.display='none'">
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">Leave blank to keep existing logo</div>
         </div>
         <div id="quResult" style="display:none;margin:12px 0;font-size:13px;"></div>
         <div style="display:flex;gap:8px;margin-top:20px;">
@@ -850,13 +881,23 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
           <span class="modal-label">Dispatcharr URL</span>
           <input type="text" class="modal-input" id="dsUrl" placeholder="http://dispatcharr:9191" style="flex:1;min-width:0;">
         </div>
-        <div class="modal-row" style="margin-bottom:6px;">
-          <span class="modal-label">Username</span>
-          <input type="text" class="modal-input" id="dsUser" placeholder="admin" style="flex:1;min-width:0;" autocomplete="username">
+        <div style="padding:8px 10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:6px;font-size:11px;color:var(--text-dim);margin-bottom:10px;">
+          💡 <strong style="color:var(--accent);">Dispatcharr v0.20.0+</strong> — use an API Token below. Username/password is for older versions only.
         </div>
         <div class="modal-row" style="margin-bottom:10px;">
-          <span class="modal-label">Password</span>
-          <input type="password" class="modal-input" id="dsPass" placeholder="••••••••" style="flex:1;min-width:0;" autocomplete="current-password">
+          <span class="modal-label">API Token</span>
+          <input type="password" class="modal-input" id="dsApiToken" placeholder="Paste your Dispatcharr API token" style="flex:1;min-width:0;" autocomplete="off">
+        </div>
+        <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px;">
+          <div class="modal-sublabel" style="margin-bottom:8px;">Legacy: Username / Password (older Dispatcharr versions)</div>
+          <div class="modal-row" style="margin-bottom:6px;">
+            <span class="modal-label">Username</span>
+            <input type="text" class="modal-input" id="dsUser" placeholder="admin" style="flex:1;min-width:0;" autocomplete="username">
+          </div>
+          <div class="modal-row" style="margin-bottom:10px;">
+            <span class="modal-label">Password</span>
+            <input type="password" class="modal-input" id="dsPass" placeholder="••••••••" style="flex:1;min-width:0;" autocomplete="current-password">
+          </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <button class="modal-btn" onclick="saveCredentials()">Save Credentials</button>
@@ -3589,9 +3630,11 @@ async function initDsTab(){
       if(d.url&&urlEl)urlEl.value=d.url;
       if(d.username&&userEl)userEl.value=d.username;
       if(passEl)passEl.placeholder=d.has_password?'••••••• (saved)':'••••••••';
+      const tokenEl=document.getElementById('dsApiToken');
+      if(tokenEl)tokenEl.placeholder=d.has_api_token?'••••••• (saved)':'Paste your Dispatcharr API token';
       saveDsCache(d.url,d.username);
-      // 3. Auto-load groups and profiles if credentials are fully saved
-      if(d.url&&d.username&&d.has_password){
+      // 3. Auto-load groups and profiles if credentials are saved (token or password)
+      if(d.url&&(d.has_api_token||(d.username&&d.has_password))){
         loadDsGroups();
         loadDsProfiles();
         loadStreamProfiles();
@@ -3613,9 +3656,10 @@ async function saveCredentials(){
   // Always cache URL+username locally so fields survive page refresh even if API is down
   saveDsCache(url,username);
   try{
+    const apiToken=document.getElementById('dsApiToken')?.value?.trim()||undefined;
     const r=await fetch(`${API_BASE}/dispatcharr/credentials`,{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({url,username,password:password||undefined}),
+      body:JSON.stringify({url,username,password:password||undefined,api_token:apiToken}),
       signal:AbortSignal.timeout(5000)
     });
     const d=await r.json();
@@ -3623,6 +3667,8 @@ async function saveCredentials(){
       el.className='dispatcharr-test-result ok';el.textContent='✅ Credentials saved to API';
       document.getElementById('dsPass').value='';
       document.getElementById('dsPass').placeholder='••••••• (saved)';
+      const tokenEl=document.getElementById('dsApiToken');
+      if(tokenEl&&apiToken){tokenEl.value='';tokenEl.placeholder='••••••• (saved)';}
     }else{el.className='dispatcharr-test-result err';el.textContent=`❌ ${d.error||'Save failed'}`;}
   }catch(e){
     el.className='dispatcharr-test-result err';

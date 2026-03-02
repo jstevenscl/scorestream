@@ -625,24 +625,43 @@ def program_to_dict(r):
 def get_creds():
     return {'url':(db_get('dispatcharr_url') or os.getenv('DISPATCHARR_URL','')).rstrip('/'),
             'username':db_get('dispatcharr_username') or os.getenv('DISPATCHARR_USER',''),
-            'password':db_get('dispatcharr_password') or os.getenv('DISPATCHARR_PASS','')}
+            'password':db_get('dispatcharr_password') or os.getenv('DISPATCHARR_PASS',''),
+            'api_token':db_get('dispatcharr_api_token') or os.getenv('DISPATCHARR_API_TOKEN','')}
 
 def dispatcharr_session(creds=None):
     if creds is None: creds = get_creds()
-    url,user,pw = creds.get('url',''),creds.get('username',''),creds.get('password','')
+    url = creds.get('url','')
     if not url: return None,'Dispatcharr URL not configured'
-    if not user or not pw: return None,'Dispatcharr credentials not configured'
     s = http.Session()
+    s.headers.update({'Accept':'application/json','Content-Type':'application/json'})
+
+    # ── Method 1: Direct API token (Dispatcharr v0.20.0+) ────────────────────
+    api_token = creds.get('api_token','')
+    if api_token:
+        s.headers.update({'Authorization': f'Token {api_token}'})
+        try:
+            r = s.get(f'{url}/api/accounts/profile/', timeout=10)
+            r.raise_for_status()
+            return s, None
+        except http.exceptions.ConnectionError:
+            return None, f'Cannot connect to Dispatcharr at {url}'
+        except http.exceptions.HTTPError as e:
+            code = e.response.status_code if e.response is not None else 0
+            if code in (401, 403):
+                return None, 'Invalid API token'
+            return None, f'Auth error: {e}'
+        except Exception as e:
+            return None, str(e)
+
+    # ── Method 2: Username/password → JWT token (legacy) ─────────────────────
+    user, pw = creds.get('username',''), creds.get('password','')
+    if not user or not pw: return None,'No API token or username/password configured'
     try:
         r = s.post(f'{url}/api/accounts/token/',json={'username':user,'password':pw},timeout=10)
         r.raise_for_status()
         token = r.json().get('access')
         if not token: return None,'No token returned — check credentials'
-        s.headers.update({
-            'Authorization': f'Bearer {token}',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        })
+        s.headers.update({'Authorization': f'Bearer {token}'})
         return s, None
     except http.exceptions.ConnectionError:
         return None, f'Cannot connect to Dispatcharr at {url}'
@@ -665,7 +684,9 @@ def health():
 @app.route('/dispatcharr/credentials', methods=['GET'])
 def get_credentials():
     c = get_creds()
-    return jsonify({'url':c.get('url',''),'username':c.get('username',''),'has_password':bool(c.get('password',''))})
+    return jsonify({'url':c.get('url',''),'username':c.get('username',''),
+                    'has_password':bool(c.get('password','')),
+                    'has_api_token':bool(c.get('api_token',''))})
 
 @app.route('/dispatcharr/credentials', methods=['POST'])
 def save_credentials():
@@ -676,6 +697,7 @@ def save_credentials():
         db_set('dispatcharr_url',url)
         if b.get('username'): db_set('dispatcharr_username',b['username'].strip())
         if b.get('password') is not None: db_set('dispatcharr_password',b['password'])
+        if b.get('api_token') is not None: db_set('dispatcharr_api_token',b['api_token'].strip())
         return jsonify({'status':'saved'})
     except Exception as e: return jsonify({'error':str(e)}),500
 
