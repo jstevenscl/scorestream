@@ -638,7 +638,7 @@ def dispatcharr_session(creds=None):
     # ── Method 1: Direct API token (Dispatcharr v0.20.0+) ────────────────────
     api_token = creds.get('api_token','')
     if api_token:
-        s.headers.update({'Authorization': f'Token {api_token}'})
+        s.headers.update({'Authorization': f'ApiKey {api_token}'})
         try:
             r = s.get(f'{url}/api/accounts/profile/', timeout=10)
             r.raise_for_status()
