@@ -635,7 +635,7 @@ def dispatcharr_session(creds=None):
     s = http.Session()
     s.headers.update({'Accept':'application/json','Content-Type':'application/json'})
 
-    # ── Method 1: Direct API token (Dispatcharr v0.20.0+) ────────────────────
+    # Method 1: API token (Dispatcharr v0.20.0+ — ApiKey header)
     api_token = creds.get('api_token','')
     if api_token:
         s.headers.update({'Authorization': f'ApiKey {api_token}'})
@@ -647,13 +647,12 @@ def dispatcharr_session(creds=None):
             return None, f'Cannot connect to Dispatcharr at {url}'
         except http.exceptions.HTTPError as e:
             code = e.response.status_code if e.response is not None else 0
-            if code in (401, 403):
-                return None, 'Invalid API token'
+            if code in (401, 403): return None,'Invalid API token'
             return None, f'Auth error: {e}'
         except Exception as e:
             return None, str(e)
 
-    # ── Method 2: Username/password → JWT token (legacy) ─────────────────────
+    # Method 2: Username/password → JWT (legacy)
     user, pw = creds.get('username',''), creds.get('password','')
     if not user or not pw: return None,'No API token or username/password configured'
     try:
@@ -684,9 +683,7 @@ def health():
 @app.route('/dispatcharr/credentials', methods=['GET'])
 def get_credentials():
     c = get_creds()
-    return jsonify({'url':c.get('url',''),'username':c.get('username',''),
-                    'has_password':bool(c.get('password','')),
-                    'has_api_token':bool(c.get('api_token',''))})
+    return jsonify({'url':c.get('url',''),'username':c.get('username',''),'has_password':bool(c.get('password','')),'has_api_token':bool(c.get('api_token',''))})
 
 @app.route('/dispatcharr/credentials', methods=['POST'])
 def save_credentials():
@@ -991,6 +988,22 @@ def scoreboard_duplicate(sid):
     return jsonify(scoreboard_to_dict(row)), 201
 
 # ── Dispatcharr channel push / update per scoreboard ─────────────────────────
+@app.route('/scoreboards/<int:sid>/unlink', methods=['POST'])
+def scoreboard_unlink(sid):
+    """Clear stored Dispatcharr IDs from a scoreboard without deleting the channel."""
+    with get_db() as conn:
+        sb = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+        if not sb: return jsonify({'error':'scoreboard not found'}),404
+        conn.execute("""UPDATE scoreboards SET
+            dispatcharr_channel_id=NULL, dispatcharr_stream_id=NULL,
+            dispatcharr_channel_number=NULL, dispatcharr_group_id=NULL,
+            dispatcharr_profile_ids=NULL, dispatcharr_stream_profile_id=NULL,
+            dispatcharr_logo_id=NULL, updated_at=datetime('now')
+            WHERE id=?""", (sid,))
+        conn.commit()
+        row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
+    return jsonify({'status':'unlinked','scoreboard':scoreboard_to_dict(row)})
+
 @app.route('/scoreboards/<int:sid>/push', methods=['POST'])
 def scoreboard_push(sid):
     """Push or update a scoreboard as a Dispatcharr channel.

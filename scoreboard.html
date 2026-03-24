@@ -646,7 +646,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
         <div id="sbCards" class="sb-cards-grid"></div>
         <button class="modal-btn" onclick="createNewScoreboard()" style="margin-top:14px;padding:10px 24px;">+ New Scoreboard</button>
       </div>
-      <!-- Quick-update modal for existing Dispatcharr channels -->
+      <!-- Quick update panel for existing channels -->
       <div id="sbQuickUpdate" style="display:none;max-width:520px;margin:0 auto;">
         <div class="wizard-header">
           <button onclick="closeQuickUpdate()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:22px;line-height:1;padding:0 8px 0 0;">←</button>
@@ -664,9 +664,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
         <div class="wiz-field">
           <div class="wiz-label">Channel Group</div>
           <div style="display:flex;gap:6px;">
-            <select class="wiz-input" id="qu_groupSel" style="flex:1;">
-              <option value="">— loading... —</option>
-            </select>
+            <select class="wiz-input" id="qu_groupSel" style="flex:1;"><option value="">— loading... —</option></select>
             <button class="modal-btn" onclick="quRefreshGroups()" style="padding:8px 12px;">↻</button>
           </div>
         </div>
@@ -689,17 +687,14 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
         </div>
         <div class="wiz-field">
           <div class="wiz-label">Stream Profile (ffmpeg)</div>
-          <select class="wiz-input" id="qu_streamProf" style="width:100%;">
-            <option value="">— loading... —</option>
-          </select>
+          <select class="wiz-input" id="qu_streamProf" style="width:100%;"><option value="">— loading... —</option></select>
         </div>
         <div class="wiz-field">
-          <div class="wiz-label">Logo URL <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(optional)</span></div>
+          <div class="wiz-label">Logo URL <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(optional — leave blank to keep existing)</span></div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <input class="wiz-input" id="qu_logoUrl" placeholder="https://example.com/logo.png" style="flex:1;">
+            <input class="wiz-input" id="qu_logoUrl" placeholder="https://example.com/logo.png" style="flex:1;" oninput="quLogoPreview()">
             <img id="qu_logoPreview" src="" style="height:32px;border-radius:4px;display:none;" onerror="this.style.display='none'">
           </div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">Leave blank to keep existing logo</div>
         </div>
         <div id="quResult" style="display:none;margin:12px 0;font-size:13px;"></div>
         <div style="display:flex;gap:8px;margin-top:20px;">
@@ -881,15 +876,15 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
           <span class="modal-label">Dispatcharr URL</span>
           <input type="text" class="modal-input" id="dsUrl" placeholder="http://dispatcharr:9191" style="flex:1;min-width:0;">
         </div>
-        <div style="padding:8px 10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:6px;font-size:11px;color:var(--text-dim);margin-bottom:10px;">
-          💡 <strong style="color:var(--accent);">Dispatcharr v0.20.0+</strong> — use an API Token below. Username/password is for older versions only.
+        <div style="padding:8px 10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:6px;font-size:11px;color:var(--text-dim);margin-bottom:8px;">
+          💡 <strong style="color:var(--accent);">Dispatcharr v0.20.0+</strong> — use an API Token. Generate one in Dispatcharr → Profile → API Keys.
         </div>
         <div class="modal-row" style="margin-bottom:10px;">
           <span class="modal-label">API Token</span>
           <input type="password" class="modal-input" id="dsApiToken" placeholder="Paste your Dispatcharr API token" style="flex:1;min-width:0;" autocomplete="off">
         </div>
-        <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px;">
-          <div class="modal-sublabel" style="margin-bottom:8px;">Legacy: Username / Password (older Dispatcharr versions)</div>
+        <div style="border-top:1px solid var(--border);margin:8px 0 8px;padding-top:8px;">
+          <div class="modal-sublabel" style="margin-bottom:6px;">Legacy — Username / Password (older Dispatcharr versions)</div>
           <div class="modal-row" style="margin-bottom:6px;">
             <span class="modal-label">Username</span>
             <input type="text" class="modal-input" id="dsUser" placeholder="admin" style="flex:1;min-width:0;" autocomplete="username">
@@ -1188,6 +1183,7 @@ function renderSbCards(){
         <button class="sb-action-btn" onclick="duplicateScoreboard(${sb.id})">Duplicate</button>
         <button class="sb-action-btn stream-url" id="urlbtn-${sb.id}" onclick="copyStreamUrl('${sb.slug}',${sb.id})">📡 Stream URL</button>
         <button class="sb-action-btn primary" onclick="openPushWizard(${sb.id})">${hasChannel?'⟳ Update Channel':'🚀 Push to Dispatcharr'}</button>
+        ${hasChannel?`<button class="sb-action-btn" onclick="unlinkChannel(${sb.id})" title="Clear Dispatcharr channel link from ScoreStream (does not delete from Dispatcharr)">⊘ Unlink</button>`:''}
         ${!sb.is_default?`<button class="sb-action-btn danger" onclick="deleteScoreboard(${sb.id})">Delete</button>`:''}
       </div>
     </div>`;
@@ -1260,10 +1256,9 @@ function openSbEditor(id){
     display_config: Object.assign({}, sb.display_config||{})
   };
 
-  // Hide list, push wizard, and quick update
+  // Hide list and push wizard
   document.getElementById('sbListView').style.display='none';
   document.getElementById('sbPushWizard').style.display='none';
-  document.getElementById('sbQuickUpdate').style.display='none';
 
   // Lock sidebar nav to prevent navigating away mid-edit
   document.querySelectorAll('.snav-btn').forEach(b=>{
@@ -1951,17 +1946,12 @@ async function saveSbEditor(){
 
 // ── Push to Dispatcharr Wizard ─────────────────────────────────────────────────
 function openPushWizard(id){
-  _activeSbId=id;
   const sb=_scoreboards.find(s=>s.id===id);
   if(!sb)return;
-
-  // Existing channel → quick update (name, number, group only)
-  if(sb.dispatcharr_channel_id){
-    openQuickUpdate(id);
-    return;
-  }
-
+  // Existing channel → quick update panel
+  if(sb.dispatcharr_channel_id){ openQuickUpdate(id); return; }
   // New channel → full wizard
+  _activeSbId=id;
   _wizardStep=1;
   _wizardData={};
   _wizardData.channelName=sb.name;
@@ -1971,18 +1961,23 @@ function openPushWizard(id){
   _wizardData.streamProfileId=sb.dispatcharr_stream_profile_id||'';
   _wizardData.isUpdate=false;
   _wizardData.existingChannelId=null;
-
   document.getElementById('sbListView').style.display='none';
   document.getElementById('sbEditorPanel')?.remove();
+  document.getElementById('sbQuickUpdate').style.display='none';
   const wiz=document.getElementById('sbPushWizard');
   wiz.style.display='block';
   document.getElementById('wizardTitle').textContent='Push to Dispatcharr: '+sb.name;
   document.getElementById('wizardResult').style.display='none';
   renderWizardStep();
-
-  // Pre-load Dispatcharr data
   loadDsGroups();
   loadStreamProfiles();
+}
+
+function closePushWizard(){
+  document.getElementById('sbPushWizard').style.display='none';
+  document.getElementById('sbQuickUpdate').style.display='none';
+  document.getElementById('sbListView').style.display='block';
+  _activeSbId=null;
 }
 
 // ── Quick Update (existing channels) ─────────────────────────────────────────
@@ -1990,21 +1985,21 @@ function openQuickUpdate(id){
   _activeSbId=id;
   const sb=_scoreboards.find(s=>s.id===id);
   if(!sb)return;
-
   document.getElementById('sbListView').style.display='none';
   document.getElementById('sbEditorPanel')?.remove();
+  document.getElementById('sbPushWizard').style.display='none';
   document.getElementById('sbQuickUpdate').style.display='block';
   document.getElementById('quickUpdateTitle').textContent='Update: '+sb.name;
-
-  // Pre-fill current values
   document.getElementById('qu_channelName').value=sb.name||'';
   document.getElementById('qu_channelNum').value=sb.dispatcharr_channel_number||'';
+  document.getElementById('qu_logoUrl').value='';
+  document.getElementById('qu_logoPreview').style.display='none';
   document.getElementById('quResult').style.display='none';
   document.getElementById('quSaveBtn').disabled=false;
   document.getElementById('quSaveBtn').textContent='💾 Save Changes';
-
-  // Load groups and pre-select current
   quLoadGroups();
+  quLoadProfiles();
+  quLoadStreamProfiles();
 }
 
 function closeQuickUpdate(){
@@ -2013,22 +2008,97 @@ function closeQuickUpdate(){
   _activeSbId=null;
 }
 
+function quLogoPreview(){
+  const url=document.getElementById('qu_logoUrl').value.trim();
+  const img=document.getElementById('qu_logoPreview');
+  if(url){img.src=url;img.style.display='block';}
+  else img.style.display='none';
+}
+
 async function quLoadGroups(){
   const sel=document.getElementById('qu_groupSel');
   if(!sel)return;
   const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  sel.innerHTML='<option value="">— loading... —</option>';
   try{
-    const r=await fetch(`${API_BASE}/dispatcharr/groups`);
+    const r=await fetch(`${API_BASE}/dispatcharr/groups`,{signal:AbortSignal.timeout(15000)});
     const d=await r.json();
-    const items=(d.results||d||[]).filter(g=>g.id);
+    const items=(d.groups||[]);
     sel.innerHTML='<option value="">— No group —</option>'+
       items.map(g=>`<option value="${g.id}"${String(g.id)===String(sb?.dispatcharr_group_id)?'selected':''}>${g.name}</option>`).join('');
-  }catch(e){
-    sel.innerHTML='<option value="">— Failed to load —</option>';
-  }
+  }catch(e){sel.innerHTML='<option value="">— Failed to load —</option>';}
+}
+function quRefreshGroups(){ quLoadGroups(); }
+
+async function quLoadProfiles(){
+  const listEl=document.getElementById('quProfileList');
+  const labelEl=document.getElementById('quProfileLabel');
+  if(!listEl)return;
+  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  const savedIds=sb?.dispatcharr_profile_ids;
+  listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">Loading...</div>';
+  if(labelEl)labelEl.textContent='— loading... —';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(15000)});
+    const d=await r.json();
+    const items=d.profiles||[];
+    if(!items.length){listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">No profiles found</div>';if(labelEl)labelEl.textContent='— none —';return;}
+    listEl.innerHTML=items.map(p=>`<label class="profile-ms-item"><input type="checkbox" class="qu-profile-cb" value="${p.id}" onchange="onQuProfileCbChange()"><span>${p.name}</span></label>`).join('');
+    // Restore saved selection
+    const allCb=document.getElementById('quProfileAll');
+    if(savedIds==='all'&&allCb){allCb.checked=true;}
+    else if(Array.isArray(savedIds)){
+      document.querySelectorAll('.qu-profile-cb').forEach(cb=>{if(savedIds.includes(parseInt(cb.value)))cb.checked=true;});
+    }
+    updateQuProfileLabel();
+  }catch(e){listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">Failed to load</div>';}
 }
 
-function quRefreshGroups(){ quLoadGroups(); }
+function toggleQuProfileDropdown(){
+  const dd=document.getElementById('quProfileDropdown');
+  if(dd)dd.style.display=dd.style.display==='none'?'block':'none';
+}
+function onQuProfileAllChange(cb){
+  if(cb.checked)document.querySelectorAll('.qu-profile-cb').forEach(c=>c.checked=false);
+  updateQuProfileLabel();
+}
+function onQuProfileCbChange(){
+  if([...document.querySelectorAll('.qu-profile-cb')].some(c=>c.checked))
+    document.getElementById('quProfileAll').checked=false;
+  updateQuProfileLabel();
+}
+function updateQuProfileLabel(){
+  const allCb=document.getElementById('quProfileAll');
+  const checked=[...document.querySelectorAll('.qu-profile-cb:checked')];
+  const label=document.getElementById('quProfileLabel');
+  if(!label)return;
+  if(allCb?.checked)label.textContent='All Profiles';
+  else if(!checked.length)label.textContent='— none selected —';
+  else if(checked.length===1)label.textContent=checked[0].nextElementSibling?.textContent||'1 profile';
+  else label.textContent=`${checked.length} profiles selected`;
+}
+function getQuProfileIds(){
+  const allCb=document.getElementById('quProfileAll');
+  if(allCb?.checked)return 'all';
+  const ids=[...document.querySelectorAll('.qu-profile-cb:checked')].map(c=>parseInt(c.value));
+  return ids.length?ids:null;
+}
+
+async function quLoadStreamProfiles(){
+  const sel=document.getElementById('qu_streamProf');
+  if(!sel)return;
+  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  const savedId=sb?.dispatcharr_stream_profile_id;
+  sel.innerHTML='<option value="">— loading... —</option>';
+  try{
+    // Use cached profiles if available
+    if(!_cachedStreamProfiles?.length) await loadStreamProfiles();
+    const profiles=_cachedStreamProfiles||[];
+    if(!profiles.length){sel.innerHTML='<option value="">— none available —</option>';return;}
+    sel.innerHTML='<option value="">— default (none) —</option>'+
+      profiles.map(p=>`<option value="${p.id}"${String(p.id)===String(savedId)?'selected':''}>${p.name}</option>`).join('');
+  }catch(e){sel.innerHTML='<option value="">— Failed to load —</option>';}
+}
 
 async function executeQuickUpdate(){
   const sb=_scoreboards.find(s=>s.id===_activeSbId);
@@ -2040,14 +2110,17 @@ async function executeQuickUpdate(){
   resultEl.textContent='⏳ Saving...';
   btn.disabled=true;
 
-  const sel=document.getElementById('qu_groupSel');
+  const groupSel=document.getElementById('qu_groupSel');
+  const streamProfSel=document.getElementById('qu_streamProf');
+  const logoUrl=document.getElementById('qu_logoUrl').value.trim();
+
   const payload={
     channelName:document.getElementById('qu_channelName').value.trim()||sb.name,
     channelNumber:document.getElementById('qu_channelNum').value?parseInt(document.getElementById('qu_channelNum').value):null,
-    groupId:sel?.value?parseInt(sel.value):null,
-    // Pass through existing values so they are not cleared
-    profileIds:sb.dispatcharr_profile_ids||null,
-    streamProfileId:sb.dispatcharr_stream_profile_id?parseInt(sb.dispatcharr_stream_profile_id):null,
+    groupId:groupSel?.value?parseInt(groupSel.value):null,
+    profileIds:getQuProfileIds(),
+    streamProfileId:streamProfSel?.value?parseInt(streamProfSel.value):null,
+    logoUrl:logoUrl||null,
   };
 
   try{
@@ -2060,30 +2133,33 @@ async function executeQuickUpdate(){
       resultEl.style.color='var(--accent-green)';
       resultEl.textContent=`✅ Channel updated: ${d.channel_name}${d.channel_number?' (Ch '+d.channel_number+')':''}`;
       btn.textContent='✅ Done';
-      if(d.scoreboard){
-        const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);
-        if(idx>=0)_scoreboards[idx]=d.scoreboard;
-      }
+      if(d.scoreboard){const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);if(idx>=0)_scoreboards[idx]=d.scoreboard;}
       setTimeout(()=>{closeQuickUpdate();renderSbCards();},1500);
     }else{
       resultEl.style.color='var(--accent-red)';
       resultEl.textContent='❌ '+(d.error||'Update failed');
-      btn.disabled=false;
-      btn.textContent='💾 Save Changes';
+      btn.disabled=false;btn.textContent='💾 Save Changes';
     }
   }catch(e){
     resultEl.style.color='var(--accent-red)';
     resultEl.textContent='❌ '+e.message;
-    btn.disabled=false;
-    btn.textContent='💾 Save Changes';
+    btn.disabled=false;btn.textContent='💾 Save Changes';
   }
 }
 
-function closePushWizard(){
-  document.getElementById('sbPushWizard').style.display='none';
-  document.getElementById('sbQuickUpdate').style.display='none';
-  document.getElementById('sbListView').style.display='block';
-  _activeSbId=null;
+async function unlinkChannel(id){
+  if(!confirm('Clear the Dispatcharr channel link from this scoreboard?
+
+This does NOT delete the channel from Dispatcharr — it just lets you re-push as a new channel.'))return;
+  try{
+    const r=await fetch(`${API_BASE}/scoreboards/${id}/unlink`,{method:'POST'});
+    const d=await r.json();
+    if(r.ok){
+      const idx=_scoreboards.findIndex(s=>s.id===id);
+      if(idx>=0)_scoreboards[idx]=d.scoreboard;
+      renderSbCards();
+    }else{alert('Failed to unlink: '+(d.error||'Unknown error'));}
+  }catch(e){alert('Error: '+e.message);}
 }
 
 function renderWizardStep(){
@@ -3633,7 +3709,7 @@ async function initDsTab(){
       const tokenEl=document.getElementById('dsApiToken');
       if(tokenEl)tokenEl.placeholder=d.has_api_token?'••••••• (saved)':'Paste your Dispatcharr API token';
       saveDsCache(d.url,d.username);
-      // 3. Auto-load groups and profiles if credentials are saved (token or password)
+      // 3. Auto-load groups and profiles if token or password saved
       if(d.url&&(d.has_api_token||(d.username&&d.has_password))){
         loadDsGroups();
         loadDsProfiles();
@@ -3656,10 +3732,9 @@ async function saveCredentials(){
   // Always cache URL+username locally so fields survive page refresh even if API is down
   saveDsCache(url,username);
   try{
-    const apiToken=document.getElementById('dsApiToken')?.value?.trim()||undefined;
     const r=await fetch(`${API_BASE}/dispatcharr/credentials`,{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({url,username,password:password||undefined,api_token:apiToken}),
+      body:JSON.stringify({url,username,password:password||undefined,api_token:document.getElementById('dsApiToken')?.value?.trim()||undefined}),
       signal:AbortSignal.timeout(5000)
     });
     const d=await r.json();
@@ -3667,8 +3742,7 @@ async function saveCredentials(){
       el.className='dispatcharr-test-result ok';el.textContent='✅ Credentials saved to API';
       document.getElementById('dsPass').value='';
       document.getElementById('dsPass').placeholder='••••••• (saved)';
-      const tokenEl=document.getElementById('dsApiToken');
-      if(tokenEl&&apiToken){tokenEl.value='';tokenEl.placeholder='••••••• (saved)';}
+      const tEl=document.getElementById('dsApiToken');if(tEl&&tEl.value){tEl.value='';tEl.placeholder='••••••• (saved)';}
     }else{el.className='dispatcharr-test-result err';el.textContent=`❌ ${d.error||'Save failed'}`;}
   }catch(e){
     el.className='dispatcharr-test-result err';
