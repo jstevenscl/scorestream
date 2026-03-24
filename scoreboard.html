@@ -2298,12 +2298,12 @@ function renderWizardStep(){
         <div class="wiz-sublabel">Built from STREAM_BASE_URL in your docker-compose. This is what Dispatcharr uses to pull the stream.</div>
       </div>`;
     // Fetch actual stream URL from API
-    fetch(\`\${API_BASE}/scoreboards/\${_activeSbId}/stream_url\`).then(r=>r.json()).then(d=>{
+    fetch(`${API_BASE}/scoreboards/${_activeSbId}/stream_url`).then(r=>r.json()).then(d=>{
       const el=document.getElementById('wiz_streamUrlDisplay');
       if(el)el.textContent=d.stream_url||'(STREAM_BASE_URL not configured)';
     }).catch(()=>{
       const el=document.getElementById('wiz_streamUrlDisplay');
-      if(el)el.textContent=sb.slug?\`(loading...)\`:'(no slug)';
+      if(el)el.textContent=sb.slug?`(loading...)`:'(no slug)';
     });
     setTimeout(wizPopulateStreamProfiles,100);
   }
