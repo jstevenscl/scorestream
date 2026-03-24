@@ -2049,7 +2049,7 @@ async function quLoadGroups(){
   const sb=_scoreboards.find(s=>s.id===_activeSbId);
   sel.innerHTML='<option value="">— loading... —</option>';
   try{
-    const r=await fetch(`${API_BASE}/dispatcharr/groups`,{signal:AbortSignal.timeout(15000)});
+    const r=await fetch(`${API_BASE}/dispatcharr/groups`,{signal:AbortSignal.timeout(50000)});
     const d=await r.json();
     const items=(d.groups||[]);
     sel.innerHTML='<option value="">— No group —</option>'+
@@ -2067,7 +2067,7 @@ async function quLoadProfiles(){
   listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">Loading...</div>';
   if(labelEl)labelEl.textContent='— loading... —';
   try{
-    const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(15000)});
+    const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(50000)});
     const d=await r.json();
     const items=d.profiles||[];
     if(!items.length){listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">No profiles found</div>';if(labelEl)labelEl.textContent='— none —';return;}
