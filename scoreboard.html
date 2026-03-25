@@ -4713,7 +4713,7 @@ function renderStreamCanvas() {
     }
   }
 
-
+  if (!allSections.length) {
     pagesEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:22px;letter-spacing:2px;">NO GAMES RIGHT NOW</div>';
     if (paginationEl) paginationEl.innerHTML = '';
     return;
