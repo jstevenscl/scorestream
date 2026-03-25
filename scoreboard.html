@@ -3386,14 +3386,14 @@ function buildFullCard(g){
         <div class="team-row${aw?' winning':g.isFinal?' losing':''}">
           ${teamLogo(away)}
           <div class="team-name-block"><div class="team-abbr">${away?.abbr||'–'}</div><div class="team-full-name">${away?.name||''} · Away</div></div>
-          <button class="star-btn ${af?'starred':''}" onclick="toggleFavTeam('${an}')">⭐</button>
+          <button class="star-btn ${af?'starred':''}" onclick="toggleFavTeam('${an}')" style="${af?'display:block!important;pointer-events:none':''}">⭐</button>
           <div class="team-score">${g.isScheduled?'–':away?.score??'–'}</div>
         </div>
         <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:2px 0;"></div>
         <div class="team-row${hw?' winning':g.isFinal?' losing':''}">
           ${teamLogo(home)}
           <div class="team-name-block"><div class="team-abbr">${home?.abbr||'–'}</div><div class="team-full-name">${home?.name||''} · Home</div></div>
-          <button class="star-btn ${hf?'starred':''}" onclick="toggleFavTeam('${hn}')">⭐</button>
+          <button class="star-btn ${hf?'starred':''}" onclick="toggleFavTeam('${hn}')" style="${hf?'display:block!important;pointer-events:none':''}">⭐</button>
           <div class="team-score">${g.isScheduled?'–':home?.score??'–'}</div>
         </div>
       </div>
