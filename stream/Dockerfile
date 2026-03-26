@@ -23,18 +23,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Built-in sports music ─────────────────────────────────────────────────────
+# All tracks are royalty-free. Full attribution details in /audio/ATTRIBUTION.txt
 # Files committed to repo under stream/audio/ — no network required at build time.
-# Renamed to clean filenames to avoid ffmpeg concat issues with spaces/special chars.
-COPY audio/ /audio-src/
+COPY audio/ /audio/
 
-RUN mkdir -p /audio && \
-    cp "/audio-src/bensound-sunsetreverie.mp3"                          "/audio/01-sunset-reverie.mp3" && \
-    cp "/audio-src/Throng by Swoop  Royalty-Free Music on Uppbeat.mp3" "/audio/02-throng.mp3" && \
-    cp "/audio-src/Damtaro - Vision (freetouse.com).mp3"               "/audio/03-vision.mp3" && \
-    cp "/audio-src/VTEMO - Drifting (freetouse.com).mp3"               "/audio/04-drifting.mp3" && \
-    cp "/audio-src/tubebackr & Tetuano - Been Waiting (freetouse.com).mp3" "/audio/05-been-waiting.mp3" && \
-    cp "/audio-src/Damtaro - Forward (freetouse.com).mp3"              "/audio/06-forward.mp3" && \
-    printf '/audio/01-sunset-reverie.mp3\n/audio/02-throng.mp3\n/audio/03-vision.mp3\n/audio/04-drifting.mp3\n/audio/05-been-waiting.mp3\n/audio/06-forward.mp3\n' \
+RUN printf '/audio/bensound-sunsetreverie.mp3\n/audio/Throng by Swoop  Royalty-Free Music on Uppbeat.mp3\n/audio/Damtaro - Vision (freetouse.com).mp3\n/audio/VTEMO - Drifting (freetouse.com).mp3\n/audio/tubebackr & Tetuano - Been Waiting (freetouse.com).mp3\n/audio/Damtaro - Forward (freetouse.com).mp3\n' \
       > /audio/playlist.m3u && \
     echo "=== Audio files ===" && ls -lh /audio/
 
