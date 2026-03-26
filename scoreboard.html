@@ -590,7 +590,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
     <button class="sidebar-btn" onclick="openSettings('scoreboards')">&#x2699;&#xFE0F; Settings</button>
   </div>
 
-  <div class="sidebar-footer" id="ssVersion">ScoreStream v0.3.1 &middot; ESPN Data</div>
+  <div class="sidebar-footer" id="ssVersion">ScoreStream &middot; ESPN Data</div>
 </aside>
 
 <div id="main">
@@ -1177,6 +1177,24 @@ const ss={
 let _scoreboards=[];
 let _activeSbId=null;  // scoreboard being edited or pushed
 let _wizardStep=1;
+let _streamStatus={};  // slug → {running, hasLive} from /api/stream/status
+
+async function fetchStreamStatus(){
+  try{
+    const r=await fetch(`${API_BASE}/stream/status`,{signal:AbortSignal.timeout(4000)});
+    if(!r.ok)return;
+    const d=await r.json();
+    _streamStatus=d.streams||{};
+    // Update badges on any visible scoreboard cards without full re-render
+    Object.entries(_streamStatus).forEach(([slug,s])=>{
+      const card=document.querySelector(`[data-slug="${slug}"]`);
+      if(card){
+        const badge=card.querySelector('.sb-stream-badge');
+        if(badge) badge.style.display = s.running ? 'inline-flex' : 'none';
+      }
+    });
+  }catch(e){}
+}
 let _wizardData={};    // accumulated wizard form data
 
 async function loadScoreboards(){
@@ -1199,11 +1217,13 @@ function renderSbCards(){
     const sportCount=Object.values(sb.sport_config||{}).filter(v=>v).length;
     const hasChannel=!!sb.dispatcharr_channel_id;
     const chNum=sb.dispatcharr_channel_number?`Ch ${sb.dispatcharr_channel_number}`:'';
-    return `<div class="sb-card${sb.is_default?' is-default':''}" id="sbcard-${sb.id}">
+    const isStreaming = _streamStatus[sb.slug]?.running === true;
+    return `<div class="sb-card${sb.is_default?' is-default':''}" id="sbcard-${sb.id}" data-slug="${sb.slug}">
       ${sb.is_default?'<div style="position:absolute;top:10px;right:10px;font-size:9px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;color:var(--text-dim);background:var(--bg-secondary);padding:2px 7px;border-radius:10px;border:1px solid var(--border);">DEFAULT</div>':''}
       <div class="sb-card-name">${sb.name}</div>
       <div class="sb-card-meta">${sportCount} sport${sportCount!==1?'s':''} enabled${sb.slug!==sb.name.toLowerCase()?` · slug: ${sb.slug}`:''}
       </div>
+      <div class="sb-stream-badge" style="display:${isStreaming?'inline-flex':'none'};align-items:center;gap:4px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.5px;padding:2px 8px;border-radius:10px;margin-bottom:6px;background:rgba(255,60,60,0.12);border:1px solid rgba(255,60,60,0.35);color:#ff4444;">🔴 Streaming</div>
       <div class="sb-card-status ${hasChannel?'live':'unpushed'}">
         ${hasChannel?'🟢 Live'+( chNum?' · '+chNum:''):'⚫ Not pushed to Dispatcharr'}
       </div>
@@ -1519,9 +1539,10 @@ function renderEditorStep(sbOverride){
   }
   else if(_editorStep===2){
     const groups=[
-      {key:'pro',   label:'Pro Leagues',   sports: ALL_SPORTS.filter(s=>s.group==='pro')},
-      {key:'ncaam', label:"NCAA Men's",    sports: ALL_SPORTS.filter(s=>s.group==='ncaam')},
-      {key:'ncaaw', label:"NCAA Women's",  sports: ALL_SPORTS.filter(s=>s.group==='ncaaw')},
+      {key:'pro',    label:'Pro Leagues',         sports: ALL_SPORTS.filter(s=>s.group==='pro')},
+      {key:'soccer', label:'International Soccer', sports: ALL_SPORTS.filter(s=>s.group==='soccer')},
+      {key:'ncaam',  label:"NCAA Men's",           sports: ALL_SPORTS.filter(s=>s.group==='ncaam')},
+      {key:'ncaaw',  label:"NCAA Women's",         sports: ALL_SPORTS.filter(s=>s.group==='ncaaw')},
     ];
     body=`<div class="wiz-sublabel" style="margin-bottom:16px;">Choose which sports appear on this scoreboard. Each scoreboard has its own independent selection.</div>`;
     groups.forEach(g=>{
@@ -2672,17 +2693,36 @@ const _origLoadStreamProfiles=typeof loadStreamProfiles!=='undefined'?loadStream
 
 const ALL_SPORTS=[
   // Pro
-  {id:'nfl',   name:'NFL',                  group:'pro',   color:'#4169e1',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'},
-  {id:'nba',   name:'NBA',                  group:'pro',   color:'#c9082a',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'},
-  {id:'mlb',   name:'MLB',                  group:'pro',   color:'#002d72',emoji:'⚾',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'},
-  {id:'nhl',   name:'NHL',                  group:'pro',   color:'#00b7e0',emoji:'🏒',url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'},
+  {id:'nfl',   name:'NFL',                    group:'pro',   color:'#4169e1',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'},
+  {id:'nba',   name:'NBA',                    group:'pro',   color:'#c9082a',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'},
+  {id:'mlb',   name:'MLB',                    group:'pro',   color:'#002d72',emoji:'⚾',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'},
+  {id:'nhl',   name:'NHL',                    group:'pro',   color:'#00b7e0',emoji:'🏒',url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'},
+  {id:'wnba',  name:'WNBA',                   group:'pro',   color:'#ff6900',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'},
+  {id:'cfl',   name:'CFL',                    group:'pro',   color:'#8b0000',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/cfl/scoreboard'},
+  {id:'xfl',   name:'XFL',                    group:'pro',   color:'#1a1a2e',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/xfl/scoreboard'},
+  {id:'ufl',   name:'UFL',                    group:'pro',   color:'#003087',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/ufl/scoreboard'},
+  {id:'mls',   name:'MLS',                    group:'pro',   color:'#1a1a2e',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard'},
+  {id:'nwsl',  name:'NWSL',                   group:'pro',   color:'#c7006b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.nwsl/scoreboard'},
+  {id:'f1',    name:'Formula 1',              group:'pro',   color:'#e8002d',emoji:'🏎️',url:'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard'},
+  {id:'pga',   name:'PGA Tour',               group:'pro',   color:'#00594f',emoji:'⛳',url:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard'},
+  {id:'atp',   name:'Tennis (ATP)',            group:'pro',   color:'#4caf50',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard'},
+  {id:'wta',   name:'Tennis (WTA)',            group:'pro',   color:'#9c27b0',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard'},
+  // International Soccer
+  {id:'epl',        name:'Premier League',    group:'soccer',color:'#3d195b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard'},
+  {id:'ucl',        name:'Champions League',  group:'soccer',color:'#1b3f8b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard'},
+  {id:'laliga',     name:'La Liga',           group:'soccer',color:'#ee8707',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard'},
+  {id:'bundesliga', name:'Bundesliga',        group:'soccer',color:'#d20515',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard'},
+  {id:'seriea',     name:'Serie A',           group:'soccer',color:'#1e4496',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard'},
+  {id:'ligue1',     name:'Ligue 1',           group:'soccer',color:'#003f8a',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard'},
   // NCAA Men
-  {id:'ncaamb',name:"NCAA Men's Basketball",group:'ncaam', color:'#ff6600',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'},
-  {id:'ncaafb',name:'NCAA Football',        group:'ncaam', color:'#8b0000',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard'},
-  {id:'ncaabase',name:"NCAA Men's Baseball",group:'ncaam', color:'#005c2e',emoji:'⚾',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/scoreboard'},
+  {id:'ncaamb',  name:"NCAA Men's Basketball", group:'ncaam', color:'#ff6600',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'},
+  {id:'ncaafb',  name:'NCAA Football',         group:'ncaam', color:'#8b0000',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard'},
+  {id:'ncaabase',name:"NCAA Men's Baseball",   group:'ncaam', color:'#005c2e',emoji:'⚾',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/scoreboard'},
   // NCAA Women
-  {id:'ncaawb',name:"NCAA Women's Basketball",group:'ncaaw',color:'#c7006b',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard'},
-  {id:'ncaasb',name:"NCAA Softball",        group:'ncaaw', color:'#7b3f99',emoji:'🥎',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/scoreboard'},
+  {id:'ncaawb',  name:"NCAA Women's Basketball",group:'ncaaw',color:'#c7006b',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard'},
+  {id:'ncaasb',  name:'NCAA Softball',          group:'ncaaw',color:'#7b3f99',emoji:'🥎',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/scoreboard'},
+  {id:'ncaavb',  name:"NCAA Women's Volleyball",group:'ncaaw',color:'#c7006b',emoji:'🏐',url:'https://site.api.espn.com/apis/site/v2/sports/volleyball/womens-college-volleyball/scoreboard'},
+  {id:'ncaalax', name:"NCAA Women's Lacrosse",  group:'ncaaw',color:'#7b3f99',emoji:'🥍',url:'https://site.api.espn.com/apis/site/v2/sports/lacrosse/womens-college-lacrosse/scoreboard'},
 ];
 
 // Default enabled sports
@@ -2787,7 +2827,7 @@ const state={
   games:{},
   favTeams:loadFavs(),
   showEnded:false,
-  daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7},
+  daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7,wnba:2,cfl:7,xfl:7,ufl:7,mls:3,nwsl:3,f1:7,pga:4,atp:3,wta:3,epl:3,ucl:4,laliga:3,bundesliga:3,seriea:3,ligue1:3,ncaavb:2,ncaalax:2},
   endedLeagues:new Set(ALL_SPORTS.map(s=>s.id)),
   endedFilter:Object.fromEntries(ALL_SPORTS.map(s=>[s.id,'all'])),
   seasonMeta:{},
@@ -3020,6 +3060,9 @@ function startAutoRefresh(){
 //  SETTINGS PAGE
 // =====================
 function openSettings(section='scoreboards'){
+  // Restore last section if none specified
+  const lastSection = localStorage.getItem('ss_last_section');
+  if(section==='scoreboards' && lastSection) section = lastSection;
   document.getElementById('settingsPage').style.display='flex';
   document.body.style.overflow='hidden';
   updateSaveUI();
@@ -3053,6 +3096,7 @@ function switchSection(section){
     _activeSbId=null;
   }
   document.querySelectorAll('.snav-btn').forEach(b=>b.classList.toggle('active',b.dataset.section===section));
+  localStorage.setItem('ss_last_section', section);
   document.querySelectorAll('.settings-section').forEach(s=>s.classList.remove('active'));
   const panel=document.getElementById(`section-${section}`);
   if(panel) panel.classList.add('active');
@@ -3073,9 +3117,8 @@ function handleModalOverlay(e){}
 //  SPORTS SETTINGS TAB
 // =====================
 function buildSportsTab(){
-  ['pro','ncaam','ncaaw'].forEach(group=>{
-    const suffix=group==='pro'?'pro':group==='ncaam'?'ncaam':'ncaaw';
-    const c=document.getElementById(`sg-${suffix}`);if(!c)return;c.innerHTML='';
+  ['pro','soccer','ncaam','ncaaw'].forEach(group=>{
+    const c=document.getElementById(`sg-${group}`);if(!c)return;c.innerHTML='';
     ALL_SPORTS.filter(s=>s.group===group).forEach(sport=>{
       const on=state.enabledSports.has(sport.id);
       const row=document.createElement('div');
@@ -4465,6 +4508,14 @@ renderFavSummary();
     setRefreshRate(savedRate);
     loadNcaaFromApi();
     initSidebarScoreboardSelector();
+    // Item 6: Fetch version from API and display in footer
+    fetch(`${API_BASE}/health`).then(r=>r.json()).then(d=>{
+      const el=document.getElementById('ssVersion');
+      if(el&&d.version) el.textContent=`ScoreStream ${d.version} · ESPN Data`;
+    }).catch(()=>{});
+    // Item 3: Poll stream status every 10s and update scoreboard card badges
+    fetchStreamStatus();
+    setInterval(fetchStreamStatus, 10000);
     return;
   }
 
