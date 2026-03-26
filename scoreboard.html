@@ -2703,10 +2703,9 @@ const ALL_SPORTS=[
   {id:'ufl',   name:'UFL',                    group:'pro',   color:'#003087',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/ufl/scoreboard'},
   {id:'mls',   name:'MLS',                    group:'pro',   color:'#1a1a2e',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard'},
   {id:'nwsl',  name:'NWSL',                   group:'pro',   color:'#c7006b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.nwsl/scoreboard'},
-  {id:'f1',    name:'Formula 1',              group:'pro',   color:'#e8002d',emoji:'🏎️',url:'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard'},
+  // NOTE: F1, Tennis (ATP/WTA), NASCAR - ESPN scoreboard API returns event names
+  // only with no competitor/lap/match data. Requires custom renderer - coming soon.
   {id:'pga',   name:'PGA Tour',               group:'pro',   color:'#00594f',emoji:'⛳',url:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard'},
-  {id:'atp',   name:'Tennis (ATP)',            group:'pro',   color:'#4caf50',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard'},
-  {id:'wta',   name:'Tennis (WTA)',            group:'pro',   color:'#9c27b0',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard'},
   // International Soccer
   {id:'epl',        name:'Premier League',    group:'soccer',color:'#3d195b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard'},
   {id:'ucl',        name:'Champions League',  group:'soccer',color:'#1b3f8b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard'},
@@ -2827,7 +2826,7 @@ const state={
   games:{},
   favTeams:loadFavs(),
   showEnded:false,
-  daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7,wnba:2,cfl:7,xfl:7,ufl:7,mls:3,nwsl:3,f1:7,pga:4,atp:3,wta:3,epl:3,ucl:4,laliga:3,bundesliga:3,seriea:3,ligue1:3,ncaavb:2,ncaalax:2},
+  daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7,wnba:2,cfl:7,xfl:7,ufl:7,mls:3,nwsl:3,pga:4,epl:3,ucl:4,laliga:3,bundesliga:3,seriea:3,ligue1:3,ncaavb:2,ncaalax:2},
   endedLeagues:new Set(ALL_SPORTS.map(s=>s.id)),
   endedFilter:Object.fromEntries(ALL_SPORTS.map(s=>[s.id,'all'])),
   seasonMeta:{},
@@ -3164,10 +3163,17 @@ function buildHistoricalUrl(sport,daysAgo){
 
 function parseGame(ev,sport){
   const comp=ev.competitions?.[0],status=ev.status,statusType=status?.type?.name||'STATUS_SCHEDULED',periodDesc=status?.type?.shortDetail||'';
+  // Golf/individual sports use athlete instead of team on each competitor
+  const isIndividual = sport.id==='pga';
   const teams=(comp?.competitors||[]).map(c=>({
-    abbr:c.team?.abbreviation||'???',name:c.team?.displayName||c.team?.name||'Unknown',
-    score:c.score||'0',color:c.team?.color?`#${c.team.color}`:'#333',
-    logo:c.team?.logo||null,homeAway:c.homeAway,winner:c.winner||false,
+    abbr:c.team?.abbreviation||c.athlete?.shortName||'???',
+    name:c.team?.displayName||c.team?.name||c.athlete?.displayName||'Unknown',
+    score:c.score||'E',
+    color:c.team?.color?`#${c.team.color}`:'#333',
+    logo:c.team?.logo||c.athlete?.flag?.href||null,
+    homeAway:c.homeAway||'away',winner:c.winner||false,
+    position:c.status?.position||null,
+    thru:c.status?.thru||null,
   }));
   let stats=[];
   try{stats=(comp?.leaders||[]).slice(0,3).map(l=>({label:l.abbreviation||l.name,value:l.leaders?.[0]?.displayValue||'–'}));}catch(e){}
@@ -3192,7 +3198,8 @@ function parseGame(ev,sport){
   const networks=resolvedLabels.slice(0,2);
   return{id:ev.id,sport:sport.id,sportName:sport.name,sportColor:sport.color,sportEmoji:sport.emoji,
     name:ev.name||'',date:ev.date,statusType,periodDesc,teams,stats,networks,
-    isLive:statusType==='STATUS_IN_PROGRESS',isFinal:statusType==='STATUS_FINAL',isScheduled:statusType==='STATUS_SCHEDULED'};
+    isLive:statusType==='STATUS_IN_PROGRESS',isFinal:statusType==='STATUS_FINAL',isScheduled:statusType==='STATUS_SCHEDULED',
+    isIndividual};
 }
 
 function getSeasonMeta(t,n){
@@ -3401,7 +3408,46 @@ function renderScoreboard(){
   }
 }
 
-function buildGameCard(g){return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);}
+function buildGameCard(g){
+  if(g.isIndividual) return buildLeaderboardCard(g);
+  return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);
+}
+
+function buildLeaderboardCard(g){
+  const card=document.createElement('div');
+  card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
+  const sh=g.isLive
+    ?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`
+    :g.isFinal?`<span class="status-final">FINAL</span>`
+    :`<span class="status-upcoming">${formatTime(g.date)}</span>`;
+  // Show top 5 players
+  const top5 = g.teams.slice(0,5);
+  const rows = top5.map((p,i) => {
+    const pos = p.position || (i+1);
+    const scoreColor = p.score && p.score.startsWith('-') ? 'var(--accent-green)' : p.score==='E' ? 'var(--text-secondary)' : '#f87171';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--border);">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);width:18px;text-align:right;">${pos}</span>
+      <span style="flex:1;font-size:12px;font-weight:700;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:${scoreColor};">${p.score||'–'}</span>
+      ${p.thru?`<span style="font-size:10px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">T${p.thru}</span>`:''}
+    </div>`;
+  }).join('');
+  const moreCount = g.teams.length - 5;
+  card.innerHTML=`
+    <div class="card-header">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>
+      </div>
+      ${sh}
+    </div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;letter-spacing:0.5px;color:var(--text-primary);margin:6px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${g.name}">${g.name}</div>
+    <div style="display:flex;flex-direction:column;gap:1px;">
+      ${rows}
+      ${moreCount>0?`<div style="font-size:10px;color:var(--text-dim);text-align:center;margin-top:4px;font-family:'Share Tech Mono',monospace;">+${moreCount} more</div>`:''}
+    </div>`;
+  return card;
+}
 
 function buildTickerCard(g){
   const card=document.createElement('div');card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
