@@ -322,7 +322,7 @@ async function startRenderer(slug) {
 
 // ── Screenshot loop ───────────────────────────────────────────────────────────
 function startScreenshotLoop(slug, page) {
-  let active = true, paused = false, count = 0;
+  let active = true, count = 0;
   const tmp  = frameTmp(slug);
   const dest = framePath(slug);
   const t0   = Date.now();
@@ -330,22 +330,20 @@ function startScreenshotLoop(slug, page) {
   async function loop() {
     while (active && streams.get(slug)?.running) {
       const t = Date.now();
-      if (!paused) {
-        try {
-          await page.screenshot({
-            path: tmp, type: 'jpeg', quality: JPEG_QUALITY,
-            clip: { x: 0, y: 0, width: WIDTH, height: HEIGHT },
-            omitBackground: false
-          });
-          fs.renameSync(tmp, dest);
-          count++;
-          if (count === 1) console.log(`[manager][${slug}] First live frame — pre-roll replaced`);
-          if (count % 300 === 0) {
-            console.log(`[manager][${slug}] ${count} frames in ${((Date.now()-t0)/1000).toFixed(0)}s`);
-          }
-        } catch (err) {
-          console.error(`[manager][${slug}] Screenshot error: ${err.message}`);
+      try {
+        await page.screenshot({
+          path: tmp, type: 'jpeg', quality: JPEG_QUALITY,
+          clip: { x: 0, y: 0, width: WIDTH, height: HEIGHT },
+          omitBackground: false
+        });
+        fs.renameSync(tmp, dest);
+        count++;
+        if (count === 1) console.log(`[manager][${slug}] First live frame — pre-roll replaced`);
+        if (count % 300 === 0) {
+          console.log(`[manager][${slug}] ${count} frames in ${((Date.now()-t0)/1000).toFixed(0)}s`);
         }
+      } catch (err) {
+        console.error(`[manager][${slug}] Screenshot error: ${err.message}`);
       }
       const wait = Math.max(0, SCREENSHOT_MS - (Date.now() - t));
       if (wait > 0) await new Promise(r => setTimeout(r, wait));
@@ -354,11 +352,7 @@ function startScreenshotLoop(slug, page) {
   }
 
   loop().catch(e => console.error(`[manager][${slug}] Loop crash: ${e.message}`));
-  return {
-    stop:  () => { active = false; },
-    pause: () => { paused = true;  console.log(`[manager][${slug}] Screenshot loop paused`); },
-    resume:() => { paused = false; console.log(`[manager][${slug}] Screenshot loop resumed`); },
-  };
+  return () => { active = false; };
 }
 
 // ── Start stream ──────────────────────────────────────────────────────────────
@@ -402,7 +396,7 @@ async function stopStream(slug) {
   if (!s) return;
   console.log(`[manager][${slug}] Stopping`);
   s.running = false;
-  if (s.stopLoop) s.stopLoop.stop();
+  if (s.stopLoop) s.stopLoop();
   if (s.ffmpeg) {
     await new Promise(resolve => {
       const t = setTimeout(() => { s.ffmpeg.kill('SIGKILL'); resolve(); }, 5000);
@@ -513,24 +507,17 @@ function startHttpServer() {
           writeStartingFrame(slug);
           prebakeHLS(slug);
         }
-        // If stream is live, reload the Puppeteer page so it picks up new settings.
-        // We pause the screenshot loop first so ffmpeg keeps encoding the last good
-        // frame (no errors, no stutter) while the page reloads, then resume after.
+        // If stream is live, reload the Puppeteer page to pick up new settings.
+        // Delay 500ms so the DB write from app.py is fully committed first.
         const s = streams.get(slug);
         if (s && s.running && s.page) {
           console.log(`[manager][${slug}] Settings changed — reloading renderer`);
           setTimeout(() => {
             const s2 = streams.get(slug);
-            if (!s2 || !s2.running || !s2.page) return;
-            if (s2.stopLoop) s2.stopLoop.pause();
-            s2.page.reload({ waitUntil: 'networkidle2', timeout: 15000 })
-              .then(() => {
-                if (s2.stopLoop) s2.stopLoop.resume();
-              })
-              .catch(e => {
-                console.warn(`[manager][${slug}] Reload warning: ${e.message}`);
-                if (s2.stopLoop) s2.stopLoop.resume();
-              });
+            if (s2 && s2.running && s2.page) {
+              s2.page.reload({ waitUntil: 'networkidle2', timeout: 15000 })
+                .catch(e => console.warn(`[manager][${slug}] Reload warning: ${e.message}`));
+            }
           }, 500);
         }
       }
