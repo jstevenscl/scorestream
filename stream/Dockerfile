@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-# Install Chromium dependencies + ffmpeg + sqlite3 build tools + curl for audio
+# Install Chromium dependencies + ffmpeg + sqlite3 build tools
 RUN apt-get update && apt-get install -y \
     chromium \
     fonts-liberation \
@@ -19,38 +19,24 @@ RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
-    curl \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Built-in sports music ─────────────────────────────────────────────────────
-# Kevin MacLeod - CC BY 3.0 (incompetech.com)
-# Downloaded from chosic.com CDN — URLs verified March 2026.
-# Uses curl -f so any 404/error causes an immediate build failure (no silent 0-byte files).
-# The size check at the end double-confirms every file is valid before the image is committed.
+# Files committed to repo under stream/audio/ — no network required at build time.
+# Renamed to clean filenames to avoid ffmpeg concat issues with spaces/special chars.
+COPY audio/ /audio-src/
+
 RUN mkdir -p /audio && \
-    curl -fsSL -A "Mozilla/5.0" \
-      "https://www.chosic.com/wp-content/uploads/2022/06/Run-Amok(chosic.com).mp3" \
-      -o /audio/02-run-amok.mp3 && \
-    curl -fsSL -A "Mozilla/5.0" \
-      "https://www.chosic.com/wp-content/uploads/2022/06/Sneaky-Snitch(chosic.com).mp3" \
-      -o /audio/03-sneaky-snitch.mp3 && \
-    curl -fsSL -A "Mozilla/5.0" \
-      "https://www.chosic.com/wp-content/uploads/2022/10/Kevin-MacLeod-Investigations(chosic.com).mp3" \
-      -o /audio/04-investigations.mp3 && \
-    curl -fsSL -A "Mozilla/5.0" \
-      "https://www.chosic.com/wp-content/uploads/2022/10/Scheming-Weasel-faster(chosic.com).mp3" \
-      -o /audio/05-scheming-weasel.mp3 && \
-    echo "=== Verifying audio files ===" && \
-    for f in /audio/0*.mp3; do \
-      size=$(stat -c%s "$f"); \
-      echo "  $f = ${size} bytes"; \
-      [ "$size" -gt 50000 ] || { echo "ABORT: $f is too small (${size} bytes) — download failed"; exit 1; }; \
-    done && \
-    printf '/audio/02-run-amok.mp3\n/audio/03-sneaky-snitch.mp3\n/audio/04-investigations.mp3\n/audio/05-scheming-weasel.mp3\n' \
+    cp "/audio-src/bensound-sunsetreverie.mp3"                          "/audio/01-sunset-reverie.mp3" && \
+    cp "/audio-src/Throng by Swoop  Royalty-Free Music on Uppbeat.mp3" "/audio/02-throng.mp3" && \
+    cp "/audio-src/Damtaro - Vision (freetouse.com).mp3"               "/audio/03-vision.mp3" && \
+    cp "/audio-src/VTEMO - Drifting (freetouse.com).mp3"               "/audio/04-drifting.mp3" && \
+    cp "/audio-src/tubebackr & Tetuano - Been Waiting (freetouse.com).mp3" "/audio/05-been-waiting.mp3" && \
+    cp "/audio-src/Damtaro - Forward (freetouse.com).mp3"              "/audio/06-forward.mp3" && \
+    printf '/audio/01-sunset-reverie.mp3\n/audio/02-throng.mp3\n/audio/03-vision.mp3\n/audio/04-drifting.mp3\n/audio/05-been-waiting.mp3\n/audio/06-forward.mp3\n' \
       > /audio/playlist.m3u && \
-    echo "=== Audio playlist ===" && cat /audio/playlist.m3u && \
-    echo "=== Audio OK ==="
+    echo "=== Audio files ===" && ls -lh /audio/
 
 WORKDIR /app
 
