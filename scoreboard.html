@@ -273,9 +273,9 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
 .fullscreen-mode .game-card{max-width:680px;margin:0 auto;}
 .fullscreen-mode .team-score{font-size:calc(var(--card-score-size,34px) + 16px);}
 .fullscreen-mode .team-abbr{font-size:calc(var(--card-abbr-size,18px) + 6px);}
-.ticker-row{display:flex;align-items:center;padding:9px 14px;gap:12px;}
-.ticker-teams{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--text-primary);flex:1;}
-.ticker-score{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:17px;color:var(--accent);letter-spacing:2px;}
+.ticker-row{display:flex;align-items:center;padding:9px 14px;gap:12px;border-left:3px solid var(--ticker-sport-color,var(--border));}
+.ticker-teams{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--ticker-font-size,14px);color:var(--text-primary);flex:1;}
+.ticker-score{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:calc(var(--ticker-font-size,14px) + 3px);color:var(--accent);letter-spacing:2px;}
 .ticker-period{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);min-width:60px;text-align:right;}
 .pinned-section{margin-bottom:26px;}
 .pinned-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,215,0,0.25);}
@@ -590,7 +590,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
     <button class="sidebar-btn" onclick="openSettings('scoreboards')">&#x2699;&#xFE0F; Settings</button>
   </div>
 
-  <div class="sidebar-footer" id="ssVersion">ScoreStream &middot; ESPN Data</div>
+  <div class="sidebar-footer" id="ssVersion">ScoreStream v0.3.1 &middot; ESPN Data</div>
 </aside>
 
 <div id="main">
@@ -781,6 +781,15 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
           <span class="modal-slider-label" data-tip="Size of the full team name shown in small text below the abbreviation (e.g. 'Los Angeles Lakers · Away')">Team Name Size</span>
           <input type="range" min="9" max="16" value="11" id="sl-name" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-name">11px</span>
+        </div>
+      </div>
+
+      <div class="modal-section" id="ticker-size-section" style="display:none;">
+        <div class="modal-section-title">Ticker Font Size</div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Font size for team names in ticker layout rows">Ticker Text Size</span>
+          <input type="range" min="11" max="22" value="14" id="sl-ticker" oninput="applyDisplay()">
+          <span class="modal-slider-val" id="val-ticker">14px</span>
         </div>
       </div>
 
@@ -1177,24 +1186,6 @@ const ss={
 let _scoreboards=[];
 let _activeSbId=null;  // scoreboard being edited or pushed
 let _wizardStep=1;
-let _streamStatus={};  // slug → {running, hasLive} from /api/stream/status
-
-async function fetchStreamStatus(){
-  try{
-    const r=await fetch(`${API_BASE}/stream/status`,{signal:AbortSignal.timeout(4000)});
-    if(!r.ok)return;
-    const d=await r.json();
-    _streamStatus=d.streams||{};
-    // Update badges on any visible scoreboard cards without full re-render
-    Object.entries(_streamStatus).forEach(([slug,s])=>{
-      const card=document.querySelector(`[data-slug="${slug}"]`);
-      if(card){
-        const badge=card.querySelector('.sb-stream-badge');
-        if(badge) badge.style.display = s.running ? 'inline-flex' : 'none';
-      }
-    });
-  }catch(e){}
-}
 let _wizardData={};    // accumulated wizard form data
 
 async function loadScoreboards(){
@@ -1217,13 +1208,11 @@ function renderSbCards(){
     const sportCount=Object.values(sb.sport_config||{}).filter(v=>v).length;
     const hasChannel=!!sb.dispatcharr_channel_id;
     const chNum=sb.dispatcharr_channel_number?`Ch ${sb.dispatcharr_channel_number}`:'';
-    const isStreaming = _streamStatus[sb.slug]?.running === true;
-    return `<div class="sb-card${sb.is_default?' is-default':''}" id="sbcard-${sb.id}" data-slug="${sb.slug}">
+    return `<div class="sb-card${sb.is_default?' is-default':''}" id="sbcard-${sb.id}">
       ${sb.is_default?'<div style="position:absolute;top:10px;right:10px;font-size:9px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;color:var(--text-dim);background:var(--bg-secondary);padding:2px 7px;border-radius:10px;border:1px solid var(--border);">DEFAULT</div>':''}
       <div class="sb-card-name">${sb.name}</div>
       <div class="sb-card-meta">${sportCount} sport${sportCount!==1?'s':''} enabled${sb.slug!==sb.name.toLowerCase()?` · slug: ${sb.slug}`:''}
       </div>
-      <div class="sb-stream-badge" style="display:${isStreaming?'inline-flex':'none'};align-items:center;gap:4px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.5px;padding:2px 8px;border-radius:10px;margin-bottom:6px;background:rgba(255,60,60,0.12);border:1px solid rgba(255,60,60,0.35);color:#ff4444;">🔴 Streaming</div>
       <div class="sb-card-status ${hasChannel?'live':'unpushed'}">
         ${hasChannel?'🟢 Live'+( chNum?' · '+chNum:''):'⚫ Not pushed to Dispatcharr'}
       </div>
@@ -1361,8 +1350,18 @@ function renderEditorStep(sbOverride){
         <div class="wiz-sublabel">Clock displayed on the stream output uses this timezone</div>
       </div>
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
-        <div class="modal-section-title" style="margin-bottom:4px;">📺 Stream Output</div>
-        <div class="wiz-sublabel" style="margin-bottom:14px;">Per-scoreboard stream display settings.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div class="modal-section-title" style="margin-bottom:0;">📺 Stream Output</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">Copy from:</span>
+            <select id="sbCopyFromSelect" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-secondary);font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 6px;cursor:pointer;max-width:140px;">
+              <option value="">— select —</option>
+              ${_scoreboards.filter(s=>s.id!==_activeSbId).map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
+            </select>
+            <button onclick="sbCopyDisplayFrom(document.getElementById('sbCopyFromSelect').value)" style="padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;">Copy</button>
+          </div>
+        </div>
+        <div class="wiz-sublabel" style="margin-bottom:14px;">Per-scoreboard stream display settings. Use Copy to clone settings from another scoreboard.</div>
         <div style="margin-bottom:12px;">
           <div class="wiz-label" data-tip="Stored for reference only. To change the actual output resolution, update STREAM_WIDTH and STREAM_HEIGHT in your Docker stack and restart the stream container.">Output Resolution</div>
           <select class="wiz-input" id="sbEditResolution" style="max-width:220px;">
@@ -1539,10 +1538,9 @@ function renderEditorStep(sbOverride){
   }
   else if(_editorStep===2){
     const groups=[
-      {key:'pro',    label:'Pro Leagues',         sports: ALL_SPORTS.filter(s=>s.group==='pro')},
-      {key:'soccer', label:'International Soccer', sports: ALL_SPORTS.filter(s=>s.group==='soccer')},
-      {key:'ncaam',  label:"NCAA Men's",           sports: ALL_SPORTS.filter(s=>s.group==='ncaam')},
-      {key:'ncaaw',  label:"NCAA Women's",         sports: ALL_SPORTS.filter(s=>s.group==='ncaaw')},
+      {key:'pro',   label:'Pro Leagues',   sports: ALL_SPORTS.filter(s=>s.group==='pro')},
+      {key:'ncaam', label:"NCAA Men's",    sports: ALL_SPORTS.filter(s=>s.group==='ncaam')},
+      {key:'ncaaw', label:"NCAA Women's",  sports: ALL_SPORTS.filter(s=>s.group==='ncaaw')},
     ];
     body=`<div class="wiz-sublabel" style="margin-bottom:16px;">Choose which sports appear on this scoreboard. Each scoreboard has its own independent selection.</div>`;
     groups.forEach(g=>{
@@ -1958,6 +1956,22 @@ function sbEditorSetDiv(div){
   if(_sbTeamActiveSport) sbEditorLoadTeams(_sbTeamActiveSport);
 }
 // Select All / Deselect All for a sport group
+function sbCopyDisplayFrom(sourceId){
+  if(!sourceId) return;
+  const src = _scoreboards.find(s=>s.id===parseInt(sourceId));
+  if(!src || !src.display_config) return;
+  const dc = src.display_config;
+  // Copy all display_config fields into the current draft
+  const copyFields = ['card_abbr_size','card_score_size','card_name_size','card_name_color',
+    'stream_card_scale','stream_layout','stream_rotation_secs','stream_resolution','finals'];
+  copyFields.forEach(f=>{ if(dc[f]!=null) _editorDraft.display_config[f]=dc[f]; });
+  // Re-render the editor step to reflect copied values
+  renderEditorStep();
+  // Show confirmation
+  const btn = document.querySelector('#sbCopyFromSelect')?.nextElementSibling;
+  if(btn){ const orig=btn.textContent; btn.textContent='✓ Copied!'; btn.style.color='var(--accent-green)'; setTimeout(()=>{btn.textContent=orig;btn.style.color='';},1500); }
+}
+
 function sbEditorToggleGroup(groupKey){
   const grid = document.querySelector(`.sport-grid[data-group="${groupKey}"]`);
   if(!grid) return;
@@ -2693,35 +2707,17 @@ const _origLoadStreamProfiles=typeof loadStreamProfiles!=='undefined'?loadStream
 
 const ALL_SPORTS=[
   // Pro
-  {id:'nfl',   name:'NFL',                    group:'pro',   color:'#4169e1',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'},
-  {id:'nba',   name:'NBA',                    group:'pro',   color:'#c9082a',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'},
-  {id:'mlb',   name:'MLB',                    group:'pro',   color:'#002d72',emoji:'⚾',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'},
-  {id:'nhl',   name:'NHL',                    group:'pro',   color:'#00b7e0',emoji:'🏒',url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'},
-  {id:'wnba',  name:'WNBA',                   group:'pro',   color:'#ff6900',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'},
-  {id:'cfl',   name:'CFL',                    group:'pro',   color:'#8b0000',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/cfl/scoreboard'},
-  {id:'xfl',   name:'XFL',                    group:'pro',   color:'#1a1a2e',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/xfl/scoreboard'},
-  {id:'ufl',   name:'UFL',                    group:'pro',   color:'#003087',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/ufl/scoreboard'},
-  {id:'mls',   name:'MLS',                    group:'pro',   color:'#1a1a2e',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard'},
-  {id:'nwsl',  name:'NWSL',                   group:'pro',   color:'#c7006b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.nwsl/scoreboard'},
-  // NOTE: F1, Tennis (ATP/WTA), NASCAR - ESPN scoreboard API returns event names
-  // only with no competitor/lap/match data. Requires custom renderer - coming soon.
-  {id:'pga',   name:'PGA Tour',               group:'pro',   color:'#00594f',emoji:'⛳',url:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard'},
-  // International Soccer
-  {id:'epl',        name:'Premier League',    group:'soccer',color:'#3d195b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard'},
-  {id:'ucl',        name:'Champions League',  group:'soccer',color:'#1b3f8b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard'},
-  {id:'laliga',     name:'La Liga',           group:'soccer',color:'#ee8707',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard'},
-  {id:'bundesliga', name:'Bundesliga',        group:'soccer',color:'#d20515',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard'},
-  {id:'seriea',     name:'Serie A',           group:'soccer',color:'#1e4496',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard'},
-  {id:'ligue1',     name:'Ligue 1',           group:'soccer',color:'#003f8a',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard'},
+  {id:'nfl',   name:'NFL',                  group:'pro',   color:'#4169e1',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'},
+  {id:'nba',   name:'NBA',                  group:'pro',   color:'#c9082a',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'},
+  {id:'mlb',   name:'MLB',                  group:'pro',   color:'#002d72',emoji:'⚾',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'},
+  {id:'nhl',   name:'NHL',                  group:'pro',   color:'#00b7e0',emoji:'🏒',url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'},
   // NCAA Men
-  {id:'ncaamb',  name:"NCAA Men's Basketball", group:'ncaam', color:'#ff6600',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'},
-  {id:'ncaafb',  name:'NCAA Football',         group:'ncaam', color:'#8b0000',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard'},
-  {id:'ncaabase',name:"NCAA Men's Baseball",   group:'ncaam', color:'#005c2e',emoji:'⚾',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/scoreboard'},
+  {id:'ncaamb',name:"NCAA Men's Basketball",group:'ncaam', color:'#ff6600',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'},
+  {id:'ncaafb',name:'NCAA Football',        group:'ncaam', color:'#8b0000',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard'},
+  {id:'ncaabase',name:"NCAA Men's Baseball",group:'ncaam', color:'#005c2e',emoji:'⚾',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/scoreboard'},
   // NCAA Women
-  {id:'ncaawb',  name:"NCAA Women's Basketball",group:'ncaaw',color:'#c7006b',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard'},
-  {id:'ncaasb',  name:'NCAA Softball',          group:'ncaaw',color:'#7b3f99',emoji:'🥎',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/scoreboard'},
-  {id:'ncaavb',  name:"NCAA Women's Volleyball",group:'ncaaw',color:'#c7006b',emoji:'🏐',url:'https://site.api.espn.com/apis/site/v2/sports/volleyball/womens-college-volleyball/scoreboard'},
-  {id:'ncaalax', name:"NCAA Women's Lacrosse",  group:'ncaaw',color:'#7b3f99',emoji:'🥍',url:'https://site.api.espn.com/apis/site/v2/sports/lacrosse/womens-college-lacrosse/scoreboard'},
+  {id:'ncaawb',name:"NCAA Women's Basketball",group:'ncaaw',color:'#c7006b',emoji:'🏀',url:'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard'},
+  {id:'ncaasb',name:"NCAA Softball",        group:'ncaaw', color:'#7b3f99',emoji:'🥎',url:'https://site.api.espn.com/apis/site/v2/sports/baseball/college-softball/scoreboard'},
 ];
 
 // Default enabled sports
@@ -2826,13 +2822,13 @@ const state={
   games:{},
   favTeams:loadFavs(),
   showEnded:false,
-  daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7,wnba:2,cfl:7,xfl:7,ufl:7,mls:3,nwsl:3,pga:4,epl:3,ucl:4,laliga:3,bundesliga:3,seriea:3,ligue1:3,ncaavb:2,ncaalax:2},
+  daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7},
   endedLeagues:new Set(ALL_SPORTS.map(s=>s.id)),
   endedFilter:Object.fromEntries(ALL_SPORTS.map(s=>[s.id,'all'])),
   seasonMeta:{},
   usingMock:false,
   refreshRate:60,
-  display:{abbrSize:18,scoreSize:34,nameSize:11,nameColor:'#3d5a78'},
+  display:{abbrSize:18,scoreSize:34,nameSize:11,nameColor:'#3d5a78',tickerSize:14},
 };
 
 // getSPORTS: returns sports enabled in Settings AND active in sidebar (for scoreboard render)
@@ -2995,16 +2991,21 @@ function refreshSportToggles(){buildSportToggles();}
 //  DISPLAY SETTINGS
 // =====================
 function applyDisplay(){
-  const abbrEl=document.getElementById('sl-abbr'),scoreEl=document.getElementById('sl-score'),nameEl=document.getElementById('sl-name'),colorEl=document.getElementById('nameColorPicker');
+  const abbrEl=document.getElementById('sl-abbr'),scoreEl=document.getElementById('sl-score'),nameEl=document.getElementById('sl-name'),colorEl=document.getElementById('nameColorPicker'),tickerEl=document.getElementById('sl-ticker');
   if(abbrEl){state.display.abbrSize=parseInt(abbrEl.value);document.getElementById('val-abbr').textContent=abbrEl.value+'px';}
   if(scoreEl){state.display.scoreSize=parseInt(scoreEl.value);document.getElementById('val-score').textContent=scoreEl.value+'px';}
   if(nameEl){state.display.nameSize=parseInt(nameEl.value);document.getElementById('val-name').textContent=nameEl.value+'px';}
   if(colorEl){state.display.nameColor=colorEl.value;document.getElementById('nameColorVal').textContent=colorEl.value;document.getElementById('nameColorSwatch').style.background=colorEl.value;}
+  if(tickerEl){state.display.tickerSize=parseInt(tickerEl.value);document.getElementById('val-ticker').textContent=tickerEl.value+'px';}
   const root=document.documentElement;
   root.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
   root.style.setProperty('--card-score-size',state.display.scoreSize+'px');
   root.style.setProperty('--card-name-size',state.display.nameSize+'px');
   root.style.setProperty('--card-name-color',state.display.nameColor);
+  root.style.setProperty('--ticker-font-size',(state.display.tickerSize||14)+'px');
+  // Show ticker size control only when ticker layout is active
+  const tickerSection=document.getElementById('ticker-size-section');
+  if(tickerSection) tickerSection.style.display=state.layout==='ticker'?'block':'none';
   settingsSave(saveDisplay);
 }
 
@@ -3032,6 +3033,10 @@ function initDisplayControls(){
   const scoreEl=document.getElementById('sl-score');if(scoreEl){scoreEl.value=state.display.scoreSize;document.getElementById('val-score').textContent=state.display.scoreSize+'px';}
   const nameEl=document.getElementById('sl-name');if(nameEl){nameEl.value=state.display.nameSize;document.getElementById('val-name').textContent=state.display.nameSize+'px';}
   const colorEl=document.getElementById('nameColorPicker');if(colorEl){colorEl.value=state.display.nameColor;document.getElementById('nameColorSwatch').style.background=state.display.nameColor;document.getElementById('nameColorVal').textContent=state.display.nameColor;}
+  const tickerEl=document.getElementById('sl-ticker');if(tickerEl){tickerEl.value=state.display.tickerSize||14;document.getElementById('val-ticker').textContent=(state.display.tickerSize||14)+'px';}
+  document.documentElement.style.setProperty('--ticker-font-size',(state.display.tickerSize||14)+'px');
+  const tickerSection=document.getElementById('ticker-size-section');
+  if(tickerSection) tickerSection.style.display=state.layout==='ticker'?'block':'none';
 }
 
 // =====================
@@ -3059,9 +3064,6 @@ function startAutoRefresh(){
 //  SETTINGS PAGE
 // =====================
 function openSettings(section='scoreboards'){
-  // Restore last section if none specified
-  const lastSection = localStorage.getItem('ss_last_section');
-  if(section==='scoreboards' && lastSection) section = lastSection;
   document.getElementById('settingsPage').style.display='flex';
   document.body.style.overflow='hidden';
   updateSaveUI();
@@ -3095,7 +3097,6 @@ function switchSection(section){
     _activeSbId=null;
   }
   document.querySelectorAll('.snav-btn').forEach(b=>b.classList.toggle('active',b.dataset.section===section));
-  localStorage.setItem('ss_last_section', section);
   document.querySelectorAll('.settings-section').forEach(s=>s.classList.remove('active'));
   const panel=document.getElementById(`section-${section}`);
   if(panel) panel.classList.add('active');
@@ -3116,8 +3117,9 @@ function handleModalOverlay(e){}
 //  SPORTS SETTINGS TAB
 // =====================
 function buildSportsTab(){
-  ['pro','soccer','ncaam','ncaaw'].forEach(group=>{
-    const c=document.getElementById(`sg-${group}`);if(!c)return;c.innerHTML='';
+  ['pro','ncaam','ncaaw'].forEach(group=>{
+    const suffix=group==='pro'?'pro':group==='ncaam'?'ncaam':'ncaaw';
+    const c=document.getElementById(`sg-${suffix}`);if(!c)return;c.innerHTML='';
     ALL_SPORTS.filter(s=>s.group===group).forEach(sport=>{
       const on=state.enabledSports.has(sport.id);
       const row=document.createElement('div');
@@ -3163,17 +3165,10 @@ function buildHistoricalUrl(sport,daysAgo){
 
 function parseGame(ev,sport){
   const comp=ev.competitions?.[0],status=ev.status,statusType=status?.type?.name||'STATUS_SCHEDULED',periodDesc=status?.type?.shortDetail||'';
-  // Golf/individual sports use athlete instead of team on each competitor
-  const isIndividual = sport.id==='pga';
   const teams=(comp?.competitors||[]).map(c=>({
-    abbr:c.team?.abbreviation||c.athlete?.shortName||'???',
-    name:c.team?.displayName||c.team?.name||c.athlete?.displayName||'Unknown',
-    score:c.score||'E',
-    color:c.team?.color?`#${c.team.color}`:'#333',
-    logo:c.team?.logo||c.athlete?.flag?.href||null,
-    homeAway:c.homeAway||'away',winner:c.winner||false,
-    position:c.status?.position||null,
-    thru:c.status?.thru||null,
+    abbr:c.team?.abbreviation||'???',name:c.team?.displayName||c.team?.name||'Unknown',
+    score:c.score||'0',color:c.team?.color?`#${c.team.color}`:'#333',
+    logo:c.team?.logo||null,homeAway:c.homeAway,winner:c.winner||false,
   }));
   let stats=[];
   try{stats=(comp?.leaders||[]).slice(0,3).map(l=>({label:l.abbreviation||l.name,value:l.leaders?.[0]?.displayValue||'–'}));}catch(e){}
@@ -3198,8 +3193,7 @@ function parseGame(ev,sport){
   const networks=resolvedLabels.slice(0,2);
   return{id:ev.id,sport:sport.id,sportName:sport.name,sportColor:sport.color,sportEmoji:sport.emoji,
     name:ev.name||'',date:ev.date,statusType,periodDesc,teams,stats,networks,
-    isLive:statusType==='STATUS_IN_PROGRESS',isFinal:statusType==='STATUS_FINAL',isScheduled:statusType==='STATUS_SCHEDULED',
-    isIndividual};
+    isLive:statusType==='STATUS_IN_PROGRESS',isFinal:statusType==='STATUS_FINAL',isScheduled:statusType==='STATUS_SCHEDULED'};
 }
 
 function getSeasonMeta(t,n){
@@ -3408,53 +3402,15 @@ function renderScoreboard(){
   }
 }
 
-function buildGameCard(g){
-  if(g.isIndividual) return buildLeaderboardCard(g);
-  return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);
-}
-
-function buildLeaderboardCard(g){
-  const card=document.createElement('div');
-  card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
-  const sh=g.isLive
-    ?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`
-    :g.isFinal?`<span class="status-final">FINAL</span>`
-    :`<span class="status-upcoming">${formatTime(g.date)}</span>`;
-  // Show top 5 players
-  const top5 = g.teams.slice(0,5);
-  const rows = top5.map((p,i) => {
-    const pos = p.position || (i+1);
-    const scoreColor = p.score && p.score.startsWith('-') ? 'var(--accent-green)' : p.score==='E' ? 'var(--text-secondary)' : '#f87171';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--border);">
-      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);width:18px;text-align:right;">${pos}</span>
-      <span style="flex:1;font-size:12px;font-weight:700;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:${scoreColor};">${p.score||'–'}</span>
-      ${p.thru?`<span style="font-size:10px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">T${p.thru}</span>`:''}
-    </div>`;
-  }).join('');
-  const moreCount = g.teams.length - 5;
-  card.innerHTML=`
-    <div class="card-header">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>
-      </div>
-      ${sh}
-    </div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;letter-spacing:0.5px;color:var(--text-primary);margin:6px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${g.name}">${g.name}</div>
-    <div style="display:flex;flex-direction:column;gap:1px;">
-      ${rows}
-      ${moreCount>0?`<div style="font-size:10px;color:var(--text-dim);text-align:center;margin-top:4px;font-family:'Share Tech Mono',monospace;">+${moreCount} more</div>`:''}
-    </div>`;
-  return card;
-}
+function buildGameCard(g){return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);}
 
 function buildTickerCard(g){
   const card=document.createElement('div');card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
   const away=g.teams.find(t=>t.homeAway==='away')||g.teams[0],home=g.teams.find(t=>t.homeAway==='home')||g.teams[1];
   const finalDate = g.isFinal && g.date ? formatDate(g.date) : '';
   const sh=g.isLive?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`:g.isFinal?`<span class="status-final">FINAL${finalDate?' · '+finalDate:''}</span>`:`<span class="status-upcoming">${formatTime(g.date)}</span>`;
-  card.innerHTML=`<div class="ticker-row"><div style="width:6px;height:18px;border-radius:2px;background:${g.sportColor};flex-shrink:0"></div><div class="ticker-teams">${away?.abbr||'–'} vs ${home?.abbr||'–'}</div><div class="ticker-score">${away?.score??'–'} – ${home?.score??'–'}</div>${buildNetworkBadges(g.networks)}<div class="ticker-period">${sh}</div></div>`;
+  card.style.setProperty('--ticker-sport-color', g.sportColor);
+  card.innerHTML=`<div class="ticker-row"><div class="ticker-teams"><span style="font-size:0.9em;opacity:0.7;">${g.sportEmoji}</span> ${away?.abbr||'–'} vs ${home?.abbr||'–'}</div><div class="ticker-score">${away?.score??'–'} – ${home?.score??'–'}</div>${buildNetworkBadges(g.networks)}<div class="ticker-period">${sh}</div></div>`;
   return card;
 }
 
@@ -4517,6 +4473,7 @@ document.querySelectorAll('.layout-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.layout-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');state.layout=btn.dataset.layout;renderScoreboard();
+    const ts=document.getElementById('ticker-size-section');if(ts)ts.style.display=state.layout==='ticker'?'block':'none';
   });
 });
 
@@ -4554,14 +4511,6 @@ renderFavSummary();
     setRefreshRate(savedRate);
     loadNcaaFromApi();
     initSidebarScoreboardSelector();
-    // Item 6: Fetch version from API and display in footer
-    fetch(`${API_BASE}/health`).then(r=>r.json()).then(d=>{
-      const el=document.getElementById('ssVersion');
-      if(el&&d.version) el.textContent=`ScoreStream ${d.version} · ESPN Data`;
-    }).catch(()=>{});
-    // Item 3: Poll stream status every 10s and update scoreboard card badges
-    fetchStreamStatus();
-    setInterval(fetchStreamStatus, 10000);
     return;
   }
 
