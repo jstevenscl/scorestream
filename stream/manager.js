@@ -507,12 +507,15 @@ function startHttpServer() {
           writeStartingFrame(slug);
           prebakeHLS(slug);
         }
-        // If stream is live, reload the Puppeteer page so it picks up new settings
+        // If stream is live, call refreshStreamConfig() inside the Puppeteer page.
+        // This updates settings in-place without a page.reload(), so the screenshot
+        // loop keeps running uninterrupted — no buffering or stutter in the output.
         const s = streams.get(slug);
         if (s && s.running && s.page) {
-          console.log(`[manager][${slug}] Settings changed — reloading renderer`);
-          s.page.reload({ waitUntil: 'networkidle2', timeout: 15000 })
-            .catch(e => console.warn(`[manager][${slug}] Reload warning: ${e.message}`));
+          console.log(`[manager][${slug}] Settings changed — refreshing renderer in-place`);
+          s.page.evaluate(() => {
+            if (typeof refreshStreamConfig === 'function') return refreshStreamConfig();
+          }).catch(e => console.warn(`[manager][${slug}] In-place refresh warning: ${e.message}`));
         }
       }
       return;
