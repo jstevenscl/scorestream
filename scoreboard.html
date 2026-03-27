@@ -324,7 +324,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
 
 /* Sport grid in settings */
 .sport-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.sport-setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;transition:all 0.2s;}
+.sport-setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;transition:all 0.2s;width:100%;box-sizing:border-box;}
 .sport-setting-row.enabled{border-color:rgba(0,212,255,0.3);}
 .sport-setting-info{display:flex;align-items:center;gap:8px;}
 .sport-setting-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:0.5px;color:var(--text-primary);}
@@ -1576,10 +1576,7 @@ function renderEditorStep(sbOverride){
     const _enabledSportIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
     const _motorSports=['f1','nascar'];
     const _isMotorOnly=_enabledSportIds.length>0&&_enabledSportIds.every(id=>_motorSports.includes(id));
-    if(_isMotorOnly){
-      document.querySelector('.editor-step-content').innerHTML=buildMotorsportEditorPanel(_editorDraft);
-      return;
-    }
+    if(_isMotorOnly){ body=buildMotorsportEditorPanel(_editorDraft); } else {
     const groups=[
       {key:'pro',    label:'Pro Leagues',         sports: ALL_SPORTS.filter(s=>s.group==='pro')},
       {key:'motor',  label:'Motorsport',           sports: ALL_SPORTS.filter(s=>s.group==='motor')},
@@ -1652,7 +1649,7 @@ function renderEditorStep(sbOverride){
       });
       body += `</div></div>`;
     }
-  }
+  } } // end motor else + step2
   else if(_editorStep===3){
     const enabledSportIds=Object.entries(_editorDraft.sport_config).filter(([,v])=>v).map(([k])=>k);
     if(!enabledSportIds.length){
@@ -2101,7 +2098,7 @@ async function saveSbEditor(){
   if(result){result.style.color='var(--text-dim)';result.textContent='Saving...';}
   const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name:_editorDraft.name, sport_config:_editorDraft.sport_config, display_config:_editorDraft.display_config, team_config:_editorDraft.team_config||{}, audio_mode:_editorDraft.audio_mode||'none', audio_source_url:_editorDraft.audio_source_url||''})
+    body:JSON.stringify({name:_editorDraft.name, sport_config:_editorDraft.sport_config, display_config:_editorDraft.display_config, team_config:_editorDraft.team_config||{}, audio_mode:_editorDraft.audio_mode||'none', audio_source_url:_editorDraft.audio_source_url||'', motor_config:_editorDraft.motor_config||{}})
   });
   if(r.ok){
     const d=await r.json();
@@ -3269,7 +3266,7 @@ async function fetchSport(sport){
   if(sport.fetchFn){
     const fn = window[sport.fetchFn];
     if(typeof fn === 'function'){
-      try{ const _sb2=_scoreboards&&_activeSbId?_scoreboards.find(s=>s.id===_activeSbId):null; return await fn(sport,_sb2); }catch(e){ console.warn(sport.id,'custom fetch error',e); return []; }
+      try{ const _sb2=_scoreboards&&_activeSbId?_scoreboards.find(s=>s.id===_activeSbId):null; const _cards=await fn(sport,_sb2); state.games[sport.id]=_cards; return _cards; }catch(e){ console.warn(sport.id,'custom fetch error',e); return []; }
     }
     return [];
   }
@@ -3462,35 +3459,13 @@ function buildMotorsportEditorPanel(draft){
   const hasF1=!!sc['f1'],hasNascar=!!sc['nascar'];
   const f1Next=mc.f1_next_race!==false,f1Last=mc.f1_last_race!==false,f1Stand=mc.f1_standings!==false;
   const nasLive=mc.nascar_live!==false,nasLast=mc.nascar_last!==false;
-
-  const chk=(val,key,color)=>`<input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked)" style="width:16px;height:16px;accent-color:${color};">`;
-
-  const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;">${chk(val,key,color)}<div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
-
-  const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">Jolpica API · Free</span></div>
-    ${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown timer')}
-    ${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Podium','Top 3 finishers with team, time and points')}
-    ${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Top 5 drivers with points and win count')}
-  </div>`:'';
-
-  const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">NASCAR Live Feed</span></div>
-    ${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races. Hidden between races.')}
-    ${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final top 10 finishing order from most recent race')}
-  </div>`:'';
-
+  const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked)" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
+  const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Podium','Top 3 finishers with team, time and points')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Top 5 drivers with points and wins')}</div>`:'';
+  const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}</div>`:'';
   const none=!hasF1&&!hasNascar?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Motorsport Enabled</div><div style="font-size:11px;margin-top:4px;">Go to Settings → Sports Library to enable Formula 1 or NASCAR</div></div>`:'';
-
-  return `<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this motorsport scoreboard displays:</div>${f1Sec}${nasSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-top:8px;">💡 To add/remove sports go to <strong>Settings → Sports Library → Motorsport</strong></div>`;
+  return `<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this motorsport scoreboard displays:</div>${f1Sec}${nasSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go to <strong>Settings → Sports Library → Motorsport</strong></div>`;
 }
-
-function setMotorConfig(key,val){
-  if(!_editorDraft) return;
-  if(!_editorDraft.motor_config) _editorDraft.motor_config={};
-  _editorDraft.motor_config[key]=val;
-}
-
+function setMotorConfig(key,val){if(!window._editorDraft)return;if(!window._editorDraft.motor_config)window._editorDraft.motor_config={};window._editorDraft.motor_config[key]=val;}
 function buildGameCard(g){
   if(g.isIndividual) return buildLeaderboardCard(g);
   if(g.isNascarLive) return buildNascarCard(g);
@@ -3537,8 +3512,7 @@ function buildLeaderboardCard(g){
 // ── NASCAR custom data fetch + card ─────────────────────────────────────────
 async function fetchNascarData(sport, sbConfig){
   const mc=(sbConfig&&sbConfig.motor_config)||{};
-  const showLive=mc.nascar_live!==false;
-  const showLast=mc.nascar_last!==false;
+  const showLive=mc.nascar_live!==false,showLast=mc.nascar_last!==false;
   try{
     const r = await fetch('https://cf.nascar.com/live/feeds/live-feed.json', {signal:AbortSignal.timeout(6000)});
     if(!r.ok) return [];
@@ -3613,9 +3587,7 @@ function buildNascarCard(g){
 // ── F1 custom data fetch + card ──────────────────────────────────────────────
 async function fetchF1Data(sport, sbConfig){
   const mc=(sbConfig&&sbConfig.motor_config)||{};
-  const showNext=mc.f1_next_race!==false;
-  const showLast=mc.f1_last_race!==false;
-  const showStand=mc.f1_standings!==false;
+  const showNext=mc.f1_next_race!==false,showLast=mc.f1_last_race!==false,showStand=mc.f1_standings!==false;
   try{
     const [nextR, lastR, standR] = await Promise.all([
       fetch('https://api.jolpi.ca/ergast/f1/current/next.json',{signal:AbortSignal.timeout(6000)}).then(r=>r.json()),
