@@ -3476,7 +3476,7 @@ function setMotorConfig(key,val){if(!window._editorDraft)return;if(!window._edit
 function buildGameCard(g){
   if(g.isIndividual) return buildLeaderboardCard(g);
   if(g.isNascarLive) return buildNascarCard(g);
-  if(g.isF1Next || g.isF1Last || g.isF1Standings) return buildF1Card(g);
+  if(g.isF1Next || g.isF1Last || g.isF1Standings || g.isF1History) return buildF1Card(g);
   return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);
 }
 
@@ -3714,6 +3714,20 @@ function buildF1Card(g){
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</span>
       ${d.wins>0?`<span style="font-size:var(--card-name-size,11px);color:#ffd700;font-family:'Share Tech Mono',monospace;">🏆${d.wins}</span>`:''}
     </div>`).join('') + `</div>`;
+  } else if(g.isF1History){
+    const medals=['🥇','🥈','🥉'];
+    body = `<div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:6px;">📍 ${g.circuit} · ${g.country} · ${g.date}</div>` +
+      g.results.map((d,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:var(--card-abbr-size,14px);">${medals[i]||d.pos}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div>
+          <div style="font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.team}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--accent-green);">+${d.points}pts</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.time||''}</div>
+        </div>
+      </div>`).join('');
   }
   card.innerHTML = header + `<div style="display:flex;flex-direction:column;gap:1px;">${body}</div>`;
   return card;

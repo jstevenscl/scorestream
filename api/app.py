@@ -352,6 +352,16 @@ def init_db():
             conn.execute('ALTER TABLE scoreboards ADD COLUMN audio_source_url TEXT')
         except Exception:
             pass
+        # Motor cache table for NASCAR/F1 results (no external history API)
+        conn.execute('''CREATE TABLE IF NOT EXISTS motor_cache(
+            key TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )''')
+        # Purge stale motor cache entries older than 30 days
+        conn.execute("DELETE FROM motor_cache WHERE updated_at < datetime('now','-30 days')")
+        conn.commit()
+
         # Seed default scoreboard if none exists
         existing = conn.execute('SELECT COUNT(*) FROM scoreboards').fetchone()[0]
         if existing == 0:
@@ -1455,6 +1465,31 @@ def set_config_route():
     return jsonify({'status':'saved'})
 
 # ── Entry ─────────────────────────────────────────────────────────────────────
+# ── Motor Cache (NASCAR/F1 result storage) ──────────────────────────────────
+@app.route('/motor/cache/<key>', methods=['GET'])
+def motor_cache_get(key):
+    try:
+        with _get_db() as conn:
+            row = conn.execute('SELECT data, updated_at FROM motor_cache WHERE key=?', (key,)).fetchone()
+            if not row: return jsonify({'error': 'not found'}), 404
+            import json as _json2
+            return jsonify({'key': key, 'data': _json2.loads(row['data']), 'updated_at': row['updated_at']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/motor/cache/<key>', methods=['POST'])
+def motor_cache_set(key):
+    try:
+        b = request.get_json(force=True) or {}
+        data_str = _json.dumps(b.get('data', {}))
+        with _get_db() as conn:
+            conn.execute('''INSERT INTO motor_cache(key, data, updated_at) VALUES(?,?,CURRENT_TIMESTAMP)
+                ON CONFLICT(key) DO UPDATE SET data=excluded.data, updated_at=CURRENT_TIMESTAMP''', (key, data_str))
+            conn.commit()
+        return jsonify({'ok': True, 'key': key})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     init_db()
     log.info('ScoreStream API starting on :5000')
