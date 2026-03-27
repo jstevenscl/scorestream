@@ -1487,7 +1487,7 @@ def set_config_route():
 @app.route('/settings/display-defaults', methods=['GET'])
 def display_defaults_get():
     try:
-        with _get_db() as conn:
+        with get_db() as conn:
             row = conn.execute("SELECT value FROM global_settings WHERE key='display_defaults'").fetchone()
             defaults = _json.loads(row['value']) if row else {}
             return jsonify({'defaults': defaults})
@@ -1499,7 +1499,7 @@ def display_defaults_set():
     try:
         b = request.get_json(force=True) or {}
         value_str = _json.dumps(b.get('defaults', {}))
-        with _get_db() as conn:
+        with get_db() as conn:
             conn.execute('''INSERT INTO global_settings(key,value,updated_at) VALUES('display_defaults',?,CURRENT_TIMESTAMP)
                 ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP''', (value_str,))
             conn.commit()
@@ -1511,7 +1511,7 @@ def display_defaults_set():
 @app.route('/motor/cache/<key>', methods=['GET'])
 def motor_cache_get(key):
     try:
-        with _get_db() as conn:
+        with get_db() as conn:
             row = conn.execute('SELECT data, updated_at FROM motor_cache WHERE key=?', (key,)).fetchone()
             if not row: return jsonify({'error': 'not found'}), 404
             import json as _json2
@@ -1524,7 +1524,7 @@ def motor_cache_set(key):
     try:
         b = request.get_json(force=True) or {}
         data_str = _json.dumps(b.get('data', {}))
-        with _get_db() as conn:
+        with get_db() as conn:
             conn.execute('''INSERT INTO motor_cache(key, data, updated_at) VALUES(?,?,CURRENT_TIMESTAMP)
                 ON CONFLICT(key) DO UPDATE SET data=excluded.data, updated_at=CURRENT_TIMESTAMP''', (key, data_str))
             conn.commit()
