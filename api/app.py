@@ -4,7 +4,7 @@ See NCAA_ARCHITECTURE.md for full design decisions.
 """
 import os, sqlite3, logging, threading
 from datetime import datetime, timezone
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import requests as http
 
@@ -356,10 +356,32 @@ def init_db():
                     "use_default_card_size INTEGER NOT NULL DEFAULT 1"]:
             try: conn.execute(f"ALTER TABLE scoreboards ADD COLUMN {col}")
             except Exception: pass
+        try: conn.execute("ALTER TABLE scoreboards ADD COLUMN audio_playlist_id INTEGER DEFAULT NULL")
+        except Exception: pass
         try:
             conn.execute('ALTER TABLE scoreboards ADD COLUMN audio_source_url TEXT')
         except Exception:
             pass
+        # Audio library table for uploaded music files
+        conn.execute('''CREATE TABLE IF NOT EXISTS audio_library(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            file_size INTEGER DEFAULT 0,
+            duration_secs INTEGER DEFAULT 0,
+            uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )''')
+        # Audio playlists
+        conn.execute('''CREATE TABLE IF NOT EXISTS audio_playlists(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            is_global INTEGER NOT NULL DEFAULT 0,
+            track_ids TEXT NOT NULL DEFAULT '[]',
+            shuffle INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )''')
+        conn.commit()
+
         # Global settings table (display defaults etc)
         conn.execute('''CREATE TABLE IF NOT EXISTS global_settings(
             key TEXT PRIMARY KEY,
@@ -906,6 +928,7 @@ def scoreboard_to_dict(r):
         'use_default_fonts': bool(r['use_default_fonts'] if 'use_default_fonts' in r.keys() else 1),
         'use_default_colors': bool(r['use_default_colors'] if 'use_default_colors' in r.keys() else 1),
         'use_default_card_size': bool(r['use_default_card_size'] if 'use_default_card_size' in r.keys() else 1),
+        'audio_playlist_id': r['audio_playlist_id'] if 'audio_playlist_id' in r.keys() else None,
         'team_config': _json.loads(r['team_config'] or '{}'),
         'display_config': _json.loads(r['display_config'] or '{}'),
         'dispatcharr_channel_id': r['dispatcharr_channel_id'],
@@ -983,7 +1006,7 @@ def scoreboard_update(sid):
         for col in ['name','sport_config','team_config','display_config',
                     'dispatcharr_channel_id','dispatcharr_channel_number',
                     'dispatcharr_group_id','dispatcharr_stream_profile_id','dispatcharr_logo_id',
-                    'audio_mode','audio_source_url','motor_config','use_default_fonts','use_default_colors','use_default_card_size']:
+                    'audio_mode','audio_source_url','motor_config','use_default_fonts','use_default_colors','use_default_card_size','audio_playlist_id']:
             if col in b:
                 fields.append(f'{col}=?')
                 val = b[col]
@@ -1483,7 +1506,144 @@ def set_config_route():
     return jsonify({'status':'saved'})
 
 # ── Entry ─────────────────────────────────────────────────────────────────────
-# ── Global Settings (display defaults) ──────────────────────────────────────
+# ── Audio Library ────────────────────────────────────────────────────────────
+import os as _os, uuid as _uuid
+
+AUDIO_DIR = _os.path.join(_os.path.dirname(__file__), 'audio_library')
+_os.makedirs(AUDIO_DIR, exist_ok=True)
+
+@app.route('/audio/library', methods=['GET'])
+def audio_library_list():
+    try:
+        with get_db() as conn:
+            rows = conn.execute('SELECT * FROM audio_library ORDER BY uploaded_at DESC').fetchall()
+            return jsonify({'tracks': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audio/library', methods=['POST'])
+def audio_library_upload():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        f = request.files['file']
+        if not f.filename:
+            return jsonify({'error': 'Empty filename'}), 400
+        # Only allow audio files
+        allowed = {'.mp3','.ogg','.aac','.m4a','.flac','.wav','.opus'}
+        ext = _os.path.splitext(f.filename)[1].lower()
+        if ext not in allowed:
+            return jsonify({'error': f'File type {ext} not allowed. Use: {", ".join(allowed)}'}), 400
+        # Save with unique name
+        safe_name = f'{_uuid.uuid4().hex}{ext}'
+        save_path = _os.path.join(AUDIO_DIR, safe_name)
+        f.save(save_path)
+        file_size = _os.path.getsize(save_path)
+        display_name = _os.path.splitext(f.filename)[0]
+        with get_db() as conn:
+            cur = conn.execute(
+                'INSERT INTO audio_library(filename, display_name, file_size) VALUES(?,?,?)',
+                (safe_name, display_name, file_size))
+            conn.commit()
+            track_id = cur.lastrowid
+        return jsonify({'ok': True, 'id': track_id, 'filename': safe_name, 'display_name': display_name, 'file_size': file_size})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audio/library/<int:tid>', methods=['DELETE'])
+def audio_library_delete(tid):
+    try:
+        with get_db() as conn:
+            row = conn.execute('SELECT filename FROM audio_library WHERE id=?', (tid,)).fetchone()
+            if not row: return jsonify({'error': 'Not found'}), 404
+            path = _os.path.join(AUDIO_DIR, row['filename'])
+            if _os.path.exists(path): _os.remove(path)
+            conn.execute('DELETE FROM audio_library WHERE id=?', (tid,))
+            conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audio/library/<int:tid>/rename', methods=['PATCH'])
+def audio_library_rename(tid):
+    try:
+        b = request.get_json(force=True) or {}
+        name = (b.get('display_name') or '').strip()
+        if not name: return jsonify({'error': 'Name required'}), 400
+        with get_db() as conn:
+            conn.execute('UPDATE audio_library SET display_name=? WHERE id=?', (name, tid))
+            conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audio/library/<path:filename>', methods=['GET'])
+def audio_library_serve(filename):
+    return send_from_directory(AUDIO_DIR, filename)
+
+# ── Audio Playlists ───────────────────────────────────────────────────────────
+@app.route('/audio/playlists', methods=['GET'])
+def audio_playlists_list():
+    try:
+        with get_db() as conn:
+            rows = conn.execute('SELECT * FROM audio_playlists ORDER BY is_global DESC, name').fetchall()
+            playlists = []
+            for r in rows:
+                p = dict(r)
+                p['track_ids'] = _json.loads(p['track_ids'] or '[]')
+                playlists.append(p)
+            return jsonify({'playlists': playlists})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audio/playlists', methods=['POST'])
+def audio_playlists_create():
+    try:
+        b = request.get_json(force=True) or {}
+        name = (b.get('name') or '').strip()
+        if not name: return jsonify({'error': 'Name required'}), 400
+        is_global = 1 if b.get('is_global') else 0
+        track_ids = _json.dumps(b.get('track_ids') or [])
+        shuffle = 1 if b.get('shuffle') else 0
+        with get_db() as conn:
+            cur = conn.execute(
+                'INSERT INTO audio_playlists(name, is_global, track_ids, shuffle) VALUES(?,?,?,?)',
+                (name, is_global, track_ids, shuffle))
+            conn.commit()
+            pid = cur.lastrowid
+        return jsonify({'ok': True, 'id': pid})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audio/playlists/<int:pid>', methods=['PATCH'])
+def audio_playlists_update(pid):
+    try:
+        b = request.get_json(force=True) or {}
+        fields, vals = [], []
+        if 'name' in b: fields.append('name=?'); vals.append(b['name'])
+        if 'is_global' in b: fields.append('is_global=?'); vals.append(1 if b['is_global'] else 0)
+        if 'track_ids' in b: fields.append('track_ids=?'); vals.append(_json.dumps(b['track_ids']))
+        if 'shuffle' in b: fields.append('shuffle=?'); vals.append(1 if b['shuffle'] else 0)
+        if not fields: return jsonify({'ok': True})
+        vals.append(pid)
+        with get_db() as conn:
+            conn.execute(f'UPDATE audio_playlists SET {", ".join(fields)} WHERE id=?', vals)
+            conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audio/playlists/<int:pid>', methods=['DELETE'])
+def audio_playlists_delete(pid):
+    try:
+        with get_db() as conn:
+            conn.execute('DELETE FROM audio_playlists WHERE id=?', (pid,))
+            conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ── Global Settings (display defaults) ──────────────────────────────────────────
 @app.route('/settings/display-defaults', methods=['GET'])
 def display_defaults_get():
     try:

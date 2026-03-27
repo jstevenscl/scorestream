@@ -3119,7 +3119,7 @@ const state={
   seasonMeta:{},
   usingMock:false,
   refreshRate:60,
-  display:{abbrSize:18,scoreSize:34,nameSize:11,nameColor:'#3d5a78'},
+  display:{abbrSize:18,scoreSize:34,nameSize:11,nameColor:'#3d5a78',tickerSize:14,logoSize:34},
 };
 
 // getSPORTS: returns sports enabled in Settings AND active in sidebar (for scoreboard render)
@@ -3282,7 +3282,7 @@ function refreshSportToggles(){buildSportToggles();}
 //  DISPLAY SETTINGS
 // =====================
 function applyDisplay(){
-  const abbrEl=document.getElementById('sl-abbr'),scoreEl=document.getElementById('sl-score'),nameEl=document.getElementById('sl-name'),colorEl=document.getElementById('nameColorPicker');
+  const abbrEl=document.getElementById('sl-abbr'),scoreEl=document.getElementById('sl-score'),nameEl=document.getElementById('sl-name'),colorEl=document.getElementById('nameColorPicker'),tickerEl=document.getElementById('sl-ticker'),logoEl=document.getElementById('sl-logo');
   if(abbrEl){state.display.abbrSize=parseInt(abbrEl.value);document.getElementById('val-abbr').textContent=abbrEl.value+'px';}
   if(scoreEl){state.display.scoreSize=parseInt(scoreEl.value);document.getElementById('val-score').textContent=scoreEl.value+'px';}
   if(nameEl){state.display.nameSize=parseInt(nameEl.value);document.getElementById('val-name').textContent=nameEl.value+'px';}
@@ -3292,6 +3292,7 @@ function applyDisplay(){
   root.style.setProperty('--card-score-size',state.display.scoreSize+'px');
   root.style.setProperty('--card-name-size',state.display.nameSize+'px');
   root.style.setProperty('--card-name-color',state.display.nameColor);
+  root.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
   settingsSave(saveDisplay);
 }
 
@@ -3319,6 +3320,8 @@ function initDisplayControls(){
   const scoreEl=document.getElementById('sl-score');if(scoreEl){scoreEl.value=state.display.scoreSize;document.getElementById('val-score').textContent=state.display.scoreSize+'px';}
   const nameEl=document.getElementById('sl-name');if(nameEl){nameEl.value=state.display.nameSize;document.getElementById('val-name').textContent=state.display.nameSize+'px';}
   const colorEl=document.getElementById('nameColorPicker');if(colorEl){colorEl.value=state.display.nameColor;document.getElementById('nameColorSwatch').style.background=state.display.nameColor;document.getElementById('nameColorVal').textContent=state.display.nameColor;}
+  const logoEl2=document.getElementById('sl-logo');if(logoEl2){logoEl2.value=state.display.logoSize||34;const lv=document.getElementById('val-logo');if(lv)lv.textContent=(state.display.logoSize||34)+'px';}
+  document.documentElement.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
 }
 
 // =====================
