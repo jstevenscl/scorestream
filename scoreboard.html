@@ -3905,7 +3905,7 @@ function buildLeaderboardCard(g){
 // ── NASCAR custom data fetch + card ─────────────────────────────────────────
 async function fetchNascarData(sport, sbConfig){
   const mc=(sbConfig&&sbConfig.motor_config)||{};
-  const showLive=mc.nascar_live!==false,showLast=mc.nascar_last!==false;
+  const showLive=mc.nascar_live!==false,showLast=mc.nascar_last!==false,showStand=mc.nascar_standings!==false;
   try{
     const r = await fetch('https://cf.nascar.com/live/feeds/live-feed.json', {signal:AbortSignal.timeout(6000)});
     if(!r.ok) return [];
@@ -3918,23 +3918,48 @@ async function fetchNascarData(sport, sbConfig){
     const isFinal = vehicles.length > 0 && d.laps_to_go === 0;
     const noRace = (vehicles.length === 0 && flagState === 0) || isQualifying;
     if(noRace){
-      if(!showLast) return [];
+      const noRaceCards = [];
+      // Fetch season standings from cache
+      if(showStand){
+        try{
+          const sr=await fetch(`${API_BASE}/motor/cache/nascar-2026-season`,{signal:AbortSignal.timeout(4000)});
+          if(sr.ok){
+            const sd=(await sr.json()).data||{};
+            const seasonData=typeof sd==='string'?JSON.parse(sd):sd;
+            const allStand=seasonData.standings||[];
+            if(allStand.length){
+              const chunkSize=8,total=allStand.length,totalPages=Math.ceil(total/chunkSize);
+              for(let i=0;i<total;i+=chunkSize){
+                const chunk=allStand.slice(i,i+chunkSize);
+                const pageNum=Math.floor(i/chunkSize)+1;
+                noRaceCards.push({
+                  id:`nascar-stand-${pageNum}`,
+                  name:totalPages>1?`NASCAR Cup Standings (${pageNum}/${totalPages})`:'NASCAR Cup Standings',
+                  sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+                  isLive:false,isFinal:false,isScheduled:false,isIndividual:false,
+                  isNascarStandings:true,drivers:chunk,pageNum,totalPages,
+                });
+              }
+            }
+          }
+        }catch(e){console.warn('NASCAR standings fetch error',e);}
+      }
+      if(!showLast) return noRaceCards.length?noRaceCards:[{id:'nascar-no-data',name:'NASCAR Cup Series',sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,isLive:false,isFinal:false,isScheduled:true,isIndividual:false,isNascarInfo:true,message:'No live race right now.',track:d.track_name||'',runName:d.run_name||''}];
       try{
         const cr=await fetch(`${API_BASE}/motor/cache/nascar-last`,{signal:AbortSignal.timeout(4000)});
-        if(!cr.ok) return [];
+        if(!cr.ok) return noRaceCards.length?noRaceCards:[];
         const rawData=(await cr.json()).data||{};
         const cd=typeof rawData==='string'?JSON.parse(rawData):rawData;
         const cachedDrivers=cd.drivers||[];
         if(!cachedDrivers.length){
-          // No cached race data yet — show an info card
+          if(noRaceCards.length) return noRaceCards;
           return [{
             id:'nascar-no-data', name:'NASCAR Cup Series',
             sportName:sport.name, sportEmoji:sport.emoji, sportColor:sport.color,
             isLive:false, isFinal:false, isScheduled:true, isIndividual:false,
             isNascarInfo:true,
-            message:'Last race results will appear here once a Cup Series race completes. Live standings will show during the race.',
-            track: d.track_name||'Martinsville Speedway',
-            runName: d.run_name||'',
+            message:'Last race results will appear here once a Cup Series race completes.',
+            track: d.track_name||'', runName: d.run_name||'',
           }];
         }
         const chunkSize=8,total=cachedDrivers.length,totalPages=Math.ceil(total/chunkSize);
@@ -3953,8 +3978,8 @@ async function fetchNascarData(sport, sbConfig){
             drivers:chunk,cachedDate:cd.race_date||'',
           });
         }
-        return lastCards;
-      }catch(e){ return []; }
+        return [...lastCards, ...noRaceCards];
+      }catch(e){ return noRaceCards.length?noRaceCards:[]; }
     }
     const flagEmoji = {1:'🟢',2:'🟡',3:'🔴',4:'🟡',8:'⬜',9:'🏁'}[flagState]||'⬛';
     // Sort by running_position
@@ -5532,8 +5557,10 @@ function renderStreamCanvas() {
     const liveUpcoming = regularGames.filter(g => !g.isFinal);
     const finalGames = regularGames.filter(g => g.isFinal);
 
-    // Motor sport cards always render as one section (they are always-on data, not ended games)
-    if (motorCards.length > 0) allSections.push({ sport, games: motorCards });
+    // Motor sport cards — each card gets its OWN page (full-screen rotation)
+    if (motorCards.length > 0) {
+      motorCards.forEach(g => allSections.push({ sport, games: [g], isMotorCard: true }));
+    }
 
     // Show live/upcoming section for regular sports
     if (liveUpcoming.length > 0) allSections.push({ sport, games: liveUpcoming });
@@ -5621,7 +5648,13 @@ function renderStreamCanvas() {
   let currentPageSections = [];
   let currentPageH = 0;
 
-  allSections.forEach(({ sport, games, isFinalSection, finalDate }) => {
+  allSections.forEach(({ sport, games, isFinalSection, finalDate, isMotorCard }) => {
+    // Motor sport cards: each gets its own full-screen page
+    if (isMotorCard && games.length > 0) {
+      if (currentPageSections.length > 0) { pages.push(currentPageSections); currentPageSections = []; currentPageH = 0; }
+      pages.push([{ sport, games, isFinalSection: false, finalDate: null, isMotorCard: true }]);
+      return;
+    }
     let remainingGames = games;
 
     while (remainingGames.length > 0) {
@@ -5665,7 +5698,7 @@ function renderStreamCanvas() {
     pageEl.className = 'stream-page' + (pageIdx === _streamCurrentPage ? ' active' : '');
     pageEl.dataset.page = pageIdx;
 
-    sections.forEach(({ sport, games, isFinalSection, isFavSection, finalDate, continued }) => {
+    sections.forEach(({ sport, games, isFinalSection, isFavSection, finalDate, continued, isMotorCard }) => {
       // Sport section header
       const season = state.seasonMeta[sport.id];
       let sbadge = '';
@@ -5678,15 +5711,18 @@ function renderStreamCanvas() {
         const dateLabel = finalDate && finalDate !== 'unknown' ? ' · ' + new Date(finalDate + 'T12:00:00').toLocaleDateString([], {month:'short', day:'numeric'}) : '';
         sectionLabel = `${sport.emoji} ${sport.name} — Finals${dateLabel}`;
       }
-      const countLabel = continued
+      const countLabel = isMotorCard ? '' : continued
         ? `${games.length} games (more →)`
         : `${games.length} game${games.length !== 1 ? 's' : ''}`;
       const stripeColor = isFavSection ? '#ffd700' : isFinalSection ? '#ffb400' : sport.color;
       sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${stripeColor}"></div><div class="league-name">${sectionLabel}</div>${sbadge}<div class="league-game-count">${countLabel}</div></div>`;
 
+      const isMotorSection = !!sections.find(s => s.isMotorCard);
+      const gridCols = isMotorSection ? 1 : cols;
       const grid = document.createElement('div');
       grid.className = 'games-grid grid-mode';
-      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      grid.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
+      if (isMotorSection) { grid.style.maxWidth = '860px'; grid.style.margin = '0 auto'; grid.style.width = '100%'; }
       // Always apply typography from state.display (populated from display_config),
       // scaled by card scale. This ensures user's saved size/color settings show in stream.
       grid.style.setProperty('--card-score-size', Math.round(state.display.scoreSize * scale) + 'px');
