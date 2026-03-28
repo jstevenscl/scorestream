@@ -3912,9 +3912,10 @@ async function fetchNascarData(sport, sbConfig){
     // flag_state: 1=green, 2=yellow, 3=red, 4=debris, 8=warm-up, 9=checkered
     const flagState = d.flag_state||0;
     const vehicles = d.vehicles||[];
-    const isLive = vehicles.length > 0 && d.laps_to_go > 0;
+    const isQualifying = flagState === 9 || flagState === 8 || (d.laps_to_go > 500 && flagState !== 1 && flagState !== 2 && flagState !== 3);
+    const isLive = vehicles.length > 0 && d.laps_to_go > 0 && !isQualifying;
     const isFinal = vehicles.length > 0 && d.laps_to_go === 0;
-    const noRace = vehicles.length === 0 && flagState === 0;
+    const noRace = (vehicles.length === 0 && flagState === 0) || isQualifying;
     if(noRace){
       if(!showLast) return [];
       try{
