@@ -965,7 +965,14 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
       </div>
     </div>
 
-    <div id="section-dispatcharr" class="settings-section">
+    <div id="section-audiolibrary" class="settings-section">
+      <div class="settings-section-header"><h2>Audio Library</h2><p>Upload audio files for stream background music. Create playlists and assign globally or per scoreboard.</p></div>
+      <div style="margin-bottom:20px;"><div class="modal-section-title" style="margin-bottom:8px;">Upload Audio Files</div><div id="audioDropZone" onclick="document.getElementById('audioFileInput').click()" style="border:2px dashed var(--border);border-radius:12px;padding:28px;text-align:center;cursor:pointer;background:var(--bg-secondary);" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="audioDrop(event)"><div style="font-size:32px;margin-bottom:8px;">&#x1F3B5;</div><div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:14px;color:var(--text-primary);">DROP FILES OR CLICK TO UPLOAD</div><div style="font-size:11px;color:var(--text-dim);margin-top:4px;">MP3, AAC, OGG, FLAC, WAV, M4A &middot; Max 50MB per file</div><input type="file" id="audioFileInput" accept=".mp3,.aac,.ogg,.flac,.wav,.m4a,.opus" multiple style="display:none" onchange="audioUploadFiles(this.files)"></div><div id="audioUploadProgress" style="display:none;margin-top:10px;font-size:12px;color:var(--text-dim);"></div></div>
+      <div style="margin-bottom:24px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div class="modal-section-title">My Tracks</div><span id="audioTrackCount" style="font-size:11px;color:var(--text-dim);"></span></div><div id="audioTrackList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;"><div style="color:var(--text-dim);font-size:12px;padding:20px;text-align:center;">Loading...</div></div></div>
+      <div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div class="modal-section-title">Playlists</div><button onclick="audioNewPlaylist()" style="padding:4px 12px;border-radius:6px;border:1px solid var(--accent);background:rgba(0,212,255,0.08);color:var(--accent);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">+ NEW</button></div><div id="audioPlaylistList" style="display:flex;flex-direction:column;gap:8px;"></div></div>
+    </div>
+
+        <div id="section-dispatcharr" class="settings-section">
       <div class="settings-section-header">
         <h2>Integrations</h2>
         <p>Connect ScoreStream to Dispatcharr to push live scoreboards as TV channels.</p>
@@ -1631,6 +1638,7 @@ function renderEditorStep(sbOverride){
           <div id="sbAudioPlaylistInfo" style="display:${(_editorDraft.audio_mode||'none')==='playlist'?'block':'none'};padding:10px 14px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;font-size:12px;color:var(--text-dim);line-height:1.6;">
             🎵 Plays royalty-free sports/hype instrumental music bundled in the stream container. Music loops automatically. No configuration needed.
           </div>
+          <div style="margin-top:10px;"><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px;">PLAYLIST</div><select id="sbPlaylistSelect" style="width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:11px;padding:6px 8px;" onchange="_editorDraft.audio_playlist_id=this.value?parseInt(this.value):null"><option value="">Use Global Default</option></select><div style="font-size:10px;color:var(--text-dim);margin-top:4px;">Manage in Audio Library</div></div>
           <div id="sbAudioStreamPanel" style="display:${(_editorDraft.audio_mode||'none')==='stream'?'block':'none'};">
             <div class="wiz-label" style="margin-bottom:6px;">Audio Stream URL</div>
             <div style="display:flex;gap:8px;align-items:center;">
@@ -1650,6 +1658,7 @@ function renderEditorStep(sbOverride){
     const sel=document.getElementById('sbEditCardScale');
     if(sel) sbPreviewCardScale(parseFloat(sel.value)/100);
     setTimeout(buildEditorPreview, 50);
+    const _psel=document.getElementById('sbPlaylistSelect');if(_psel&&_audioPlaylists&&_audioPlaylists.length){while(_psel.options.length>1)_psel.remove(1);_audioPlaylists.forEach(function(p){const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_global?' (Global)':'');if(_editorDraft.audio_playlist_id===p.id)o.selected=true;_psel.appendChild(o);});}
   },0);
   }
   else if(_editorStep===2){
@@ -2031,6 +2040,58 @@ function buildEditorPreview(){
   var sel=document.getElementById('sbEditCardScale');
   if(sel) sbPreviewCardScale(parseFloat(sel.value)/100);
 }
+
+// ── Audio Library ────────────────────────────────────────────────────────────
+let _audioTracks=[],_audioPlaylists=[];
+async function loadAudioLibrary(){
+  try{const [tr,pr]=await Promise.all([fetch(`${API_BASE}/audio/library`).then(r=>r.json()),fetch(`${API_BASE}/audio/playlists`).then(r=>r.json())]);_audioTracks=tr.tracks||[];_audioPlaylists=pr.playlists||[];renderAudioTracks();renderAudioPlaylists();}catch(e){console.warn('loadAudioLibrary',e);}
+}
+function renderAudioTracks(){
+  const el=document.getElementById('audioTrackList'),ct=document.getElementById('audioTrackCount');if(!el)return;
+  if(ct)ct.textContent=_audioTracks.length+' track'+(_audioTracks.length!==1?'s':'');
+  if(!_audioTracks.length){el.innerHTML='<div style="color:var(--text-dim);padding:20px;text-align:center;font-size:12px;">No tracks yet.</div>';return;}
+  el.innerHTML=_audioTracks.map(function(t){return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);"><span style="font-size:18px;">&#x1F3B5;</span><div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+t.display_name+'</div><div style="font-size:10px;color:var(--text-dim);">'+((t.file_size||0)/1024/1024).toFixed(1)+' MB</div></div><audio controls style="height:28px;max-width:120px;" preload="none"><source src="'+API_BASE+'/audio/library/'+t.filename+'"></audio><button onclick="audioDeleteTrack('+t.id+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0 4px;">&#x1F5D1;</button></div>';}).join('');
+}
+function renderAudioPlaylists(){
+  const el=document.getElementById('audioPlaylistList');if(!el)return;
+  if(!_audioPlaylists.length){el.innerHTML='<div style="color:var(--text-dim);font-size:12px;padding:12px;text-align:center;">No playlists yet.</div>';return;}
+  el.innerHTML=_audioPlaylists.map(function(p){var tids=p.track_ids||[],bc=p.is_global?'var(--accent)':'var(--border)';return '<div style="padding:12px 14px;background:var(--bg-secondary);border-radius:10px;border:1px solid '+bc+';"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="display:flex;align-items:center;gap:8px;"><span>'+(p.is_global?'&#x1F310;':'&#x1F4CB;')+'</span><span style="font-weight:900;font-size:14px;color:var(--text-primary);">'+p.name+'</span>'+(p.is_global?'<span style="font-size:9px;color:var(--accent);background:rgba(0,212,255,0.1);padding:1px 6px;border-radius:10px;">GLOBAL</span>':'')+'</div><div style="display:flex;gap:6px;"><button onclick="audioEditPlaylist('+p.id+')" style="padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:11px;cursor:pointer;">Edit</button><button onclick="audioDeletePlaylist('+p.id+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;">&#x1F5D1;</button></div></div><div style="font-size:11px;color:var(--text-dim);">'+tids.length+' track'+(tids.length!==1?'s':'')+'</div></div>';}).join('');
+}
+function audioDrop(e){e.preventDefault();document.getElementById('audioDropZone').style.borderColor='var(--border)';audioUploadFiles(e.dataTransfer.files);}
+async function audioUploadFiles(files){
+  const prog=document.getElementById('audioUploadProgress'),allowed=['mp3','ogg','aac','m4a','flac','wav','opus'];let ok=0;prog.style.display='block';
+  for(let i=0;i<files.length;i++){
+    const file=files[i],ext=file.name.split('.').pop().toLowerCase();
+    if(!allowed.includes(ext)){prog.textContent=file.name+': unsupported';continue;}
+    if(file.size>52428800){prog.textContent=file.name+': exceeds 50MB';continue;}
+    prog.textContent='Uploading '+file.name+' ('+(i+1)+'/'+files.length+')';
+    const fd=new FormData();fd.append('file',file);
+    try{const r=await fetch(`${API_BASE}/audio/library`,{method:'POST',body:fd});const d=await r.json();if(d.ok){_audioTracks.unshift(d);ok++;}else prog.textContent='Error: '+d.error;}
+    catch(e2){prog.textContent='Failed: '+e2.message;}
+  }
+  prog.textContent='\u2713 '+ok+' file'+(ok!==1?'s':'')+' uploaded';
+  setTimeout(function(){prog.style.display='none';},2500);renderAudioTracks();document.getElementById('audioFileInput').value='';
+}
+async function audioDeleteTrack(id){if(!confirm('Delete this track?'))return;await fetch(`${API_BASE}/audio/library/${id}`,{method:'DELETE'});_audioTracks=_audioTracks.filter(function(t){return t.id!==id;});renderAudioTracks();}
+function audioNewPlaylist(){const name=prompt('Playlist name:');if(!name||!name.trim())return;const isG=confirm('Make this the global default?\n(Used by scoreboards without a custom playlist)');audioCreatePlaylist(name.trim(),isG);}
+async function audioCreatePlaylist(name,isG){const r=await fetch(`${API_BASE}/audio/playlists`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,is_global:isG,track_ids:[],shuffle:false})});const d=await r.json();if(d.ok){await loadAudioLibrary();setTimeout(function(){audioEditPlaylist(d.id);},100);}}
+function audioEditPlaylist(id){
+  const p=_audioPlaylists.find(function(x){return x.id===id;});if(!p)return;
+  const tids=p.track_ids||[];
+  var rows=_audioTracks.length?_audioTracks.map(function(t){var chk=tids.includes(t.id)?'checked':'';var bg=tids.includes(t.id)?'background:rgba(0,212,255,0.06);border-color:rgba(0,212,255,0.3);':'';return '<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;'+bg+'"><input type="checkbox" '+chk+' value="'+t.id+'" style="accent-color:var(--accent);"><span style="font-size:13px;font-weight:700;flex:1;">'+t.display_name+'</span><span style="font-size:10px;color:var(--text-dim);">'+((t.file_size||0)/1024/1024).toFixed(1)+'MB</span></label>';}).join(''):'<div style="color:var(--text-dim);padding:12px;text-align:center;">No tracks.</div>';
+  var modal=document.getElementById('audioEditModal');
+  if(!modal){modal=document.createElement('div');modal.id='audioEditModal';modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;';modal.onclick=function(e){if(e.target===modal)modal.remove();};document.body.appendChild(modal);}
+  modal.innerHTML='<div style="background:var(--bg-primary);border-radius:16px;border:1px solid var(--border);padding:20px;max-width:480px;width:90vw;max-height:80vh;overflow-y:auto;"><div style="font-weight:900;font-size:18px;letter-spacing:2px;margin-bottom:16px;">EDIT: '+p.name+'</div><label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;"><input type="checkbox" id="plEdit_global" '+(p.is_global?'checked':'')+' style="accent-color:var(--accent);"> <span style="font-size:13px;">Global Default</span></label><label style="display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer;"><input type="checkbox" id="plEdit_shuffle" '+(p.shuffle?'checked':'')+' style="accent-color:var(--accent);"> <span style="font-size:13px;">Shuffle</span></label><div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:8px;">SELECT TRACKS</div><div id="plEdit_tracks" style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;margin-bottom:16px;">'+rows+'</div><div style="display:flex;gap:8px;"><button onclick="audioSavePlaylist('+id+')" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:900;font-size:14px;cursor:pointer;">SAVE</button><button onclick="document.getElementById(\'audioEditModal\').remove()" style="padding:10px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:12px;cursor:pointer;">Cancel</button></div></div>';
+}
+async function audioSavePlaylist(id){
+  const cbs=document.querySelectorAll('#plEdit_tracks input[type=checkbox]:checked');
+  const track_ids=Array.from(cbs).map(function(cb){return parseInt(cb.value);});
+  const is_global=!!(document.getElementById('plEdit_global')||{}).checked;
+  const shuffle=!!(document.getElementById('plEdit_shuffle')||{}).checked;
+  await fetch(`${API_BASE}/audio/playlists/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({track_ids:track_ids,is_global:is_global,shuffle:shuffle})});
+  document.getElementById('audioEditModal').remove();await loadAudioLibrary();
+}
+async function audioDeletePlaylist(id){if(!confirm('Delete?'))return;await fetch(`${API_BASE}/audio/playlists/${id}`,{method:'DELETE'});_audioPlaylists=_audioPlaylists.filter(function(p){return p.id!==id;});renderAudioPlaylists();}
 
 // ── Display Defaults ─────────────────────────────────────────────────────────
 let _displayDefaults = {};
@@ -2732,8 +2793,10 @@ function renderWizardStep(){
         <div class="wiz-review-row"><span class="wiz-review-key">Profiles</span><span class="wiz-review-val">${_wizardData.profileIds==='all'?'All Profiles':Array.isArray(_wizardData.profileIds)&&_wizardData.profileIds.length?_wizardData.profileIds.length+' selected':'(none)'}</span></div>
         <div class="wiz-review-row"><span class="wiz-review-key">Stream Profile</span><span class="wiz-review-val">${_wizardData.streamProfileName||'(default)'}</span></div>
         <div class="wiz-review-row"><span class="wiz-review-key">Logo</span><span class="wiz-review-val">${logoDisplay}</span></div>
-        <div class="wiz-review-row"><span class="wiz-review-key">Stream URL</span><span class="wiz-review-val" style="font-family:monospace;font-size:10px;">${sb2.slug?`${window.location.origin}/hls/${sb2.slug}.m3u8`:'(not set — configure STREAM_BASE_URL)'}</span></div>
+        <div class="wiz-review-row"><span class="wiz-review-key">Stream URL</span><span class="wiz-review-val" style="font-family:monospace;font-size:10px;">${sb2.slug?'Loading…':'(not set — configure STREAM_BASE_URL)'}</span></div>
       </div>`;
+  // Fetch real stream URL (uses STREAM_BASE_URL not browser origin)
+  if(step===6&&_activeSbId){fetch(`${API_BASE}/scoreboards/${_activeSbId}/stream_url`).then(r=>r.json()).then(d=>{const el=document.getElementById('wiz_reviewStreamUrl');if(el&&d.stream_url)el.textContent=d.stream_url;else if(el)el.textContent='(STREAM_BASE_URL not configured)';}).catch(()=>{});}
   }
 }
 
@@ -3392,6 +3455,7 @@ function switchSection(section){
   if(section==='scoreboards') loadScoreboards();
   if(section==='sports') buildSportsTab();
   if(section==='displaydefaults'){ setTimeout(loadDisplayDefaults, 50); }
+  if(section==='audiolibrary'){ setTimeout(loadAudioLibrary, 50); }
   if(section==='teams'){buildTbTabs();loadTbSport(tbState.activeSport||getSPORTS()[0]?.id);}
   if(section==='dispatcharr') initDsTab();
   if(section==='ncaa') initNcaaSection();
@@ -5732,6 +5796,9 @@ function renderNcaaList(){
       <div style="display:flex;gap:6px;flex-shrink:0;">
         <button onclick="openNcaaEditModal(${p.id})" style="padding:5px 11px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Edit</button>
         <button onclick="deleteNcaaProgram(${p.id},'${(p.display_name||p.full_name).replace(/'/g,"\\'")}',${p.school_id})" style="padding:5px 11px;background:transparent;border:1px solid rgba(255,59,92,0.3);border-radius:6px;color:var(--accent-red);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Delete</button>
+      <button class="snav-btn" data-section="audiolibrary" onclick="switchSection('audiolibrary')">
+        <span class="snav-icon">🎵</span><span>Audio Library</span>
+      </button>
       </div>
     </div>`;
   }).join('');
