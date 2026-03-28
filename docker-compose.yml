@@ -47,6 +47,7 @@ services:
       - CONFIG_PATH=/config/config.json
     volumes:
       - ./config:/config
+      - audio_library:/app/audio_library
     networks:
       - scorestream-net
 
@@ -66,10 +67,11 @@ services:
       - MANAGER_PORT=3001
       - HLS_SEGMENT_DURATION=${HLS_SEGMENT_DURATION:-2}
       - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-10}
-      - AUDIO_DIR=/audio
+      - AUDIO_DIR=/audio_library
     volumes:
       - ./config:/config:ro
       - hls_segments:/hls
+      - audio_library:/audio_library:ro
     networks:
       - scorestream-net
     depends_on:
@@ -78,6 +80,7 @@ services:
 
 volumes:
   hls_segments:
+  audio_library:
 
 networks:
   scorestream-net:
