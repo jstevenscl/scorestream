@@ -256,7 +256,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
 .card-body{padding:12px 14px;}
 .teams-container{display:flex;flex-direction:column;gap:9px;}
 .team-row{display:flex;align-items:center;gap:10px;}
-.team-logo-placeholder{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:10px;flex-shrink:0;text-align:center;line-height:1.1;}
+.team-logo-placeholder{width:var(--team-logo-size,34px);height:var(--team-logo-size,34px);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:calc(var(--team-logo-size,34px) * 0.28);flex-shrink:0;text-align:center;line-height:1.1;}
 .team-name-block{flex:1;min-width:0;}
 .team-abbr{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:var(--card-abbr-size,18px);letter-spacing:1px;text-transform:uppercase;color:var(--text-primary);line-height:1;}
 .team-full-name{font-size:var(--card-name-size,11px);color:var(--card-name-color,var(--text-dim));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -795,11 +795,7 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
           <input type="range" min="9" max="16" value="11" id="sl-name" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-name">11px</span>
         </div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of team logo boxes on game cards. Increase for better visibility on TV or mobile.">Team Logo Size</span>
-          <input type="range" min="20" max="64" value="34" id="sl-logo" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-logo">34px</span>
-        </div>
+
         <div class="modal-slider-row">
           <span class="modal-slider-label" data-tip="Size of the channel/event name shown at the top of each game card (e.g. tournament name, network).">Channel Name Size</span>
           <input type="range" min="8" max="20" value="11" id="sl-channel" oninput="applyDisplay()">
@@ -949,6 +945,11 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
             <span class="modal-slider-label">Rotation Timer</span>
             <input type="range" min="5" max="120" id="ddRotationSecs" oninput="document.getElementById('ddRotationSecsVal').textContent=this.value+'s'">
             <span class="modal-slider-val" id="ddRotationSecsVal">15s</span>
+          </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label">Team Logo Size</span>
+            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';document.documentElement.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);">
+            <span class="modal-slider-val" id="ddLogoSizeVal">34px</span>
           </div>
           <div style="margin-bottom:12px;">
             <div class="modal-section-title" style="font-size:11px;margin-bottom:8px;">Default Layout</div>
@@ -1606,7 +1607,19 @@ function renderEditorStep(sbOverride){
             </div>
             <div class="wiz-sublabel">Game card size on stream (50–300%)</div>
           </div>
-          <div>
+          
+
+        <div style="margin-bottom:12px;">
+          <div class="wiz-label">Team Logo Size</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="range" min="20" max="64" value="${Math.round(state.display.logoSize||34)}" id="sbEditLogoSize"
+              oninput="document.getElementById('sbEditLogoSizeVal').textContent=this.value+'px';document.documentElement.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);">
+            <span style="font-size:12px;color:var(--text-dim);" id="sbEditLogoSizeVal">${Math.round(state.display.logoSize||34)}px</span>
+          </div>
+          <div class="wiz-sublabel">Logo size on stream cards</div>
+        </div>
+
+<div>
             <div class="wiz-label" data-tip="When there are more games than fit on one screen, the stream automatically pages through them. This controls how long each page is shown before advancing. Set to 0 to disable auto-rotation.">Page Rotation</div>
             <div style="display:flex;align-items:center;gap:8px;">
               <input type="number" class="wiz-input" id="sbEditRotation"
@@ -2072,17 +2085,17 @@ function renderAudioPlaylists(){
 }
 function audioDrop(e){e.preventDefault();document.getElementById('audioDropZone').style.borderColor='var(--border)';audioUploadFiles(e.dataTransfer.files);}
 async function audioUploadFiles(files){
-  const prog=document.getElementById('audioUploadProgress'),allowed=['mp3','ogg','aac','m4a','flac','wav','opus'];let ok=0;prog.style.display='block';
+  const prog=document.getElementById('audioUploadProgress'),allowed=['mp3','ogg','aac','m4a','flac','wav','opus'];let ok=0,errors=[];prog.style.display='block';
   for(let i=0;i<files.length;i++){
     const file=files[i],ext=file.name.split('.').pop().toLowerCase();
     if(!allowed.includes(ext)){prog.textContent=file.name+': unsupported';continue;}
     if(file.size>52428800){prog.textContent=file.name+': exceeds 50MB';continue;}
     prog.textContent='Uploading '+file.name+' ('+(i+1)+'/'+files.length+')';
     const fd=new FormData();fd.append('file',file);
-    try{const r=await fetch(`${API_BASE}/audio/library`,{method:'POST',body:fd});const d=await r.json();if(d.ok){_audioTracks.unshift(d);ok++;}else prog.textContent='Error: '+d.error;}
+    try{const r=await fetch(`${API_BASE}/audio/library`,{method:'POST',body:fd});const d=await r.json();if(d.ok){_audioTracks.unshift(d);ok++;}else{prog.textContent='Error: '+d.error;errors.push(d.error);}}
     catch(e2){prog.textContent='Failed: '+e2.message;}
   }
-  prog.textContent='\u2713 '+ok+' file'+(ok!==1?'s':'')+' uploaded';
+  prog.textContent=ok>0?'\u2713 '+ok+' file'+(ok!==1?'s':'')+' uploaded'+(errors.length?' ('+errors.length+' failed)':''):'Upload failed: check file types and size';
   setTimeout(function(){prog.style.display='none';},2500);renderAudioTracks();document.getElementById('audioFileInput').value='';
 }
 async function audioDeleteTrack(id){if(!confirm('Delete this track?'))return;await fetch(`${API_BASE}/audio/library/${id}`,{method:'DELETE'});_audioTracks=_audioTracks.filter(function(t){return t.id!==id;});renderAudioTracks();}
@@ -2809,7 +2822,7 @@ function renderWizardStep(){
         <div class="wiz-review-row"><span class="wiz-review-key">Stream URL</span><span class="wiz-review-val" style="font-family:monospace;font-size:10px;">${sb2.slug?'Loading…':'(not set — configure STREAM_BASE_URL)'}</span></div>
       </div>`;
   // Fetch real stream URL (uses STREAM_BASE_URL not browser origin)
-  if(step===6&&_activeSbId){fetch(`${API_BASE}/scoreboards/${_activeSbId}/stream_url`).then(r=>r.json()).then(d=>{const el=document.getElementById('wiz_reviewStreamUrl');if(el&&d.stream_url)el.textContent=d.stream_url;else if(el)el.textContent='(STREAM_BASE_URL not configured)';}).catch(()=>{});}
+  if(step===6&&_activeSbId){fetch(`${API_BASE}/scoreboards/${_activeSbId}/stream_url`).then(r=>r.json()).then(d=>{const el=document.getElementById('wiz_reviewStreamUrl');if(el)el.textContent=d.stream_url||'(STREAM_BASE_URL not configured in docker-compose)';}).catch(e=>{const el=document.getElementById('wiz_reviewStreamUrl');if(el)el.textContent='Error fetching URL: '+e.message;});}
   }
 }
 
