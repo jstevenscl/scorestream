@@ -3401,6 +3401,7 @@ function applyDisplay(){
   if(scoreEl){state.display.scoreSize=parseInt(scoreEl.value);document.getElementById('val-score').textContent=scoreEl.value+'px';}
   if(nameEl){state.display.nameSize=parseInt(nameEl.value);document.getElementById('val-name').textContent=nameEl.value+'px';}
   if(colorEl){state.display.nameColor=colorEl.value;document.getElementById('nameColorVal').textContent=colorEl.value;document.getElementById('nameColorSwatch').style.background=colorEl.value;}
+  if(logoEl){state.display.logoSize=parseInt(logoEl.value);const lv=document.getElementById('val-logo');if(lv)lv.textContent=logoEl.value+'px';}
   const root=document.documentElement;
   root.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
   root.style.setProperty('--card-score-size',state.display.scoreSize+'px');
