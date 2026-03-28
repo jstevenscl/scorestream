@@ -3274,7 +3274,7 @@ function saveSbFavs(){
     body: JSON.stringify({ display_config: dc })
   }).catch(e => console.warn('[favs] Failed to save sb favs:', e.message));
 }
-function isGameFavorited(g){return g.teams.some(t=>state.favTeams.has(t.name)||state.favTeams.has(t.abbr));}
+function isGameFavorited(g){if(!g.teams||!g.teams.length)return false;return g.teams.some(t=>state.favTeams.has(t.name)||state.favTeams.has(t.abbr));}
 function clearAllFavTeams(){
   state.favTeams.clear();
   if(_activeSidebarSbId){ saveSbFavs(); } else { saveFavs(); }
@@ -5695,7 +5695,7 @@ function renderStreamCanvas() {
       grid.style.setProperty('--card-name-color', state.display.nameColor);
 
       games.forEach(g => {
-        const card = buildFullCard(g);
+        const card = buildGameCard(g);
         card.dataset.gameId = g.id;
         grid.appendChild(card);
       });
