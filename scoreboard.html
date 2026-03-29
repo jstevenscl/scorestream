@@ -801,6 +801,11 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
           <input type="range" min="8" max="20" value="11" id="sl-channel" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-channel">11px</span>
         </div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Size of team logo and score badge on each card.">Logo Size</span>
+          <input type="range" min="20" max="64" value="34" id="sl-logo" oninput="applyDisplay()">
+          <span class="modal-slider-val" id="val-logo">34px</span>
+        </div>
       </div>
 
       <div class="modal-section">
@@ -3742,6 +3747,23 @@ function updateTopbar(){
   if(lc)lc.textContent=live;if(tc)tc.textContent=total;
 }
 
+function getMotorSectionName(sport, sampleCard) {
+  if (!sampleCard) return sport.name;
+  if (sampleCard.isLive || sampleCard.isNascarLive) return `${sport.name} — Live`;
+  if (sampleCard.isNascarStandings || sampleCard.isF1Standings) return `${sport.name} — Driver Standings`;
+  if (sampleCard.isNascarLast || sampleCard.isF1Last) {
+    const raceName = (sampleCard.name||'').split(' (')[0].replace(/ Result$/,'').replace(/ \(\d+\/\d+\)$/,'');
+    return `${sport.name} — ${raceName}${sampleCard.raceDate?' · '+sampleCard.raceDate:''}`;
+  }
+  if (sampleCard.isF1Next || sampleCard.isNascarInfo) return `${sport.name} — Upcoming`;
+  if (sampleCard.isPGAHistory || sampleCard.isPGALive) {
+    const tName = (sampleCard.name||'').split(' (')[0];
+    const status = sampleCard.isComplete ? 'Final' : sampleCard.isLive ? 'Live' : 'In Progress';
+    return `${sport.name} — ${tName} (${status})`;
+  }
+  return sport.name;
+}
+
 function renderScoreboard(){
   // Stream mode: do in-place updates instead of full re-render
   if(document.body.classList.contains('stream-mode')){
@@ -3814,7 +3836,7 @@ function renderScoreboard(){
       let sbadge='';
       if(season&&season.key!=='reg')sbadge=`<span class="league-season-badge ${season.key}">${season.label}</span>`;
       const sec=document.createElement('div');sec.className='league-section';
-      sec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:${sport.color}"></div><div class="league-name">${sport.emoji} ${sport.name}</div>${sbadge}<div class="league-game-count">${liveUpcomingGames.length} game${liveUpcomingGames.length!==1?'s':''}</div></div>`;
+      sec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:${sport.color}"></div><div class="league-name">${sport.emoji} ${sport.isMotorSport||sport.fetchFn?getMotorSectionName(sport,liveUpcomingGames[0]):sport.name}</div>${sbadge}${!(sport.isMotorSport||sport.fetchFn)?`<div class="league-game-count">${liveUpcomingGames.length} game${liveUpcomingGames.length!==1?'s':''}</div>`:''}</div>`;
       const grid=document.createElement('div');grid.className=`games-grid ${state.layout}-mode`;
       liveUpcomingGames.forEach(g=>grid.appendChild(buildGameCard(g)));sec.appendChild(grid);sb.appendChild(sec);
     }
@@ -3834,7 +3856,7 @@ function renderScoreboard(){
         const dGames=byDate[dateKey];
         const dateLabel=dateKey!=='unknown'?' · '+new Date(dateKey+'T12:00:00').toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}):'';
         const finSec=document.createElement('div');finSec.className='league-section';
-        finSec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:#ffb400"></div><div class="league-name">${sport.emoji} ${sport.name} — Finals${dateLabel}</div><div class="league-game-count">${dGames.length} game${dGames.length!==1?'s':''}</div></div>`;
+        finSec.innerHTML=`<div class="league-header"><div class="league-stripe" style="background:#ffb400"></div><div class="league-name">${sport.emoji} ${(sport.isMotorSport||sport.fetchFn)?getMotorSectionName(sport,dGames[0]):(sport.name+' — Finals'+dateLabel)}</div><div class="league-game-count">${dGames.length} game${dGames.length!==1?'s':''}</div></div>`;
         const finGrid=document.createElement('div');finGrid.className=`games-grid ${state.layout}-mode`;
         dGames.forEach(g=>finGrid.appendChild(buildGameCard(g)));finSec.appendChild(finGrid);sb.appendChild(finSec);
       });
@@ -3928,7 +3950,7 @@ async function fetchPGAData(sport, sbConfig){
         tournaments.sort((a,b)=>b.date.localeCompare(a.date));
         tournaments.forEach(t=>{
           const players = t.players||[];
-          const chunkSize=8, total=players.length, totalPages=Math.ceil(total/chunkSize);
+          const chunkSize=15, total=players.length, totalPages=Math.ceil(total/chunkSize);
           const statusLabel = t.is_complete ? 'FINAL' : 'IN PROGRESS';
           for(let i=0;i<total;i+=chunkSize){
             const chunk=players.slice(i,i+chunkSize);
@@ -3976,7 +3998,7 @@ async function fetchPGAData(sport, sbConfig){
           if(!competitors.length) return;
           const isLive = ev.status?.type?.state==='in';
           const isFinal = ev.status?.type?.state==='post';
-          const chunkSize=8, total=competitors.length, totalPages=Math.ceil(total/chunkSize);
+          const chunkSize=15, total=competitors.length, totalPages=Math.ceil(total/chunkSize);
           for(let i=0;i<total;i+=chunkSize){
             const chunk=competitors.slice(i,i+chunkSize);
             const pageNum=Math.floor(i/chunkSize)+1;
@@ -4010,7 +4032,9 @@ async function fetchNascarData(sport, sbConfig){
     // flag_state: 1=green, 2=yellow, 3=red, 4=debris, 8=warm-up, 9=checkered
     const flagState = d.flag_state||0;
     const vehicles = d.vehicles||[];
-    const isQualifying = flagState === 9 || flagState === 8 || (d.laps_to_go > 500 && flagState !== 1 && flagState !== 2 && flagState !== 3);
+    // Only treat as real race if it is Cup (1), Xfinity (2), or Truck (3) series
+    const isKnownSeries = d.series_id === 1 || d.series_id === 2 || d.series_id === 3;
+    const isQualifying = !isKnownSeries || flagState === 9 || flagState === 8 || (d.laps_to_go > 500 && flagState !== 1 && flagState !== 2 && flagState !== 3);
     const isLive = vehicles.length > 0 && d.laps_to_go > 0 && !isQualifying;
     const isFinal = vehicles.length > 0 && d.laps_to_go === 0;
     const noRace = (vehicles.length === 0 && flagState === 0) || isQualifying;
@@ -5795,7 +5819,7 @@ function renderStreamCanvas() {
   // Individual sport cards (leaderboard, F1, NASCAR) are taller
   const hasIndividualSports = getAllEnabledSports().some(s=>s.isIndividualSport||s.fetchFn);
   const hasMotorSports = getAllEnabledSports().some(s=>s.fetchFn);
-  const cardH = Math.round((hasIndividualSports || hasMotorSports ? 300 : 130) * scale);
+  const cardH = Math.round((hasIndividualSports || hasMotorSports ? 320 : 130) * scale);
   const sectionHeaderH = 36; // league-header height
   const gridGap = 9;
   const pagePad = 28; // padding inside page
