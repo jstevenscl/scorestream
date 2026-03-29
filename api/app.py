@@ -382,6 +382,21 @@ def init_db():
         )''')
         conn.commit()
 
+        # Seed a default global playlist if none exists
+        existing = conn.execute("SELECT id FROM audio_playlists WHERE is_global=1").fetchone()
+        if not existing:
+            conn.execute(
+                "INSERT INTO audio_playlists(name, is_global, track_ids, shuffle) VALUES(?,?,?,?)",
+                ('Default (Built-in)', 1, '[]', 0)
+            )
+            conn.commit()
+
+        # Purge motor cache entries older than 30 days — but preserve nascar-2026-season
+        try:
+            conn.execute("DELETE FROM motor_cache WHERE key NOT IN ('nascar-2026-season','pga-2026-tournaments') AND updated_at < datetime('now','-30 days')")
+            conn.commit()
+        except Exception: pass
+
         # Global settings table (display defaults etc)
         conn.execute('''CREATE TABLE IF NOT EXISTS global_settings(
             key TEXT PRIMARY KEY,

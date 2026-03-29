@@ -4045,8 +4045,10 @@ async function fetchNascarData(sport, sbConfig){
       try{
         const cr=await fetch(`${API_BASE}/motor/cache/nascar-last`,{signal:AbortSignal.timeout(4000)});
         if(!cr.ok) return noRaceCards.length?noRaceCards:[];
-        const rawData=(await cr.json()).data||{};
-        const cd=typeof rawData==='string'?JSON.parse(rawData):rawData;
+        let rawData=(await cr.json()).data||{};
+        // Handle double-encoded JSON (cache stores as JSON string inside JSON)
+        if(typeof rawData==='string'){try{rawData=JSON.parse(rawData);}catch(e){rawData={};}}
+        const cd=rawData;
         const cachedDrivers=cd.drivers||[];
         if(!cachedDrivers.length){
           if(noRaceCards.length) return noRaceCards;
@@ -4203,7 +4205,18 @@ async function fetchF1Data(sport, sbConfig){
       const raceDay = new Date(yr,mo-1,dy);
       const diffDays = Math.round((raceDay-today)/86400000);
       const countdown = diffDays > 1 ? `in ${diffDays}d` : diffDays===1 ? 'tomorrow' : diffDays===0 ? 'today' : 'soon';
-      const timeStr = nextRace.time ? nextRace.time.replace('Z','').substring(0,5)+' UTC' : '';
+      // Show race time in scoreboard timezone if configured
+      let timeStr = '';
+      if (nextRace.time) {
+        try {
+          const raceISO = `${nextRace.date}T${nextRace.time}`;
+          const raceDate = new Date(raceISO);
+          const sbTz = (_scoreboards&&_scoreboards[0]?.display_config?.timezone) || Intl.DateTimeFormat().resolvedOptions().timeZone;
+          timeStr = raceDate.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:sbTz,timeZoneName:'short'});
+        } catch(e) {
+          timeStr = nextRace.time.replace('Z','').substring(0,5)+' UTC';
+        }
+      }
       cards.push({
         id:'f1-next', name:`Next: ${nextRace.raceName}`,
         sportName:sport.name, sportEmoji:sport.emoji, sportColor:sport.color,
@@ -5668,13 +5681,46 @@ function renderStreamCanvas() {
     const liveUpcoming = regularGames.filter(g => !g.isFinal);
     const finalGames = regularGames.filter(g => g.isFinal);
 
-    // Motor sport cards — max 4 per page, each sport starts a fresh page
+    // Motor sport cards — each card type gets its own named section, max 4 per page
     if (motorCards.length > 0) {
-      const maxPerPage = 4;
-      for (let i = 0; i < motorCards.length; i += maxPerPage) {
-        const chunk = motorCards.slice(i, i + maxPerPage);
-        allSections.push({ sport, games: chunk, isMotorCard: true });
-      }
+      // Group by card type so each type gets its own labeled section
+      const typeOrder = ['live','standings','last','next','info','hist'];
+      const byType = {};
+      motorCards.forEach(g => {
+        let type = 'other';
+        if (g.isLive || g.isNascarLive) type = 'live';
+        else if (g.isNascarStandings || g.isF1Standings) type = 'standings';
+        else if (g.isNascarLast || g.isF1Last) type = 'last';
+        else if (g.isF1Next || g.isNascarInfo) type = 'next';
+        else if (g.isPGAHistory || g.isPGALive) type = 'hist';
+        if (!byType[type]) byType[type] = [];
+        byType[type].push(g);
+      });
+      typeOrder.concat(['other']).forEach(type => {
+        if (!byType[type]) return;
+        const group = byType[type];
+        // Build a descriptive section name
+        let sectionName = sport.name;
+        const sample = group[0];
+        if (type === 'live') sectionName = `${sport.name} — Live`;
+        else if (type === 'standings') sectionName = `${sport.name} — Driver Standings`;
+        else if (type === 'last') {
+          const raceName = sample.name?.split(' (')[0]?.replace(/ Result$/,'') || 'Last Race';
+          const raceDate = sample.raceDate || '';
+          sectionName = `${sport.name} — ${raceName}${raceDate?' · '+raceDate:''}`;
+        }
+        else if (type === 'next') sectionName = `${sport.name} — Upcoming`;
+        else if (type === 'hist') {
+          const tName = sample.name?.split(' (')[0] || 'Tournament';
+          const status = sample.isComplete ? 'Final' : 'In Progress';
+          sectionName = `${sport.name} — ${tName} (${status})`;
+        }
+        const maxPerPage = 4;
+        for (let i = 0; i < group.length; i += maxPerPage) {
+          const chunk = group.slice(i, i + maxPerPage);
+          allSections.push({ sport, games: chunk, isMotorCard: true, sectionName });
+        }
+      });
     }
 
     // Show live/upcoming section for regular sports
@@ -5764,11 +5810,11 @@ function renderStreamCanvas() {
   let currentPageSections = [];
   let currentPageH = 0;
 
-  allSections.forEach(({ sport, games, isFinalSection, finalDate, isMotorCard }) => {
+  allSections.forEach(({ sport, games, isFinalSection, finalDate, isMotorCard, sectionName }) => {
     // Motor sport cards: each gets its own full-screen page
     if (isMotorCard && games.length > 0) {
       if (currentPageSections.length > 0) { pages.push(currentPageSections); currentPageSections = []; currentPageH = 0; }
-      pages.push([{ sport, games, isFinalSection: false, finalDate: null, isMotorCard: true }]);
+      pages.push([{ sport, games, isFinalSection: false, finalDate: null, isMotorCard: true, sectionName }]);
       return;
     }
     let remainingGames = games;
@@ -5791,7 +5837,7 @@ function renderStreamCanvas() {
         remainingGames = remainingGames.slice(gamesFit);
         const continued = remainingGames.length > 0; // more chunks will follow on next pages
 
-        currentPageSections.push({ sport, games: chunk, isFinalSection, finalDate, continued });
+        currentPageSections.push({ sport, games: chunk, isFinalSection, finalDate, continued, sectionName });
         const actualRows = Math.ceil(chunk.length / cols);
         currentPageH += sectionHeaderH + gridGap + (actualRows * cardH) + ((actualRows - 1) * gridGap) + 26;
       } else {
@@ -5814,7 +5860,7 @@ function renderStreamCanvas() {
     pageEl.className = 'stream-page' + (pageIdx === _streamCurrentPage ? ' active' : '');
     pageEl.dataset.page = pageIdx;
 
-    sections.forEach(({ sport, games, isFinalSection, isFavSection, finalDate, continued, isMotorCard }) => {
+    sections.forEach(({ sport, games, isFinalSection, isFavSection, finalDate, continued, isMotorCard, sectionName }) => {
       // Sport section header
       const season = state.seasonMeta[sport.id];
       let sbadge = '';
@@ -5822,8 +5868,8 @@ function renderStreamCanvas() {
       const sec = document.createElement('div');
       sec.className = 'league-section';
       sec.dataset.sportId = sport.id;
-      let sectionLabel = `${sport.emoji} ${sport.name}`;
-      if (isFinalSection) {
+      let sectionLabel = sectionName ? `${sport.emoji} ${sectionName}` : `${sport.emoji} ${sport.name}`;
+      if (isFinalSection && !isMotorCard) {
         const dateLabel = finalDate && finalDate !== 'unknown' ? ' · ' + new Date(finalDate + 'T12:00:00').toLocaleDateString([], {month:'short', day:'numeric'}) : '';
         sectionLabel = `${sport.emoji} ${sport.name} — Finals${dateLabel}`;
       }
