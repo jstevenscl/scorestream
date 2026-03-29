@@ -1451,6 +1451,10 @@ function openSbEditor(id){
   if(!sb)return;
   _activeSbId=id;
   _editorStep=1;
+  // Ensure playlists are loaded before rendering editor (fixes dropdown showing only Global Default)
+  if(!_audioPlaylists||!_audioPlaylists.length){
+    loadAudioLibrary().catch(()=>{});
+  }
   // Start draft from saved values
   _editorDraft={
     name: sb.name,
@@ -5744,7 +5748,8 @@ function renderStreamCanvas() {
   // Card approximate height at current scale (header + 2 teams + padding)
   // Individual sport cards (leaderboard, F1, NASCAR) are taller
   const hasIndividualSports = getAllEnabledSports().some(s=>s.isIndividualSport||s.fetchFn);
-  const cardH = Math.round((hasIndividualSports ? 210 : 130) * scale);
+  const hasMotorSports = getAllEnabledSports().some(s=>s.fetchFn);
+  const cardH = Math.round((hasIndividualSports || hasMotorSports ? 300 : 130) * scale);
   const sectionHeaderH = 36; // league-header height
   const gridGap = 9;
   const pagePad = 28; // padding inside page
@@ -5822,18 +5827,15 @@ function renderStreamCanvas() {
         const dateLabel = finalDate && finalDate !== 'unknown' ? ' · ' + new Date(finalDate + 'T12:00:00').toLocaleDateString([], {month:'short', day:'numeric'}) : '';
         sectionLabel = `${sport.emoji} ${sport.name} — Finals${dateLabel}`;
       }
-      const countLabel = isMotorCard ? '' : continued
+      const countLabel = (isMotorCard||isFavSection) ? '' : continued
         ? `${games.length} games (more →)`
         : `${games.length} game${games.length !== 1 ? 's' : ''}`;
       const stripeColor = isFavSection ? '#ffd700' : isFinalSection ? '#ffb400' : sport.color;
       sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${stripeColor}"></div><div class="league-name">${sectionLabel}</div>${sbadge}<div class="league-game-count">${countLabel}</div></div>`;
 
-      const isMotorSection = !!sections.find(s => s.isMotorCard);
-      const gridCols = isMotorSection ? 1 : cols;
       const grid = document.createElement('div');
       grid.className = 'games-grid grid-mode';
-      grid.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
-      if (isMotorSection) { grid.style.maxWidth = '860px'; grid.style.margin = '0 auto'; grid.style.width = '100%'; }
+      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
       // Always apply typography from state.display (populated from display_config),
       // scaled by card scale. This ensures user's saved size/color settings show in stream.
       grid.style.setProperty('--card-score-size', Math.round(state.display.scoreSize * scale) + 'px');

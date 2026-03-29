@@ -234,18 +234,25 @@ function startFfmpeg(slug) {
       args.push('-stream_loop', '-1', '-f', 'concat', '-safe', '0', '-i', audioInput);
       console.log(`[manager][${slug}] Audio: ${validTracks.length} tracks: ${validTracks.map(f=>f.split('/').pop()).join(', ')}`);
     } else {
-      // Fallback: find any non-empty mp3 in AUDIO_DIR
+      // Fallback: use baked-in /audio directory (Kevin MacLeod CC-BY tracks)
+      const DEFAULT_AUDIO_DIR = '/audio';
       try {
-        const mp3s = fs.readdirSync(AUDIO_DIR)
+        const mp3s = fs.readdirSync(DEFAULT_AUDIO_DIR)
           .filter(f => f.endsWith('.mp3'))
-          .filter(f => { try { return fs.statSync(path.join(AUDIO_DIR, f)).size > 1000; } catch(_) { return false; } })
+          .filter(f => { try { return fs.statSync(path.join(DEFAULT_AUDIO_DIR, f)).size > 1000; } catch(_) { return false; } })
           .sort();
         if (mp3s.length > 0) {
-          audioInput = path.join(AUDIO_DIR, mp3s[0]);
-          args.push('-stream_loop', '-1', '-i', audioInput);
-          console.log(`[manager][${slug}] Audio: fallback to ${mp3s[0]}`);
+          // Build concat file from all default tracks for proper cycling
+          const concatPath = path.join(DEFAULT_AUDIO_DIR, `loop_default.txt`);
+          const entries = mp3s.map(f => `file '${path.join(DEFAULT_AUDIO_DIR, f)}'`).join('\n') + '\n';
+          fs.writeFileSync(concatPath, entries);
+          audioInput = concatPath;
+          args.push('-stream_loop', '-1', '-f', 'concat', '-safe', '0', '-i', audioInput);
+          console.log(`[manager][${slug}] Audio: default tracks from ${DEFAULT_AUDIO_DIR}: ${mp3s.join(', ')}`);
         }
-      } catch(e) {}
+      } catch(e) {
+        console.warn(`[manager][${slug}] No fallback audio found`);
+      }
     }
 
     if (!audioInput) {
