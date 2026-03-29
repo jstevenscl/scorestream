@@ -226,11 +226,13 @@ function startFfmpeg(slug) {
     if (validTracks.length > 0) {
       // Write ffmpeg concat file repeated 500x for hours of audio without loop issues
       const concatPath = path.join(AUDIO_DIR, `loop_${slug}.txt`);
+      // Write single pass — -stream_loop -1 on the concat input handles infinite looping
       const singlePass = validTracks.map(f => `file '${f}'`).join('\n') + '\n';
-      fs.writeFileSync(concatPath, singlePass.repeat(500));
+      fs.writeFileSync(concatPath, singlePass);
       audioInput = concatPath;
-      args.push('-f', 'concat', '-safe', '0', '-i', audioInput);
-      console.log(`[manager][${slug}] Audio: ${validTracks.length} tracks from assigned playlist`);
+      // -stream_loop -1 before concat input = loops the entire playlist infinitely
+      args.push('-stream_loop', '-1', '-f', 'concat', '-safe', '0', '-i', audioInput);
+      console.log(`[manager][${slug}] Audio: ${validTracks.length} tracks: ${validTracks.map(f=>f.split('/').pop()).join(', ')}`);
     } else {
       // Fallback: find any non-empty mp3 in AUDIO_DIR
       try {
@@ -270,7 +272,6 @@ function startFfmpeg(slug) {
     args.push(
       '-c:a', 'aac', '-b:a', '128k', '-ac', '2',
       '-map', '0:v:0', '-map', '1:a:0',
-      '-shortest',
     );
   } else {
     args.push('-an');  // no audio

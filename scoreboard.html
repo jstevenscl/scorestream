@@ -3103,7 +3103,7 @@ const ALL_SPORTS=[
   {id:'ufl',        name:'UFL',                    group:'pro',   color:'#003087',emoji:'🏈',url:'https://site.api.espn.com/apis/site/v2/sports/football/ufl/scoreboard'},
   {id:'mls',        name:'MLS',                    group:'pro',   color:'#1a1a2e',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard'},
   {id:'nwsl',       name:'NWSL',                   group:'pro',   color:'#c7006b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.nwsl/scoreboard'},
-  {id:'pga',        name:'PGA Tour',               group:'pro',   color:'#00594f',emoji:'⛳',url:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',isIndividualSport:true},
+  {id:'pga',        name:'PGA Tour',               group:'pro',   color:'#00594f',emoji:'⛳',url:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',isIndividualSport:true,fetchFn:'fetchPGAData'},
   // Motorsport (custom APIs — Jolpica for F1, cf.nascar.com for NASCAR)
   {id:'f1',         name:'Formula 1',              group:'motor', color:'#e10600',emoji:'🏎️',fetchFn:'fetchF1Data'},
   {id:'nascar',     name:'NASCAR Cup',             group:'motor', color:'#ffd700',emoji:'🏁',fetchFn:'fetchNascarData'},
@@ -3863,7 +3863,7 @@ function sbToggleDefault(group, toggleEl){
 
 function setMotorConfig(key,val){if(!window._editorDraft)return;if(!window._editorDraft.motor_config)window._editorDraft.motor_config={};window._editorDraft.motor_config[key]=val;}
 function buildGameCard(g){
-  if(g.isIndividual) return buildLeaderboardCard(g);
+  if(g.isIndividual||g.isPGAHistory||g.isPGALive) return buildLeaderboardCard(g);
   if(g.isNascarLive||g.isNascarStandings||g.isNascarLast||g.isNascarInfo) return buildNascarCard(g);
   if(g.isF1Next || g.isF1Last || g.isF1Standings || g.isF1History) return buildF1Card(g);
   return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);
@@ -3873,7 +3873,9 @@ function buildGameCard(g){
 function buildLeaderboardCard(g){
   const card=document.createElement('div');
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
-  const sh=g.isLive
+  const sh=g.isPGAHistory
+    ?(g.isComplete?`<span class="status-final">FINAL</span>`:`<span class="status-live"><div class="status-live-dot"></div>IN PROGRESS</span>`)
+    :g.isLive
     ?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`
     :g.isFinal?`<span class="status-final">FINAL</span>`
     :`<span class="status-upcoming">${formatTime(g.date)}</span>`;
@@ -3903,6 +3905,97 @@ function buildLeaderboardCard(g){
 }
 
 // ── NASCAR custom data fetch + card ─────────────────────────────────────────
+// ── PGA Tour Data (live + historical from cache) ────────────────────────────
+async function fetchPGAData(sport, sbConfig){
+  const mc=(sbConfig&&sbConfig.motor_config)||{};
+  const showLive=mc.pga_live!==false, showHistory=mc.pga_history!==false;
+  const cards = [];
+
+  // Fetch historical tournaments from cache
+  if(showHistory){
+    try{
+      const hr = await fetch(`${API_BASE}/motor/cache/pga-2026-tournaments`,{signal:AbortSignal.timeout(4000)});
+      if(hr.ok){
+        const hd = await hr.json();
+        const raw = hd.data;
+        const parsed = typeof raw==='string'?JSON.parse(raw):raw;
+        const tournaments = parsed?.tournaments||[];
+        // Sort newest first, completed only (unless in-progress)
+        tournaments.sort((a,b)=>b.date.localeCompare(a.date));
+        tournaments.forEach(t=>{
+          const players = t.players||[];
+          const chunkSize=8, total=players.length, totalPages=Math.ceil(total/chunkSize);
+          const statusLabel = t.is_complete ? 'FINAL' : 'IN PROGRESS';
+          for(let i=0;i<total;i+=chunkSize){
+            const chunk=players.slice(i,i+chunkSize);
+            const pageNum=Math.floor(i/chunkSize)+1;
+            cards.push({
+              id:`pga-hist-${t.name.replace(/[^a-z0-9]/gi,'-')}-${pageNum}`,
+              name: totalPages>1?`${t.name} (${pageNum}/${totalPages})`:`${t.name}`,
+              sportName:sport.name, sportEmoji:sport.emoji, sportColor:sport.color,
+              isLive: !t.is_complete, isFinal: t.is_complete,
+              isScheduled: false, isIndividual: true,
+              isPGAHistory: true, isComplete: t.is_complete,
+              statusLabel, tournamentDate: t.date,
+              winner: t.winner, winnerScore: t.winner_score,
+              teams: chunk.map(p=>({
+                name:p.name, score:p.score,
+                position:p.pos, thru: p.r4?'F':(p.r3?'R3 done':p.r2?'R2 done':''),
+                earnings:p.earnings, fedex:p.fedex,
+                r1:p.r1, r2:p.r2, r3:p.r3, r4:p.r4,
+              })),
+              pageNum, totalPages,
+            });
+          }
+        });
+      }
+    }catch(e){console.warn('PGA history fetch error',e);}
+  }
+
+  // Fetch live/current tournament from ESPN
+  if(showLive){
+    try{
+      const r=await fetch(sport.url,{signal:AbortSignal.timeout(6000)});
+      if(r.ok){
+        const data=await r.json();
+        const events=data.events||data.leagues?.[0]?.events||[];
+        const expanded=[];
+        events.forEach(ev=>{
+          const comp=ev.competitions?.[0];
+          if(!comp) return;
+          const competitors=(comp.competitors||[]).map(c=>({
+            name:c.athlete?.displayName||c.team?.displayName||'?',
+            score:c.score||'–',
+            position:c.status?.position||null,
+            thru:c.status?.thru||null,
+          }));
+          if(!competitors.length) return;
+          const isLive = ev.status?.type?.state==='in';
+          const isFinal = ev.status?.type?.state==='post';
+          const chunkSize=8, total=competitors.length, totalPages=Math.ceil(total/chunkSize);
+          for(let i=0;i<total;i+=chunkSize){
+            const chunk=competitors.slice(i,i+chunkSize);
+            const pageNum=Math.floor(i/chunkSize)+1;
+            expanded.push({
+              id:`pga-live-${ev.id}-${pageNum}`,
+              name:totalPages>1?`${ev.name} (${pageNum}/${totalPages})`:ev.name,
+              sportName:sport.name, sportEmoji:sport.emoji, sportColor:sport.color,
+              isLive, isFinal, isScheduled:!isLive&&!isFinal, isIndividual:true,
+              isPGALive:true,
+              teams:chunk, periodDesc:ev.status?.type?.shortDetail||'',
+              pageNum, totalPages,
+            });
+          }
+        });
+        // Live cards go FIRST, before history
+        cards.unshift(...expanded);
+      }
+    }catch(e){console.warn('PGA live fetch error',e);}
+  }
+
+  return cards;
+}
+
 async function fetchNascarData(sport, sbConfig){
   const mc=(sbConfig&&sbConfig.motor_config)||{};
   const showLive=mc.nascar_live!==false,showLast=mc.nascar_last!==false,showStand=mc.nascar_standings!==false;
@@ -5370,6 +5463,20 @@ renderFavSummary();
       // Store scoreboard so fetchSport can pass motor_config to fetchF1Data/fetchNascarData
       _scoreboards=[sb];
       _activeSbId=sb.id;
+      // Apply scoreboard display_config to CSS vars immediately
+      if(sb.display_config){
+        const dc=sb.display_config;
+        const root=document.documentElement;
+        if(dc.card_abbr_size) root.style.setProperty('--card-abbr-size',dc.card_abbr_size+'px');
+        if(dc.card_score_size) root.style.setProperty('--card-score-size',dc.card_score_size+'px');
+        if(dc.card_name_size) root.style.setProperty('--card-name-size',dc.card_name_size+'px');
+        if(dc.card_name_color) root.style.setProperty('--card-name-color',dc.card_name_color);
+        if(dc.logo_size) root.style.setProperty('--team-logo-size',dc.logo_size+'px');
+        state.display.abbrSize=dc.card_abbr_size||state.display.abbrSize;
+        state.display.scoreSize=dc.card_score_size||state.display.scoreSize;
+        state.display.nameSize=dc.card_name_size||state.display.nameSize;
+        state.display.nameColor=dc.card_name_color||state.display.nameColor;
+      }
       // Update topbar title
       const titleEl=document.getElementById('topbarTitle');
       if(titleEl)titleEl.textContent=sb.name||'ScoreStream';
@@ -5557,9 +5664,13 @@ function renderStreamCanvas() {
     const liveUpcoming = regularGames.filter(g => !g.isFinal);
     const finalGames = regularGames.filter(g => g.isFinal);
 
-    // Motor sport cards — each card gets its OWN page (full-screen rotation)
+    // Motor sport cards — max 4 per page, each sport starts a fresh page
     if (motorCards.length > 0) {
-      motorCards.forEach(g => allSections.push({ sport, games: [g], isMotorCard: true }));
+      const maxPerPage = 4;
+      for (let i = 0; i < motorCards.length; i += maxPerPage) {
+        const chunk = motorCards.slice(i, i + maxPerPage);
+        allSections.push({ sport, games: chunk, isMotorCard: true });
+      }
     }
 
     // Show live/upcoming section for regular sports
