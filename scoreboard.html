@@ -3948,8 +3948,16 @@ async function fetchPGAData(sport, sbConfig){
         const parsed = typeof raw==='string'?JSON.parse(raw):raw;
         const tournaments = parsed?.tournaments||[];
         // Sort newest first, completed only (unless in-progress)
+        const pgaMax=(mc&&mc.pga_max_events)||3;
+        const todayStr2=new Date().toISOString().slice(0,10);
         tournaments.sort((a,b)=>b.date.localeCompare(a.date));
+        let pgaShown=0;
         tournaments.forEach(t=>{
+          // Skip future events with no scores yet
+          if(!t.is_complete && t.date > todayStr2 && !(t.players||[]).some(p=>p.r1)) return;
+          // Limit completed tournaments to pgaMax
+          if(t.is_complete && pgaShown>=pgaMax) return;
+          if(t.is_complete) pgaShown++;
           const players = t.players||[];
           const chunkSize=15, total=players.length, totalPages=Math.ceil(total/chunkSize);
           const statusLabel = t.is_complete ? 'FINAL' : 'IN PROGRESS';
