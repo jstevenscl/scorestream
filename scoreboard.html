@@ -5722,19 +5722,27 @@ function renderStreamCanvas() {
     if (motorCards.length > 0) {
       // Group by card type so each type gets its own labeled section
       const typeOrder = ['live','standings','last','next','info','hist'];
-      const byType = {};
+      // Group cards by type — each type and each PGA tournament gets its own section
+      const _byType = {};
       motorCards.forEach(g => {
         let type = 'other';
-        if (g.isLive || g.isNascarLive) type = 'live';
-        else if (g.isNascarStandings || g.isF1Standings) type = 'standings';
-        else if (g.isNascarLast || g.isF1Last) type = 'last';
+        if (g.isNascarStandings || g.isF1Standings) type = 'standings';
+        else if (g.isNascarLast && !g.isLive) type = 'last';
+        else if (g.isF1Last) type = 'last';
         else if (g.isF1Next || g.isNascarInfo) type = 'next';
-        else if (g.isPGAHistory || g.isPGALive) type = 'hist';
-        if (!byType[type]) byType[type] = [];
-        byType[type].push(g);
+        else if (g.isPGAHistory || g.isPGALive) {
+          const baseName = (g.name||'').replace(/ \(\d+\/\d+\)$/,'').split(' (')[0].trim().replace(/\s+/g,'_');
+          type = 'hist__' + (g.tournamentDate||'0000') + '__' + baseName;
+        }
+        else if (g.isLive || g.isNascarLive) type = 'live';
+        if (!_byType[type]) _byType[type] = [];
+        _byType[type].push(g);
       });
-      orderedKeys2.forEach(type => {
-        const group = byType2[type];
+      const _typeOrder = ['live','next','last','standings'];
+      const _histKeys = Object.keys(_byType).filter(k=>k.startsWith('hist__')).sort().reverse();
+      const _orderedKeys = [..._typeOrder.filter(t=>_byType[t]), ..._histKeys, 'other'].filter((t,i,a)=>_byType[t]&&a.indexOf(t)===i);
+      _orderedKeys.forEach(type => {
+        const group = _byType[type];
         if (!group||!group.length) return;
         const sample = group[0];
         const sectionName = getMotorSectionName(sport, sample);
