@@ -48,15 +48,15 @@ jobs:
       - name: Build & Push — API (beta)
         uses: docker/build-push-action@v5
         with:
-          context: ./api
+          context: .
           file: ./api/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:beta
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:beta-${{ steps.sha.outputs.short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
 
       - name: Build & Push — Web/Nginx (beta)
         uses: docker/build-push-action@v5
@@ -68,8 +68,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:beta
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:beta-${{ steps.sha.outputs.short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
 
       - name: Build & Push — Stream Manager (beta)
         uses: docker/build-push-action@v5
@@ -81,8 +81,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta-${{ steps.sha.outputs.short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=stream
+          cache-to: type=gha,mode=max,scope=stream
 
       - name: Summary
         run: |

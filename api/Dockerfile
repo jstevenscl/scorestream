@@ -1,15 +1,23 @@
-﻿FROM python:3.11-slim
+# Build context is repo root (set in beta.yml: context: .)
+# so we can COPY from stream/audio/ into the API image
+
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY api/requirements.txt .
+RUN pip install -r requirements.txt
 
-COPY app.py .
+COPY api/app.py .
 
-EXPOSE 5000
+# ── Built-in royalty-free audio — baked directly into the API image ───────────
+# Copied from stream/audio/ at build time. On startup, app.py copies these
+# into /audio_library (the shared volume) and registers them in the DB.
+# This is the ONLY place these files need to live — no cross-container copying,
+# no runtime downloads, no race conditions.
+COPY stream/audio/*.mp3 /builtin_audio/
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1
+ENV DB_PATH=/config/scorestream.db \
+    AUDIO_DIR=/audio_library
 
-CMD ["python", "-u", "app.py"]
+CMD ["python", "app.py"]

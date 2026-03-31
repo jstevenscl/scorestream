@@ -393,30 +393,41 @@ def init_db():
         
         conn.commit()
 
-    # Ask stream manager to seed built-in audio files into shared volume + DB
-    # Retries for up to 60 seconds waiting for stream manager to be ready
-    try:
-        import threading as _t
-        def _seed_audio():
-            import time as _time, urllib.request as _ur
-            for attempt in range(12):  # retry every 5s for 60s
-                _time.sleep(5)
-                try:
-                    req = _ur.Request(
-                        STREAM_MANAGER_URL + '/seed-audio',
-                        data=b'{}', method='POST',
-                        headers={'Content-Type': 'application/json'}
-                    )
-                    with _ur.urlopen(req, timeout=10) as resp:
-                        result = resp.read().decode()
-                        print(f'[api] seed-audio OK: {result}')
-                        return  # success — stop retrying
-                except Exception as e:
-                    print(f'[api] seed-audio attempt {attempt+1}/12 failed: {e}')
-            print('[api] seed-audio: gave up after 12 attempts')
-        _t.Thread(target=_seed_audio, daemon=True).start()
-    except Exception:
-        pass
+    # Seed built-in audio tracks from /builtin_audio (baked into API image via Dockerfile)
+    # This is simple, reliable, and needs no cross-container communication
+    BUILTIN_AUDIO_SRC = '/builtin_audio'
+    if _os.path.isdir(BUILTIN_AUDIO_SRC):
+        try:
+            import json as _json
+            mp3s = sorted([f for f in _os.listdir(BUILTIN_AUDIO_SRC)
+                           if f.endswith('.mp3') and not f.startswith('loop')])
+            existing_files = {r[0] for r in conn.execute('SELECT filename FROM audio_library').fetchall()}
+            new_ids = []
+            for mp3 in mp3s:
+                src = _os.path.join(BUILTIN_AUDIO_SRC, mp3)
+                dst = _os.path.join(AUDIO_DIR, mp3)
+                if not _os.path.exists(dst):
+                    import shutil as _shutil
+                    _shutil.copy2(src, dst)
+                if mp3 not in existing_files:
+                    display = 'Built-in: ' + mp3.replace('.mp3','').replace('-',' ').replace('_',' ').title()
+                    size = _os.path.getsize(dst)
+                    cur = conn.execute(
+                        'INSERT INTO audio_library(filename,display_name,file_size) VALUES(?,?,?)',
+                        (mp3, display, size))
+                    new_ids.append(cur.lastrowid)
+            if new_ids:
+                gpl = conn.execute("SELECT id,track_ids FROM audio_playlists WHERE is_global=1").fetchone()
+                if gpl:
+                    existing_ids = _json.loads(gpl['track_ids'] or '[]')
+                    all_ids = list(dict.fromkeys(existing_ids + new_ids))
+                    conn.execute("UPDATE audio_playlists SET track_ids=? WHERE id=?",
+                                 (_json.dumps(all_ids), gpl['id']))
+            conn.commit()
+            if new_ids:
+                print(f'[api] Seeded {len(new_ids)} built-in audio tracks into library')
+        except Exception as e:
+            print(f'[api] Built-in audio seed error: {e}')
 
         # Purge motor cache entries older than 30 days — but preserve nascar-2026-season
         try:
@@ -1551,25 +1562,8 @@ def set_config_route():
 # ── Audio Library ────────────────────────────────────────────────────────────
 import os as _os, uuid as _uuid
 
-# Use /audio_library volume (shared with stream container) if mounted, else local fallback
-AUDIO_DIR = '/audio_library' if _os.path.isdir('/audio_library') else _os.path.join(_os.path.dirname(__file__), 'audio_library')
+AUDIO_DIR = _os.environ.get('AUDIO_DIR', '/audio_library')
 _os.makedirs(AUDIO_DIR, exist_ok=True)
-
-@app.route('/audio/seed-builtin', methods=['POST'])
-def audio_seed_builtin():
-    """Proxy to stream manager /seed-audio — can be called manually or on startup."""
-    try:
-        import urllib.request as _ur
-        req = _ur.Request(
-            STREAM_MANAGER_URL + '/seed-audio',
-            data=b'{}', method='POST',
-            headers={'Content-Type': 'application/json'}
-        )
-        with _ur.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode())
-            return jsonify({'ok': True, 'result': result})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
 
 @app.route('/audio/library/register', methods=['POST'])
 def audio_library_register():

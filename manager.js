@@ -156,67 +156,6 @@ function prebakeHLS(slug) {
 
 // ── Audio config ──────────────────────────────────────────────────────────────
 const AUDIO_DIR = process.env.AUDIO_DIR || '/audio';
-const BAKED_AUDIO_DIR = '/audio'; // Kevin MacLeod files baked into stream image
-
-// On startup: copy baked-in tracks into AUDIO_DIR (shared volume) and register in DB
-// This makes them accessible to the API container for the audio library UI
-// Shared audio library volume — API container writes DB entries pointing here
-const SHARED_AUDIO_DIR = '/audio_library';
-
-function seedBuiltinAudio() {
-  // Copy baked-in tracks from /audio into the shared /audio_library volume
-  // so the API container can serve them and register them in the DB
-  if (!fs.existsSync(BAKED_AUDIO_DIR)) {
-    console.log('[manager] seedBuiltinAudio: /audio dir not found, skipping');
-    return;
-  }
-  if (!fs.existsSync(SHARED_AUDIO_DIR)) {
-    console.log('[manager] seedBuiltinAudio: /audio_library not mounted, skipping');
-    return;
-  }
-  try {
-    const mp3s = fs.readdirSync(BAKED_AUDIO_DIR)
-      .filter(f => f.endsWith('.mp3') && !f.startsWith('loop') && !f.startsWith('silent'))
-      .filter(f => { try { return fs.statSync(path.join(BAKED_AUDIO_DIR, f)).size > 10000; } catch(_) { return false; } });
-    if (!mp3s.length) {
-      console.log('[manager] seedBuiltinAudio: no mp3s found in /audio');
-      return;
-    }
-    console.log(`[manager] seedBuiltinAudio: found ${mp3s.length} tracks in /audio`);
-    const db = new Database(DB_PATH, { fileMustExist: true });
-    const existingFiles = new Set(db.prepare('SELECT filename FROM audio_library').all().map(r => r.filename));
-    const newIds = [];
-    for (const mp3 of mp3s) {
-      // Copy to shared volume so API can serve it
-      const dest = path.join(SHARED_AUDIO_DIR, mp3);
-      if (!fs.existsSync(dest)) {
-        fs.copyFileSync(path.join(BAKED_AUDIO_DIR, mp3), dest);
-        console.log(`[manager] Copied ${mp3} to ${SHARED_AUDIO_DIR}`);
-      }
-      // Register in DB if not already there
-      if (!existingFiles.has(mp3)) {
-        const displayName = 'Built-in: ' + mp3.replace('.mp3','').replace(/^\d+-/,'').replace(/-/g,' ').replace(/_/g,' ').replace(/\b\w/g, ch => ch.toUpperCase());
-        const size = fs.statSync(dest).size;
-        const result = db.prepare('INSERT INTO audio_library(filename, display_name, file_size) VALUES(?,?,?)').run(mp3, displayName, size);
-        newIds.push(result.lastInsertRowid);
-        console.log(`[manager] Registered: ${displayName} (id=${result.lastInsertRowid})`);
-      }
-    }
-    if (newIds.length > 0) {
-      const globalPl = db.prepare('SELECT id, track_ids FROM audio_playlists WHERE is_global=1').get();
-      if (globalPl) {
-        const existing = JSON.parse(globalPl.track_ids || '[]');
-        db.prepare('UPDATE audio_playlists SET track_ids=? WHERE id=?')
-          .run(JSON.stringify([...existing, ...newIds]), globalPl.id);
-        console.log(`[manager] Added ${newIds.length} tracks to Default playlist`);
-      }
-    }
-    db.close();
-  } catch(e) {
-    console.warn('[manager] seedBuiltinAudio error:', e.message);
-  }
-}
-seedBuiltinAudio();
 
 function getAudioConfig(slug) {
   try {
@@ -584,56 +523,6 @@ function startHttpServer() {
     }
 
     // POST /reload
-    if (req.method === 'POST' && req.url === '/seed-audio') {
-      let body = '';
-      req.on('data', d => { body += d; });
-      req.on('end', () => {
-        try {
-          if (!fs.existsSync(BAKED_AUDIO_DIR) || !fs.existsSync(SHARED_AUDIO_DIR)) {
-            res.writeHead(200, {'Content-Type':'application/json'});
-            res.end(JSON.stringify({ok:false, reason:'dirs not found'}));
-            return;
-          }
-          const mp3s = fs.readdirSync(BAKED_AUDIO_DIR)
-            .filter(f => f.endsWith('.mp3') && !f.startsWith('loop') && !f.startsWith('silent'))
-            .filter(f => { try { return fs.statSync(path.join(BAKED_AUDIO_DIR,f)).size > 10000; } catch(_){return false;} });
-          const copied = [];
-          const db = new Database(DB_PATH, {fileMustExist:true});
-          const existingFiles = new Set(db.prepare('SELECT filename FROM audio_library').all().map(r=>r.filename));
-          const newIds = [];
-          for (const mp3 of mp3s) {
-            const dest = path.join(SHARED_AUDIO_DIR, mp3);
-            if (!fs.existsSync(dest)) {
-              fs.copyFileSync(path.join(BAKED_AUDIO_DIR, mp3), dest);
-              copied.push(mp3);
-            }
-            if (!existingFiles.has(mp3)) {
-              const display = 'Built-in: ' + mp3.replace('.mp3','').replace(/^\d+-/,'').replace(/-/g,' ').replace(/_/g,' ').replace(/\b\w/g, ch => ch.toUpperCase());
-              const size = fs.statSync(path.join(SHARED_AUDIO_DIR, mp3)).size;
-              const r = db.prepare('INSERT INTO audio_library(filename,display_name,file_size) VALUES(?,?,?)').run(mp3, display, size);
-              newIds.push(r.lastInsertRowid);
-            }
-          }
-          if (newIds.length > 0) {
-            const gpl = db.prepare('SELECT id,track_ids FROM audio_playlists WHERE is_global=1').get();
-            if (gpl) {
-              const existing = JSON.parse(gpl.track_ids||'[]');
-              db.prepare('UPDATE audio_playlists SET track_ids=? WHERE id=?').run(JSON.stringify([...existing,...newIds]), gpl.id);
-            }
-          }
-          db.close();
-          console.log('[manager] /seed-audio: copied=' + copied.length + ' registered=' + newIds.length);
-          res.writeHead(200, {'Content-Type':'application/json'});
-          res.end(JSON.stringify({ok:true, copied, registered:newIds}));
-        } catch(e) {
-          console.error('[manager] /seed-audio error:', e.message);
-          res.writeHead(500, {'Content-Type':'application/json'});
-          res.end(JSON.stringify({ok:false, error:e.message}));
-        }
-      });
-      return;
-    }
-
     if (req.method === 'POST' && req.url === '/reload') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));
