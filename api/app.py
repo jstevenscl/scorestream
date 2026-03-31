@@ -1531,6 +1531,30 @@ import os as _os, uuid as _uuid
 AUDIO_DIR = _os.path.join(_os.path.dirname(__file__), 'audio_library')
 _os.makedirs(AUDIO_DIR, exist_ok=True)
 
+@app.route('/audio/library/register', methods=['POST'])
+def audio_library_register():
+    """Register a file already in AUDIO_DIR into the library (no upload needed)."""
+    try:
+        b = request.get_json(force=True) or {}
+        filename = b.get('filename','').strip()
+        display_name = b.get('display_name', filename).strip()
+        if not filename:
+            return jsonify({'error':'filename required'}), 400
+        full_path = _os.path.join(AUDIO_DIR, filename)
+        if not _os.path.exists(full_path):
+            return jsonify({'error':f'File not found in audio library: {filename}'}), 404
+        file_size = _os.path.getsize(full_path)
+        with get_db() as conn:
+            existing = conn.execute('SELECT id FROM audio_library WHERE filename=?',(filename,)).fetchone()
+            if existing:
+                return jsonify({'ok':True,'id':existing['id'],'status':'already_registered'})
+            cur = conn.execute('INSERT INTO audio_library(filename,display_name,file_size) VALUES(?,?,?)',
+                               (filename, display_name, file_size))
+            conn.commit()
+            return jsonify({'ok':True,'id':cur.lastrowid,'status':'registered'})
+    except Exception as e:
+        return jsonify({'error':str(e)}),500
+
 @app.route('/audio/library', methods=['GET'])
 def audio_library_list():
     try:
