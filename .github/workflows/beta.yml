@@ -83,6 +83,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta-${{ steps.sha.outputs.short }}
           cache-from: type=gha,scope=stream
           cache-to: type=gha,mode=max,scope=stream
+          build-args: |
+            CACHEBUST=${{ github.sha }}
 
       - name: Summary
         run: |

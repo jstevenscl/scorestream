@@ -36,6 +36,9 @@ WORKDIR /app
 COPY package.json .
 RUN npm install --omit=dev
 
+ARG CACHEBUST=1
+RUN echo "Cache bust: $CACHEBUST"
+
 COPY manager.js .
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
