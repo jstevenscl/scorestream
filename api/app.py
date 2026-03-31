@@ -1534,17 +1534,18 @@ _os.makedirs(AUDIO_DIR, exist_ok=True)
 
 @app.route('/audio/library/register', methods=['POST'])
 def audio_library_register():
-    """Register a file already in AUDIO_DIR into the library (no upload needed)."""
+    """Register a file into the library. Use force=true to skip file existence check (for built-in tracks)."""
     try:
         b = request.get_json(force=True) or {}
         filename = b.get('filename','').strip()
         display_name = b.get('display_name', filename).strip()
+        force = b.get('force', False)
         if not filename:
             return jsonify({'error':'filename required'}), 400
         full_path = _os.path.join(AUDIO_DIR, filename)
-        if not _os.path.exists(full_path):
+        if not force and not _os.path.exists(full_path):
             return jsonify({'error':f'File not found in audio library: {filename}'}), 404
-        file_size = _os.path.getsize(full_path)
+        file_size = _os.path.getsize(full_path) if _os.path.exists(full_path) else 0
         with get_db() as conn:
             existing = conn.execute('SELECT id FROM audio_library WHERE filename=?',(filename,)).fetchone()
             if existing:
