@@ -156,6 +156,49 @@ function prebakeHLS(slug) {
 
 // ── Audio config ──────────────────────────────────────────────────────────────
 const AUDIO_DIR = process.env.AUDIO_DIR || '/audio';
+const BAKED_AUDIO_DIR = '/audio'; // Kevin MacLeod files baked into stream image
+
+// On startup: copy baked-in tracks into AUDIO_DIR (shared volume) and register in DB
+// This makes them accessible to the API container for the audio library UI
+function seedBuiltinAudio() {
+  if (!fs.existsSync(BAKED_AUDIO_DIR)) return;
+  if (AUDIO_DIR === BAKED_AUDIO_DIR) return; // same dir, nothing to do
+  try {
+    const mp3s = fs.readdirSync(BAKED_AUDIO_DIR)
+      .filter(f => f.endsWith('.mp3') && !f.startsWith('loop') && !f.startsWith('silent'))
+      .filter(f => { try { return fs.statSync(path.join(BAKED_AUDIO_DIR, f)).size > 10000; } catch(_) { return false; } });
+    if (!mp3s.length) return;
+    const db = new Database(DB_PATH, { fileMustExist: true });
+    const existingFiles = new Set(db.prepare('SELECT filename FROM audio_library').all().map(r => r.filename));
+    const newIds = [];
+    for (const mp3 of mp3s) {
+      const dest = path.join(AUDIO_DIR, mp3);
+      if (!fs.existsSync(dest)) {
+        fs.copyFileSync(path.join(BAKED_AUDIO_DIR, mp3), dest);
+      }
+      if (!existingFiles.has(mp3)) {
+        const displayName = 'Built-in: ' + mp3.replace('.mp3','').replace(/^\d+-/,'').replace(/-/g,' ').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+        const size = fs.statSync(dest).size;
+        const result = db.prepare('INSERT INTO audio_library(filename, display_name, file_size) VALUES(?,?,?)').run(mp3, displayName, size);
+        newIds.push(result.lastInsertRowid);
+        console.log(`[manager] Registered built-in track: ${displayName}`);
+      }
+    }
+    if (newIds.length > 0) {
+      const globalPl = db.prepare('SELECT id, track_ids FROM audio_playlists WHERE is_global=1').get();
+      if (globalPl) {
+        const existing = JSON.parse(globalPl.track_ids || '[]');
+        db.prepare('UPDATE audio_playlists SET track_ids=? WHERE id=?')
+          .run(JSON.stringify([...existing, ...newIds]), globalPl.id);
+        console.log(`[manager] Added ${newIds.length} built-in tracks to Default playlist`);
+      }
+    }
+    db.close();
+  } catch(e) {
+    console.warn('[manager] seedBuiltinAudio error:', e.message);
+  }
+}
+seedBuiltinAudio();
 
 function getAudioConfig(slug) {
   try {
