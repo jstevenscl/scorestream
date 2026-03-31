@@ -584,6 +584,56 @@ function startHttpServer() {
     }
 
     // POST /reload
+    if (req.method === 'POST' && req.url === '/seed-audio') {
+      let body = '';
+      req.on('data', d => { body += d; });
+      req.on('end', () => {
+        try {
+          if (!fs.existsSync(BAKED_AUDIO_DIR) || !fs.existsSync(SHARED_AUDIO_DIR)) {
+            res.writeHead(200, {'Content-Type':'application/json'});
+            res.end(JSON.stringify({ok:false, reason:'dirs not found'}));
+            return;
+          }
+          const mp3s = fs.readdirSync(BAKED_AUDIO_DIR)
+            .filter(f => f.endsWith('.mp3') && !f.startsWith('loop') && !f.startsWith('silent'))
+            .filter(f => { try { return fs.statSync(path.join(BAKED_AUDIO_DIR,f)).size > 10000; } catch(_){return false;} });
+          const copied = [];
+          const db = new Database(DB_PATH, {fileMustExist:true});
+          const existingFiles = new Set(db.prepare('SELECT filename FROM audio_library').all().map(r=>r.filename));
+          const newIds = [];
+          for (const mp3 of mp3s) {
+            const dest = path.join(SHARED_AUDIO_DIR, mp3);
+            if (!fs.existsSync(dest)) {
+              fs.copyFileSync(path.join(BAKED_AUDIO_DIR, mp3), dest);
+              copied.push(mp3);
+            }
+            if (!existingFiles.has(mp3)) {
+              const display = 'Built-in: ' + mp3.replace('.mp3','').replace(/^\d+-/,'').replace(/-/g,' ').replace(/_/g,' ').replace(/\b\w/g, ch => ch.toUpperCase());
+              const size = fs.statSync(path.join(SHARED_AUDIO_DIR, mp3)).size;
+              const r = db.prepare('INSERT INTO audio_library(filename,display_name,file_size) VALUES(?,?,?)').run(mp3, display, size);
+              newIds.push(r.lastInsertRowid);
+            }
+          }
+          if (newIds.length > 0) {
+            const gpl = db.prepare('SELECT id,track_ids FROM audio_playlists WHERE is_global=1').get();
+            if (gpl) {
+              const existing = JSON.parse(gpl.track_ids||'[]');
+              db.prepare('UPDATE audio_playlists SET track_ids=? WHERE id=?').run(JSON.stringify([...existing,...newIds]), gpl.id);
+            }
+          }
+          db.close();
+          console.log('[manager] /seed-audio: copied=' + copied.length + ' registered=' + newIds.length);
+          res.writeHead(200, {'Content-Type':'application/json'});
+          res.end(JSON.stringify({ok:true, copied, registered:newIds}));
+        } catch(e) {
+          console.error('[manager] /seed-audio error:', e.message);
+          res.writeHead(500, {'Content-Type':'application/json'});
+          res.end(JSON.stringify({ok:false, error:e.message}));
+        }
+      });
+      return;
+    }
+
     if (req.method === 'POST' && req.url === '/reload') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));

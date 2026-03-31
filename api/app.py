@@ -391,9 +391,30 @@ def init_db():
             )
             conn.commit()
         
-        # Built-in audio tracks are seeded by the stream container (manager.js seedBuiltinAudio)
-        # which copies Kevin MacLeod files into the shared audio_library volume and registers them in DB
         conn.commit()
+
+    # Ask stream manager to seed built-in audio files into shared volume + DB
+    # This runs on every API startup — idempotent, skips already-registered files
+    try:
+        import threading as _t
+        def _seed_audio():
+            import time as _time
+            _time.sleep(3)  # wait for stream manager to be ready
+            try:
+                import urllib.request as _ur
+                req = _ur.Request(
+                    STREAM_MANAGER_URL + '/seed-audio',
+                    data=b'{}', method='POST',
+                    headers={'Content-Type': 'application/json'}
+                )
+                with _ur.urlopen(req, timeout=10) as resp:
+                    result = resp.read()
+                    print(f'[api] seed-audio result: {result.decode()}')
+            except Exception as e:
+                print(f'[api] seed-audio call failed (stream may not be ready): {e}')
+        _t.Thread(target=_seed_audio, daemon=True).start()
+    except Exception:
+        pass
 
         # Purge motor cache entries older than 30 days — but preserve nascar-2026-season
         try:
