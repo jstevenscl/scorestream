@@ -5721,25 +5721,11 @@ function renderStreamCanvas() {
         if (!byType[type]) byType[type] = [];
         byType[type].push(g);
       });
-      typeOrder.concat(['other']).forEach(type => {
-        if (!byType[type]) return;
-        const group = byType[type];
-        // Build a descriptive section name
-        let sectionName = sport.name;
+      orderedKeys2.forEach(type => {
+        const group = byType2[type];
+        if (!group||!group.length) return;
         const sample = group[0];
-        if (type === 'live') sectionName = `${sport.name} — Live`;
-        else if (type === 'standings') sectionName = `${sport.name} — Driver Standings`;
-        else if (type === 'last') {
-          const raceName = sample.name?.split(' (')[0]?.replace(/ Result$/,'') || 'Last Race';
-          const raceDate = sample.raceDate || '';
-          sectionName = `${sport.name} — ${raceName}${raceDate?' · '+raceDate:''}`;
-        }
-        else if (type === 'next') sectionName = `${sport.name} — Upcoming`;
-        else if (type === 'hist') {
-          const tName = sample.name?.split(' (')[0] || 'Tournament';
-          const status = sample.isComplete ? 'Final' : 'In Progress';
-          sectionName = `${sport.name} — ${tName} (${status})`;
-        }
+        const sectionName = getMotorSectionName(sport, sample);
         const maxPerPage = 4;
         for (let i = 0; i < group.length; i += maxPerPage) {
           const chunk = group.slice(i, i + maxPerPage);
