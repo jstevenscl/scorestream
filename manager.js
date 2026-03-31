@@ -170,9 +170,14 @@ function getAudioConfig(slug) {
     }
     // If playlist mode, resolve track filenames from audio_playlists + audio_library tables
     let tracks = [];
-    if ((row.audio_mode || 'none') === 'playlist' && row.audio_playlist_id) {
+    // If no specific playlist assigned, try the global default playlist
+    const playlistId = row.audio_playlist_id || (() => {
+      const globalPl = db.prepare("SELECT id FROM audio_playlists WHERE is_global=1 LIMIT 1").get();
+      return globalPl ? globalPl.id : null;
+    })();
+    if ((row.audio_mode || 'none') === 'playlist' && playlistId) {
       try {
-        const playlist = db.prepare("SELECT track_ids FROM audio_playlists WHERE id = ?").get(row.audio_playlist_id);
+        const playlist = db.prepare("SELECT track_ids FROM audio_playlists WHERE id = ?").get(playlistId);
         if (playlist && playlist.track_ids) {
           const ids = JSON.parse(playlist.track_ids || '[]');
           if (ids.length > 0) {
@@ -224,15 +229,14 @@ function startFfmpeg(slug) {
     });
 
     if (validTracks.length > 0) {
-      // Write ffmpeg concat file repeated 500x for hours of audio without loop issues
+      // Write ffmpeg concat file with tracks repeated 200x (~hours of audio)
+      // NOTE: -stream_loop does NOT work with concat demuxer — must repeat in file
       const concatPath = path.join(AUDIO_DIR, `loop_${slug}.txt`);
-      // Write single pass — -stream_loop -1 on the concat input handles infinite looping
       const singlePass = validTracks.map(f => `file '${f}'`).join('\n') + '\n';
-      fs.writeFileSync(concatPath, singlePass);
+      fs.writeFileSync(concatPath, singlePass.repeat(200));
       audioInput = concatPath;
-      // -stream_loop -1 before concat input = loops the entire playlist infinitely
-      args.push('-stream_loop', '-1', '-f', 'concat', '-safe', '0', '-i', audioInput);
-      console.log(`[manager][${slug}] Audio: ${validTracks.length} tracks: ${validTracks.map(f=>f.split('/').pop()).join(', ')}`);
+      args.push('-f', 'concat', '-safe', '0', '-i', audioInput);
+      console.log(`[manager][${slug}] Audio: ${validTracks.length} tracks (x200): ${validTracks.map(f=>f.split('/').pop()).join(', ')}`);
     } else {
       // Fallback: use baked-in /audio directory (Kevin MacLeod CC-BY tracks)
       const DEFAULT_AUDIO_DIR = '/audio';
@@ -242,13 +246,14 @@ function startFfmpeg(slug) {
           .filter(f => { try { return fs.statSync(path.join(DEFAULT_AUDIO_DIR, f)).size > 1000; } catch(_) { return false; } })
           .sort();
         if (mp3s.length > 0) {
-          // Build concat file from all default tracks for proper cycling
+          // Build concat file with all default tracks repeated 200x — loop via file repetition
+          // NOTE: -stream_loop does NOT work with concat demuxer
           const concatPath = path.join(DEFAULT_AUDIO_DIR, `loop_default.txt`);
-          const entries = mp3s.map(f => `file '${path.join(DEFAULT_AUDIO_DIR, f)}'`).join('\n') + '\n';
-          fs.writeFileSync(concatPath, entries);
+          const singleEntry = mp3s.map(f => `file '${path.join(DEFAULT_AUDIO_DIR, f)}'`).join('\n') + '\n';
+          fs.writeFileSync(concatPath, singleEntry.repeat(200));
           audioInput = concatPath;
-          args.push('-stream_loop', '-1', '-f', 'concat', '-safe', '0', '-i', audioInput);
-          console.log(`[manager][${slug}] Audio: default tracks from ${DEFAULT_AUDIO_DIR}: ${mp3s.join(', ')}`);
+          args.push('-f', 'concat', '-safe', '0', '-i', audioInput);
+          console.log(`[manager][${slug}] Audio: default tracks (x200) from ${DEFAULT_AUDIO_DIR}: ${mp3s.join(', ')}`);
         }
       } catch(e) {
         console.warn(`[manager][${slug}] No fallback audio found`);

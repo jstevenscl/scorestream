@@ -390,6 +390,41 @@ def init_db():
                 ('Default (Built-in)', 1, '[]', 0)
             )
             conn.commit()
+        
+        # Register baked-in /audio tracks in the library if not already there
+        # These are the Kevin MacLeod CC-BY royalty-free songs from the Dockerfile
+        import os as _scan_os
+        BAKED_AUDIO_DIR = '/audio'
+        if _scan_os.path.isdir(BAKED_AUDIO_DIR):
+            existing_files = {r['filename'] for r in conn.execute('SELECT filename FROM audio_library').fetchall()}
+            baked_mp3s = sorted([f for f in _scan_os.listdir(BAKED_AUDIO_DIR) if f.endswith('.mp3') and not f.startswith('loop')])
+            new_track_ids = []
+            for mp3 in baked_mp3s:
+                if mp3 not in existing_files:
+                    full_path = _scan_os.path.join(BAKED_AUDIO_DIR, mp3)
+                    try:
+                        size = _scan_os.path.getsize(full_path)
+                        if size < 1000:
+                            continue
+                        # Display name: clean up filename
+                        display = mp3.replace('.mp3','').replace('-',' ').replace('_',' ').title()
+                        cur = conn.execute(
+                            'INSERT INTO audio_library(filename, display_name, file_size) VALUES(?,?,?)',
+                            (mp3, f'Built-in: {display}', size)
+                        )
+                        new_track_ids.append(cur.lastrowid)
+                    except Exception:
+                        pass
+            # Add newly registered tracks to the Default global playlist
+            if new_track_ids:
+                global_pl = conn.execute("SELECT id, track_ids FROM audio_playlists WHERE is_global=1").fetchone()
+                if global_pl:
+                    import json as _jscan
+                    existing_ids = _jscan.loads(global_pl['track_ids'] or '[]')
+                    all_ids = existing_ids + new_track_ids
+                    conn.execute("UPDATE audio_playlists SET track_ids=? WHERE id=?",
+                                 (_jscan.dumps(all_ids), global_pl['id']))
+            conn.commit()
 
         # Purge motor cache entries older than 30 days — but preserve nascar-2026-season
         try:
