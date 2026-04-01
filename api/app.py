@@ -437,17 +437,21 @@ def init_db():
             rg = http.get(GITHUB_RAW, timeout=10)
             if rg.ok:
                 gdata = rg.json()
+                updated_count = 0
                 for key, value in gdata.items():
-                    existing = conn.execute("SELECT updated_at FROM motor_cache WHERE key=?", (key,)).fetchone()
-                    # Only update if GitHub data is newer or key doesn't exist
+                    existing = conn.execute("SELECT data, updated_at FROM motor_cache WHERE key=?", (key,)).fetchone()
                     gh_updated = value.get('_updated', '2000-01-01')
-                    if not existing or gh_updated > existing['updated_at'][:10]:
-                        conn.execute(
-                            "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
-                            (key, _jg.dumps(value.get('data', value)), gh_updated + ' 00:00:00')
-                        )
+                    new_data = _jg.dumps(value.get('data', value))
+                    # Update if key doesn't exist, GitHub data is newer, or content differs
+                    if not existing or gh_updated >= existing['updated_at'][:10]:
+                        if not existing or existing['data'] != new_data:
+                            conn.execute(
+                                "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
+                                (key, new_data, gh_updated + ' 00:00:00')
+                            )
+                            updated_count += 1
                 conn.commit()
-                print(f'[api] Seeded {len(gdata)} motor cache keys from GitHub')
+                print(f'[api] GitHub motor cache: {updated_count}/{len(gdata)} keys updated')
         except Exception as e:
             print(f'[api] GitHub motor cache seed error: {e}')
 
