@@ -1918,7 +1918,7 @@ if __name__ == '__main__':
             vehicles = sorted(live.get('vehicles', []), key=lambda x: x.get('running_position', 99))
             drivers = [{
                 'pos': v.get('running_position'),
-                'car': '#' + str(v.get('vehicle_number', '?')),
+                'car': '#' + str(v.get('vehicle_number', '?')).lstrip('#'),
                 'driver': (v.get('driver', {}).get('full_name') or
                            (v.get('driver', {}).get('first_name','') + ' ' +
                             v.get('driver', {}).get('last_name','')).strip()),
@@ -1961,7 +1961,7 @@ if __name__ == '__main__':
                             'driver': (e.get('driver_name') or e.get('driver', {}).get('full_name') or
                                        (e.get('driver', {}).get('first_name','') + ' ' +
                                         e.get('driver', {}).get('last_name','')).strip() or 'Unknown'),
-                            'car': '#' + str(e.get('car_number', '?')),
+                            'car': '#' + str(e.get('car_number', '?')).lstrip('#'),
                             'manufacturer': e.get('manufacturer', ''),
                             'points': e.get('points', 0),
                             'wins': e.get('wins', 0),
