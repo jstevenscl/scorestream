@@ -1465,6 +1465,7 @@ function openSbEditor(id){
     sport_config: Object.assign({}, sb.sport_config||{}),
     team_config: (sb.team_config && !Array.isArray(sb.team_config)) ? JSON.parse(JSON.stringify(sb.team_config)) : {},
     display_config: Object.assign({}, sb.display_config||{}),
+    motor_config: Object.assign({}, sb.motor_config||{}),
     audio_mode: sb.audio_mode || 'none',
     audio_source_url: sb.audio_source_url || '',
     audio_playlist_id: sb.audio_playlist_id || null
