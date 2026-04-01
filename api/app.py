@@ -429,6 +429,46 @@ def init_db():
         except Exception as e:
             print(f'[api] Built-in audio seed error: {e}')
 
+        # Seed motor cache from GitHub raw data file (auto-updated weekly by GitHub Actions)
+        # This ensures every fresh install has current race/tournament data
+        try:
+            import json as _jg
+            GITHUB_RAW = 'https://raw.githubusercontent.com/jstevenscl/scorestream-pro/dev/api/data/motor_cache.json'
+            rg = http.get(GITHUB_RAW, timeout=10)
+            if rg.ok:
+                gdata = rg.json()
+                for key, value in gdata.items():
+                    existing = conn.execute("SELECT updated_at FROM motor_cache WHERE key=?", (key,)).fetchone()
+                    # Only update if GitHub data is newer or key doesn't exist
+                    gh_updated = value.get('_updated', '2000-01-01')
+                    if not existing or gh_updated > existing['updated_at'][:10]:
+                        conn.execute(
+                            "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
+                            (key, _jg.dumps(value.get('data', value)), gh_updated + ' 00:00:00')
+                        )
+                conn.commit()
+                print(f'[api] Seeded {len(gdata)} motor cache keys from GitHub')
+        except Exception as e:
+            print(f'[api] GitHub motor cache seed error: {e}')
+
+        # Seed nascar-history from nascar-last if history doesn't exist yet
+        try:
+            import json as _jh
+            hist = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-history'").fetchone()
+            if not hist:
+                last = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-last'").fetchone()
+                if last:
+                    ld = _jh.loads(last['data'])
+                    if isinstance(ld, str): ld = _jh.loads(ld)
+                    if ld.get('drivers'):
+                        hist_data = {'races': [ld], 'updated': ld.get('race_date','2026-01-01')}
+                        conn.execute("INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,datetime('now'))",
+                                     ('nascar-history', _jh.dumps(hist_data)))
+                        conn.commit()
+                        print('[api] Seeded nascar-history from nascar-last')
+        except Exception as e:
+            print(f'[api] nascar-history seed error: {e}')
+
         # Validate audio library on every startup:
         # 1. Mark tracks whose files are missing from disk (file_size=0)
         # 2. Remove ghost track IDs from playlists (IDs that no longer exist in library)
