@@ -1876,5 +1876,192 @@ def motor_nascar_fetch():
 
 if __name__ == '__main__':
     init_db()
+
+    # ── Background motor sport data refresh ──────────────────────────────────
+    def _refresh_motor_data():
+        """Fetch NASCAR and PGA data from live APIs and store in motor_cache.
+        Runs once on startup then every 6 hours automatically."""
+        import time as _time
+        _time.sleep(10)  # Wait for DB to be fully ready
+        while True:
+            try:
+                _auto_refresh_nascar()
+            except Exception as e:
+                log.warning(f'[auto] NASCAR refresh error: {e}')
+            try:
+                _auto_refresh_pga()
+            except Exception as e:
+                log.warning(f'[auto] PGA refresh error: {e}')
+            _time.sleep(6 * 3600)  # Refresh every 6 hours
+
+    def _auto_refresh_nascar():
+        """Fetch NASCAR standings and last race from NASCAR APIs."""
+        import json as _j
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/json',
+            'Referer': 'https://www.nascar.com/',
+            'Origin': 'https://www.nascar.com',
+        }
+        # Live feed for current race state
+        try:
+            r = http.get('https://cf.nascar.com/live/feeds/live-feed.json', headers=headers, timeout=10)
+            if not r.ok: return
+            live = r.json()
+            series_id = live.get('series_id', 0)
+            flag_state = live.get('flag_state', 0)
+            run_type = live.get('run_type', 0)
+            run_name = live.get('run_name', '')
+            if series_id != 1 or not run_name: return  # Only Cup Series
+
+            # Build last race cache from live feed vehicles
+            vehicles = sorted(live.get('vehicles', []), key=lambda x: x.get('running_position', 99))
+            drivers = [{
+                'pos': v.get('running_position'),
+                'car': '#' + str(v.get('vehicle_number', '?')),
+                'driver': (v.get('driver', {}).get('full_name') or
+                           (v.get('driver', {}).get('first_name','') + ' ' +
+                            v.get('driver', {}).get('last_name','')).strip()),
+                'manufacturer': v.get('vehicle_manufacturer', ''),
+                'laps': v.get('laps_completed', 0),
+                'status': v.get('status', 'Running'),
+                'delta': v.get('delta'),
+            } for v in vehicles if v.get('running_position')]
+
+            if drivers:
+                from datetime import date as _date
+                last_data = {
+                    'run_name': run_name,
+                    'track_name': live.get('track_name', ''),
+                    'race_date': str(_date.today()),
+                    'flag_state': flag_state,
+                    'laps_in_race': live.get('laps_in_race', 0),
+                    'series_id': series_id,
+                    'drivers': drivers,
+                }
+                with get_db() as conn:
+                    conn.execute(
+                        "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,datetime('now'))",
+                        ('nascar-last', _j.dumps(last_data))
+                    )
+                log.info(f'[auto] NASCAR last race updated: {run_name} ({len(drivers)} drivers)')
+
+            # Standings
+            for url in [
+                'https://cf.nascar.com/cacher/2026/1/standings/driver-standings.json',
+                'https://cf.nascar.com/cacher/2025/1/standings/driver-standings.json',
+            ]:
+                try:
+                    rs = http.get(url, headers=headers, timeout=10)
+                    if rs.ok:
+                        raw = rs.json()
+                        entries = raw if isinstance(raw, list) else raw.get('response', [])
+                        standings = [{
+                            'pos': e.get('points_position') or e.get('rank') or (i+1),
+                            'driver': (e.get('driver_name') or e.get('driver', {}).get('full_name') or
+                                       (e.get('driver', {}).get('first_name','') + ' ' +
+                                        e.get('driver', {}).get('last_name','')).strip() or 'Unknown'),
+                            'car': '#' + str(e.get('car_number', '?')),
+                            'manufacturer': e.get('manufacturer', ''),
+                            'points': e.get('points', 0),
+                            'wins': e.get('wins', 0),
+                            'races': e.get('races', 0),
+                        } for i, e in enumerate(entries[:30])]
+                        if standings:
+                            with get_db() as conn:
+                                existing = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-2026-season'").fetchone()
+                                ex_data = _j.loads(existing['data']) if existing else {}
+                                ex_data['standings'] = standings
+                                ex_data['updated'] = str(_date.today())
+                                conn.execute(
+                                    "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,datetime('now'))",
+                                    ('nascar-2026-season', _j.dumps(ex_data))
+                                )
+                            log.info(f'[auto] NASCAR standings updated: {len(standings)} drivers')
+                        break
+                except Exception:
+                    continue
+        except Exception as e:
+            log.warning(f'[auto] NASCAR live feed error: {e}')
+
+    def _auto_refresh_pga():
+        """Fetch PGA Tour data from ESPN API and store in motor_cache."""
+        import json as _j
+        from datetime import date as _date, timedelta as _td
+        # ESPN golf scoreboard API - gets current/recent tournament
+        espn_urls = [
+            'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',
+            'https://site.web.api.espn.com/apis/v2/scoreboard/header?sport=golf&league=pga',
+        ]
+        try:
+            r = http.get(espn_urls[0], timeout=10)
+            if not r.ok: return
+            data = r.json()
+            events = data.get('events', [])
+            if not events: return
+
+            with get_db() as conn:
+                existing = conn.execute("SELECT data FROM motor_cache WHERE key='pga-2026-tournaments'").fetchone()
+                ex = _j.loads(existing['data']) if existing else {'tournaments': []}
+                tournaments = ex.get('tournaments', [])
+
+            for event in events:
+                name = event.get('name', '')
+                date_str = (event.get('date') or '')[:10]
+                status_type = event.get('status', {}).get('type', {})
+                is_complete = status_type.get('completed', False)
+                is_live = status_type.get('name') in ('in', 'STATUS_IN_PROGRESS')
+
+                # Get competitors/leaderboard
+                competitors = []
+                for comp in (event.get('competitions', [{}])[0].get('competitors', []) if event.get('competitions') else []):
+                    athlete = comp.get('athlete', {})
+                    stats = {s.get('name',''):s.get('displayValue','') for s in comp.get('statistics', [])}
+                    competitors.append({
+                        'pos': comp.get('status', {}).get('position', {}).get('displayName', ''),
+                        'name': athlete.get('displayName', ''),
+                        'score': stats.get('scoreToPar', comp.get('score', '')),
+                        'r1': stats.get('round1', ''),
+                        'r2': stats.get('round2', ''),
+                        'r3': stats.get('round3', ''),
+                        'r4': stats.get('round4', ''),
+                        'total': stats.get('totalScore', ''),
+                    })
+
+                winner = competitors[0]['name'] if is_complete and competitors else None
+                winner_score = competitors[0]['score'] if is_complete and competitors else None
+
+                # Update or insert tournament
+                existing_t = next((t for t in tournaments if t['name'] == name or t['date'][:10] == date_str[:10]), None)
+                if existing_t:
+                    existing_t['is_complete'] = is_complete
+                    existing_t['is_live'] = is_live
+                    if winner: existing_t['winner'] = winner
+                    if winner_score: existing_t['winner_score'] = winner_score
+                    if competitors: existing_t['players'] = competitors
+                else:
+                    tournaments.append({
+                        'name': name,
+                        'date': date_str,
+                        'is_complete': is_complete,
+                        'is_live': is_live,
+                        'winner': winner,
+                        'winner_score': winner_score,
+                        'players': competitors,
+                    })
+
+            with get_db() as conn:
+                conn.execute(
+                    "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,datetime('now'))",
+                    ('pga-2026-tournaments', _j.dumps({'tournaments': tournaments, 'updated': str(_date.today())}))
+                )
+            log.info(f'[auto] PGA updated: {len(events)} events from ESPN')
+        except Exception as e:
+            log.warning(f'[auto] PGA ESPN error: {e}')
+
+    _t = threading.Thread(target=_refresh_motor_data, daemon=True)
+    _t.start()
+    log.info('[auto] Motor sport background refresh started (NASCAR + PGA every 6h)')
+
     log.info('ScoreStream API starting on :5000')
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
