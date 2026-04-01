@@ -4066,8 +4066,22 @@ async function fetchPGAData(sport, sbConfig){
             thru:c.status?.thru||null,
           }));
           if(!competitors.length) return;
+          const hasScores = competitors.some(p=>p.r1&&p.r1!==''&&p.r1!=='-'&&p.r1!=='0');
           const isLive = ev.status?.type?.state==='in';
           const isFinal = ev.status?.type?.state==='post';
+          // Show upcoming as single info card if no scores yet
+          if(!hasScores && !isLive && !isFinal){
+            expanded.push({
+              id:`pga-upcoming-${ev.id}`,
+              name: ev.name||'Upcoming Tournament',
+              sportName:sport.name, sportEmoji:sport.emoji, sportColor:sport.color,
+              isPGAHistory:true, isPGALive:false,
+              isComplete:false, isLive:false,
+              tournamentDate: (ev.date||'').slice(0,10),
+              players:[], pageNum:1, totalPages:1,
+            });
+            return;
+          }
           const chunkSize=15, total=competitors.length, totalPages=Math.ceil(total/chunkSize);
           for(let i=0;i<total;i+=chunkSize){
             const chunk=competitors.slice(i,i+chunkSize);
