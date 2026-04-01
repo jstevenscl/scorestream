@@ -3905,7 +3905,12 @@ function setMotorConfig(key,val){
     fetch(`${API_BASE}/scoreboards/${sbId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({motor_config:window._editorDraft.motor_config})
     }).then(r=>r.json()).then(d=>{
-      if(d.ok){const sb=_scoreboards.find(s=>s.id===sbId);if(sb)sb.motor_config=Object.assign({},window._editorDraft.motor_config);}
+      // Update local scoreboard object with saved motor_config
+      const sb=_scoreboards.find(s=>s.id===sbId);
+      if(sb) sb.motor_config=Object.assign({},window._editorDraft.motor_config);
+      // Re-render motor settings UI to update button highlights
+      const motorEl=document.getElementById('sbMotorSettings');
+      if(motorEl&&typeof buildMotorSettingsHTML==='function') motorEl.innerHTML=buildMotorSettingsHTML();
     }).catch(()=>{});
   }
 }
