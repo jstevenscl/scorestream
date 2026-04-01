@@ -429,31 +429,31 @@ def init_db():
         except Exception as e:
             print(f'[api] Built-in audio seed error: {e}')
 
-        # Seed motor cache from GitHub raw data file (auto-updated weekly by GitHub Actions)
-        # This ensures every fresh install has current race/tournament data
+        # Seed motor cache from GitHub data branch (auto-updated by GitHub Actions)
+        # Fetches from dedicated data branch — never conflicts with code pushes to dev/beta/latest
         try:
             import json as _jg
-            GITHUB_RAW = 'https://raw.githubusercontent.com/jstevenscl/scorestream-pro/dev/api/data/motor_cache.json'
-            rg = http.get(GITHUB_RAW, timeout=10)
+            DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream-pro/data/motor_cache.json'
+            rg = http.get(DATA_URL, timeout=15)
             if rg.ok:
                 gdata = rg.json()
                 updated_count = 0
                 for key, value in gdata.items():
-                    existing = conn.execute("SELECT data, updated_at FROM motor_cache WHERE key=?", (key,)).fetchone()
-                    gh_updated = value.get('_updated', '2000-01-01')
+                    existing = conn.execute("SELECT data FROM motor_cache WHERE key=?", (key,)).fetchone()
                     new_data = _jg.dumps(value.get('data', value))
-                    # Update if key doesn't exist, GitHub data is newer, or content differs
-                    if not existing or gh_updated >= existing['updated_at'][:10]:
-                        if not existing or existing['data'] != new_data:
-                            conn.execute(
-                                "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
-                                (key, new_data, gh_updated + ' 00:00:00')
-                            )
-                            updated_count += 1
+                    if not existing or existing['data'] != new_data:
+                        gh_updated = value.get('_updated', '2026-01-01')
+                        conn.execute(
+                            "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
+                            (key, new_data, gh_updated + ' 00:00:00')
+                        )
+                        updated_count += 1
                 conn.commit()
-                print(f'[api] GitHub motor cache: {updated_count}/{len(gdata)} keys updated')
+                print(f'[api] Motor cache seeded from data branch: {updated_count}/{len(gdata)} keys updated')
+            else:
+                print(f'[api] Motor cache fetch failed: {rg.status_code}')
         except Exception as e:
-            print(f'[api] GitHub motor cache seed error: {e}')
+            print(f'[api] Motor cache seed error: {e}')
 
         # Seed nascar-history from nascar-last if history doesn't exist yet
         try:
