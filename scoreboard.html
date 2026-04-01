@@ -3934,6 +3934,11 @@ function setMotorConfig(key,val){
   });
   fetch(`${API_BASE}/scoreboards/${sbId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({motor_config:currentMc})
+  }).then(()=>{
+    // If a stream is active for this scoreboard, re-fetch motor data immediately
+    if(document.body.classList.contains('stream-mode')){
+      fetchAllScores().then(()=>renderStreamCanvas()).catch(()=>{});
+    }
   }).catch(e=>console.warn('setMotorConfig error:',e));
 }
 function buildGameCard(g){
@@ -4171,6 +4176,7 @@ async function fetchNascarData(sport, sbConfig){
         }
       }catch(e){ return noRaceCards.length?noRaceCards:[]; }
     }
+    if(noRace) return [];
     const flagEmoji = {1:'🟢',2:'🟡',3:'🔴',4:'🟡',8:'⬜',9:'🏁'}[flagState]||'⬛';
     // Sort by running_position
     const sorted = [...vehicles].sort((a,b)=>(a.running_position||99)-(b.running_position||99));
@@ -6027,6 +6033,14 @@ function advanceStreamPage() {
 function updateStreamScoresInPlace() {
   const sports = getSPORTS();
   let hasNewGames = false;
+
+  // Motor sports need full re-render since cards don't have teams[] for in-place update
+  const hasMotorSports = sports.some(s => s.fetchFn && (state.games[s.id]||[]).length > 0);
+  if (hasMotorSports) {
+    renderStreamCanvas();
+    updateTopbarCounts();
+    return;
+  }
 
   sports.forEach(sport => {
     let games = state.games[sport.id] || [];

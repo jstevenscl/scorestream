@@ -2,15 +2,10 @@ name: Update Motor Cache Data
 
 on:
   schedule:
-    # Sunday 8pm ET (Mon 1am UTC) - NASCAR race results
     - cron: '0 1 * * 1'
-    # Monday 6am ET (Mon 11am UTC) - NASCAR safety net
     - cron: '0 11 * * 1'
-    # Monday 8pm ET (Tue 1am UTC) - NASCAR confirmation
     - cron: '0 1 * * 2'
-    # Wednesday 8pm ET (Thu 1am UTC) - final PGA capture before new event
     - cron: '0 1 * * 4'
-    # Thursday-Sunday 8pm ET - PGA round-by-round
     - cron: '0 1 * * 5'
     - cron: '0 1 * * 6'
     - cron: '0 1 * * 7'
@@ -30,161 +25,132 @@ jobs:
           ref: data
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Fetch NASCAR and PGA Data
+      - name: Write fetch script
         run: |
-          python3 - << 'PYTHON'
-import json, urllib.request, datetime, os
+          cat > fetch_motor.py << 'PYEOF'
+          import json, urllib.request, datetime, os
+          today = datetime.date.today()
+          today_str = today.isoformat()
+          month = today.month
+          NASCAR_HDR = {'User-Agent':'Mozilla/5.0','Accept':'application/json','Referer':'https://www.nascar.com/','Origin':'https://www.nascar.com'}
+          ESPN_HDR = {'User-Agent':'Mozilla/5.0','Accept':'application/json'}
+          NASCAR_SEASON = (2, 11)
+          PGA_SEASON_MONTHS = {10,11,12,1,2,3,4,5,6,7,8}
+          def in_season(sport):
+              m = today.month
+              if sport == 'nascar': return NASCAR_SEASON[0] <= m <= NASCAR_SEASON[1]
+              if sport == 'pga': return m in PGA_SEASON_MONTHS
+              return True
+          def fetch(url, headers):
+              try:
+                  req = urllib.request.Request(url, headers=headers)
+                  with urllib.request.urlopen(req, timeout=12) as r:
+                      return json.loads(r.read())
+              except Exception as e:
+                  print(f"  FAIL {url}: {e}")
+                  return None
+          cache_path = 'motor_cache.json'
+          cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
+          print(f"Loaded {len(cache)} existing keys. Today: {today_str}")
+          nascar_off = not in_season('nascar')
+          pga_off = not in_season('pga')
+          if nascar_off:
+              if 'nascar-history' in cache:
+                  cache['nascar-history']['data'] = {'races': [], 'updated': today_str, 'off_season': True}
+                  print("NASCAR off-season: race history purged, keeping standings")
+              if month == 2 and today.day <= 7:
+                  cache.pop('nascar-2026-season', None)
+                  cache.pop('nascar-history', None)
+                  cache.pop('nascar-last', None)
+                  print("NASCAR new season: full reset")
+          if pga_off:
+              if 'pga-2026-tournaments' in cache:
+                  cache['pga-2026-tournaments']['data']['tournaments'] = []
+                  print("PGA off-season: tournament history purged")
+          if in_season('nascar'):
+              print("\n--- NASCAR ---")
+              live = fetch('https://cf.nascar.com/live/feeds/live-feed.json', NASCAR_HDR)
+              if live and live.get('series_id') == 1 and live.get('run_name'):
+                  vehicles = sorted(live.get('vehicles',[]), key=lambda x: x.get('running_position',99))
+                  drivers = [{'pos':v.get('running_position'),'car':'#'+str(v.get('vehicle_number','?')).lstrip('#'),
+                              'driver':(v.get('driver',{}).get('full_name') or (v.get('driver',{}).get('first_name','')+' '+v.get('driver',{}).get('last_name','')).strip()),
+                              'manufacturer':v.get('vehicle_manufacturer',''),'laps':v.get('laps_completed',0),
+                              'status':v.get('status','Running'),'points':0} for v in vehicles if v.get('running_position')]
+                  if drivers:
+                      last = {'run_name':live['run_name'],'track_name':live.get('track_name',''),'race_date':today_str,
+                              'flag_state':live.get('flag_state',9),'laps_in_race':live.get('laps_in_race',0),
+                              'series_id':1,'race_id':live.get('race_id'),'drivers':drivers}
+                      cache['nascar-last'] = {'data':last,'_updated':today_str}
+                      hist = cache.get('nascar-history',{}).get('data',{})
+                      if isinstance(hist,str): hist=json.loads(hist)
+                      races = hist.get('races',[])
+                      if not any(r.get('run_name')==live['run_name'] for r in races):
+                          races.insert(0, last)
+                          races = races[:10]
+                          print(f"  Added {live['run_name']} to history ({len(races)} races)")
+                      cache['nascar-history'] = {'data':{'races':races,'updated':today_str},'_updated':today_str}
+                      print(f"  Last race: {live['run_name']} {len(drivers)} drivers")
+              for year in ['2026','2025']:
+                  data = fetch(f'https://cf.nascar.com/cacher/{year}/1/standings/driver-standings.json', NASCAR_HDR)
+                  if data:
+                      entries = data if isinstance(data,list) else data.get('response',[])
+                      standings = [{'pos':e.get('points_position') or (i+1),'driver':e.get('driver_name') or e.get('driver',{}).get('full_name','Unknown'),
+                                    'car':'#'+str(e.get('car_number','?')).lstrip('#'),'manufacturer':e.get('manufacturer',''),
+                                    'points':e.get('points',0),'wins':e.get('wins',0),'races':e.get('races',0)} for i,e in enumerate(entries[:44])]
+                      if standings:
+                          existing = cache.get('nascar-2026-season',{}).get('data',{})
+                          if isinstance(existing,str): existing=json.loads(existing)
+                          existing['standings'] = standings
+                          existing['updated'] = today_str
+                          cache['nascar-2026-season'] = {'data':existing,'_updated':today_str}
+                          print(f"  Standings: {len(standings)} drivers from {year}")
+                          break
+          if in_season('pga'):
+              print("\n--- PGA ---")
+              espn = fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard', ESPN_HDR)
+              if espn:
+                  existing_pga = cache.get('pga-2026-tournaments',{}).get('data',{})
+                  if isinstance(existing_pga,str): existing_pga=json.loads(existing_pga)
+                  tournaments = existing_pga.get('tournaments',[])
+                  for event in espn.get('events',[]):
+                      name = event.get('name','')
+                      date_str = (event.get('date') or '')[:10]
+                      st = event.get('status',{}).get('type',{})
+                      is_complete = st.get('completed',False)
+                      is_live = st.get('name') in ('in','STATUS_IN_PROGRESS')
+                      comps_raw = event.get('competitions',[{}])[0].get('competitors',[]) if event.get('competitions') else []
+                      competitors = []
+                      for c in comps_raw:
+                          stats = {s.get('name',''):s.get('displayValue','') for s in c.get('statistics',[])}
+                          competitors.append({'pos':c.get('status',{}).get('position',{}).get('displayName',''),
+                                              'name':c.get('athlete',{}).get('displayName',''),
+                                              'score':stats.get('scoreToPar',c.get('score','')),
+                                              'r1':stats.get('round1',''),'r2':stats.get('round2',''),
+                                              'r3':stats.get('round3',''),'r4':stats.get('round4',''),
+                                              'total':stats.get('totalScore','')})
+                      has_scores = any(c.get('r1') and c['r1'] not in ('','-','0') for c in competitors)
+                      winner = competitors[0]['name'] if is_complete and competitors else None
+                      winner_score = competitors[0]['score'] if is_complete and competitors else None
+                      existing_t = next((t for t in tournaments if t.get('name')==name or t.get('date','')[:10]==date_str),None)
+                      if existing_t:
+                          existing_t.update({'is_complete':is_complete,'is_live':is_live})
+                          if winner: existing_t['winner']=winner
+                          if winner_score: existing_t['winner_score']=winner_score
+                          if has_scores: existing_t['players']=competitors
+                          print(f"  Updated: {name}")
+                      else:
+                          tournaments.append({'name':name,'date':date_str,'is_complete':is_complete,'is_live':is_live,
+                                              'winner':winner,'winner_score':winner_score,'players':competitors if has_scores else []})
+                          print(f"  Added: {name}")
+                  completed = [t for t in tournaments if t.get('is_complete')][-10:]
+                  upcoming = [t for t in tournaments if not t.get('is_complete')]
+                  cache['pga-2026-tournaments'] = {'data':{'tournaments':upcoming+completed,'updated':today_str},'_updated':today_str}
+          with open(cache_path,'w') as f: json.dump(cache,f,indent=2)
+          print(f"\nWritten {len(cache)} keys ({os.path.getsize(cache_path):,} bytes)")
+          PYEOF
 
-today = datetime.date.today()
-today_str = today.isoformat()
-month = today.month
-
-NASCAR_HDR = {'User-Agent':'Mozilla/5.0','Accept':'application/json','Referer':'https://www.nascar.com/','Origin':'https://www.nascar.com'}
-ESPN_HDR = {'User-Agent':'Mozilla/5.0','Accept':'application/json'}
-
-# Season windows (month ranges, inclusive)
-NASCAR_SEASON = (2, 11)   # Feb-Nov
-PGA_SEASON_MONTHS = {10,11,12,1,2,3,4,5,6,7,8}  # Oct-Aug (wrap-around)
-F1_SEASON = (3, 12)       # Mar-Dec
-
-def in_season(sport):
-    m = today.month
-    if sport == 'nascar': return NASCAR_SEASON[0] <= m <= NASCAR_SEASON[1]
-    if sport == 'pga': return m in PGA_SEASON_MONTHS
-    if sport == 'f1': return F1_SEASON[0] <= m <= F1_SEASON[1]
-    return True
-
-def fetch(url, headers):
-    try:
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=12) as r:
-            return json.loads(r.read())
-    except Exception as e:
-        print(f"  FAIL {url}: {e}")
-        return None
-
-cache_path = 'motor_cache.json'
-cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
-print(f"Loaded {len(cache)} existing keys. Today: {today_str}")
-
-# ── Season management: purge old data at season boundaries ──
-nascar_off = not in_season('nascar')
-pga_off = not in_season('pga')
-
-if nascar_off:
-    # Off-season: keep only final standings, purge race history
-    if 'nascar-history' in cache:
-        cache['nascar-history']['data'] = {'races': [], 'updated': today_str, 'off_season': True}
-        print("NASCAR off-season: race history purged")
-    # New season start (February): wipe standings too for fresh slate
-    if month == 2 and today.day <= 7:
-        cache.pop('nascar-2026-season', None)
-        cache.pop('nascar-history', None)
-        cache.pop('nascar-last', None)
-        print("NASCAR new season: full reset")
-
-if pga_off:
-    if 'pga-2026-tournaments' in cache:
-        cache['pga-2026-tournaments']['data']['tournaments'] = []
-        print("PGA off-season: tournament history purged")
-
-# ── NASCAR ──
-if in_season('nascar'):
-    print("\n--- NASCAR ---")
-    live = fetch('https://cf.nascar.com/live/feeds/live-feed.json', NASCAR_HDR)
-    if live and live.get('series_id') == 1 and live.get('run_name'):
-        vehicles = sorted(live.get('vehicles',[]), key=lambda x: x.get('running_position',99))
-        drivers = [{'pos':v.get('running_position'),
-                    'car':'#'+str(v.get('vehicle_number','?')).lstrip('#'),
-                    'driver':(v.get('driver',{}).get('full_name') or
-                              (v.get('driver',{}).get('first_name','')+' '+v.get('driver',{}).get('last_name','')).strip()),
-                    'manufacturer':v.get('vehicle_manufacturer',''),
-                    'laps':v.get('laps_completed',0),
-                    'status':v.get('status','Running'),
-                    'points':0} for v in vehicles if v.get('running_position')]
-        if drivers:
-            last = {'run_name':live['run_name'],'track_name':live.get('track_name',''),
-                    'race_date':today_str,'flag_state':live.get('flag_state',9),
-                    'laps_in_race':live.get('laps_in_race',0),'series_id':1,
-                    'race_id':live.get('race_id'),'drivers':drivers}
-            cache['nascar-last'] = {'data':last,'_updated':today_str}
-            # Update history - add if not already there, keep max 10 races
-            hist = cache.get('nascar-history',{}).get('data',{})
-            if isinstance(hist,str): hist=json.loads(hist)
-            races = hist.get('races',[])
-            if not any(r.get('run_name')==live['run_name'] for r in races):
-                races.insert(0, last)
-                races = races[:10]
-                print(f"  Added {live['run_name']} to history ({len(races)} races)")
-            cache['nascar-history'] = {'data':{'races':races,'updated':today_str},'_updated':today_str}
-            print(f"  Last race: {live['run_name']} {len(drivers)} drivers flag={live.get('flag_state')}")
-
-    for year in ['2026','2025']:
-        data = fetch(f'https://cf.nascar.com/cacher/{year}/1/standings/driver-standings.json', NASCAR_HDR)
-        if data:
-            entries = data if isinstance(data,list) else data.get('response',[])
-            standings = [{'pos':e.get('points_position') or (i+1),
-                          'driver':e.get('driver_name') or e.get('driver',{}).get('full_name','Unknown'),
-                          'car':'#'+str(e.get('car_number','?')).lstrip('#'),
-                          'manufacturer':e.get('manufacturer',''),
-                          'points':e.get('points',0),'wins':e.get('wins',0),'races':e.get('races',0)}
-                         for i,e in enumerate(entries[:44])]
-            if standings:
-                existing = cache.get('nascar-2026-season',{}).get('data',{})
-                if isinstance(existing,str): existing=json.loads(existing)
-                existing['standings'] = standings
-                existing['updated'] = today_str
-                cache['nascar-2026-season'] = {'data':existing,'_updated':today_str}
-                print(f"  Standings: {len(standings)} drivers from {year}")
-                break
-
-# ── PGA ──
-if in_season('pga'):
-    print("\n--- PGA ---")
-    espn = fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard', ESPN_HDR)
-    if espn:
-        existing_pga = cache.get('pga-2026-tournaments',{}).get('data',{})
-        if isinstance(existing_pga,str): existing_pga=json.loads(existing_pga)
-        tournaments = existing_pga.get('tournaments',[])
-        for event in espn.get('events',[]):
-            name = event.get('name','')
-            date_str = (event.get('date') or '')[:10]
-            st = event.get('status',{}).get('type',{})
-            is_complete = st.get('completed',False)
-            is_live = st.get('name') in ('in','STATUS_IN_PROGRESS')
-            comps_raw = event.get('competitions',[{}])[0].get('competitors',[]) if event.get('competitions') else []
-            competitors = []
-            for c in comps_raw:
-                stats = {s.get('name',''):s.get('displayValue','') for s in c.get('statistics',[])}
-                competitors.append({'pos':c.get('status',{}).get('position',{}).get('displayName',''),
-                                    'name':c.get('athlete',{}).get('displayName',''),
-                                    'score':stats.get('scoreToPar',c.get('score','')),
-                                    'r1':stats.get('round1',''),'r2':stats.get('round2',''),
-                                    'r3':stats.get('round3',''),'r4':stats.get('round4',''),
-                                    'total':stats.get('totalScore','')})
-            has_scores = any(c.get('r1') and c['r1'] not in ('','-','0') for c in competitors)
-            winner = competitors[0]['name'] if is_complete and competitors else None
-            winner_score = competitors[0]['score'] if is_complete and competitors else None
-            existing_t = next((t for t in tournaments if t.get('name')==name or t.get('date','')[:10]==date_str),None)
-            if existing_t:
-                existing_t.update({'is_complete':is_complete,'is_live':is_live})
-                if winner: existing_t['winner']=winner
-                if winner_score: existing_t['winner_score']=winner_score
-                if has_scores: existing_t['players']=competitors
-                print(f"  Updated: {name}")
-            else:
-                tournaments.append({'name':name,'date':date_str,'is_complete':is_complete,'is_live':is_live,
-                                    'winner':winner,'winner_score':winner_score,
-                                    'players':competitors if has_scores else []})
-                print(f"  Added: {name}")
-        # Keep max 10 completed tournaments
-        completed = [t for t in tournaments if t.get('is_complete')][-10:]
-        upcoming = [t for t in tournaments if not t.get('is_complete')]
-        cache['pga-2026-tournaments'] = {'data':{'tournaments':upcoming+completed,'updated':today_str},'_updated':today_str}
-
-with open(cache_path,'w') as f: json.dump(cache,f,indent=2)
-print(f"\nWritten {len(cache)} keys ({os.path.getsize(cache_path):,} bytes)")
-PYTHON
+      - name: Run fetch script
+        run: python3 fetch_motor.py
 
       - name: Commit and Push if changed
         run: |
