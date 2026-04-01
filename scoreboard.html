@@ -3953,7 +3953,7 @@ function buildLeaderboardCard(g){
     ?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`
     :g.isFinal?`<span class="status-final">FINAL</span>`
     :`<span class="status-upcoming">${formatTime(g.date)}</span>`;
-  const rows=g.teams.map((p,i)=>{
+  const rows=(g.teams||[]).map((p,i)=>{
     const pos=p.position||(i+1);
     const scoreColor=p.score&&p.score.startsWith('-')?'var(--accent-green)':p.score==='E'?'var(--text-secondary)':'#f87171';
     return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--border);">
@@ -4011,7 +4011,7 @@ async function fetchPGAData(sport, sbConfig){
               isPGAHistory:true, isPGALive:false,
               isComplete:false, isLive:false,
               tournamentDate: t.date,
-              players:[],
+              players:[], teams:[],
               pageNum:1, totalPages:1,
             });
             return;
@@ -4078,7 +4078,7 @@ async function fetchPGAData(sport, sbConfig){
               isPGAHistory:true, isPGALive:false,
               isComplete:false, isLive:false,
               tournamentDate: (ev.date||'').slice(0,10),
-              players:[], pageNum:1, totalPages:1,
+              players:[], teams:[], pageNum:1, totalPages:1,
             });
             return;
           }
