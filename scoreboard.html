@@ -4116,7 +4116,7 @@ async function fetchNascarData(sport, sbConfig){
   const showLive=mc.nascar_live!==false;
   const showLast=mc.nascar_last!==false;
   const showStand=mc.nascar_standings!==false;
-  const maxRaces=mc.nascar_max_races||1;
+  const maxRaces=mc.nascar_max_races||3;
   try{
     const r=await fetch('https://cf.nascar.com/live/feeds/live-feed.json',{signal:AbortSignal.timeout(6000)});
     if(!r.ok) return [];
