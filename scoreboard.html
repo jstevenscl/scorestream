@@ -3917,33 +3917,8 @@ function setMotorConfig(key,val){
     // Update in-memory scoreboard
     if(sb) sb.motor_config=Object.assign({},currentMc);
     if(window._editorDraft) window._editorDraft.motor_config=Object.assign({},currentMc);
-    // Re-render the motor settings section to update button highlights
-    const motorEl=document.getElementById('sbMotorSettings');
-    if(motorEl){
-      // Find the scoreboard and re-render motor settings
-      const activeSb=_scoreboards&&_scoreboards.find(s=>s.id===sbId);
-      if(activeSb && typeof renderSbEditorStep==='function') {
-        const inner=motorEl.querySelector('.motor-inner');
-        if(inner) inner.innerHTML='';
-      }
-      // Force re-render by updating button styles directly
-      motorEl.querySelectorAll('button[onclick*="nascar_max_races"],button[onclick*="f1_max_races"],button[onclick*="pga_max_events"]').forEach(btn=>{
-        const onclk=btn.getAttribute('onclick')||'';
-        const numMatch=onclk.match(/,(\d+)\)/);
-        if(numMatch){
-          const btnVal=parseInt(numMatch[1]);
-          const keyMatch=onclk.match(/'([^']+)'/);
-          const btnKey=keyMatch&&keyMatch[1];
-          const isSel=btnVal===val&&btnKey===key;
-          // Get the color from the button's current selected style or default
-          const selColor = btn.closest('[style*="border:1px solid"]')
-            ? btn.closest('[style*="border:1px solid"]').style.borderColor : '#ffd700';
-          btn.style.border=`1px solid ${isSel?selColor:'var(--border)'}`;
-          btn.style.background=isSel?selColor:'var(--bg-card)';
-          btn.style.color=isSel?'#000':'var(--text-primary)';
-        }
-      });
-    }
+    // Re-render step 2 to update button highlights
+    if(typeof renderEditorStep==='function') renderEditorStep();
   }).catch(e=>console.warn('setMotorConfig error:',e));
 }
 function buildGameCard(g){
