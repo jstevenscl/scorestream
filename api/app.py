@@ -433,7 +433,7 @@ def init_db():
         # Fetches from dedicated data branch — never conflicts with code pushes to dev/beta/latest
         try:
             import json as _jg
-            DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream-pro/data/motor_cache.json'
+            DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream/data/motor_cache.json'
             rg = http.get(DATA_URL, timeout=15)
             if rg.ok:
                 gdata = rg.json()
