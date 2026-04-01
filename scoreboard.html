@@ -4002,7 +4002,8 @@ async function fetchPGAData(sport, sbConfig){
         tournaments.forEach(t=>{
           // Skip future events with no scores yet
           // Show upcoming tournaments as a single info card instead of skipping
-          if(!t.is_complete && t.date > todayStr2 && !(t.players||[]).some(p=>p.r1)){
+          const hasScores = (t.players||[]).some(p=>p.r1&&p.r1!==''&&p.r1!=='-'&&p.r1!=='0');
+          if(!t.is_complete && !hasScores){
             cards.push({
               id:`pga-upcoming-${t.date}`,
               name: t.name,
