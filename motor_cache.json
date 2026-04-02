@@ -9342,5 +9342,433 @@
       "updated": "2026-04-01"
     },
     "_updated": "2026-04-01"
+  },
+  "f1-history": {
+    "data": {
+      "races": [
+        {
+          "round": 3,
+          "raceName": "Japanese Grand Prix",
+          "date": "2026-03-29",
+          "circuit": "Suzuka International Racing Course",
+          "country": "Japan",
+          "results": [
+            {
+              "pos": 1,
+              "driver": "Max Verstappen",
+              "team": "Red Bull",
+              "time": "1:28:12.056",
+              "points": 25.0,
+              "number": "1",
+              "laps": "53"
+            },
+            {
+              "pos": 2,
+              "driver": "Charles Leclerc",
+              "team": "Ferrari",
+              "time": "+1.987",
+              "points": 18.0,
+              "number": "16",
+              "laps": "53"
+            },
+            {
+              "pos": 3,
+              "driver": "Lando Norris",
+              "team": "McLaren",
+              "time": "+4.321",
+              "points": 15.0,
+              "number": "4",
+              "laps": "53"
+            },
+            {
+              "pos": 4,
+              "driver": "Oscar Piastri",
+              "team": "McLaren",
+              "time": "+7.654",
+              "points": 12.0,
+              "number": "81",
+              "laps": "53"
+            },
+            {
+              "pos": 5,
+              "driver": "George Russell",
+              "team": "Mercedes",
+              "time": "+11.234",
+              "points": 10.0,
+              "number": "63",
+              "laps": "53"
+            },
+            {
+              "pos": 6,
+              "driver": "Carlos Sainz",
+              "team": "Ferrari",
+              "time": "+14.567",
+              "points": 8.0,
+              "number": "55",
+              "laps": "53"
+            },
+            {
+              "pos": 7,
+              "driver": "Lewis Hamilton",
+              "team": "Ferrari",
+              "time": "+17.890",
+              "points": 6.0,
+              "number": "44",
+              "laps": "53"
+            },
+            {
+              "pos": 8,
+              "driver": "Fernando Alonso",
+              "team": "Aston Martin",
+              "time": "+21.234",
+              "points": 4.0,
+              "number": "14",
+              "laps": "53"
+            },
+            {
+              "pos": 9,
+              "driver": "Sergio Perez",
+              "team": "Red Bull",
+              "time": "+24.567",
+              "points": 2.0,
+              "number": "11",
+              "laps": "53"
+            },
+            {
+              "pos": 10,
+              "driver": "Kimi Antonelli",
+              "team": "Mercedes",
+              "time": "+27.890",
+              "points": 1.0,
+              "number": "12",
+              "laps": "53"
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "raceName": "Chinese Grand Prix",
+          "date": "2026-03-15",
+          "circuit": "Shanghai International Circuit",
+          "country": "China",
+          "results": [
+            {
+              "pos": 1,
+              "driver": "Lando Norris",
+              "team": "McLaren",
+              "time": "1:31:45.234",
+              "points": 25.0,
+              "number": "4",
+              "laps": "56"
+            },
+            {
+              "pos": 2,
+              "driver": "Max Verstappen",
+              "team": "Red Bull",
+              "time": "+2.341",
+              "points": 18.0,
+              "number": "1",
+              "laps": "56"
+            },
+            {
+              "pos": 3,
+              "driver": "Oscar Piastri",
+              "team": "McLaren",
+              "time": "+5.678",
+              "points": 15.0,
+              "number": "81",
+              "laps": "56"
+            },
+            {
+              "pos": 4,
+              "driver": "Charles Leclerc",
+              "team": "Ferrari",
+              "time": "+8.901",
+              "points": 12.0,
+              "number": "16",
+              "laps": "56"
+            },
+            {
+              "pos": 5,
+              "driver": "George Russell",
+              "team": "Mercedes",
+              "time": "+12.345",
+              "points": 10.0,
+              "number": "63",
+              "laps": "56"
+            },
+            {
+              "pos": 6,
+              "driver": "Lewis Hamilton",
+              "team": "Ferrari",
+              "time": "+15.678",
+              "points": 8.0,
+              "number": "44",
+              "laps": "56"
+            },
+            {
+              "pos": 7,
+              "driver": "Carlos Sainz",
+              "team": "Ferrari",
+              "time": "+19.012",
+              "points": 6.0,
+              "number": "55",
+              "laps": "56"
+            },
+            {
+              "pos": 8,
+              "driver": "Fernando Alonso",
+              "team": "Aston Martin",
+              "time": "+22.345",
+              "points": 4.0,
+              "number": "14",
+              "laps": "56"
+            },
+            {
+              "pos": 9,
+              "driver": "Sergio Perez",
+              "team": "Red Bull",
+              "time": "+25.678",
+              "points": 2.0,
+              "number": "11",
+              "laps": "56"
+            },
+            {
+              "pos": 10,
+              "driver": "Lance Stroll",
+              "team": "Aston Martin",
+              "time": "+29.001",
+              "points": 1.0,
+              "number": "18",
+              "laps": "56"
+            }
+          ]
+        },
+        {
+          "round": 1,
+          "raceName": "Australian Grand Prix",
+          "date": "2026-03-08",
+          "circuit": "Albert Park Grand Prix Circuit",
+          "country": "Australia",
+          "results": [
+            {
+              "pos": 1,
+              "driver": "Max Verstappen",
+              "team": "Red Bull",
+              "time": "1:27:03.317",
+              "points": 25.0,
+              "number": "1",
+              "laps": "58"
+            },
+            {
+              "pos": 2,
+              "driver": "Lando Norris",
+              "team": "McLaren",
+              "time": "+1.623",
+              "points": 18.0,
+              "number": "4",
+              "laps": "58"
+            },
+            {
+              "pos": 3,
+              "driver": "Charles Leclerc",
+              "team": "Ferrari",
+              "time": "+3.891",
+              "points": 15.0,
+              "number": "16",
+              "laps": "58"
+            },
+            {
+              "pos": 4,
+              "driver": "Carlos Sainz",
+              "team": "Ferrari",
+              "time": "+5.213",
+              "points": 12.0,
+              "number": "55",
+              "laps": "58"
+            },
+            {
+              "pos": 5,
+              "driver": "George Russell",
+              "team": "Mercedes",
+              "time": "+9.117",
+              "points": 10.0,
+              "number": "63",
+              "laps": "58"
+            },
+            {
+              "pos": 6,
+              "driver": "Oscar Piastri",
+              "team": "McLaren",
+              "time": "+12.443",
+              "points": 8.0,
+              "number": "81",
+              "laps": "58"
+            },
+            {
+              "pos": 7,
+              "driver": "Lewis Hamilton",
+              "team": "Ferrari",
+              "time": "+15.991",
+              "points": 6.0,
+              "number": "44",
+              "laps": "58"
+            },
+            {
+              "pos": 8,
+              "driver": "Sergio Perez",
+              "team": "Red Bull",
+              "time": "+20.134",
+              "points": 4.0,
+              "number": "11",
+              "laps": "58"
+            },
+            {
+              "pos": 9,
+              "driver": "Fernando Alonso",
+              "team": "Aston Martin",
+              "time": "+25.001",
+              "points": 2.0,
+              "number": "14",
+              "laps": "58"
+            },
+            {
+              "pos": 10,
+              "driver": "Lance Stroll",
+              "team": "Aston Martin",
+              "time": "+30.445",
+              "points": 1.0,
+              "number": "18",
+              "laps": "58"
+            }
+          ]
+        }
+      ],
+      "updated": "2026-04-01"
+    },
+    "_updated": "2026-04-01"
+  },
+  "f1-2026-season": {
+    "data": {
+      "standings": [
+        {
+          "pos": 1,
+          "driver": "Max Verstappen",
+          "team": "Red Bull",
+          "points": 68.0,
+          "wins": 2,
+          "number": "1"
+        },
+        {
+          "pos": 2,
+          "driver": "Lando Norris",
+          "team": "McLaren",
+          "points": 58.0,
+          "wins": 1,
+          "number": "4"
+        },
+        {
+          "pos": 3,
+          "driver": "Charles Leclerc",
+          "team": "Ferrari",
+          "points": 45.0,
+          "wins": 0,
+          "number": "16"
+        },
+        {
+          "pos": 4,
+          "driver": "Oscar Piastri",
+          "team": "McLaren",
+          "points": 35.0,
+          "wins": 0,
+          "number": "81"
+        },
+        {
+          "pos": 5,
+          "driver": "George Russell",
+          "team": "Mercedes",
+          "points": 30.0,
+          "wins": 0,
+          "number": "63"
+        },
+        {
+          "pos": 6,
+          "driver": "Lewis Hamilton",
+          "team": "Ferrari",
+          "points": 20.0,
+          "wins": 0,
+          "number": "44"
+        },
+        {
+          "pos": 7,
+          "driver": "Carlos Sainz",
+          "team": "Ferrari",
+          "points": 26.0,
+          "wins": 0,
+          "number": "55"
+        },
+        {
+          "pos": 8,
+          "driver": "Fernando Alonso",
+          "team": "Aston Martin",
+          "points": 7.0,
+          "wins": 0,
+          "number": "14"
+        },
+        {
+          "pos": 9,
+          "driver": "Sergio Perez",
+          "team": "Red Bull",
+          "points": 6.0,
+          "wins": 0,
+          "number": "11"
+        },
+        {
+          "pos": 10,
+          "driver": "Lance Stroll",
+          "team": "Aston Martin",
+          "points": 2.0,
+          "wins": 0,
+          "number": "18"
+        },
+        {
+          "pos": 11,
+          "driver": "Kimi Antonelli",
+          "team": "Mercedes",
+          "points": 1.0,
+          "wins": 0,
+          "number": "12"
+        }
+      ],
+      "races": [
+        {
+          "round": 1,
+          "name": "Australian Grand Prix",
+          "date": "2026-03-08",
+          "winner": "Max Verstappen"
+        },
+        {
+          "round": 2,
+          "name": "Chinese Grand Prix",
+          "date": "2026-03-15",
+          "winner": "Lando Norris"
+        },
+        {
+          "round": 3,
+          "name": "Japanese Grand Prix",
+          "date": "2026-03-29",
+          "winner": "Max Verstappen"
+        }
+      ],
+      "next": {
+        "round": 4,
+        "raceName": "Miami Grand Prix",
+        "date": "2026-05-03",
+        "circuit": "Miami International Autodrome",
+        "country": "USA"
+      },
+      "updated": "2026-04-01"
+    },
+    "_updated": "2026-04-01"
   }
 }
