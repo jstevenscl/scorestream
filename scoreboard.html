@@ -3752,7 +3752,8 @@ function updateTopbar(){
 
 function getMotorSectionName(sport, sampleCard) {
   if (!sampleCard) return sport.name;
-  if (sampleCard.isNascarStandings || sampleCard.isF1Standings) return `${sport.name} — Driver Standings`;
+  if (sampleCard.isNascarStandings) return `${sport.name} — Point Standings`;
+  if (sampleCard.isF1Standings) return `${sport.name} — Driver Standings`;
   if (sampleCard.isNascarLast || sampleCard.isNascarLive) {
     const raceName = (sampleCard.name||'').replace(/ \(\d+\/\d+\)$/,'').replace(/ Result$/,'').split(' (')[0].trim();
     const raceDate = sampleCard.raceDate||'';
@@ -4002,6 +4003,11 @@ async function fetchPGAData(sport, sbConfig){
         // Sort newest first, completed only (unless in-progress)
         const pgaMax=(mc&&mc.pga_max_events)||3;
         const todayStr2=new Date().toISOString().slice(0,10);
+        // Deduplicate by name (ESPN live may duplicate cache data)
+        const seenNames=new Set();
+        const dedupedT=[];
+        tournaments.forEach(t=>{const k=t.name?.trim();if(!k||seenNames.has(k))return;seenNames.add(k);dedupedT.push(t);});
+        tournaments=dedupedT;
         tournaments.sort((a,b)=>b.date.localeCompare(a.date));
         let pgaShown=0;
         tournaments.forEach(t=>{
@@ -4074,6 +4080,7 @@ async function fetchPGAData(sport, sbConfig){
           const hasScores = competitors.some(p=>p.r1&&p.r1!==''&&p.r1!=='-'&&p.r1!=='0');
           const isLive = ev.status?.type?.state==='in';
           const isFinal = ev.status?.type?.state==='post';
+          // Skip events already in cache from motor_cache.json seed (avoid duplicates)
           // Show upcoming as single info card if no scores yet
           if(!hasScores && !isLive && !isFinal){
             expanded.push({
@@ -4350,8 +4357,75 @@ async function fetchF1Data(sport, sbConfig){
         });
       }
     }
+    // Fetch additional past races from Jolpica if f1_max_races > 1
+    if(showLast && mc.f1_max_races > 1){
+      try{
+        const maxR = mc.f1_max_races||1;
+        // Get current round from next race data to calculate past rounds
+        const nextRound = cards.find(c=>c.isF1Next)?.round;
+        const currentRound = nextRound ? parseInt(nextRound)-1 : null;
+        if(currentRound && currentRound > 1){
+          const existingRaces = new Set(cards.filter(c=>c.isF1Last).map(c=>c.raceName));
+          let racesAdded = 1; // already have the most recent
+          for(let round=currentRound-1; round>=1 && racesAdded<maxR; round--){
+            try{
+              const hr=await fetch(`https://api.jolpi.ca/ergast/f1/current/${round}/results.json`,{signal:AbortSignal.timeout(4000)});
+              if(!hr.ok) continue;
+              const hd=await hr.json();
+              const race=hd?.MRData?.RaceTable?.Races?.[0];
+              if(!race||existingRaces.has(race.raceName)) continue;
+              const allRes=(race.Results||[]).map(r=>({
+                pos:parseInt(r.position),driver:`${r.Driver.givenName} ${r.Driver.familyName}`,
+                team:r.Constructor.name,time:r.Time?.time||r.status,
+                points:r.points,number:r.Driver.permanentNumber||'',laps:r.laps,
+              }));
+              const chunkSize=8,total=allRes.length,totalPages=Math.ceil(total/chunkSize);
+              for(let i=0;i<total;i+=chunkSize){
+                const chunk=allRes.slice(i,i+chunkSize);
+                const pageNum=Math.floor(i/chunkSize)+1;
+                cards.push({
+                  id:`f1-hist-${round}-${pageNum}`,
+                  name:totalPages>1?`${race.raceName} (${pageNum}/${totalPages})`:race.raceName,
+                  sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+                  isLive:false,isFinal:true,isScheduled:false,isIndividual:false,
+                  isF1Last:true,raceName:race.raceName,raceDate:race.date,
+                  circuit:race.Circuit?.circuitName||'',country:race.Circuit?.Location?.country||'',
+                  results:chunk,pageNum,totalPages,
+                });
+              }
+              racesAdded++;
+            }catch(e){break;}
+          }
+        }
+      }catch(e){console.warn('F1 history error',e);}
+    }
     return cards;
   }catch(e){ console.warn('F1 fetch error', e); return []; }
+}
+
+function buildNascarCard(g){
+  const card=document.createElement('div');
+  card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
+  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏁 ${g.sportName}</span>`;
+  if(g.isNascarInfo){
+    card.innerHTML=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span class="status-upcoming">NO RACE</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.runName||'NASCAR Cup Series'}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;">${g.message||'No race data available.'}</div>`;
+    return card;
+  }
+  if(g.isNascarStandings){
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
+    const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;">${d.pos}</span><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.manufacturer} ${(d.car||'').replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`).join('');
+    card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
+    return card;
+  }
+  if(g.isNascarLast||g.isNascarLive){
+    const medals=['🥇','🥈','🥉'];
+    const statusBadge=g.isFinal?'<span class="status-final">RESULT</span>':`<span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'Share Tech Mono',monospace;color:#4ade80;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span>LIVE</span>`;
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${statusBadge}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:var(--text-primary);margin:4px 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.trackName||''} ${g.raceDate?' · '+g.raceDate:''}</div>`;
+    const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;">${d.pos<=3?medals[d.pos-1]:d.pos}</span><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.manufacturer} ${(d.car||d.number||'').toString().replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`).join('');
+    card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
+    return card;
+  }
+  return card;
 }
 
 function buildF1Card(g){
@@ -5764,8 +5838,15 @@ function renderStreamCanvas() {
       motorCards.forEach(g => {
         let type = 'other';
         if (g.isNascarStandings || g.isF1Standings) type = 'standings';
-        else if ((g.isNascarLast || g.isNascarLive) && g.isFinal) type = 'last';
-        else if (g.isF1Last) type = 'last';
+        else if ((g.isNascarLast || g.isNascarLive) && g.isFinal) {
+          // Key by race name so each race event gets its own section
+          const raceName = (g.name||'').replace(/ \(\d+\/\d+\)$/,'').trim().replace(/\s+/g,'_');
+          type = 'race__' + (g.raceDate||'0000') + '__' + raceName;
+        }
+        else if (g.isF1Last) {
+          const rName = (g.raceName||g.name||'').replace(/ \(\d+\/\d+\)$/,'').trim().replace(/\s+/g,'_');
+          type = 'race__' + (g.raceDate||'0000') + '__' + rName;
+        }
         else if (g.isF1Next || g.isNascarInfo) type = 'next';
         else if (g.isPGAHistory || g.isPGALive) {
           const baseName = (g.name||'').replace(/ \(\d+\/\d+\)$/,'').split(' (')[0].trim().replace(/\s+/g,'_');
@@ -5775,9 +5856,10 @@ function renderStreamCanvas() {
         if (!_byType[type]) _byType[type] = [];
         _byType[type].push(g);
       });
-      const _typeOrder = ['live','next','last','standings'];
+      const _typeOrder = ['live','next','standings'];
       const _histKeys = Object.keys(_byType).filter(k=>k.startsWith('hist__')).sort().reverse();
-      const _orderedKeys = [..._typeOrder.filter(t=>_byType[t]), ..._histKeys, 'other'].filter((t,i,a)=>_byType[t]&&a.indexOf(t)===i);
+      const _raceKeys = Object.keys(_byType).filter(k=>k.startsWith('race__')).sort().reverse();
+      const _orderedKeys = [..._typeOrder.filter(t=>_byType[t]), ..._raceKeys, ..._histKeys, 'other'].filter((t,i,a)=>_byType[t]&&a.indexOf(t)===i);
       _orderedKeys.forEach(type => {
         const group = _byType[type];
         if (!group||!group.length) return;
