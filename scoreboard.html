@@ -4357,8 +4357,42 @@ async function fetchF1Data(sport, sbConfig){
         });
       }
     }
-    // Fetch additional past races from Jolpica if f1_max_races > 1
+    // Fetch additional past races - try f1-history cache first, then Jolpica
     if(showLast && mc.f1_max_races > 1){
+      // Try cache first
+      try{
+        const chr=await fetch(`${API_BASE}/motor/cache/f1-history`,{signal:AbortSignal.timeout(3000)});
+        if(chr.ok){
+          let chd=(await chr.json()).data||{};
+          if(typeof chd==='string'){try{chd=JSON.parse(chd);}catch(e){chd={};}}
+          const cachedRaces=(chd.races||[]);
+          const maxR=mc.f1_max_races||1;
+          const existingRaces=new Set(cards.filter(c=>c.isF1Last).map(c=>c.raceName));
+          let added=1;
+          for(const race of cachedRaces){
+            if(added>=maxR) break;
+            if(existingRaces.has(race.raceName)) continue;
+            const allRes=race.results||[];
+            const chunkSize=8,total=allRes.length,totalPages=Math.ceil(total/chunkSize);
+            for(let i=0;i<total;i+=chunkSize){
+              const chunk=allRes.slice(i,i+chunkSize);
+              const pageNum=Math.floor(i/chunkSize)+1;
+              cards.push({
+                id:`f1-cache-${race.round}-${pageNum}`,
+                name:totalPages>1?`${race.raceName} (${pageNum}/${totalPages})`:race.raceName,
+                sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+                isLive:false,isFinal:true,isScheduled:false,isIndividual:false,
+                isF1Last:true,raceName:race.raceName,raceDate:race.date,
+                circuit:race.circuit||'',country:race.country||'',
+                results:chunk,pageNum,totalPages,
+              });
+            }
+            added++;
+          }
+        }
+      }catch(e){console.warn('F1 cache history error',e);}
+    }
+    if(false && showLast && mc.f1_max_races > 1){
       try{
         const maxR = mc.f1_max_races||1;
         // Get current round from next race data to calculate past rounds
