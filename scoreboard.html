@@ -5896,10 +5896,10 @@ function renderStreamCanvas() {
     if (!games.length) return;
 
     // Apply team filter
-    if (_activeTeamConfig) {
+    if (_activeTeamConfig && !sport.fetchFn) {
       const sportTeams = _activeTeamConfig[sport.id];
       if (sportTeams && sportTeams.length)
-        games = games.filter(g => g.teams.some(t => sportTeams.includes(t.name) || sportTeams.includes(t.abbr)));
+        games = games.filter(g => (g.teams||[]).some(t => sportTeams.includes(t.name) || sportTeams.includes(t.abbr)));
     }
 
     // Separate live/upcoming from finals
@@ -6184,15 +6184,15 @@ function updateStreamScoresInPlace() {
 
   sports.forEach(sport => {
     let games = state.games[sport.id] || [];
-    if (_activeTeamConfig) {
+    if (_activeTeamConfig && !sport.fetchFn) {
       const sportTeams = _activeTeamConfig[sport.id];
       if (sportTeams && sportTeams.length)
-        games = games.filter(g => g.teams.some(t => sportTeams.includes(t.name) || sportTeams.includes(t.abbr)));
+        games = games.filter(g => (g.teams||[]).some(t => sportTeams.includes(t.name) || sportTeams.includes(t.abbr)));
     }
     // Only filter out finals if they're not configured to show for this sport
     const showFinalForSport = (_activeFinalsCfg && _activeFinalsCfg[sport.id]?.show) ||
                               (state.showEnded && state.endedLeagues.has(sport.id));
-    if (!showFinalForSport) games = games.filter(g => !g.isFinal);
+    if (!showFinalForSport && !sport.fetchFn) games = games.filter(g => !g.isFinal);
 
     games.forEach(g => {
       const cardEl = document.querySelector(`.stream-page [data-game-id="${g.id}"]`);
