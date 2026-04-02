@@ -2210,6 +2210,13 @@ function ddPreview(){
   root.style.setProperty('--card-score-size', vals.card_score_size+'px');
   root.style.setProperty('--card-name-size', vals.card_name_size+'px');
   root.style.setProperty('--card-name-color', vals.card_name_color);
+  // Also update any visible preview cards
+  document.querySelectorAll('.sbCardScaleInner,.dd-preview-card').forEach(el=>{
+    el.style.setProperty('--card-abbr-size', vals.card_abbr_size+'px');
+    el.style.setProperty('--card-score-size', vals.card_score_size+'px');
+    el.style.setProperty('--card-name-size', vals.card_name_size+'px');
+    el.style.setProperty('--card-name-color', vals.card_name_color);
+  });
 }
 
 async function ddSave(){
@@ -2292,6 +2299,7 @@ function sbGetEffectiveDisplayConfig(sb){
 
 function sbPreviewCardScale(val){
   const scale = parseFloat(val) || 1.0;
+  if(!document.getElementById('sbCardScaleInner')) return;
   const inner = document.getElementById('sbCardScaleInner');
   const wrap  = document.getElementById('sbCardScaleWrap');
   if(!inner || !wrap) return;
@@ -4030,7 +4038,7 @@ async function fetchPGAData(sport, sbConfig){
           if(t.is_complete && pgaShown>=pgaMax) return;
           if(t.is_complete) pgaShown++;
           const players = t.players||[];
-          const chunkSize=15, total=players.length, totalPages=Math.ceil(total/chunkSize);
+          const chunkSize=10, total=players.length, totalPages=Math.ceil(total/chunkSize);
           const statusLabel = t.is_complete ? 'FINAL' : 'IN PROGRESS';
           for(let i=0;i<total;i+=chunkSize){
             const chunk=players.slice(i,i+chunkSize);
