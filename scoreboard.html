@@ -2316,6 +2316,8 @@ function sbPreviewCardScale(val){
   inner.style.setProperty('--card-abbr-size',  Math.round(abbrBase  * scale) + 'px');
   inner.style.setProperty('--card-name-size',  Math.round(nameBase  * scale) + 'px');
   inner.style.setProperty('--card-name-color', nameColor);
+  // Force reflow to prevent overflow
+  wrap.style.overflow='hidden';
 }
 
 function sbEditorFilterTeams(query){
@@ -4064,9 +4066,12 @@ async function fetchPGAData(sport, sbConfig){
         const data=await r.json();
         const events=data.events||data.leagues?.[0]?.events||[];
         const expanded=[];
+        const existingNames=new Set(cards.map(card=>(card.name||'').replace(/ \(\d+\/\d+\)$/,'').trim()));
         events.forEach(ev=>{
           const comp=ev.competitions?.[0];
           if(!comp) return;
+          // Skip if this tournament is already shown from cache
+          if(existingNames.has((ev.name||'').trim())) return;
           const competitors=(comp.competitors||[]).map(c=>({
             name:c.athlete?.displayName||c.team?.displayName||'?',
             score:c.score||'–',
@@ -4204,6 +4209,33 @@ async function fetchNascarData(sport, sbConfig){
           }
         }catch(e){console.warn('NASCAR history error',e);}
       }
+
+      // NASCAR upcoming race
+      try{
+        const nr=await fetch(`${API_BASE}/motor/cache/nascar-2026-season`,{signal:AbortSignal.timeout(3000)});
+        if(nr.ok){
+          let nd=(await nr.json()).data||{};
+          if(typeof nd==='string'){try{nd=JSON.parse(nd);}catch(e){nd={};}}
+          const nextR=nd.next_race;
+          if(nextR && mc.nascar_next_race!==false){
+            const raceDate=new Date(nextR.date+'T12:00:00');
+            const now=new Date();
+            const diff=raceDate-now;
+            const days=Math.floor(diff/86400000);
+            const hrs=Math.floor((diff%86400000)/3600000);
+            const countdown=diff>0?(days>0?`${days}d ${hrs}h`:`${hrs}h`):'Soon';
+            cards.push({
+              id:'nascar-next',
+              name:nextR.name,
+              sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+              isLive:false,isFinal:false,isScheduled:true,isIndividual:false,isNascarInfo:false,
+              isNascarNext:true,
+              track:nextR.track,raceDate:nextR.date,raceTime:nextR.time,tv:nextR.tv,
+              countdown,message:'',
+            });
+          }
+        }
+      }catch(e){}
 
       if(!cards.length){
         return [{id:'nascar-no-data',name:'NASCAR Cup Series',
@@ -4438,6 +4470,16 @@ function buildNascarCard(g){
   const card=document.createElement('div');
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
   const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏁 ${g.sportName}</span>`;
+  if(g.isNascarNext){
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span class="status-upcoming">UPCOMING</span></div>`;
+    card.innerHTML=hdr+`<div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;color:var(--text-primary);margin:4px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
+    <div style="display:flex;flex-direction:column;gap:5px;font-size:var(--card-name-size,11px);">
+      <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📍</span><span style="color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;">${g.track||''}</span></div>
+      <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📅</span><span style="color:var(--text-primary);">${g.raceDate||''}</span><span style="color:var(--text-dim);">${g.raceTime||''}</span></div>
+      <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📺</span><span style="color:var(--text-primary);">${g.tv||''}</span><span style="color:var(--accent-green);font-family:'Share Tech Mono',monospace;margin-left:auto;">${g.countdown||''}</span></div>
+    </div>`;
+    return card;
+  }
   if(g.isNascarInfo){
     card.innerHTML=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span class="status-upcoming">NO RACE</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.runName||'NASCAR Cup Series'}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;">${g.message||'No race data available.'}</div>`;
     return card;
