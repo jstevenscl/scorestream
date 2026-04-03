@@ -3908,9 +3908,9 @@ function buildMotorsportEditorPanel(draft){
   const f1Next=mc.f1_next_race!==false,f1Last=mc.f1_last_race!==false,f1Stand=mc.f1_standings!==false;
   const nasLive=mc.nascar_live!==false,nasLast=mc.nascar_last!==false,nasStand=mc.nascar_standings!==false;
   const nasMaxRaces=mc.nascar_max_races||3,f1MaxRaces=mc.f1_max_races||3,pgaMaxEventsUI=mc.pga_max_events||3;
-  const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked,'${_mcSbId}')" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
+  const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked,_activeSidebarSbId||_activeSbId||'${_mcSbId}')" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
   const _mcSbId=(draft&&draft.id)||_activeSidebarSbId||_activeSbId||'';
-  const countSel=(val,key,color,label)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div></div><div style="display:flex;gap:4px;">${[1,2,3,5,10].map(n=>`<button onclick="setMotorConfig('${key}',${n},'${_mcSbId}')" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===val?color:'var(--border)'};background:${n===val?color:'var(--bg-card)'};color:${n===val?'#000':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>`;
+  const countSel=(val,key,color,label)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div></div><div style="display:flex;gap:4px;">${[1,2,3,5,10].map(n=>`<button onclick="setMotorConfig('${key}',${n},_activeSidebarSbId||_activeSbId||'${_mcSbId}')" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===val?color:'var(--border)'};background:${n===val?color:'var(--bg-card)'};color:${n===val?'#000':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>`;
   const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Results','Full finishing order pages')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Championship standings')}${countSel(f1MaxRaces,'f1_max_races','#e10600','📋 Past Races to Show')}</div>`:'';
   const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}</div>`:'';
   const hasPGA=(_editorDraft.sport_config||{})['pga'];
@@ -4029,7 +4029,8 @@ async function fetchPGAData(sport, sbConfig){
           // Skip future events with no scores yet
           // Show upcoming tournaments as a single info card instead of skipping
           const hasScores = (t.players||[]).some(p=>p.r1&&p.r1!==''&&p.r1!=='-'&&p.r1!=='0');
-          if(!t.is_complete && !hasScores){
+          const isCurrentlyLive=!t.is_complete&&t.date<=todayStr2;
+          if(!t.is_complete && !hasScores && !isCurrentlyLive){
             cards.push({
               id:`pga-upcoming-${t.date}`,
               name: t.name,
@@ -4042,7 +4043,8 @@ async function fetchPGAData(sport, sbConfig){
             });
             return;
           }
-          // Limit completed tournaments to pgaMax
+          // Limit completed tournaments to pgaMax; skip live-but-uncached (ESPN will add)
+          if(isCurrentlyLive && !hasScores) return;
           if(t.is_complete && pgaShown>=pgaMax) return;
           if(t.is_complete) pgaShown++;
           const players = t.players||[];
@@ -5955,7 +5957,9 @@ function renderStreamCanvas() {
         if (!group||!group.length) return;
         const sample = group[0];
         const sectionName = getMotorSectionName(sport, sample)||sport.name||'NASCAR';
-        const maxPerPage = 8;
+        // PGA: all cards for same tournament go in ONE section so one header per tournament
+        const isPGASection = type.startsWith('hist__');
+        const maxPerPage = isPGASection ? group.length : 8;
         for (let i = 0; i < group.length; i += maxPerPage) {
           const chunk = group.slice(i, i + maxPerPage);
           allSections.push({ sport, games: chunk, isMotorCard: true, sectionName });
@@ -6051,7 +6055,7 @@ function renderStreamCanvas() {
   let currentPageH = 0;
 
   allSections.forEach(({ sport, games, isFinalSection, finalDate, isMotorCard, sectionName }) => {
-    // Motor sport cards: NASCAR/F1 races get own page; PGA fills page normally
+    // Motor sport cards: NASCAR/F1 races and standings get own page; PGA fills page normally
     if (isMotorCard && games.length > 0) {
       const isPGA = games[0]?.isPGAHistory || games[0]?.isPGALive;
       if (!isPGA) {
@@ -6059,7 +6063,7 @@ function renderStreamCanvas() {
         pages.push([{ sport, games, isFinalSection: false, finalDate: null, isMotorCard: true, sectionName }]);
         return;
       }
-      // PGA falls through to normal page-filling logic below
+      // PGA falls through to normal page-filling logic below - each tournament fills available space
     }
     let remainingGames = games;
 
