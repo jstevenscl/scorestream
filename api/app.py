@@ -441,13 +441,13 @@ def init_db():
                 for key, value in gdata.items():
                     existing = conn.execute("SELECT data FROM motor_cache WHERE key=?", (key,)).fetchone()
                     new_data = _jg.dumps(value.get('data', value))
-                    if not existing or existing['data'] != new_data:
-                        gh_updated = value.get('_updated', '2026-01-01')
-                        conn.execute(
-                            "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
-                            (key, new_data, gh_updated + ' 00:00:00')
-                        )
-                        updated_count += 1
+                    # Always overwrite from data branch to ensure fresh data
+                    gh_updated = value.get('_updated', '2026-01-01')
+                    conn.execute(
+                        "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
+                        (key, new_data, gh_updated + ' 00:00:00')
+                    )
+                    updated_count += 1
                 conn.commit()
                 print(f'[api] Motor cache seeded from data branch: {updated_count}/{len(gdata)} keys updated')
             else:

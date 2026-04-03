@@ -1753,8 +1753,8 @@ function renderEditorStep(sbOverride){
         <div style="display:flex;flex-direction:column;gap:8px;">`;
       enabledForFinals.forEach(sp => {
         const cfg = finals[sp.id] || { show: false, days: 1 };
-        body += `<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border);">
-            <span style="font-size:15px;">${sp.emoji}</span>
+        body += `<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--bg-card);border-radius:8px;border:1px solid var(---border);${sp.fetchFn?'display:none;':''}">
+               <span style="font-size:15px;">${sp.emoji}</span>
             <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-primary);">${sp.name}</span>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
               <span style="font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">Show Finals</span>
@@ -5928,7 +5928,7 @@ function renderStreamCanvas() {
           const rName = (g.raceName||g.name||'').replace(/ \(\d+\/\d+\)$/,'').trim().replace(/\s+/g,'_');
           type = 'race__' + (g.raceDate||'0000') + '__' + rName;
         }
-        else if (g.isF1Next || g.isNascarInfo) type = 'next';
+        else if (g.isF1Next || g.isNascarInfo || g.isNascarNext) type = 'next';
         else if (g.isPGAHistory || g.isPGALive) {
           const baseName = (g.name||'').replace(/ \(\d+\/\d+\)$/,'').split(' (')[0].trim().replace(/\s+/g,'_');
           type = 'hist__' + (g.tournamentDate||'0000') + '__' + baseName;
