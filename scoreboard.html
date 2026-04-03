@@ -1461,6 +1461,7 @@ function openSbEditor(id){
   window._editingSbId = id;
   // Start draft from saved values
   _editorDraft={
+    id: sb.id,
     name: sb.name,
     sport_config: Object.assign({}, sb.sport_config||{}),
     team_config: (sb.team_config && !Array.isArray(sb.team_config)) ? JSON.parse(JSON.stringify(sb.team_config)) : {},
@@ -1896,6 +1897,8 @@ function collectEditorStepData(){
     if(nameSzEl) _editorDraft.display_config.card_name_size=parseInt(nameSzEl.value);
     const nameColEl=document.getElementById('sbEditNameColor');
     if(nameColEl) _editorDraft.display_config.card_name_color=nameColEl.value;
+    const logoSzEl=document.getElementById('sbEditLogoSize');
+    if(logoSzEl) _editorDraft.display_config.logo_size=parseInt(logoSzEl.value);
     const rotEl=document.getElementById('sbEditRotation');
     if(rotEl) _editorDraft.display_config.stream_rotation_secs=parseInt(rotEl.value);
     // Audio settings are updated live via sbAudioModeChange/sbAudioUrlChange, no collection needed here
@@ -2197,6 +2200,8 @@ function ddGetValues(){
     card_score_size: parseInt(gv('ddScoreSize'))||34,
     card_name_size:  parseInt(gv('ddNameSize'))||11,
     card_name_color: gv('ddNameColor')||'#3d5a78',
+    logo_size: parseInt(gv('ddLogoSize'))||34,
+    channel_name_size: parseInt(gv('ddChannelNameSize'))||14,
     stream_card_scale: (parseInt(gv('ddCardScale'))||100)/100,
     stream_rotation_secs: parseInt(gv('ddRotationSecs'))||15,
     stream_layout: layout,
@@ -3904,12 +3909,13 @@ function buildMotorsportEditorPanel(draft){
   const nasLive=mc.nascar_live!==false,nasLast=mc.nascar_last!==false,nasStand=mc.nascar_standings!==false;
   const nasMaxRaces=mc.nascar_max_races||3,f1MaxRaces=mc.f1_max_races||3,pgaMaxEventsUI=mc.pga_max_events||3;
   const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked,'${_mcSbId}')" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
-  const _mcSbId=draft.id||_activeSidebarSbId||_activeSbId||'';
+  const _mcSbId=(draft&&draft.id)||_activeSidebarSbId||_activeSbId||'';
   const countSel=(val,key,color,label)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div></div><div style="display:flex;gap:4px;">${[1,2,3,5,10].map(n=>`<button onclick="setMotorConfig('${key}',${n},'${_mcSbId}')" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===val?color:'var(--border)'};background:${n===val?color:'var(--bg-card)'};color:${n===val?'#000':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>`;
   const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Results','Full finishing order pages')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Championship standings')}${countSel(f1MaxRaces,'f1_max_races','#e10600','📋 Past Races to Show')}</div>`:'';
   const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}</div>`:'';
   const hasPGA=(_editorDraft.sport_config||{})['pga'];
-  const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}</div>`:'';
+  const pgaHistory=mc.pga_history!==false,pgaLive=mc.pga_live!==false;
+  const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}</div>`:'';
   const none=!hasF1&&!hasNascar&&!hasPGA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Motorsport Enabled</div><div style="font-size:11px;margin-top:4px;">Go to Settings → Sports Library to enable Formula 1 or NASCAR</div></div>`:'';
   return `<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this motorsport scoreboard displays:</div>${f1Sec}${nasSec}${pgaSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go to <strong>Settings → Sports Library → Motorsport</strong></div>`;
 }
