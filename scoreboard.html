@@ -3761,7 +3761,8 @@ function updateTopbar(){
 }
 
 function getMotorSectionName(sport, sampleCard) {
-  if (!sampleCard) return sport.name;
+  if (!sport) return '';
+  if (!sampleCard) return sport.name||'';
   if (sampleCard.isNascarStandings) return `${sport.name} — Point Standings`;
   if (sampleCard.isF1Standings) return `${sport.name} — Driver Standings`;
   if (sampleCard.isNascarLast || sampleCard.isNascarLive) {
@@ -3954,7 +3955,7 @@ function setMotorConfig(key,val){
 }
 function buildGameCard(g){
   if(g.isIndividual||g.isPGAHistory||g.isPGALive) return buildLeaderboardCard(g);
-  if(g.isNascarLive||g.isNascarStandings||g.isNascarLast||g.isNascarInfo) return buildNascarCard(g);
+  if(g.isNascarLive||g.isNascarStandings||g.isNascarLast||g.isNascarInfo||g.isNascarNext) return buildNascarCard(g);
   if(g.isF1Next || g.isF1Last || g.isF1Standings || g.isF1History) return buildF1Card(g);
   return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);
 }
@@ -4038,7 +4039,7 @@ async function fetchPGAData(sport, sbConfig){
           if(t.is_complete && pgaShown>=pgaMax) return;
           if(t.is_complete) pgaShown++;
           const players = t.players||[];
-          const chunkSize=10, total=players.length, totalPages=Math.ceil(total/chunkSize);
+          const chunkSize=8, total=players.length, totalPages=Math.ceil(total/chunkSize);
           const statusLabel = t.is_complete ? 'FINAL' : 'IN PROGRESS';
           for(let i=0;i<total;i+=chunkSize){
             const chunk=players.slice(i,i+chunkSize);
@@ -4093,6 +4094,7 @@ async function fetchPGAData(sport, sbConfig){
           // Skip events already in cache from motor_cache.json seed (avoid duplicates)
           // Show upcoming as single info card if no scores yet
           if(!hasScores && !isLive && !isFinal){
+            if(existingNames.has((ev.name||'').trim())) return;
             expanded.push({
               id:`pga-upcoming-${ev.id}`,
               name: ev.name||'Upcoming Tournament',
@@ -5945,7 +5947,7 @@ function renderStreamCanvas() {
         const group = _byType[type];
         if (!group||!group.length) return;
         const sample = group[0];
-        const sectionName = getMotorSectionName(sport, sample);
+        const sectionName = getMotorSectionName(sport, sample)||sport.name||'NASCAR';
         const maxPerPage = 8;
         for (let i = 0; i < group.length; i += maxPerPage) {
           const chunk = group.slice(i, i + maxPerPage);
