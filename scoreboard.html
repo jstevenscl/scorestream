@@ -1702,7 +1702,7 @@ function renderEditorStep(sbOverride){
     const _enabledSportIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
     const _motorSports=['f1','nascar'];
     const _isMotorOnly=_enabledSportIds.length>0&&_enabledSportIds.every(id=>_motorSports.includes(id));
-    if(_isMotorOnly){ body=buildMotorsportEditorPanel(_editorDraft); } else {
+    if(_isMotorOnly){ body=buildMotorsportEditorPanel(_editorDraft); setTimeout(()=>{const mp=document.getElementById('motorPanel');if(mp)mp.dataset.sbid=_editorDraft.id||_activeSbId||'';},10); } else {
     const groups=[
       {key:'pro',    label:'Pro Leagues',         sports: ALL_SPORTS.filter(s=>s.group==='pro')},
       {key:'motor',  label:'Motorsport',           sports: ALL_SPORTS.filter(s=>s.group==='motor')},
@@ -3917,7 +3917,7 @@ function buildMotorsportEditorPanel(draft){
   const pgaHistory=mc.pga_history!==false,pgaLive=mc.pga_live!==false;
   const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}</div>`:'';
   const none=!hasF1&&!hasNascar&&!hasPGA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Motorsport Enabled</div><div style="font-size:11px;margin-top:4px;">Go to Settings → Sports Library to enable Formula 1 or NASCAR</div></div>`:'';
-  return `<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this motorsport scoreboard displays:</div>${f1Sec}${nasSec}${pgaSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go to <strong>Settings → Sports Library → Motorsport</strong></div>`;
+  return `<div id="motorPanel" style=""><div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this motorsport scoreboard displays:</div>${f1Sec}${nasSec}${pgaSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go to <strong>Settings → Sports Library → Motorsport</strong></div>`;
 }
 function sbToggleDefault(group, toggleEl){
   const key = group==='fonts' ? 'use_default_fonts' : group==='colors' ? 'use_default_colors' : 'use_default_card_size';
@@ -3927,7 +3927,8 @@ function sbToggleDefault(group, toggleEl){
 }
 
 function setMotorConfig(key,val,explicitSbId){
-  const sbId=explicitSbId||_activeSidebarSbId||_activeSbId||window._editingSbId;
+  const _domSbId=document.getElementById('motorPanel')?.dataset?.sbid;
+  const sbId=explicitSbId||_activeSidebarSbId||_activeSbId||window._editingSbId||(_domSbId?parseInt(_domSbId):null);
   if(!sbId) return;
   const sb=_scoreboards&&_scoreboards.find(s=>s.id===sbId);
   const currentMc=Object.assign({}, sb ? sb.motor_config||{} : {});
@@ -4696,7 +4697,7 @@ function teamLogo(team){
   if(!team)return'';
   const bg=team.color||'#1a2a3a',text=(team.abbr||'?').substring(0,3);
   if(team.logo)return`<div class="team-logo-placeholder" style="background:#${bg.replace('#','')};padding:3px"><img src="${team.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:4px" onerror="this.parentNode.textContent='${text}'"></div>`;
-  return`<div class="team-logo-placeholder" style="background:#${bg.replace('#','')};color:white">${text}</div>`;
+  return`<div class="team-logo-placeholder" style="background:#${bg.replace('#','')};color:white">${text}</div></div>`;
 }
 
 function buildStats(g){
@@ -5941,8 +5942,11 @@ function renderStreamCanvas() {
         }
         else if (g.isF1Next || g.isNascarInfo || g.isNascarNext) type = 'next';
         else if (g.isPGAHistory || g.isPGALive) {
-          const baseName = (g.name||'').replace(/ \(\d+\/\d+\)$/,'').split(' (')[0].trim().replace(/\s+/g,'_');
-          type = 'hist__' + (g.tournamentDate||'0000') + '__' + baseName;
+          if (g.isLive) { type = 'live'; }
+          else {
+            const baseName = (g.name||'').replace(/ \(\d+\/\d+\)$/,'').split(' (')[0].trim().replace(/\s+/g,'_');
+            type = 'hist__' + (g.tournamentDate||'0000') + '__' + baseName;
+          }
         }
         else if (g.isLive || g.isNascarLive) type = 'live';
         if (!_byType[type]) _byType[type] = [];
