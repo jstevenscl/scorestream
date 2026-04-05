@@ -395,48 +395,6 @@ def init_db():
 
     # Seed built-in audio tracks from /builtin_audio (baked into API image via Dockerfile)
     # This is simple, reliable, and needs no cross-container communication
-    # Seed motor cache from GitHub data branch (unconditional — always runs on startup)
-    try:
-        import json as _jg
-        DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream/data/motor_cache.json'
-        rg = http.get(DATA_URL, timeout=15)
-        if rg.ok:
-            gdata = rg.json()
-            updated_count = 0
-            for key, value in gdata.items():
-                new_data = _jg.dumps(value.get('data', value))
-                gh_updated = value.get('_updated', '2026-01-01')
-                conn.execute(
-                    "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
-                    (key, new_data, gh_updated + ' 00:00:00')
-                )
-                updated_count += 1
-            conn.commit()
-            print(f'[api] Motor cache seeded from data branch: {updated_count}/{len(gdata)} keys updated')
-        else:
-            print(f'[api] Motor cache fetch failed: {rg.status_code}')
-    except Exception as e:
-        print(f'[api] Motor cache seed error: {e}')
-
-    # Seed nascar-history from nascar-last if history doesn't exist yet
-    try:
-        import json as _jh
-        hist = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-history'").fetchone()
-        if not hist:
-            last = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-last'").fetchone()
-            if last:
-                ld = _jh.loads(last['data'])
-                if isinstance(ld, str): ld = _jh.loads(ld)
-                if ld.get('drivers'):
-                    hist_data = {'races': [ld], 'updated': ld.get('race_date','2026-01-01')}
-                    conn.execute("INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,datetime('now'))",
-                                 ('nascar-history', _jh.dumps(hist_data)))
-                    conn.commit()
-                    print('[api] Seeded nascar-history from nascar-last')
-    except Exception as e:
-        print(f'[api] nascar-history seed error: {e}')
-
-    # Seed built-in audio tracks from /builtin_audio (baked into API image via Dockerfile)
     BUILTIN_AUDIO_SRC = '/builtin_audio'
     if _os.path.isdir(BUILTIN_AUDIO_SRC):
         try:
@@ -471,64 +429,109 @@ def init_db():
         except Exception as e:
             print(f'[api] Built-in audio seed error: {e}')
 
-    # Validate audio library on every startup:
-    # 1. Mark tracks whose files are missing from disk (file_size=0)
-    # 2. Remove ghost track IDs from playlists (IDs that no longer exist in library)
-    try:
-        import json as _jv
-        all_tracks = conn.execute('SELECT id, filename, file_size FROM audio_library').fetchall()
-        all_track_ids = {t['id'] for t in all_tracks}
-        for t in all_tracks:
-            full_path = _os.path.join(AUDIO_DIR, t['filename'])
-            on_disk = _os.path.exists(full_path)
-            if not on_disk and (t['file_size'] or 0) != 0:
-                conn.execute('UPDATE audio_library SET file_size=0 WHERE id=?', (t['id'],))
-                print(f'[api] Audio validation: file missing on disk — {t["filename"]}')
-            elif on_disk and (t['file_size'] or 0) == 0:
-                conn.execute('UPDATE audio_library SET file_size=? WHERE id=?',
-                             (_os.path.getsize(full_path), t['id']))
-        playlists = conn.execute('SELECT id, name, track_ids FROM audio_playlists').fetchall()
-        for pl in playlists:
-            ids = _jv.loads(pl['track_ids'] or '[]')
-            valid = [i for i in ids if i in all_track_ids]
-            if len(valid) != len(ids):
-                removed = [i for i in ids if i not in all_track_ids]
-                conn.execute('UPDATE audio_playlists SET track_ids=? WHERE id=?',
-                             (_jv.dumps(valid), pl['id']))
-                print(f'[api] Audio validation: removed ghost IDs {removed} from playlist "{pl["name"]}"')
+        # Seed motor cache from GitHub data branch (auto-updated by GitHub Actions)
+        # Fetches from dedicated data branch — never conflicts with code pushes to dev/beta/latest
+        try:
+            import json as _jg
+            DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream/data/motor_cache.json'
+            rg = http.get(DATA_URL, timeout=15)
+            if rg.ok:
+                gdata = rg.json()
+                updated_count = 0
+                for key, value in gdata.items():
+                    existing = conn.execute("SELECT data FROM motor_cache WHERE key=?", (key,)).fetchone()
+                    new_data = _jg.dumps(value.get('data', value))
+                    # Always overwrite from data branch to ensure fresh data
+                    gh_updated = value.get('_updated', '2026-01-01')
+                    conn.execute(
+                        "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
+                        (key, new_data, gh_updated + ' 00:00:00')
+                    )
+                    updated_count += 1
+                conn.commit()
+                print(f'[api] Motor cache seeded from data branch: {updated_count}/{len(gdata)} keys updated')
+            else:
+                print(f'[api] Motor cache fetch failed: {rg.status_code}')
+        except Exception as e:
+            print(f'[api] Motor cache seed error: {e}')
+
+        # Seed nascar-history from nascar-last if history doesn't exist yet
+        try:
+            import json as _jh
+            hist = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-history'").fetchone()
+            if not hist:
+                last = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-last'").fetchone()
+                if last:
+                    ld = _jh.loads(last['data'])
+                    if isinstance(ld, str): ld = _jh.loads(ld)
+                    if ld.get('drivers'):
+                        hist_data = {'races': [ld], 'updated': ld.get('race_date','2026-01-01')}
+                        conn.execute("INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,datetime('now'))",
+                                     ('nascar-history', _jh.dumps(hist_data)))
+                        conn.commit()
+                        print('[api] Seeded nascar-history from nascar-last')
+        except Exception as e:
+            print(f'[api] nascar-history seed error: {e}')
+
+        # Validate audio library on every startup:
+        # 1. Mark tracks whose files are missing from disk (file_size=0)
+        # 2. Remove ghost track IDs from playlists (IDs that no longer exist in library)
+        try:
+            import json as _jv
+            all_tracks = conn.execute('SELECT id, filename, file_size FROM audio_library').fetchall()
+            all_track_ids = {t['id'] for t in all_tracks}
+            for t in all_tracks:
+                full_path = _os.path.join(AUDIO_DIR, t['filename'])
+                on_disk = _os.path.exists(full_path)
+                if not on_disk and (t['file_size'] or 0) != 0:
+                    conn.execute('UPDATE audio_library SET file_size=0 WHERE id=?', (t['id'],))
+                    print(f'[api] Audio validation: file missing on disk — {t["filename"]}')
+                elif on_disk and (t['file_size'] or 0) == 0:
+                    # File now exists (was re-uploaded) — update size
+                    conn.execute('UPDATE audio_library SET file_size=? WHERE id=?',
+                                 (_os.path.getsize(full_path), t['id']))
+            playlists = conn.execute('SELECT id, name, track_ids FROM audio_playlists').fetchall()
+            for pl in playlists:
+                ids = _jv.loads(pl['track_ids'] or '[]')
+                valid = [i for i in ids if i in all_track_ids]
+                if len(valid) != len(ids):
+                    removed = [i for i in ids if i not in all_track_ids]
+                    conn.execute('UPDATE audio_playlists SET track_ids=? WHERE id=?',
+                                 (_jv.dumps(valid), pl['id']))
+                    print(f'[api] Audio validation: removed ghost IDs {removed} from playlist "{pl["name"]}"')
+            conn.commit()
+        except Exception as e:
+            print(f'[api] Audio validation error: {e}')
+
+        # Purge motor cache entries older than 30 days — but preserve nascar-2026-season
+        try:
+            conn.execute("DELETE FROM motor_cache WHERE key NOT IN ('nascar-2026-season','pga-2026-tournaments') AND updated_at < datetime('now','-30 days')")
+            conn.commit()
+        except Exception: pass
+
+        # Global settings table (display defaults etc)
+        conn.execute('''CREATE TABLE IF NOT EXISTS global_settings(
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )''')
+
+        # Motor cache table for NASCAR/F1 results (no external history API)
+        conn.execute('''CREATE TABLE IF NOT EXISTS motor_cache(
+            key TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )''')
+        # Purge stale motor cache entries older than 30 days
+        conn.execute("DELETE FROM motor_cache WHERE updated_at < datetime('now','-30 days')")
         conn.commit()
-    except Exception as e:
-        print(f'[api] Audio validation error: {e}')
 
-    # Purge motor cache entries older than 30 days — but preserve nascar-2026-season
-    try:
-        conn.execute("DELETE FROM motor_cache WHERE key NOT IN ('nascar-2026-season','pga-2026-tournaments') AND updated_at < datetime('now','-30 days')")
+        # Seed default scoreboard if none exists
+        existing = conn.execute('SELECT COUNT(*) FROM scoreboards').fetchone()[0]
+        if existing == 0:
+            conn.execute("""INSERT INTO scoreboards(name,slug,is_default,sport_config,team_config,display_config)
+                VALUES('ScoreStream','scorestream',1,'{}','[]','{}')""")
         conn.commit()
-    except Exception: pass
-
-    # Global settings table (display defaults etc)
-    conn.execute('''CREATE TABLE IF NOT EXISTS global_settings(
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )''')
-
-    # Motor cache table for NASCAR/F1 results (no external history API)
-    conn.execute('''CREATE TABLE IF NOT EXISTS motor_cache(
-        key TEXT PRIMARY KEY,
-        data TEXT NOT NULL,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )''')
-    # Purge stale motor cache entries older than 30 days
-    conn.execute("DELETE FROM motor_cache WHERE updated_at < datetime('now','-30 days')")
-    conn.commit()
-
-    # Seed default scoreboard if none exists
-    existing = conn.execute('SELECT COUNT(*) FROM scoreboards').fetchone()[0]
-    if existing == 0:
-        conn.execute("""INSERT INTO scoreboards(name,slug,is_default,sport_config,team_config,display_config)
-            VALUES('ScoreStream','scorestream',1,'{}','[]','{}')""")
-    conn.commit()
     log.info(f'DB ready: {DB_PATH}')
     threading.Thread(target=startup_sync, daemon=True, name='ncaa-sync').start()
 

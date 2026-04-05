@@ -1702,7 +1702,7 @@ function renderEditorStep(sbOverride){
     const _enabledSportIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
     const _motorSports=['f1','nascar'];
     const _isMotorOnly=_enabledSportIds.length>0&&_enabledSportIds.every(id=>_motorSports.includes(id));
-    if(_isMotorOnly){ body=buildMotorsportEditorPanel(_editorDraft); setTimeout(()=>{const mp=document.getElementById('motorPanel');if(mp)mp.dataset.sbid=_editorDraft.id||_activeSbId||'';},10); } else {
+    if(_isMotorOnly){ window._motorPanelSbId=_editorDraft.id||_activeSbId||null; body=buildMotorsportEditorPanel(_editorDraft); } else {
     const groups=[
       {key:'pro',    label:'Pro Leagues',         sports: ALL_SPORTS.filter(s=>s.group==='pro')},
       {key:'motor',  label:'Motorsport',           sports: ALL_SPORTS.filter(s=>s.group==='motor')},
@@ -3927,8 +3927,7 @@ function sbToggleDefault(group, toggleEl){
 }
 
 function setMotorConfig(key,val,explicitSbId){
-  const _domSbId=document.getElementById('motorPanel')?.dataset?.sbid;
-  const sbId=explicitSbId||_activeSidebarSbId||_activeSbId||window._editingSbId||(_domSbId?parseInt(_domSbId):null);
+  const sbId=explicitSbId||_activeSidebarSbId||_activeSbId||window._editingSbId||window._motorPanelSbId||null;
   if(!sbId) return;
   const sb=_scoreboards&&_scoreboards.find(s=>s.id===sbId);
   const currentMc=Object.assign({}, sb ? sb.motor_config||{} : {});
@@ -4045,7 +4044,7 @@ async function fetchPGAData(sport, sbConfig){
             return;
           }
           // Limit completed tournaments to pgaMax; skip live-but-uncached (ESPN will add)
-          if(isCurrentlyLive && !hasScores) return;
+          // Live: show even without cached round scores (ESPN adds live data)
           if(t.is_complete && pgaShown>=pgaMax) return;
           if(t.is_complete) pgaShown++;
           const players = t.players||[];
@@ -4101,9 +4100,10 @@ async function fetchPGAData(sport, sbConfig){
           const hasScores = competitors.some(p=>p.r1&&p.r1!==''&&p.r1!=='-'&&p.r1!=='0');
           const isLive = ev.status?.type?.state==='in';
           const isFinal = ev.status?.type?.state==='post';
+          const effectiveHasScores = hasScores || isLive;
           // Skip events already in cache from motor_cache.json seed (avoid duplicates)
           // Show upcoming as single info card if no scores yet
-          if(!hasScores && !isLive && !isFinal){
+          if(!effectiveHasScores && !isLive && !isFinal){
             if(existingNames.has((ev.name||'').trim())) return;
             expanded.push({
               id:`pga-upcoming-${ev.id}`,
