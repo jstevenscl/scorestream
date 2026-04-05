@@ -1700,7 +1700,7 @@ function renderEditorStep(sbOverride){
   }
   else if(_editorStep===2){
     const _enabledSportIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
-    const _motorSports=['f1','nascar'];
+    const _motorSports=['f1','nascar','pga'];
     const _isMotorOnly=_enabledSportIds.length>0&&_enabledSportIds.every(id=>_motorSports.includes(id));
     if(_isMotorOnly){ window._motorPanelSbId=_editorDraft.id||_activeSbId||null; body=buildMotorsportEditorPanel(_editorDraft); } else {
     const groups=[
@@ -3662,7 +3662,17 @@ async function fetchSport(sport){
   if(sport.fetchFn){
     const fn = window[sport.fetchFn];
     if(typeof fn === 'function'){
-      try{ const _sb2=_scoreboards&&_activeSbId?_scoreboards.find(s=>s.id===_activeSbId):null; const _cards=await fn(sport,_sb2); state.games[sport.id]=_cards; return _cards; }catch(e){ console.warn(sport.id,'custom fetch error',e); return []; }
+      try{
+        let _sb2=_scoreboards&&_activeSbId?_scoreboards.find(s=>s.id===_activeSbId):null;
+        // Re-fetch scoreboard config from DB so selector changes take effect immediately
+        if(_sb2&&_activeSbId){
+          try{
+            const _fresh=await fetch(`${API_BASE}/scoreboards/${_activeSbId}`,{signal:AbortSignal.timeout(2000)});
+            if(_fresh.ok){const _fd=await _fresh.json();if(_fd.motor_config){_sb2=Object.assign({},_sb2,{motor_config:_fd.motor_config});const _sm=_scoreboards&&_scoreboards.find(s=>s.id===_activeSbId);if(_sm)_sm.motor_config=_fd.motor_config;}}
+          }catch(e){}
+        }
+        const _cards=await fn(sport,_sb2); state.games[sport.id]=_cards; return _cards;
+      }catch(e){ console.warn(sport.id,'custom fetch error',e); return []; }
     }
     return [];
   }
@@ -3953,8 +3963,23 @@ function setMotorConfig(key,val,explicitSbId){
   });
   fetch(`${API_BASE}/scoreboards/${sbId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({motor_config:currentMc})
-  }).then(()=>{
-    // If a stream is active for this scoreboard, re-fetch motor data immediately
+  }).then(r=>r.json()).then(d=>{
+    // Update in-memory scoreboard with confirmed saved values
+    const saved=_scoreboards&&_scoreboards.find(s=>s.id===sbId);
+    if(saved&&d.motor_config) saved.motor_config=Object.assign({},d.motor_config);
+    if(window._editorDraft) window._editorDraft.motor_config=Object.assign({},currentMc);
+    // Re-render motor panel so buttons reflect saved state
+    const panelContainer=document.getElementById('sbEditorBody')||document.getElementById('sbWizardBody');
+    if(panelContainer&&window._editorDraft){
+      const _motorSports2=['f1','nascar','pga'];
+      const _enabledIds2=Object.keys(window._editorDraft.sport_config||{}).filter(id=>window._editorDraft.sport_config[id]);
+      const _isMotor2=_enabledIds2.length>0&&_enabledIds2.every(id=>_motorSports2.includes(id));
+      if(_isMotor2){
+        window._motorPanelSbId=sbId;
+        panelContainer.innerHTML=buildMotorsportEditorPanel(window._editorDraft);
+      }
+    }
+    // If stream page, re-fetch scores
     if(document.body.classList.contains('stream-mode')){
       fetchAllScores().then(()=>renderStreamCanvas()).catch(()=>{});
     }
