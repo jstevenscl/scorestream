@@ -473,6 +473,27 @@ def init_db():
         except Exception as e:
             print(f'[api] nascar-history seed error: {e}')
 
+        # Strip cross-contaminated keys from motor scoreboard configs
+        try:
+            import json as _jmc
+            _motor_valid_keys = {
+                'nascar': {'nascar_next_race','nascar_live','nascar_last','nascar_standings','nascar_max_races'},
+                'f1':     {'f1_next_race','f1_last_race','f1_standings','f1_max_races'},
+                'pga':    {'pga_live','pga_history','pga_max_events'},
+            }
+            for slug, valid_keys in _motor_valid_keys.items():
+                row = conn.execute("SELECT id, motor_config FROM scoreboards WHERE slug=?", (slug,)).fetchone()
+                if not row: continue
+                mc = _jmc.loads(row['motor_config'] or '{}')
+                cleaned = {k: v for k, v in mc.items() if k in valid_keys}
+                if cleaned != mc:
+                    conn.execute("UPDATE scoreboards SET motor_config=? WHERE id=?", (_jmc.dumps(cleaned), row['id']))
+                    removed = set(mc.keys()) - set(cleaned.keys())
+                    print(f'[api] Cleaned motor_config for {slug}: removed {removed}')
+            conn.commit()
+        except Exception as e:
+            print(f'[api] motor_config cleanup error: {e}')
+
         # Validate audio library on every startup:
         # 1. Mark tracks whose files are missing from disk (file_size=0)
         # 2. Remove ghost track IDs from playlists (IDs that no longer exist in library)

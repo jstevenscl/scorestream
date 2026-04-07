@@ -1571,7 +1571,7 @@ function renderEditorStep(sbOverride){
             <input type="range" min="14" max="28" step="1"
               value="${_editorDraft.display_config.card_abbr_size || 18}"
               id="sbEditAbbrSize"
-              oninput="document.getElementById('sbEditAbbrSizeVal').textContent=this.value+'px';sbPreviewCardScale(document.getElementById('sbEditCardScale').value/100)">
+              oninput="document.getElementById('sbEditAbbrSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-abbr-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditAbbrSizeVal">${_editorDraft.display_config.card_abbr_size || 18}px</span>
           </div>
           <div class="modal-slider-row">
@@ -1579,7 +1579,7 @@ function renderEditorStep(sbOverride){
             <input type="range" min="24" max="52" step="1"
               value="${_editorDraft.display_config.card_score_size || 34}"
               id="sbEditScoreSize"
-              oninput="document.getElementById('sbEditScoreSizeVal').textContent=this.value+'px';sbPreviewCardScale(document.getElementById('sbEditCardScale').value/100)">
+              oninput="document.getElementById('sbEditScoreSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-score-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditScoreSizeVal">${_editorDraft.display_config.card_score_size || 34}px</span>
           </div>
           <div class="modal-slider-row">
@@ -1587,7 +1587,7 @@ function renderEditorStep(sbOverride){
             <input type="range" min="9" max="16" step="1"
               value="${_editorDraft.display_config.card_name_size || 11}"
               id="sbEditNameSize"
-              oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px';sbPreviewCardScale(document.getElementById('sbEditCardScale').value/100)">
+              oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-name-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditNameSizeVal">${_editorDraft.display_config.card_name_size || 11}px</span>
           </div>
           <div class="modal-slider-row" style="align-items:center;">
@@ -1598,7 +1598,7 @@ function renderEditorStep(sbOverride){
                 <input type="color" id="sbEditNameColor"
                   value="${_editorDraft.display_config.card_name_color || '#3d5a78'}"
                   style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
-                  oninput="document.getElementById('sbEditNameColorSwatch').style.background=this.value;document.getElementById('sbEditNameColorVal').textContent=this.value;sbPreviewCardScale(document.getElementById('sbEditCardScale').value/100)">
+                  oninput="document.getElementById('sbEditNameColorSwatch').style.background=this.value;document.getElementById('sbEditNameColorVal').textContent=this.value;document.getElementById('sbCardScaleInner')?.style.setProperty('--card-name-color',this.value)">
               </div>
               <span class="modal-slider-val" id="sbEditNameColorVal">${_editorDraft.display_config.card_name_color || '#3d5a78'}</span>
             </div>
@@ -1656,7 +1656,7 @@ function renderEditorStep(sbOverride){
           <div class="wiz-label" style="margin-bottom:8px;">Card Scale Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(live)</span></div>
           <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px 14px 10px;overflow:hidden;">
             <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
-            <div id="sbCardScaleWrap" style="overflow:hidden;">
+            <div id="sbCardScaleWrap" style="overflow:hidden;max-height:260px;">
               <div id="sbCardScaleInner" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;transform-origin:top left;transition:transform 0.2s ease;"></div>
             </div>
           </div>
@@ -2308,29 +2308,17 @@ function sbPreviewCardScale(val){
   const inner = document.getElementById('sbCardScaleInner');
   const wrap  = document.getElementById('sbCardScaleWrap');
   if(!inner || !wrap) return;
-  // Reset transform first to measure natural size
+  // Reset transform to measure natural size, then re-apply
   inner.style.transform = '';
-  inner.style.removeProperty('--card-score-size');
-  inner.style.removeProperty('--card-abbr-size');
   const naturalW = inner.offsetWidth;
   const naturalH = inner.offsetHeight;
-  // Apply scale
   inner.style.transform = `scale(${scale})`;
   inner.style.transformOrigin = 'top left';
-  // Resize wrapper to match scaled dimensions (prevents gap / overflow)
+  // Resize wrapper to match scaled dimensions, capped to prevent overflow
+  const MAX_WRAP_H = 260;
   wrap.style.width  = Math.round(naturalW * scale) + 'px';
-  wrap.style.height = Math.round(naturalH * scale) + 'px';
-  // Update font sizes to match stream renderer — use editor's typography values as base
-  const abbrBase  = parseInt(document.getElementById('sbEditAbbrSize')?.value  || 18);
-  const scoreBase = parseInt(document.getElementById('sbEditScoreSize')?.value || 34);
-  const nameBase  = parseInt(document.getElementById('sbEditNameSize')?.value  || 11);
-  const nameColor = document.getElementById('sbEditNameColor')?.value || '#3d5a78';
-  inner.style.setProperty('--card-score-size', Math.round(scoreBase * scale) + 'px');
-  inner.style.setProperty('--card-abbr-size',  Math.round(abbrBase  * scale) + 'px');
-  inner.style.setProperty('--card-name-size',  Math.round(nameBase  * scale) + 'px');
-  inner.style.setProperty('--card-name-color', nameColor);
-  // Force reflow to prevent overflow
-  wrap.style.overflow='hidden';
+  wrap.style.height = Math.min(Math.round(naturalH * scale), MAX_WRAP_H) + 'px';
+  wrap.style.overflow = 'hidden';
 }
 
 function sbEditorFilterTeams(query){
