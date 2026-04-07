@@ -3949,16 +3949,18 @@ function setMotorConfig(key,val,explicitSbId){
     if(!_editorDraft.motor_config) _editorDraft.motor_config={};
     _editorDraft.motor_config=Object.assign({},currentMc);
   }
-  // Optimistic immediate re-render so buttons respond instantly on click
-  const panelContainer=document.getElementById('sbEditorBody')||document.getElementById('sbWizardBody');
-  if(panelContainer&&_editorDraft&&_editorDraft.id){
-    const _motorSports2=['f1','nascar','pga'];
-    const _enabledIds2=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
-    if(_enabledIds2.length>0&&_enabledIds2.every(id=>_motorSports2.includes(id))){
-      window._motorPanelSbId=sbId;
-      panelContainer.innerHTML=buildMotorsportEditorPanel(_editorDraft);
-    }
-  }
+  // Update only the count selector buttons for this key — surgical, no DOM restructuring
+  const colors={'nascar_max_races':'#ffd700','f1_max_races':'#e10600','pga_max_events':'#00594f'};
+  const col=colors[key]||'#ffd700';
+  document.querySelectorAll('button[onclick*="setMotorConfig"]').forEach(btn=>{
+    const oc=btn.getAttribute('onclick')||'';
+    const m=oc.match(/setMotorConfig\('([^']+)',(\d+)/);
+    if(!m||m[1]!==key) return;
+    const sel=parseInt(m[2])===val;
+    btn.style.background=sel?col:'var(--bg-card)';
+    btn.style.border='1px solid '+(sel?col:'var(--border)');
+    btn.style.color=sel?'#000':'var(--text-primary)';
+  });
   fetch(`${API_BASE}/scoreboards/${sbId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({motor_config:currentMc})
   }).then(r=>r.json()).then(d=>{
