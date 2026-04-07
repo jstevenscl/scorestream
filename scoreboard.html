@@ -5840,6 +5840,11 @@ async function refreshStreamConfig() {
     const prevRotation = _activeStreamDisplayConfig?.stream_rotation_secs;
     _activeStreamDisplayConfig = dc;
     _activeFinalsCfg = dc.finals || null;  // keep finals config in sync
+    // Update motor_config so fetchNascarData/fetchF1Data/fetchPGAData use latest selector values
+    if(sb.motor_config && _scoreboards){
+      const _streamSb=_scoreboards.find(s=>s.id===sb.id||s.slug===_activeStreamSlug);
+      if(_streamSb) _streamSb.motor_config=sb.motor_config;
+    }
     // Re-apply resolution if it changed
     applyStreamResolution(dc.stream_resolution || '1920x1080');
     // Re-apply layout if it changed
