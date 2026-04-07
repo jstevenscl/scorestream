@@ -12,6 +12,7 @@
   --accent:#00d4ff; --accent2:#ff6b00; --accent-green:#00ff88;
   --accent-red:#ff3b5c; --text-primary:#e8f0fe; --text-secondary:#7a9ab8;
   --text-dim:#3d5a78;
+  --motor-label-color:#3d5a78; --motor-secondary-color:#7a9ab8;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg-primary);color:var(--text-primary);font-family:'Barlow',sans-serif;min-height:100vh;overflow-x:hidden;}
@@ -172,6 +173,11 @@ body.stream-mode .star-btn.starred{display:inline-block !important;pointer-event
 body.stream-mode .game-card{cursor:default;animation:none;}
 body.stream-mode .game-card:hover{transform:none;box-shadow:none;border-color:var(--border);}
 body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
+/* Motor card header: sport label is redundant with section header in stream — hide it */
+body.stream-mode .motor-sport-label{display:none;}
+/* .card-header: used by motor sport cards (NASCAR/F1/PGA) */
+.card-header{padding:5px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;border-bottom:1px solid var(--border);}
+body.stream-mode .card-header{padding:4px 10px;}
 
 #stream-canvas{flex:1;overflow:hidden;position:relative;}
 #stream-pages{width:100%;height:100%;position:relative;}
@@ -1611,6 +1617,32 @@ function renderEditorStep(sbOverride){
               <span class="modal-slider-val" id="sbEditNameColorVal">${_editorDraft.display_config.card_name_color || '#3d5a78'}</span>
             </div>
           </div>
+          <div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="Color of label/dim text on motor sport cards (series name, section headers, track name)">Motor Label Color</span>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
+              <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+                <div id="sbEditMotorLabelColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.motor_label_color || '#3d5a78'};"></div>
+                <input type="color" id="sbEditMotorLabelColor"
+                  value="${_editorDraft.display_config.motor_label_color || '#3d5a78'}"
+                  style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                  oninput="document.getElementById('sbEditMotorLabelColorSwatch').style.background=this.value;document.getElementById('sbEditMotorLabelColorVal').textContent=this.value;document.getElementById('sbCardScaleInner')?.style.setProperty('--motor-label-color',this.value)">
+              </div>
+              <span class="modal-slider-val" id="sbEditMotorLabelColorVal">${_editorDraft.display_config.motor_label_color || '#3d5a78'}</span>
+            </div>
+          </div>
+          <div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="Color of secondary text on motor sport cards (driver number, car type, manufacturer, points)">Motor Secondary Color</span>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
+              <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+                <div id="sbEditMotorSecColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.motor_secondary_color || '#7a9ab8'};"></div>
+                <input type="color" id="sbEditMotorSecColor"
+                  value="${_editorDraft.display_config.motor_secondary_color || '#7a9ab8'}"
+                  style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                  oninput="document.getElementById('sbEditMotorSecColorSwatch').style.background=this.value;document.getElementById('sbEditMotorSecColorVal').textContent=this.value;document.getElementById('sbCardScaleInner')?.style.setProperty('--motor-secondary-color',this.value)">
+              </div>
+              <span class="modal-slider-val" id="sbEditMotorSecColorVal">${_editorDraft.display_config.motor_secondary_color || '#7a9ab8'}</span>
+            </div>
+          </div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -1709,6 +1741,8 @@ function renderEditorStep(sbOverride){
       const titleEl=document.getElementById('sbEditTitleSize'); if(titleEl) inner.style.setProperty('--card-title-size',titleEl.value+'px');
       const nameEl=document.getElementById('sbEditNameSize'); if(nameEl) inner.style.setProperty('--card-name-size',nameEl.value+'px');
       const colorEl=document.getElementById('sbEditNameColor'); if(colorEl) inner.style.setProperty('--card-name-color',colorEl.value);
+      const motorLblEl=document.getElementById('sbEditMotorLabelColor'); if(motorLblEl) inner.style.setProperty('--motor-label-color',motorLblEl.value);
+      const motorSecEl=document.getElementById('sbEditMotorSecColor'); if(motorSecEl) inner.style.setProperty('--motor-secondary-color',motorSecEl.value);
     }
     setTimeout(buildEditorPreview, 50);
     const _psel=document.getElementById('sbPlaylistSelect');if(_psel&&_audioPlaylists&&_audioPlaylists.length){while(_psel.options.length>1)_psel.remove(1);_audioPlaylists.forEach(function(p){const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_global?' (Global)':'');if(_editorDraft.audio_playlist_id===p.id)o.selected=true;_psel.appendChild(o);});}
@@ -1915,6 +1949,10 @@ function collectEditorStepData(){
     if(nameSzEl) _editorDraft.display_config.card_name_size=parseInt(nameSzEl.value);
     const nameColEl=document.getElementById('sbEditNameColor');
     if(nameColEl) _editorDraft.display_config.card_name_color=nameColEl.value;
+    const motorLabelEl=document.getElementById('sbEditMotorLabelColor');
+    if(motorLabelEl) _editorDraft.display_config.motor_label_color=motorLabelEl.value;
+    const motorSecEl=document.getElementById('sbEditMotorSecColor');
+    if(motorSecEl) _editorDraft.display_config.motor_secondary_color=motorSecEl.value;
     const logoSzEl=document.getElementById('sbEditLogoSize');
     if(logoSzEl) _editorDraft.display_config.logo_size=parseInt(logoSzEl.value);
     const rotEl=document.getElementById('sbEditRotation');
@@ -3460,6 +3498,8 @@ function initDisplayControls(){
     if(dc.card_score_size != null) state.display.scoreSize = dc.card_score_size;
     if(dc.card_name_size  != null) state.display.nameSize  = dc.card_name_size;
     if(dc.card_name_color != null) state.display.nameColor = dc.card_name_color;
+    if(dc.motor_label_color != null) document.documentElement.style.setProperty('--motor-label-color', dc.motor_label_color);
+    if(dc.motor_secondary_color != null) document.documentElement.style.setProperty('--motor-secondary-color', dc.motor_secondary_color);
   }
   const root=document.documentElement;
   root.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
@@ -4010,7 +4050,7 @@ function buildLeaderboardCard(g){
     <div class="card-header">
       <div style="display:flex;align-items:center;gap:6px;">
         <div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>
+        <span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>
       </div>
       ${sh}
     </div>
@@ -4375,6 +4415,7 @@ async function fetchF1Data(sport, sbConfig){
         country: nextRace.Circuit?.Location?.country||'',
         date: nextRace.date, time: timeStr,
         countdown, round: nextRace.round,
+        tv: 'ESPN',
       });
     }
     // Cards 2+: Last race ALL finishers paginated (8 per card)
@@ -4508,14 +4549,17 @@ async function fetchF1Data(sport, sbConfig){
 function buildNascarCard(g){
   const card=document.createElement('div');
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
-  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏁 ${g.sportName}</span>`;
+  card.style.setProperty('--text-dim','var(--motor-label-color,#3d5a78)');
+  card.style.setProperty('--text-secondary','var(--motor-secondary-color,#7a9ab8)');
+  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏁 ${g.sportName}</span>`;
   if(g.isNascarNext){
-    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span class="status-upcoming">UPCOMING</span></div>`;
+    const tvBadge=g.tv?buildNetworkBadges([g.tv]):'';
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><div style="display:flex;align-items:center;gap:4px;">${tvBadge}<span class="status-upcoming">UPCOMING</span></div></div>`;
     card.innerHTML=hdr+`<div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,15px);font-weight:900;color:var(--text-primary);margin:4px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
     <div style="display:flex;flex-direction:column;gap:5px;font-size:var(--card-name-size,11px);">
       <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📍</span><span style="color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;">${g.track||''}</span></div>
       <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📅</span><span style="color:var(--text-primary);">${g.raceDate||''}</span><span style="color:var(--text-dim);">${g.raceTime||''}</span></div>
-      <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📺</span><span style="color:var(--text-primary);">${g.tv||''}</span><span style="color:var(--accent-green);font-family:'Share Tech Mono',monospace;margin-left:auto;">${g.countdown||''}</span></div>
+      <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--accent-green);font-family:'Share Tech Mono',monospace;">${g.countdown||''}</span></div>
     </div>`;
     return card;
   }
@@ -4543,12 +4587,20 @@ function buildNascarCard(g){
 function buildF1Card(g){
   const card = document.createElement('div');
   card.className = `game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
+  card.style.setProperty('--text-dim','var(--motor-label-color,#3d5a78)');
+  card.style.setProperty('--text-secondary','var(--motor-secondary-color,#7a9ab8)');
+  const tvBadgeF1 = (g.isScheduled && g.tv) ? buildNetworkBadges([g.tv]) : '';
+  const statusBadgeF1 = g.isFinal
+    ? '<span class="status-final">RESULT</span>'
+    : g.isScheduled
+      ? `<div style="display:flex;align-items:center;gap:4px;">${tvBadgeF1}<span class="status-upcoming">UPCOMING</span></div>`
+      : '<span style="font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);">STANDINGS</span>';
   const header = `<div class="card-header">
     <div style="display:flex;align-items:center;gap:6px;">
       <div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div>
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏎️ ${g.sportName}</span>
+      <span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏎️ ${g.sportName}</span>
     </div>
-    ${g.isFinal?'<span class="status-final">RESULT</span>':g.isScheduled?'<span class="status-upcoming">UPCOMING</span>':'<span style="font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);">STANDINGS</span>'}
+    ${statusBadgeF1}
   </div>
   <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>`;
 
@@ -6064,10 +6116,19 @@ function renderStreamCanvas() {
     : (window.innerWidth - 28);
 
   // Card approximate height at current scale (header + 2 teams + padding)
-  // Individual sport cards (leaderboard, F1, NASCAR) are taller
+  // Individual sport cards (leaderboard, F1, NASCAR) are taller — and scale with font sizes.
+  // Motor cards have ~8 driver rows whose height scales with abbrSize+nameSize.
   const hasIndividualSports = getAllEnabledSports().some(s=>s.isIndividualSport||s.fetchFn);
   const hasMotorSports = getAllEnabledSports().some(s=>s.fetchFn);
-  const cardH = Math.round((hasIndividualSports || hasMotorSports ? 320 : 130) * scale);
+  const _eff_abbrPx = (state.display.abbrSize || 18) * scale;
+  const _eff_namePx = (state.display.nameSize || 11) * scale;
+  // Each motor card row: driver name (abbrPx) + secondary line (namePx) + 10px padding
+  const _motorRowH = _eff_abbrPx * 1.2 + _eff_namePx * 1.2 + 10;
+  // card-header(30) + race title(30) + 8 rows + bottom pad(20)
+  const _motorCardH = Math.round(60 + 8 * _motorRowH + 20);
+  const cardH = hasMotorSports ? Math.max(_motorCardH, Math.round(220 * scale))
+    : hasIndividualSports ? Math.round(260 * scale)
+    : Math.round(130 * scale);
   const sectionHeaderH = 36; // league-header height
   const gridGap = 9;
   const pagePad = 28; // padding inside page
@@ -6133,7 +6194,7 @@ function renderStreamCanvas() {
   pagesEl.innerHTML = '';
   pages.forEach((sections, pageIdx) => {
     const pageEl = document.createElement('div');
-    pageEl.className = 'stream-page' + (pageIdx === _streamCurrentPage ? ' active' : '');
+    pageEl.className = 'stream-page'; // active class applied after shrink-to-fit measurement
     pageEl.dataset.page = pageIdx;
 
     sections.forEach(({ sport, games, isFinalSection, isFavSection, finalDate, continued, isMotorCard, sectionName }) => {
@@ -6164,6 +6225,10 @@ function renderStreamCanvas() {
       grid.style.setProperty('--card-abbr-size',  Math.round(state.display.abbrSize  * scale) + 'px');
       grid.style.setProperty('--card-name-size',  Math.round(state.display.nameSize  * scale) + 'px');
       grid.style.setProperty('--card-name-color', state.display.nameColor);
+      const _dc = _activeStreamDisplayConfig || {};
+      if (_dc.card_title_size) grid.style.setProperty('--card-title-size', Math.round(_dc.card_title_size * scale) + 'px');
+      if (_dc.motor_label_color) grid.style.setProperty('--motor-label-color', _dc.motor_label_color);
+      if (_dc.motor_secondary_color) grid.style.setProperty('--motor-secondary-color', _dc.motor_secondary_color);
 
       games.forEach(g => {
         const card = buildGameCard(g);
@@ -6176,6 +6241,25 @@ function renderStreamCanvas() {
     });
 
     pagesEl.appendChild(pageEl);
+  });
+
+  // Shrink-to-fit: after layout is calculated, scale down any page whose content
+  // exceeds the available height (caused by large font sizes making cards taller
+  // than the cardH estimate). Runs before making the active page visible to avoid flash.
+  requestAnimationFrame(() => {
+    pagesEl.querySelectorAll('.stream-page').forEach(pg => {
+      pg.style.transform = '';
+      const contentH = pg.scrollHeight;
+      const containerH = pg.clientHeight || availH;
+      if (contentH > containerH + 4) {
+        const shrink = (containerH / contentH).toFixed(4);
+        pg.style.transform = `scale(${shrink})`;
+        pg.style.transformOrigin = 'top left';
+      }
+    });
+    // Now activate the current page (visible after scaling is applied)
+    const activePg = pagesEl.querySelector(`.stream-page[data-page="${_streamCurrentPage}"]`);
+    if (activePg) activePg.classList.add('active');
   });
 
   // Render pagination dots (only if more than 1 page)
