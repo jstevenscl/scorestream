@@ -3945,18 +3945,18 @@ function setMotorConfig(key,val,explicitSbId){
   const currentMc=Object.assign({}, sb ? sb.motor_config||{} : {});
   currentMc[key]=val;
   if(sb) sb.motor_config=Object.assign({},currentMc);
-  if(window._editorDraft){
-    if(!window._editorDraft.motor_config) window._editorDraft.motor_config={};
-    window._editorDraft.motor_config=Object.assign({},currentMc);
+  if(_editorDraft){
+    if(!_editorDraft.motor_config) _editorDraft.motor_config={};
+    _editorDraft.motor_config=Object.assign({},currentMc);
   }
   // Optimistic immediate re-render so buttons respond instantly on click
   const panelContainer=document.getElementById('sbEditorBody')||document.getElementById('sbWizardBody');
-  if(panelContainer&&window._editorDraft){
+  if(panelContainer&&_editorDraft&&_editorDraft.id){
     const _motorSports2=['f1','nascar','pga'];
-    const _enabledIds2=Object.keys(window._editorDraft.sport_config||{}).filter(id=>window._editorDraft.sport_config[id]);
+    const _enabledIds2=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
     if(_enabledIds2.length>0&&_enabledIds2.every(id=>_motorSports2.includes(id))){
       window._motorPanelSbId=sbId;
-      panelContainer.innerHTML=buildMotorsportEditorPanel(window._editorDraft);
+      panelContainer.innerHTML=buildMotorsportEditorPanel(_editorDraft);
     }
   }
   fetch(`${API_BASE}/scoreboards/${sbId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
