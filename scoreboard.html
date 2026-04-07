@@ -6146,12 +6146,16 @@ function renderStreamCanvas() {
   let currentPageH = 0;
 
   allSections.forEach(({ sport, games, isFinalSection, finalDate, isMotorCard, sectionName }) => {
-    // Motor sport cards: NASCAR/F1 races and standings get own page; PGA fills page normally
+    // Motor sport cards: each section gets its own page(s), split by cols so each
+    // page has at most one row of cards — guarantees nothing clips vertically.
     if (isMotorCard && games.length > 0) {
       const isPGA = games[0]?.isPGAHistory || games[0]?.isPGALive;
       if (!isPGA) {
         if (currentPageSections.length > 0) { pages.push(currentPageSections); currentPageSections = []; currentPageH = 0; }
-        pages.push([{ sport, games, isFinalSection: false, finalDate: null, isMotorCard: true, sectionName }]);
+        // Slice into pages of at most `cols` cards (1 row per stream page)
+        for (let i = 0; i < games.length; i += cols) {
+          pages.push([{ sport, games: games.slice(i, i + cols), isFinalSection: false, finalDate: null, isMotorCard: true, sectionName }]);
+        }
         return;
       }
       // PGA falls through to normal page-filling logic below - each tournament fills available space
@@ -6251,14 +6255,11 @@ function renderStreamCanvas() {
   requestAnimationFrame(() => {
     pagesEl.querySelectorAll('.stream-page').forEach(pg => {
       pg.style.transform = '';
-      // Measure content height via the last child's position + height.
-      // scrollHeight is unreliable on overflow:hidden position:absolute elements in Chromium.
-      const secs = pg.children;
-      let contentH = 20; // page padding top+bottom
-      if (secs.length > 0) {
-        const last = secs[secs.length - 1];
-        contentH = last.offsetTop + last.offsetHeight + 10; // 10px bottom padding
-      }
+      // Temporarily allow overflow so scrollHeight reflects true content height.
+      // All pages are opacity:0 at this point so no visual flash occurs.
+      pg.style.overflow = 'visible';
+      const contentH = pg.scrollHeight;
+      pg.style.overflow = ''; // reverts to CSS overflow:hidden
       if (contentH > availH + 4) {
         const shrink = (availH / contentH).toFixed(4);
         pg.style.transform = `scale(${shrink})`;
