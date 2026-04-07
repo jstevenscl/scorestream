@@ -3938,7 +3938,8 @@ function sbToggleDefault(group, toggleEl){
 }
 
 function setMotorConfig(key,val,explicitSbId){
-  const sbId=explicitSbId||_activeSidebarSbId||_activeSbId||window._editingSbId||window._motorPanelSbId||null;
+  // explicitSbId is always a baked numeric literal from the onclick — use it directly
+  const sbId=explicitSbId||_activeSbId||window._motorPanelSbId||window._editingSbId||null;
   if(!sbId) return;
   const sb=_scoreboards&&_scoreboards.find(s=>s.id===sbId);
   const currentMc=Object.assign({}, sb ? sb.motor_config||{} : {});
@@ -3948,38 +3949,22 @@ function setMotorConfig(key,val,explicitSbId){
     if(!window._editorDraft.motor_config) window._editorDraft.motor_config={};
     window._editorDraft.motor_config=Object.assign({},currentMc);
   }
-  // Update button styles directly without re-rendering
-  document.querySelectorAll('button[onclick*="setMotorConfig"]').forEach(btn=>{
-    const oc=btn.getAttribute('onclick')||'';
-    const km=oc.match(/setMotorConfig\('([^']+)',(\d+)\)/);
-    if(!km) return;
-    const bKey=km[1], bVal=parseInt(km[2]);
-    if(bKey!==key) return;
-    const colors={'nascar_max_races':'#ffd700','f1_max_races':'#e10600','pga_max_events':'#00594f'};
-    const col=colors[key]||'#ffd700';
-    const sel=bVal===val;
-    btn.style.background=sel?col:'var(--bg-card)';
-    btn.style.border='1px solid '+(sel?col:'var(--border)');
-    btn.style.color=sel?'#000':'var(--text-primary)';
-  });
+  // Optimistic immediate re-render so buttons respond instantly on click
+  const panelContainer=document.getElementById('sbEditorBody')||document.getElementById('sbWizardBody');
+  if(panelContainer&&window._editorDraft){
+    const _motorSports2=['f1','nascar','pga'];
+    const _enabledIds2=Object.keys(window._editorDraft.sport_config||{}).filter(id=>window._editorDraft.sport_config[id]);
+    if(_enabledIds2.length>0&&_enabledIds2.every(id=>_motorSports2.includes(id))){
+      window._motorPanelSbId=sbId;
+      panelContainer.innerHTML=buildMotorsportEditorPanel(window._editorDraft);
+    }
+  }
   fetch(`${API_BASE}/scoreboards/${sbId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({motor_config:currentMc})
   }).then(r=>r.json()).then(d=>{
-    // Update in-memory scoreboard with confirmed saved values
+    // Confirm saved values from DB into in-memory scoreboard
     const saved=_scoreboards&&_scoreboards.find(s=>s.id===sbId);
     if(saved&&d.motor_config) saved.motor_config=Object.assign({},d.motor_config);
-    if(window._editorDraft) window._editorDraft.motor_config=Object.assign({},currentMc);
-    // Re-render motor panel so buttons reflect saved state
-    const panelContainer=document.getElementById('sbEditorBody')||document.getElementById('sbWizardBody');
-    if(panelContainer&&window._editorDraft){
-      const _motorSports2=['f1','nascar','pga'];
-      const _enabledIds2=Object.keys(window._editorDraft.sport_config||{}).filter(id=>window._editorDraft.sport_config[id]);
-      const _isMotor2=_enabledIds2.length>0&&_enabledIds2.every(id=>_motorSports2.includes(id));
-      if(_isMotor2){
-        window._motorPanelSbId=sbId;
-        panelContainer.innerHTML=buildMotorsportEditorPanel(window._editorDraft);
-      }
-    }
     // If stream page, re-fetch scores
     if(document.body.classList.contains('stream-mode')){
       fetchAllScores().then(()=>renderStreamCanvas()).catch(()=>{});
