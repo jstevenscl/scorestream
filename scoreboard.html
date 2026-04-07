@@ -1583,6 +1583,14 @@ function renderEditorStep(sbOverride){
             <span class="modal-slider-val" id="sbEditScoreSizeVal">${_editorDraft.display_config.card_score_size || 34}px</span>
           </div>
           <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Size of the race/event title (e.g. Daytona 500, Japanese Grand Prix)">Title Size</span>
+            <input type="range" min="10" max="22" step="1"
+              value="${_editorDraft.display_config.card_title_size || 13}"
+              id="sbEditTitleSize"
+              oninput="document.getElementById('sbEditTitleSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-title-size',this.value+'px')">
+            <span class="modal-slider-val" id="sbEditTitleSizeVal">${_editorDraft.display_config.card_title_size || 13}px</span>
+          </div>
+          <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="Size of the full team name shown below the abbreviation">Team Name Size</span>
             <input type="range" min="9" max="16" step="1"
               value="${_editorDraft.display_config.card_name_size || 11}"
@@ -1694,6 +1702,14 @@ function renderEditorStep(sbOverride){
   setTimeout(()=>{
     const sel=document.getElementById('sbEditCardScale');
     if(sel) sbPreviewCardScale(parseFloat(sel.value)/100);
+    const inner=document.getElementById('sbCardScaleInner');
+    if(inner){
+      const abbrEl=document.getElementById('sbEditAbbrSize'); if(abbrEl) inner.style.setProperty('--card-abbr-size',abbrEl.value+'px');
+      const scoreEl=document.getElementById('sbEditScoreSize'); if(scoreEl) inner.style.setProperty('--card-score-size',scoreEl.value+'px');
+      const titleEl=document.getElementById('sbEditTitleSize'); if(titleEl) inner.style.setProperty('--card-title-size',titleEl.value+'px');
+      const nameEl=document.getElementById('sbEditNameSize'); if(nameEl) inner.style.setProperty('--card-name-size',nameEl.value+'px');
+      const colorEl=document.getElementById('sbEditNameColor'); if(colorEl) inner.style.setProperty('--card-name-color',colorEl.value);
+    }
     setTimeout(buildEditorPreview, 50);
     const _psel=document.getElementById('sbPlaylistSelect');if(_psel&&_audioPlaylists&&_audioPlaylists.length){while(_psel.options.length>1)_psel.remove(1);_audioPlaylists.forEach(function(p){const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_global?' (Global)':'');if(_editorDraft.audio_playlist_id===p.id)o.selected=true;_psel.appendChild(o);});}
   },0);
@@ -1893,6 +1909,8 @@ function collectEditorStepData(){
     if(abbrSzEl) _editorDraft.display_config.card_abbr_size=parseInt(abbrSzEl.value);
     const scoreSzEl=document.getElementById('sbEditScoreSize');
     if(scoreSzEl) _editorDraft.display_config.card_score_size=parseInt(scoreSzEl.value);
+    const titleSzEl=document.getElementById('sbEditTitleSize');
+    if(titleSzEl) _editorDraft.display_config.card_title_size=parseInt(titleSzEl.value);
     const nameSzEl=document.getElementById('sbEditNameSize');
     if(nameSzEl) _editorDraft.display_config.card_name_size=parseInt(nameSzEl.value);
     const nameColEl=document.getElementById('sbEditNameColor');
@@ -2065,7 +2083,7 @@ function buildEditorPreview(){
     g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
     inner.appendChild(g1); inner.appendChild(g2);
   } else if(isMotorOnly&&isNascar){
-    var g1=buildNascarCard({id:'nascar-live',name:'Daytona 500',sportName:'NASCAR Cup',sportEmoji:'\uD83C\uDFC1',sportColor:'#ffd700',isLive:true,isFinal:false,isNascarLive:true,flagEmoji:'\uD83D\uDFE2',trackName:'Daytona International Speedway',lapNumber:142,lapsInRace:200,lapsToGo:58,drivers:[{pos:1,driver:'Denny Hamlin',car:'11',delta:null},{pos:2,driver:'Kyle Larson',car:'5',delta:0.8},{pos:3,driver:'Chase Elliott',car:'9',delta:1.2},{pos:4,driver:'Ryan Blaney',car:'12',delta:2.3},{pos:5,driver:'Martin Truex Jr',car:'19',delta:3.1}]});
+    var g1=buildNascarCard({id:'nascar-live',name:'Daytona 500',sportName:'NASCAR Cup Series',sportEmoji:'\uD83C\uDFC1',sportColor:'#ffd700',isLive:true,isFinal:false,isNascarLive:true,flagEmoji:'\uD83D\uDFE2',trackName:'Daytona International Speedway',lapNumber:142,lapsInRace:200,lapsToGo:58,drivers:[{pos:1,driver:'Denny Hamlin',car:'#11',manufacturer:'Toyota',delta:null},{pos:2,driver:'Kyle Larson',car:'#5',manufacturer:'Chevrolet',delta:0.8},{pos:3,driver:'Chase Elliott',car:'#9',manufacturer:'Chevrolet',delta:1.2},{pos:4,driver:'Ryan Blaney',car:'#12',manufacturer:'Ford',delta:2.3},{pos:5,driver:'Martin Truex Jr',car:'#19',manufacturer:'Toyota',delta:3.1}]});
     g1.style.pointerEvents='none';
     inner.appendChild(g1);
   } else if(isPGA){
@@ -3121,7 +3139,7 @@ const ALL_SPORTS=[
   {id:'pga',        name:'PGA Tour',               group:'pro',   color:'#00594f',emoji:'⛳',url:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',isIndividualSport:true,fetchFn:'fetchPGAData'},
   // Motorsport (custom APIs — Jolpica for F1, cf.nascar.com for NASCAR)
   {id:'f1',         name:'Formula 1',              group:'motor', color:'#e10600',emoji:'🏎️',fetchFn:'fetchF1Data'},
-  {id:'nascar',     name:'NASCAR Cup',             group:'motor', color:'#ffd700',emoji:'🏁',fetchFn:'fetchNascarData'},
+  {id:'nascar',     name:'NASCAR Cup Series',       group:'motor', color:'#ffd700',emoji:'🏁',fetchFn:'fetchNascarData'},
   // Tennis — parked until live match endpoint confirmed
   // International Soccer
   {id:'epl',        name:'Premier League',         group:'soccer',color:'#3d195b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard'},
@@ -3911,7 +3929,7 @@ function buildMotorsportEditorPanel(draft){
   const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked,${_mcSbId})" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
   const countSel=(val,key,color,label)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div></div><div style="display:flex;gap:4px;">${[1,2,3,5,10].map(n=>`<button onclick="setMotorConfig('${key}',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===val?color:'var(--border)'};background:${n===val?color:'var(--bg-card)'};color:${n===val?'#000':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>`;
   const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Results','Full finishing order pages')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Championship standings')}${countSel(f1MaxRaces,'f1_max_races','#e10600','📋 Past Races to Show')}</div>`:'';
-  const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}</div>`:'';
+  const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}</div>`:'';
   const hasPGA=(_editorDraft.sport_config||{})['pga'];
   const pgaHistory=mc.pga_history!==false,pgaLive=mc.pga_live!==false;
   const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}</div>`:'';
@@ -4178,7 +4196,7 @@ async function fetchNascarData(sport, sbConfig){
                 const pageNum=Math.floor(i/chunkSize)+1;
                 cards.push({
                   id:`nascar-stand-${pageNum}`,
-                  name:totalPages>1?`NASCAR Cup Point Standings (${pageNum}/${totalPages})`:'NASCAR Cup Point Standings',
+                  name:totalPages>1?`NASCAR Cup Series Point Standings (${pageNum}/${totalPages})`:'NASCAR Cup Series Point Standings',
                   sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
                   isLive:false,isFinal:false,isScheduled:false,isIndividual:false,
                   isNascarStandings:true,drivers:chunk,pageNum,totalPages,
@@ -4490,10 +4508,10 @@ async function fetchF1Data(sport, sbConfig){
 function buildNascarCard(g){
   const card=document.createElement('div');
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
-  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏁 ${g.sportName}</span>`;
+  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏁 ${g.sportName}</span>`;
   if(g.isNascarNext){
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span class="status-upcoming">UPCOMING</span></div>`;
-    card.innerHTML=hdr+`<div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;color:var(--text-primary);margin:4px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
+    card.innerHTML=hdr+`<div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,15px);font-weight:900;color:var(--text-primary);margin:4px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
     <div style="display:flex;flex-direction:column;gap:5px;font-size:var(--card-name-size,11px);">
       <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📍</span><span style="color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;">${g.track||''}</span></div>
       <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📅</span><span style="color:var(--text-primary);">${g.raceDate||''}</span><span style="color:var(--text-dim);">${g.raceTime||''}</span></div>
@@ -4502,11 +4520,11 @@ function buildNascarCard(g){
     return card;
   }
   if(g.isNascarInfo){
-    card.innerHTML=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span class="status-upcoming">NO RACE</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.runName||'NASCAR Cup Series'}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;">${g.message||'No race data available.'}</div>`;
+    card.innerHTML=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span class="status-upcoming">NO RACE</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.runName||'NASCAR Cup Series'}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;">${g.message||'No race data available.'}</div>`;
     return card;
   }
   if(g.isNascarStandings){
-    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-name-size,11px);font-family:'Share Tech Mono',monospace;color:var(--text-dim);">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
     const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-secondary);width:20px;text-align:right;">${d.pos}</span><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||'').replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
@@ -4514,7 +4532,7 @@ function buildNascarCard(g){
   if(g.isNascarLast||g.isNascarLive){
     const medals=['🥇','🥈','🥉'];
     const statusBadge=g.isFinal?'<span class="status-final">RESULT</span>':`<span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'Share Tech Mono',monospace;color:#4ade80;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span>LIVE</span>`;
-    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${statusBadge}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:var(--text-primary);margin:4px 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.trackName||''} ${g.raceDate?' · '+g.raceDate:''}</div>`;
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${statusBadge}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.trackName||''} ${g.raceDate?' · '+g.raceDate:''}</div>`;
     const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;">${d.pos<=3?medals[d.pos-1]:d.pos}</span><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||d.number||'').toString().replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
@@ -4528,11 +4546,11 @@ function buildF1Card(g){
   const header = `<div class="card-header">
     <div style="display:flex;align-items:center;gap:6px;">
       <div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div>
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏎️ ${g.sportName}</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏎️ ${g.sportName}</span>
     </div>
     ${g.isFinal?'<span class="status-final">RESULT</span>':g.isScheduled?'<span class="status-upcoming">UPCOMING</span>':'<span style="font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);">STANDINGS</span>'}
   </div>
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:var(--text-primary);margin:4px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>`;
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>`;
 
   let body = '';
   if(g.isF1Next){
