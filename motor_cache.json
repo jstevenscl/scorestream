@@ -12,296 +12,296 @@
         {
           "pos": 1,
           "driver": "C. Elliott",
-          "car": ",#9",
-          "manufacturer": ",Chevrolet",
+          "car": "#9",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 55
         },
         {
           "pos": 2,
           "driver": "D. Hamlin",
-          "car": ",#11",
-          "manufacturer": ",Toyota",
+          "car": "#11",
+          "manufacturer": "Toyota",
           "status": "Finished",
           "points": 56
         },
         {
           "pos": 3,
           "driver": "J. Logano",
-          "car": ",#22",
-          "manufacturer": ",Ford",
+          "car": "#22",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 46
         },
         {
           "pos": 4,
           "driver": "T. Gibbs",
-          "car": ",#54",
-          "manufacturer": ",Toyota",
+          "car": "#54",
+          "manufacturer": "Toyota",
           "status": "Finished",
           "points": 49
         },
         {
           "pos": 5,
           "driver": "W. Byron",
-          "car": ",#24",
-          "manufacturer": ",Chevrolet",
+          "car": "#24",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 47
         },
         {
           "pos": 6,
           "driver": "R. Blaney",
-          "car": ",#12",
-          "manufacturer": ",Ford",
+          "car": "#12",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 41
         },
         {
           "pos": 7,
           "driver": "C. Bell",
-          "car": ",#20",
-          "manufacturer": ",Toyota",
+          "car": "#20",
+          "manufacturer": "Toyota",
           "status": "Finished",
           "points": 30
         },
         {
           "pos": 8,
           "driver": "A. Cindric",
-          "car": ",#2",
-          "manufacturer": ",Ford",
+          "car": "#2",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 40
         },
         {
           "pos": 9,
           "driver": "K. Larson",
-          "car": ",#5",
-          "manufacturer": ",Chevrolet",
+          "car": "#5",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 30
         },
         {
           "pos": 10,
           "driver": "J. Berry",
-          "car": ",#21",
-          "manufacturer": ",Ford",
+          "car": "#21",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 36
         },
         {
           "pos": 11,
           "driver": "S. van Gisbergen",
-          "car": ",#97",
-          "manufacturer": ",Chevrolet",
+          "car": "#97",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 34
         },
         {
           "pos": 12,
           "driver": "R. Preece",
-          "car": ",#60",
-          "manufacturer": ",Ford",
+          "car": "#60",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 26
         },
         {
           "pos": 13,
           "driver": "B. Keselowski",
-          "car": ",#6",
-          "manufacturer": ",Ford",
+          "car": "#6",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 24
         },
         {
           "pos": 14,
           "driver": "C. Briscoe",
-          "car": ",#19",
-          "manufacturer": ",Toyota",
+          "car": "#19",
+          "manufacturer": "Toyota",
           "status": "Finished",
           "points": 23
         },
         {
           "pos": 15,
           "driver": "T. Reddick",
-          "car": ",#45",
-          "manufacturer": ",Toyota",
+          "car": "#45",
+          "manufacturer": "Toyota",
           "status": "Finished",
           "points": 28
         },
         {
           "pos": 16,
           "driver": "R. Chastain",
-          "car": ",#1",
-          "manufacturer": ",Chevrolet",
+          "car": "#1",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 21
         },
         {
           "pos": 17,
           "driver": "C. Hocevar",
-          "car": ",#77",
-          "manufacturer": ",Chevrolet",
+          "car": "#77",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 20
         },
         {
           "pos": 18,
           "driver": "M. McDowell",
-          "car": ",#71",
-          "manufacturer": ",Chevrolet",
+          "car": "#71",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 19
         },
         {
           "pos": 19,
           "driver": "C. Buescher",
-          "car": ",#17",
-          "manufacturer": ",Ford",
+          "car": "#17",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 18
         },
         {
           "pos": 20,
           "driver": "D. Suárez",
-          "car": ",#7",
-          "manufacturer": ",Chevrolet",
+          "car": "#7",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 17
         },
         {
           "pos": 21,
           "driver": "E. Jones",
-          "car": ",#43",
-          "manufacturer": ",Toyota",
+          "car": "#43",
+          "manufacturer": "Toyota",
           "status": "Finished",
           "points": 16
         },
         {
           "pos": 22,
           "driver": "J. Allgaier",
-          "car": ",#48",
-          "manufacturer": ",Chevrolet",
+          "car": "#48",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 0
         },
         {
           "pos": 23,
           "driver": "T. Gilliland",
-          "car": ",#34",
-          "manufacturer": ",Ford",
+          "car": "#34",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 14
         },
         {
           "pos": 24,
           "driver": "K. Busch",
-          "car": ",#8",
-          "manufacturer": ",Chevrolet",
+          "car": "#8",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 13
         },
         {
           "pos": 25,
           "driver": "A. Dillon",
-          "car": ",#3",
-          "manufacturer": ",Chevrolet",
+          "car": "#3",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 12
         },
         {
           "pos": 26,
           "driver": "C. Zilisch",
-          "car": ",#88",
-          "manufacturer": ",Chevrolet",
+          "car": "#88",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 11
         },
         {
           "pos": 27,
           "driver": "AJ Allmendinger",
-          "car": ",#16",
-          "manufacturer": ",Chevrolet",
+          "car": "#16",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 10
         },
         {
           "pos": 28,
           "driver": "N. Gragson",
-          "car": ",#4",
-          "manufacturer": ",Ford",
+          "car": "#4",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 9
         },
         {
           "pos": 29,
           "driver": "J. Nemechek",
-          "car": ",#42",
-          "manufacturer": ",Toyota",
+          "car": "#42",
+          "manufacturer": "Toyota",
           "status": "Finished",
           "points": 8
         },
         {
           "pos": 30,
           "driver": "R. Stenhouse Jr.",
-          "car": ",#47",
-          "manufacturer": ",Chevrolet",
+          "car": "#47",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 7
         },
         {
           "pos": 31,
           "driver": "C. Custer",
-          "car": ",#41",
-          "manufacturer": ",Chevrolet",
+          "car": "#41",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 6
         },
         {
           "pos": 32,
           "driver": "C. Ware",
-          "car": ",#51",
-          "manufacturer": ",Chevrolet",
+          "car": "#51",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 5
         },
         {
           "pos": 33,
           "driver": "A. Hill",
-          "car": ",#33",
-          "manufacturer": ",Chevrolet",
+          "car": "#33",
+          "manufacturer": "Chevrolet",
           "status": "Finished",
           "points": 0
         },
         {
           "pos": 34,
           "driver": "Z. Smith",
-          "car": ",#38",
-          "manufacturer": ",Ford",
+          "car": "#38",
+          "manufacturer": "Ford",
           "status": "Finished",
           "points": 3
         },
         {
           "pos": 35,
           "driver": "R. Herbst",
-          "car": ",#35",
-          "manufacturer": ",Toyota",
+          "car": "#35",
+          "manufacturer": "Toyota",
           "status": "DNF",
           "points": 2
         },
         {
           "pos": 36,
           "driver": "D. Wallace Jr.",
-          "car": ",#23",
-          "manufacturer": ",Toyota",
+          "car": "#23",
+          "manufacturer": "Toyota",
           "status": "DNF",
           "points": 1
         },
         {
           "pos": 37,
           "driver": "T. Dillon",
-          "car": ",#10",
-          "manufacturer": ",Chevrolet",
+          "car": "#10",
+          "manufacturer": "Chevrolet",
           "status": "DNF",
           "points": 1
         }
@@ -324,296 +324,296 @@
             {
               "pos": 1,
               "driver": "C. Elliott",
-              "car": ",#9",
-              "manufacturer": ",Chevrolet",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 55
             },
             {
               "pos": 2,
               "driver": "D. Hamlin",
-              "car": ",#11",
-              "manufacturer": ",Toyota",
+              "car": "#11",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 56
             },
             {
               "pos": 3,
               "driver": "J. Logano",
-              "car": ",#22",
-              "manufacturer": ",Ford",
+              "car": "#22",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 46
             },
             {
               "pos": 4,
               "driver": "T. Gibbs",
-              "car": ",#54",
-              "manufacturer": ",Toyota",
+              "car": "#54",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 49
             },
             {
               "pos": 5,
               "driver": "W. Byron",
-              "car": ",#24",
-              "manufacturer": ",Chevrolet",
+              "car": "#24",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 47
             },
             {
               "pos": 6,
               "driver": "R. Blaney",
-              "car": ",#12",
-              "manufacturer": ",Ford",
+              "car": "#12",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 41
             },
             {
               "pos": 7,
               "driver": "C. Bell",
-              "car": ",#20",
-              "manufacturer": ",Toyota",
+              "car": "#20",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 30
             },
             {
               "pos": 8,
               "driver": "A. Cindric",
-              "car": ",#2",
-              "manufacturer": ",Ford",
+              "car": "#2",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 40
             },
             {
               "pos": 9,
               "driver": "K. Larson",
-              "car": ",#5",
-              "manufacturer": ",Chevrolet",
+              "car": "#5",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 30
             },
             {
               "pos": 10,
               "driver": "J. Berry",
-              "car": ",#21",
-              "manufacturer": ",Ford",
+              "car": "#21",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 36
             },
             {
               "pos": 11,
               "driver": "S. van Gisbergen",
-              "car": ",#97",
-              "manufacturer": ",Chevrolet",
+              "car": "#97",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 34
             },
             {
               "pos": 12,
               "driver": "R. Preece",
-              "car": ",#60",
-              "manufacturer": ",Ford",
+              "car": "#60",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 26
             },
             {
               "pos": 13,
               "driver": "B. Keselowski",
-              "car": ",#6",
-              "manufacturer": ",Ford",
+              "car": "#6",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 24
             },
             {
               "pos": 14,
               "driver": "C. Briscoe",
-              "car": ",#19",
-              "manufacturer": ",Toyota",
+              "car": "#19",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 23
             },
             {
               "pos": 15,
               "driver": "T. Reddick",
-              "car": ",#45",
-              "manufacturer": ",Toyota",
+              "car": "#45",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 28
             },
             {
               "pos": 16,
               "driver": "R. Chastain",
-              "car": ",#1",
-              "manufacturer": ",Chevrolet",
+              "car": "#1",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 21
             },
             {
               "pos": 17,
               "driver": "C. Hocevar",
-              "car": ",#77",
-              "manufacturer": ",Chevrolet",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 20
             },
             {
               "pos": 18,
               "driver": "M. McDowell",
-              "car": ",#71",
-              "manufacturer": ",Chevrolet",
+              "car": "#71",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 19
             },
             {
               "pos": 19,
               "driver": "C. Buescher",
-              "car": ",#17",
-              "manufacturer": ",Ford",
+              "car": "#17",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 18
             },
             {
               "pos": 20,
               "driver": "D. Suárez",
-              "car": ",#7",
-              "manufacturer": ",Chevrolet",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 17
             },
             {
               "pos": 21,
               "driver": "E. Jones",
-              "car": ",#43",
-              "manufacturer": ",Toyota",
+              "car": "#43",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 16
             },
             {
               "pos": 22,
               "driver": "J. Allgaier",
-              "car": ",#48",
-              "manufacturer": ",Chevrolet",
+              "car": "#48",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 0
             },
             {
               "pos": 23,
               "driver": "T. Gilliland",
-              "car": ",#34",
-              "manufacturer": ",Ford",
+              "car": "#34",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 14
             },
             {
               "pos": 24,
               "driver": "K. Busch",
-              "car": ",#8",
-              "manufacturer": ",Chevrolet",
+              "car": "#8",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 13
             },
             {
               "pos": 25,
               "driver": "A. Dillon",
-              "car": ",#3",
-              "manufacturer": ",Chevrolet",
+              "car": "#3",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 12
             },
             {
               "pos": 26,
               "driver": "C. Zilisch",
-              "car": ",#88",
-              "manufacturer": ",Chevrolet",
+              "car": "#88",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 11
             },
             {
               "pos": 27,
               "driver": "AJ Allmendinger",
-              "car": ",#16",
-              "manufacturer": ",Chevrolet",
+              "car": "#16",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 10
             },
             {
               "pos": 28,
               "driver": "N. Gragson",
-              "car": ",#4",
-              "manufacturer": ",Ford",
+              "car": "#4",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 9
             },
             {
               "pos": 29,
               "driver": "J. Nemechek",
-              "car": ",#42",
-              "manufacturer": ",Toyota",
+              "car": "#42",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 8
             },
             {
               "pos": 30,
               "driver": "R. Stenhouse Jr.",
-              "car": ",#47",
-              "manufacturer": ",Chevrolet",
+              "car": "#47",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 7
             },
             {
               "pos": 31,
               "driver": "C. Custer",
-              "car": ",#41",
-              "manufacturer": ",Chevrolet",
+              "car": "#41",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 6
             },
             {
               "pos": 32,
               "driver": "C. Ware",
-              "car": ",#51",
-              "manufacturer": ",Chevrolet",
+              "car": "#51",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 5
             },
             {
               "pos": 33,
               "driver": "A. Hill",
-              "car": ",#33",
-              "manufacturer": ",Chevrolet",
+              "car": "#33",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 0
             },
             {
               "pos": 34,
               "driver": "Z. Smith",
-              "car": ",#38",
-              "manufacturer": ",Ford",
+              "car": "#38",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 3
             },
             {
               "pos": 35,
               "driver": "R. Herbst",
-              "car": ",#35",
-              "manufacturer": ",Toyota",
+              "car": "#35",
+              "manufacturer": "Toyota",
               "status": "DNF",
               "points": 2
             },
             {
               "pos": 36,
               "driver": "D. Wallace Jr.",
-              "car": ",#23",
-              "manufacturer": ",Toyota",
+              "car": "#23",
+              "manufacturer": "Toyota",
               "status": "DNF",
               "points": 1
             },
             {
               "pos": 37,
               "driver": "T. Dillon",
-              "car": ",#10",
-              "manufacturer": ",Chevrolet",
+              "car": "#10",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 1
             }
@@ -630,296 +630,296 @@
             {
               "pos": 1,
               "driver": "T. Reddick",
-              "car": ",#45",
-              "manufacturer": ",Toyota",
+              "car": "#45",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 70
             },
             {
               "pos": 2,
               "driver": "B. Keselowski",
-              "car": ",#6",
-              "manufacturer": ",Ford",
+              "car": "#6",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 55
             },
             {
               "pos": 3,
               "driver": "R. Blaney",
-              "car": ",#12",
-              "manufacturer": ",Ford",
+              "car": "#12",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 42
             },
             {
               "pos": 4,
               "driver": "C. Hocevar",
-              "car": ",#77",
-              "manufacturer": ",Chevrolet",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 33
             },
             {
               "pos": 5,
               "driver": "A. Cindric",
-              "car": ",#2",
-              "manufacturer": ",Ford",
+              "car": "#2",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 38
             },
             {
               "pos": 6,
               "driver": "T. Gibbs",
-              "car": ",#54",
-              "manufacturer": ",Toyota",
+              "car": "#54",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 33
             },
             {
               "pos": 7,
               "driver": "D. Suárez",
-              "car": ",#7",
-              "manufacturer": ",Chevrolet",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 33
             },
             {
               "pos": 8,
               "driver": "W. Byron",
-              "car": ",#24",
-              "manufacturer": ",Chevrolet",
+              "car": "#24",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 34
             },
             {
               "pos": 9,
               "driver": "C. Buescher",
-              "car": ",#17",
-              "manufacturer": ",Ford",
+              "car": "#17",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 42
             },
             {
               "pos": 10,
               "driver": "E. Jones",
-              "car": ",#43",
-              "manufacturer": ",Toyota",
+              "car": "#43",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 27
             },
             {
               "pos": 11,
               "driver": "D. Hamlin",
-              "car": ",#11",
-              "manufacturer": ",Toyota",
+              "car": "#11",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 26
             },
             {
               "pos": 12,
               "driver": "C. Briscoe",
-              "car": ",#19",
-              "manufacturer": ",Toyota",
+              "car": "#19",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 32
             },
             {
               "pos": 13,
               "driver": "R. Preece",
-              "car": ",#60",
-              "manufacturer": ",Ford",
+              "car": "#60",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 29
             },
             {
               "pos": 14,
               "driver": "S. van Gisbergen",
-              "car": ",#97",
-              "manufacturer": ",Chevrolet",
+              "car": "#97",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 23
             },
             {
               "pos": 15,
               "driver": "C. Elliott",
-              "car": ",#9",
-              "manufacturer": ",Chevrolet",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 26
             },
             {
               "pos": 16,
               "driver": "R. Chastain",
-              "car": ",#1",
-              "manufacturer": ",Chevrolet",
+              "car": "#1",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 21
             },
             {
               "pos": 17,
               "driver": "J. Berry",
-              "car": ",#21",
-              "manufacturer": ",Ford",
+              "car": "#21",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 20
             },
             {
               "pos": 18,
               "driver": "C. Zilisch",
-              "car": ",#88",
-              "manufacturer": ",Chevrolet",
+              "car": "#88",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 19
             },
             {
               "pos": 19,
               "driver": "C. Bell",
-              "car": ",#20",
-              "manufacturer": ",Toyota",
+              "car": "#20",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 18
             },
             {
               "pos": 20,
               "driver": "M. McDowell",
-              "car": ",#71",
-              "manufacturer": ",Chevrolet",
+              "car": "#71",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 17
             },
             {
               "pos": 21,
               "driver": "K. Busch",
-              "car": ",#8",
-              "manufacturer": ",Chevrolet",
+              "car": "#8",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 16
             },
             {
               "pos": 22,
               "driver": "Z. Smith",
-              "car": ",#38",
-              "manufacturer": ",Ford",
+              "car": "#38",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 15
             },
             {
               "pos": 23,
               "driver": "T. Gilliland",
-              "car": ",#34",
-              "manufacturer": ",Ford",
+              "car": "#34",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 14
             },
             {
               "pos": 24,
               "driver": "J. Allgaier",
-              "car": ",#48",
-              "manufacturer": ",Chevrolet",
+              "car": "#48",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 0
             },
             {
               "pos": 25,
               "driver": "A. Dillon",
-              "car": ",#3",
-              "manufacturer": ",Chevrolet",
+              "car": "#3",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 12
             },
             {
               "pos": 26,
               "driver": "N. Gragson",
-              "car": ",#4",
-              "manufacturer": ",Ford",
+              "car": "#4",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 11
             },
             {
               "pos": 27,
               "driver": "J. Nemechek",
-              "car": ",#42",
-              "manufacturer": ",Toyota",
+              "car": "#42",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 10
             },
             {
               "pos": 28,
               "driver": "C. Custer",
-              "car": ",#41",
-              "manufacturer": ",Chevrolet",
+              "car": "#41",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 9
             },
             {
               "pos": 29,
               "driver": "R. Stenhouse Jr.",
-              "car": ",#47",
-              "manufacturer": ",Chevrolet",
+              "car": "#47",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 8
             },
             {
               "pos": 30,
               "driver": "AJ Allmendinger",
-              "car": ",#16",
-              "manufacturer": ",Chevrolet",
+              "car": "#16",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 7
             },
             {
               "pos": 31,
               "driver": "T. Dillon",
-              "car": ",#10",
-              "manufacturer": ",Chevrolet",
+              "car": "#10",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 6
             },
             {
               "pos": 32,
               "driver": "K. Larson",
-              "car": ",#5",
-              "manufacturer": ",Chevrolet",
+              "car": "#5",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 19
             },
             {
               "pos": 33,
               "driver": "J. Logano",
-              "car": ",#22",
-              "manufacturer": ",Ford",
+              "car": "#22",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 4
             },
             {
               "pos": 34,
               "driver": "D. Wallace Jr.",
-              "car": ",#23",
-              "manufacturer": ",Toyota",
+              "car": "#23",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 11
             },
             {
               "pos": 35,
               "driver": "R. Herbst",
-              "car": ",#35",
-              "manufacturer": ",Toyota",
+              "car": "#35",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 2
             },
             {
               "pos": 36,
               "driver": "C. Ware",
-              "car": ",#51",
-              "manufacturer": ",Chevrolet",
+              "car": "#51",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 1
             },
             {
               "pos": 37,
               "driver": "T. Hill",
-              "car": ",#66",
-              "manufacturer": ",Ford",
+              "car": "#66",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 0
             }
@@ -936,288 +936,288 @@
             {
               "pos": 1,
               "driver": "D. Hamlin",
-              "car": ",#11",
-              "manufacturer": ",Toyota",
+              "car": "#11",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 70
             },
             {
               "pos": 2,
               "driver": "C. Elliott",
-              "car": ",#9",
-              "manufacturer": ",Chevrolet",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 40
             },
             {
               "pos": 3,
               "driver": "W. Byron",
-              "car": ",#24",
-              "manufacturer": ",Chevrolet",
+              "car": "#24",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 49
             },
             {
               "pos": 4,
               "driver": "C. Bell",
-              "car": ",#20",
-              "manufacturer": ",Toyota",
+              "car": "#20",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 51
             },
             {
               "pos": 5,
               "driver": "T. Gibbs",
-              "car": ",#54",
-              "manufacturer": ",Toyota",
+              "car": "#54",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 39
             },
             {
               "pos": 6,
               "driver": "C. Buescher",
-              "car": ",#17",
-              "manufacturer": ",Ford",
+              "car": "#17",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 35
             },
             {
               "pos": 7,
               "driver": "K. Larson",
-              "car": ",#5",
-              "manufacturer": ",Chevrolet",
+              "car": "#5",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 48
             },
             {
               "pos": 8,
               "driver": "C. Briscoe",
-              "car": ",#19",
-              "manufacturer": ",Toyota",
+              "car": "#19",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 29
             },
             {
               "pos": 9,
               "driver": "D. Wallace Jr.",
-              "car": ",#23",
-              "manufacturer": ",Toyota",
+              "car": "#23",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 41
             },
             {
               "pos": 10,
               "driver": "B. Keselowski",
-              "car": ",#6",
-              "manufacturer": ",Ford",
+              "car": "#6",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 27
             },
             {
               "pos": 11,
               "driver": "R. Preece",
-              "car": ",#60",
-              "manufacturer": ",Ford",
+              "car": "#60",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 33
             },
             {
               "pos": 12,
               "driver": "A. Dillon",
-              "car": ",#3",
-              "manufacturer": ",Chevrolet",
+              "car": "#3",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 25
             },
             {
               "pos": 13,
               "driver": "T. Reddick",
-              "car": ",#45",
-              "manufacturer": ",Toyota",
+              "car": "#45",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 30
             },
             {
               "pos": 14,
               "driver": "Z. Smith",
-              "car": ",#38",
-              "manufacturer": ",Ford",
+              "car": "#38",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 23
             },
             {
               "pos": 15,
               "driver": "J. Logano",
-              "car": ",#22",
-              "manufacturer": ",Ford",
+              "car": "#22",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 22
             },
             {
               "pos": 16,
               "driver": "R. Blaney",
-              "car": ",#12",
-              "manufacturer": ",Ford",
+              "car": "#12",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 23
             },
             {
               "pos": 17,
               "driver": "R. Chastain",
-              "car": ",#1",
-              "manufacturer": ",Chevrolet",
+              "car": "#1",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 20
             },
             {
               "pos": 18,
               "driver": "D. Suárez",
-              "car": ",#7",
-              "manufacturer": ",Chevrolet",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 19
             },
             {
               "pos": 19,
               "driver": "A. Cindric",
-              "car": ",#2",
-              "manufacturer": ",Ford",
+              "car": "#2",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 19
             },
             {
               "pos": 20,
               "driver": "E. Jones",
-              "car": ",#43",
-              "manufacturer": ",Toyota",
+              "car": "#43",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 17
             },
             {
               "pos": 21,
               "driver": "J. Nemechek",
-              "car": ",#42",
-              "manufacturer": ",Toyota",
+              "car": "#42",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 16
             },
             {
               "pos": 22,
               "driver": "C. Hocevar",
-              "car": ",#77",
-              "manufacturer": ",Chevrolet",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 15
             },
             {
               "pos": 23,
               "driver": "R. Herbst",
-              "car": ",#35",
-              "manufacturer": ",Toyota",
+              "car": "#35",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 14
             },
             {
               "pos": 24,
               "driver": "AJ Allmendinger",
-              "car": ",#16",
-              "manufacturer": ",Chevrolet",
+              "car": "#16",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 13
             },
             {
               "pos": 25,
               "driver": "J. Allgaier",
-              "car": ",#48",
-              "manufacturer": ",Chevrolet",
+              "car": "#48",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 0
             },
             {
               "pos": 26,
               "driver": "M. McDowell",
-              "car": ",#71",
-              "manufacturer": ",Chevrolet",
+              "car": "#71",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 11
             },
             {
               "pos": 27,
               "driver": "C. Custer",
-              "car": ",#41",
-              "manufacturer": ",Chevrolet",
+              "car": "#41",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 10
             },
             {
               "pos": 28,
               "driver": "K. Busch",
-              "car": ",#8",
-              "manufacturer": ",Chevrolet",
+              "car": "#8",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 9
             },
             {
               "pos": 29,
               "driver": "R. Stenhouse Jr.",
-              "car": ",#47",
-              "manufacturer": ",Chevrolet",
+              "car": "#47",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 8
             },
             {
               "pos": 30,
               "driver": "N. Gragson",
-              "car": ",#4",
-              "manufacturer": ",Ford",
+              "car": "#4",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 7
             },
             {
               "pos": 31,
               "driver": "J. Berry",
-              "car": ",#21",
-              "manufacturer": ",Ford",
+              "car": "#21",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 6
             },
             {
               "pos": 32,
               "driver": "C. Zilisch",
-              "car": ",#88",
-              "manufacturer": ",Chevrolet",
+              "car": "#88",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 5
             },
             {
               "pos": 33,
               "driver": "T. Dillon",
-              "car": ",#10",
-              "manufacturer": ",Chevrolet",
+              "car": "#10",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 4
             },
             {
               "pos": 34,
               "driver": "T. Gilliland",
-              "car": ",#34",
-              "manufacturer": ",Ford",
+              "car": "#34",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 3
             },
             {
               "pos": 35,
               "driver": "C. Ware",
-              "car": ",#51",
-              "manufacturer": ",Chevrolet",
+              "car": "#51",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 2
             },
             {
               "pos": 36,
               "driver": "S. van Gisbergen",
-              "car": ",#97",
-              "manufacturer": ",Chevrolet",
+              "car": "#97",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 1
             }
@@ -1234,296 +1234,296 @@
             {
               "pos": 1,
               "driver": "R. Blaney",
-              "car": ",#12",
-              "manufacturer": ",Ford",
+              "car": "#12",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 65
             },
             {
               "pos": 2,
               "driver": "C. Bell",
-              "car": ",#20",
-              "manufacturer": ",Toyota",
+              "car": "#20",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 54
             },
             {
               "pos": 3,
               "driver": "K. Larson",
-              "car": ",#5",
-              "manufacturer": ",Chevrolet",
+              "car": "#5",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 36
             },
             {
               "pos": 4,
               "driver": "T. Gibbs",
-              "car": ",#54",
-              "manufacturer": ",Toyota",
+              "car": "#54",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 36
             },
             {
               "pos": 5,
               "driver": "D. Hamlin",
-              "car": ",#11",
-              "manufacturer": ",Toyota",
+              "car": "#11",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 47
             },
             {
               "pos": 6,
               "driver": "D. Wallace Jr.",
-              "car": ",#23",
-              "manufacturer": ",Toyota",
+              "car": "#23",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 37
             },
             {
               "pos": 7,
               "driver": "W. Byron",
-              "car": ",#24",
-              "manufacturer": ",Chevrolet",
+              "car": "#24",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 32
             },
             {
               "pos": 8,
               "driver": "T. Reddick",
-              "car": ",#45",
-              "manufacturer": ",Toyota",
+              "car": "#45",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 39
             },
             {
               "pos": 9,
               "driver": "M. McDowell",
-              "car": ",#71",
-              "manufacturer": ",Chevrolet",
+              "car": "#71",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 28
             },
             {
               "pos": 10,
               "driver": "E. Jones",
-              "car": ",#43",
-              "manufacturer": ",Toyota",
+              "car": "#43",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 27
             },
             {
               "pos": 11,
               "driver": "S. van Gisbergen",
-              "car": ",#97",
-              "manufacturer": ",Chevrolet",
+              "car": "#97",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 26
             },
             {
               "pos": 12,
               "driver": "T. Gilliland",
-              "car": ",#34",
-              "manufacturer": ",Ford",
+              "car": "#34",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 26
             },
             {
               "pos": 13,
               "driver": "R. Preece",
-              "car": ",#60",
-              "manufacturer": ",Ford",
+              "car": "#60",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 24
             },
             {
               "pos": 14,
               "driver": "C. Buescher",
-              "car": ",#17",
-              "manufacturer": ",Ford",
+              "car": "#17",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 30
             },
             {
               "pos": 15,
               "driver": "B. Keselowski",
-              "car": ",#6",
-              "manufacturer": ",Ford",
+              "car": "#6",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 22
             },
             {
               "pos": 16,
               "driver": "A. Dillon",
-              "car": ",#3",
-              "manufacturer": ",Chevrolet",
+              "car": "#3",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 21
             },
             {
               "pos": 17,
               "driver": "K. Busch",
-              "car": ",#8",
-              "manufacturer": ",Chevrolet",
+              "car": "#8",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 20
             },
             {
               "pos": 18,
               "driver": "R. Herbst",
-              "car": ",#35",
-              "manufacturer": ",Toyota",
+              "car": "#35",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 19
             },
             {
               "pos": 19,
               "driver": "AJ Allmendinger",
-              "car": ",#16",
-              "manufacturer": ",Chevrolet",
+              "car": "#16",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 18
             },
             {
               "pos": 20,
               "driver": "C. Hocevar",
-              "car": ",#77",
-              "manufacturer": ",Chevrolet",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 21
             },
             {
               "pos": 21,
               "driver": "A. Hill",
-              "car": ",#33",
-              "manufacturer": ",Chevrolet",
+              "car": "#33",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 0
             },
             {
               "pos": 22,
               "driver": "R. Stenhouse Jr.",
-              "car": ",#47",
-              "manufacturer": ",Chevrolet",
+              "car": "#47",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 15
             },
             {
               "pos": 23,
               "driver": "C. Elliott",
-              "car": ",#9",
-              "manufacturer": ",Chevrolet",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 14
             },
             {
               "pos": 24,
               "driver": "C. Ware",
-              "car": ",#51",
-              "manufacturer": ",Chevrolet",
+              "car": "#51",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 13
             },
             {
               "pos": 25,
               "driver": "J. Nemechek",
-              "car": ",#42",
-              "manufacturer": ",Toyota",
+              "car": "#42",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 12
             },
             {
               "pos": 26,
               "driver": "T. Dillon",
-              "car": ",#10",
-              "manufacturer": ",Chevrolet",
+              "car": "#10",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 11
             },
             {
               "pos": 27,
               "driver": "Z. Smith",
-              "car": ",#38",
-              "manufacturer": ",Ford",
+              "car": "#38",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 10
             },
             {
               "pos": 28,
               "driver": "R. Chastain",
-              "car": ",#1",
-              "manufacturer": ",Chevrolet",
+              "car": "#1",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 10
             },
             {
               "pos": 29,
               "driver": "C. Zilisch",
-              "car": ",#88",
-              "manufacturer": ",Chevrolet",
+              "car": "#88",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 8
             },
             {
               "pos": 30,
               "driver": "D. Suárez",
-              "car": ",#7",
-              "manufacturer": ",Chevrolet",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 11
             },
             {
               "pos": 31,
               "driver": "J. Logano",
-              "car": ",#22",
-              "manufacturer": ",Ford",
+              "car": "#22",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 23
             },
             {
               "pos": 32,
               "driver": "J. Berry",
-              "car": ",#21",
-              "manufacturer": ",Ford",
+              "car": "#21",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 5
             },
             {
               "pos": 33,
               "driver": "A. Alfredo",
-              "car": ",#48",
-              "manufacturer": ",Chevrolet",
+              "car": "#48",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 0
             },
             {
               "pos": 34,
               "driver": "A. Cindric",
-              "car": ",#2",
-              "manufacturer": ",Ford",
+              "car": "#2",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 13
             },
             {
               "pos": 35,
               "driver": "C. Custer",
-              "car": ",#41",
-              "manufacturer": ",Chevrolet",
+              "car": "#41",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 2
             },
             {
               "pos": 36,
               "driver": "N. Gragson",
-              "car": ",#4",
-              "manufacturer": ",Ford",
+              "car": "#4",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 1
             },
             {
               "pos": 37,
               "driver": "C. Briscoe",
-              "car": ",#19",
-              "manufacturer": ",Toyota",
+              "car": "#19",
+              "manufacturer": "Toyota",
               "status": "DNF",
               "points": 1
             }
@@ -1540,296 +1540,296 @@
             {
               "pos": 1,
               "driver": "T. Reddick",
-              "car": ",#45",
-              "manufacturer": ",Toyota",
+              "car": "#45",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 61
             },
             {
               "pos": 2,
               "driver": "S. van Gisbergen",
-              "car": ",#97",
-              "manufacturer": ",Chevrolet",
+              "car": "#97",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 45
             },
             {
               "pos": 3,
               "driver": "C. Bell",
-              "car": ",#20",
-              "manufacturer": ",Toyota",
+              "car": "#20",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 34
             },
             {
               "pos": 4,
               "driver": "T. Gibbs",
-              "car": ",#54",
-              "manufacturer": ",Toyota",
+              "car": "#54",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 48
             },
             {
               "pos": 5,
               "driver": "M. McDowell",
-              "car": ",#71",
-              "manufacturer": ",Chevrolet",
+              "car": "#71",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 40
             },
             {
               "pos": 6,
               "driver": "K. Larson",
-              "car": ",#5",
-              "manufacturer": ",Chevrolet",
+              "car": "#5",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 31
             },
             {
               "pos": 7,
               "driver": "C. Elliott",
-              "car": ",#9",
-              "manufacturer": ",Chevrolet",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 33
             },
             {
               "pos": 8,
               "driver": "R. Blaney",
-              "car": ",#12",
-              "manufacturer": ",Ford",
+              "car": "#12",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 33
             },
             {
               "pos": 9,
               "driver": "AJ Allmendinger",
-              "car": ",#16",
-              "manufacturer": ",Chevrolet",
+              "car": "#16",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 43
             },
             {
               "pos": 10,
               "driver": "D. Hamlin",
-              "car": ",#11",
-              "manufacturer": ",Toyota",
+              "car": "#11",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 28
             },
             {
               "pos": 11,
               "driver": "D. Wallace Jr.",
-              "car": ",#23",
-              "manufacturer": ",Toyota",
+              "car": "#23",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 31
             },
             {
               "pos": 12,
               "driver": "K. Busch",
-              "car": ",#8",
-              "manufacturer": ",Chevrolet",
+              "car": "#8",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 25
             },
             {
               "pos": 13,
               "driver": "W. Byron",
-              "car": ",#24",
-              "manufacturer": ",Chevrolet",
+              "car": "#24",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 26
             },
             {
               "pos": 14,
               "driver": "C. Zilisch",
-              "car": ",#88",
-              "manufacturer": ",Chevrolet",
+              "car": "#88",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 23
             },
             {
               "pos": 15,
               "driver": "J. Logano",
-              "car": ",#22",
-              "manufacturer": ",Ford",
+              "car": "#22",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 22
             },
             {
               "pos": 16,
               "driver": "T. Dillon",
-              "car": ",#10",
-              "manufacturer": ",Chevrolet",
+              "car": "#10",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 21
             },
             {
               "pos": 17,
               "driver": "J. Nemechek",
-              "car": ",#42",
-              "manufacturer": ",Toyota",
+              "car": "#42",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 20
             },
             {
               "pos": 18,
               "driver": "R. Preece",
-              "car": ",#60",
-              "manufacturer": ",Ford",
+              "car": "#60",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 19
             },
             {
               "pos": 19,
               "driver": "A. Dillon",
-              "car": ",#3",
-              "manufacturer": ",Chevrolet",
+              "car": "#3",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 18
             },
             {
               "pos": 20,
               "driver": "B. Keselowski",
-              "car": ",#6",
-              "manufacturer": ",Ford",
+              "car": "#6",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 17
             },
             {
               "pos": 21,
               "driver": "T. Gilliland",
-              "car": ",#34",
-              "manufacturer": ",Ford",
+              "car": "#34",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 23
             },
             {
               "pos": 22,
               "driver": "N. Gragson",
-              "car": ",#4",
-              "manufacturer": ",Ford",
+              "car": "#4",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 15
             },
             {
               "pos": 23,
               "driver": "R. Herbst",
-              "car": ",#35",
-              "manufacturer": ",Toyota",
+              "car": "#35",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 14
             },
             {
               "pos": 24,
               "driver": "C. Buescher",
-              "car": ",#17",
-              "manufacturer": ",Ford",
+              "car": "#17",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 20
             },
             {
               "pos": 25,
               "driver": "D. Suárez",
-              "car": ",#7",
-              "manufacturer": ",Chevrolet",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 20
             },
             {
               "pos": 26,
               "driver": "J. Berry",
-              "car": ",#21",
-              "manufacturer": ",Ford",
+              "car": "#21",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 11
             },
             {
               "pos": 27,
               "driver": "J. Love",
-              "car": ",#33",
-              "manufacturer": ",Chevrolet",
+              "car": "#33",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 0
             },
             {
               "pos": 28,
               "driver": "R. Stenhouse Jr.",
-              "car": ",#47",
-              "manufacturer": ",Chevrolet",
+              "car": "#47",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 9
             },
             {
               "pos": 29,
               "driver": "C. Custer",
-              "car": ",#41",
-              "manufacturer": ",Chevrolet",
+              "car": "#41",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 11
             },
             {
               "pos": 30,
               "driver": "C. Ware",
-              "car": ",#51",
-              "manufacturer": ",Chevrolet",
+              "car": "#51",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 7
             },
             {
               "pos": 31,
               "driver": "C. Hocevar",
-              "car": ",#77",
-              "manufacturer": ",Chevrolet",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 8
             },
             {
               "pos": 32,
               "driver": "A. Cindric",
-              "car": ",#2",
-              "manufacturer": ",Ford",
+              "car": "#2",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 5
             },
             {
               "pos": 33,
               "driver": "Z. Smith",
-              "car": ",#38",
-              "manufacturer": ",Ford",
+              "car": "#38",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 4
             },
             {
               "pos": 34,
               "driver": "E. Jones",
-              "car": ",#43",
-              "manufacturer": ",Toyota",
+              "car": "#43",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 3
             },
             {
               "pos": 35,
               "driver": "R. Chastain",
-              "car": ",#1",
-              "manufacturer": ",Chevrolet",
+              "car": "#1",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 13
             },
             {
               "pos": 36,
               "driver": "A. Bowman",
-              "car": ",#48",
-              "manufacturer": ",Chevrolet",
+              "car": "#48",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 5
             },
             {
               "pos": 37,
               "driver": "C. Briscoe",
-              "car": ",#19",
-              "manufacturer": ",Toyota",
+              "car": "#19",
+              "manufacturer": "Toyota",
               "status": "DNF",
               "points": 1
             }
@@ -1846,304 +1846,304 @@
             {
               "pos": 1,
               "driver": "T. Reddick",
-              "car": ",#45",
-              "manufacturer": ",Toyota",
+              "car": "#45",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 67
             },
             {
               "pos": 2,
               "driver": "C. Briscoe",
-              "car": ",#19",
-              "manufacturer": ",Toyota",
+              "car": "#19",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 43
             },
             {
               "pos": 3,
               "driver": "R. Chastain",
-              "car": ",#1",
-              "manufacturer": ",Chevrolet",
+              "car": "#1",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 34
             },
             {
               "pos": 4,
               "driver": "C. Hocevar",
-              "car": ",#77",
-              "manufacturer": ",Chevrolet",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 38
             },
             {
               "pos": 5,
               "driver": "D. Suárez",
-              "car": ",#7",
-              "manufacturer": ",Chevrolet",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 32
             },
             {
               "pos": 6,
               "driver": "S. van Gisbergen",
-              "car": ",#97",
-              "manufacturer": ",Chevrolet",
+              "car": "#97",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 32
             },
             {
               "pos": 7,
               "driver": "Z. Smith",
-              "car": ",#38",
-              "manufacturer": ",Ford",
+              "car": "#38",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 30
             },
             {
               "pos": 8,
               "driver": "D. Wallace Jr.",
-              "car": ",#23",
-              "manufacturer": ",Toyota",
+              "car": "#23",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 48
             },
             {
               "pos": 9,
               "driver": "R. Preece",
-              "car": ",#60",
-              "manufacturer": ",Ford",
+              "car": "#60",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 32
             },
             {
               "pos": 10,
               "driver": "R. Blaney",
-              "car": ",#12",
-              "manufacturer": ",Ford",
+              "car": "#12",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 31
             },
             {
               "pos": 11,
               "driver": "C. Elliott",
-              "car": ",#9",
-              "manufacturer": ",Chevrolet",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 38
             },
             {
               "pos": 12,
               "driver": "AJ Allmendinger",
-              "car": ",#16",
-              "manufacturer": ",Chevrolet",
+              "car": "#16",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 25
             },
             {
               "pos": 13,
               "driver": "D. Hamlin",
-              "car": ",#11",
-              "manufacturer": ",Toyota",
+              "car": "#11",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 24
             },
             {
               "pos": 14,
               "driver": "N. Gragson",
-              "car": ",#4",
-              "manufacturer": ",Ford",
+              "car": "#4",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 23
             },
             {
               "pos": 15,
               "driver": "C. Buescher",
-              "car": ",#17",
-              "manufacturer": ",Ford",
+              "car": "#17",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 22
             },
             {
               "pos": 16,
               "driver": "T. Dillon",
-              "car": ",#10",
-              "manufacturer": ",Chevrolet",
+              "car": "#10",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 21
             },
             {
               "pos": 17,
               "driver": "B. Keselowski",
-              "car": ",#6",
-              "manufacturer": ",Ford",
+              "car": "#6",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 22
             },
             {
               "pos": 18,
               "driver": "J. Logano",
-              "car": ",#22",
-              "manufacturer": ",Ford",
+              "car": "#22",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 22
             },
             {
               "pos": 19,
               "driver": "J. Nemechek",
-              "car": ",#42",
-              "manufacturer": ",Toyota",
+              "car": "#42",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 18
             },
             {
               "pos": 20,
               "driver": "M. McDowell",
-              "car": ",#71",
-              "manufacturer": ",Chevrolet",
+              "car": "#71",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 17
             },
             {
               "pos": 21,
               "driver": "C. Bell",
-              "car": ",#20",
-              "manufacturer": ",Toyota",
+              "car": "#20",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 16
             },
             {
               "pos": 22,
               "driver": "C. Custer",
-              "car": ",#41",
-              "manufacturer": ",Chevrolet",
+              "car": "#41",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 16
             },
             {
               "pos": 23,
               "driver": "A. Bowman",
-              "car": ",#48",
-              "manufacturer": ",Chevrolet",
+              "car": "#48",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 14
             },
             {
               "pos": 24,
               "driver": "E. Jones",
-              "car": ",#43",
-              "manufacturer": ",Toyota",
+              "car": "#43",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 13
             },
             {
               "pos": 25,
               "driver": "T. Gilliland",
-              "car": ",#34",
-              "manufacturer": ",Ford",
+              "car": "#34",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 12
             },
             {
               "pos": 26,
               "driver": "A. Cindric",
-              "car": ",#2",
-              "manufacturer": ",Ford",
+              "car": "#2",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 21
             },
             {
               "pos": 27,
               "driver": "C. Ware",
-              "car": ",#51",
-              "manufacturer": ",Chevrolet",
+              "car": "#51",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 10
             },
             {
               "pos": 28,
               "driver": "W. Byron",
-              "car": ",#24",
-              "manufacturer": ",Chevrolet",
+              "car": "#24",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 25
             },
             {
               "pos": 29,
               "driver": "A. Dillon",
-              "car": ",#3",
-              "manufacturer": ",Chevrolet",
+              "car": "#3",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 8
             },
             {
               "pos": 30,
               "driver": "C. Zilisch",
-              "car": ",#88",
-              "manufacturer": ",Chevrolet",
+              "car": "#88",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 9
             },
             {
               "pos": 31,
               "driver": "J. J. Yeley",
-              "car": ",#44",
-              "manufacturer": ",Chevrolet",
+              "car": "#44",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 0
             },
             {
               "pos": 32,
               "driver": "K. Larson",
-              "car": ",#5",
-              "manufacturer": ",Chevrolet",
+              "car": "#5",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 13
             },
             {
               "pos": 33,
               "driver": "R. Herbst",
-              "car": ",#35",
-              "manufacturer": ",Toyota",
+              "car": "#35",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 4
             },
             {
               "pos": 34,
               "driver": "K. Busch",
-              "car": ",#8",
-              "manufacturer": ",Chevrolet",
+              "car": "#8",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 7
             },
             {
               "pos": 35,
               "driver": "B. J. McLeod",
-              "car": ",#78",
-              "manufacturer": ",Chevrolet",
+              "car": "#78",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 2
             },
             {
               "pos": 36,
               "driver": "R. Stenhouse Jr.",
-              "car": ",#47",
-              "manufacturer": ",Chevrolet",
+              "car": "#47",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 1
             },
             {
               "pos": 37,
               "driver": "T. Gibbs",
-              "car": ",#54",
-              "manufacturer": ",Toyota",
+              "car": "#54",
+              "manufacturer": "Toyota",
               "status": "DNF",
               "points": 1
             },
             {
               "pos": 38,
               "driver": "J. Berry",
-              "car": ",#21",
-              "manufacturer": ",Ford",
+              "car": "#21",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 1
             }
@@ -2160,328 +2160,328 @@
             {
               "pos": 1,
               "driver": "T. Reddick",
-              "car": ",#45",
-              "manufacturer": ",Toyota",
+              "car": "#45",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 58
             },
             {
               "pos": 2,
               "driver": "R. Stenhouse Jr.",
-              "car": ",#47",
-              "manufacturer": ",Chevrolet",
+              "car": "#47",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 35
             },
             {
               "pos": 3,
               "driver": "J. Logano",
-              "car": ",#22",
-              "manufacturer": ",Ford",
+              "car": "#22",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 36
             },
             {
               "pos": 4,
               "driver": "C. Elliott",
-              "car": ",#9",
-              "manufacturer": ",Chevrolet",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 33
             },
             {
               "pos": 5,
               "driver": "B. Keselowski",
-              "car": ",#6",
-              "manufacturer": ",Ford",
+              "car": "#6",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 32
             },
             {
               "pos": 6,
               "driver": "Z. Smith",
-              "car": ",#38",
-              "manufacturer": ",Ford",
+              "car": "#38",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 41
             },
             {
               "pos": 7,
               "driver": "C. Buescher",
-              "car": ",#17",
-              "manufacturer": ",Ford",
+              "car": "#17",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 39
             },
             {
               "pos": 8,
               "driver": "R. Herbst",
-              "car": ",#35",
-              "manufacturer": ",Toyota",
+              "car": "#35",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 35
             },
             {
               "pos": 9,
               "driver": "J. Berry",
-              "car": ",#21",
-              "manufacturer": ",Ford",
+              "car": "#21",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 28
             },
             {
               "pos": 10,
               "driver": "D. Wallace Jr.",
-              "car": ",#23",
-              "manufacturer": ",Toyota",
+              "car": "#23",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 37
             },
             {
               "pos": 11,
               "driver": "N. Gragson",
-              "car": ",#4",
-              "manufacturer": ",Ford",
+              "car": "#4",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 27
             },
             {
               "pos": 12,
               "driver": "W. Byron",
-              "car": ",#24",
-              "manufacturer": ",Chevrolet",
+              "car": "#24",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 25
             },
             {
               "pos": 13,
               "driver": "D. Suárez",
-              "car": ",#7",
-              "manufacturer": ",Chevrolet",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 31
             },
             {
               "pos": 14,
               "driver": "T. Dillon",
-              "car": ",#10",
-              "manufacturer": ",Chevrolet",
+              "car": "#10",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 23
             },
             {
               "pos": 15,
               "driver": "K. Busch",
-              "car": ",#8",
-              "manufacturer": ",Chevrolet",
+              "car": "#8",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 29
             },
             {
               "pos": 16,
               "driver": "K. Larson",
-              "car": ",#5",
-              "manufacturer": ",Chevrolet",
+              "car": "#5",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 21
             },
             {
               "pos": 17,
               "driver": "C. Ware",
-              "car": ",#51",
-              "manufacturer": ",Chevrolet",
+              "car": "#51",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 20
             },
             {
               "pos": 18,
               "driver": "C. Hocevar",
-              "car": ",#77",
-              "manufacturer": ",Chevrolet",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 27
             },
             {
               "pos": 19,
               "driver": "AJ Allmendinger",
-              "car": ",#16",
-              "manufacturer": ",Chevrolet",
+              "car": "#16",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 18
             },
             {
               "pos": 20,
               "driver": "R. Chastain",
-              "car": ",#1",
-              "manufacturer": ",Chevrolet",
+              "car": "#1",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 17
             },
             {
               "pos": 21,
               "driver": "E. Jones",
-              "car": ",#43",
-              "manufacturer": ",Toyota",
+              "car": "#43",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 16
             },
             {
               "pos": 22,
               "driver": "M. McDowell",
-              "car": ",#71",
-              "manufacturer": ",Chevrolet",
+              "car": "#71",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 19
             },
             {
               "pos": 23,
               "driver": "T. Gibbs",
-              "car": ",#54",
-              "manufacturer": ",Toyota",
+              "car": "#54",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 14
             },
             {
               "pos": 24,
               "driver": "C. Custer",
-              "car": ",#41",
-              "manufacturer": ",Chevrolet",
+              "car": "#41",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 13
             },
             {
               "pos": 25,
               "driver": "R. Preece",
-              "car": ",#60",
-              "manufacturer": ",Ford",
+              "car": "#60",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 15
             },
             {
               "pos": 26,
               "driver": "J. Nemechek",
-              "car": ",#42",
-              "manufacturer": ",Toyota",
+              "car": "#42",
+              "manufacturer": "Toyota",
               "status": "DNF",
               "points": 19
             },
             {
               "pos": 27,
               "driver": "R. Blaney",
-              "car": ",#12",
-              "manufacturer": ",Ford",
+              "car": "#12",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 27
             },
             {
               "pos": 28,
               "driver": "C. Heim",
-              "car": ",#67",
-              "manufacturer": ",Toyota",
+              "car": "#67",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 0
             },
             {
               "pos": 29,
               "driver": "J. Johnson",
-              "car": ",#84",
-              "manufacturer": ",Toyota",
+              "car": "#84",
+              "manufacturer": "Toyota",
               "status": "DNF",
               "points": 0
             },
             {
               "pos": 30,
               "driver": "S. van Gisbergen",
-              "car": ",#97",
-              "manufacturer": ",Chevrolet",
+              "car": "#97",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 8
             },
             {
               "pos": 31,
               "driver": "D. Hamlin",
-              "car": ",#11",
-              "manufacturer": ",Toyota",
+              "car": "#11",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 7
             },
             {
               "pos": 32,
               "driver": "C. Mears",
-              "car": ",#66",
-              "manufacturer": ",Ford",
+              "car": "#66",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 6
             },
             {
               "pos": 33,
               "driver": "C. Zilisch",
-              "car": ",#88",
-              "manufacturer": ",Chevrolet",
+              "car": "#88",
+              "manufacturer": "Chevrolet",
               "status": "Finished",
               "points": 5
             },
             {
               "pos": 34,
               "driver": "A. Cindric",
-              "car": ",#2",
-              "manufacturer": ",Ford",
+              "car": "#2",
+              "manufacturer": "Ford",
               "status": "Finished",
               "points": 13
             },
             {
               "pos": 35,
               "driver": "C. Bell",
-              "car": ",#20",
-              "manufacturer": ",Toyota",
+              "car": "#20",
+              "manufacturer": "Toyota",
               "status": "DNF",
               "points": 3
             },
             {
               "pos": 36,
               "driver": "C. Briscoe",
-              "car": ",#19",
-              "manufacturer": ",Toyota",
+              "car": "#19",
+              "manufacturer": "Toyota",
               "status": "Finished",
               "points": 2
             },
             {
               "pos": 37,
               "driver": "A. Dillon",
-              "car": ",#3",
-              "manufacturer": ",Chevrolet",
+              "car": "#3",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 1
             },
             {
               "pos": 38,
               "driver": "J. Allgaier",
-              "car": ",#40",
-              "manufacturer": ",Chevrolet",
+              "car": "#40",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 0
             },
             {
               "pos": 39,
               "driver": "T. Gilliland",
-              "car": ",#34",
-              "manufacturer": ",Ford",
+              "car": "#34",
+              "manufacturer": "Ford",
               "status": "DNF",
               "points": 1
             },
             {
               "pos": 40,
               "driver": "A. Bowman",
-              "car": ",#48",
-              "manufacturer": ",Chevrolet",
+              "car": "#48",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 3
             },
             {
               "pos": 41,
               "driver": "B. J. McLeod",
-              "car": ",#78",
-              "manufacturer": ",Chevrolet",
+              "car": "#78",
+              "manufacturer": "Chevrolet",
               "status": "DNF",
               "points": 1
             }
@@ -10149,10 +10149,11 @@
         "raceName": "Miami Grand Prix",
         "date": "2026-05-03",
         "circuit": "Miami International Autodrome",
-        "country": "USA"
+        "country": "USA",
+        "tv": "ESPN"
       },
       "updated": "2026-04-02"
     },
-    "_updated": "2026-04-03"
+    "_updated": "2026-04-07"
   }
 }
