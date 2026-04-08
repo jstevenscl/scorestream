@@ -2,13 +2,12 @@ name: Update Motor Cache Data
 
 on:
   schedule:
-    - cron: '0 1 * * 1'
-    - cron: '0 11 * * 1'
-    - cron: '0 1 * * 2'
-    - cron: '0 1 * * 4'
-    - cron: '0 1 * * 5'
-    - cron: '0 1 * * 6'
-    - cron: "0 1 * * 0"
+    # Run every 6 hours every day — catches tennis players within 6h of first appearance,
+    # keeps PGA/NASCAR fresh, and stays well within GitHub Actions free-tier limits
+    - cron: '0 1 * * *'
+    - cron: '0 7 * * *'
+    - cron: '0 13 * * *'
+    - cron: '0 19 * * *'
   workflow_dispatch:
 
 jobs:
@@ -168,7 +167,8 @@ jobs:
                                   if aid: sb_ids.add(str(aid))
                   print(f"  Scoreboard: {len(sb_ids)} active player IDs")
                   for aid in sb_ids:
-                      if str(aid) in existing: continue
+                      # Skip only if already cached WITH a headshot; re-check headshot-less entries
+                      if str(aid) in existing and existing[str(aid)].get('headshot'): continue
                       details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/athletes/{aid}',ESPN_HDR)
                       if not details: continue
                       ath=details.get('athlete') or details
