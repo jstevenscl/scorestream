@@ -208,6 +208,32 @@ jobs:
                       print(f"  + {p['name']} ({aid}) hs={'yes' if p['headshot'] else 'no'}")
               print(f"  {league.upper()}: {new_count} new, {len(existing)} total in cache")
               cache[f'{league}-players']={'data':existing,'_updated':today_str}
+          for league in ['atp','wta']:
+              print(f"\n--- {league.upper()} Rankings ---")
+              rankings_raw=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/rankings',ESPN_HDR)
+              if rankings_raw:
+                  ranks=[]
+                  for rlist in (rankings_raw.get('rankings') or []):
+                      ranks=rlist.get('ranks') or rlist.get('entries') or []
+                      if ranks: break
+                  if not ranks: ranks=rankings_raw.get('ranks') or rankings_raw.get('entries') or []
+                  entries=[]
+                  player_cache=cache.get(f'{league}-players',{}).get('data',{})
+                  if isinstance(player_cache,str): player_cache=json.loads(player_cache)
+                  for r in ranks[:50]:
+                      ath=r.get('athlete') or r.get('team') or {}
+                      aid=str(ath.get('id',''))
+                      cached_p=player_cache.get(aid,{})
+                      name=ath.get('displayName','') or cached_p.get('name','')
+                      country=(ath.get('flag') or {}).get('alt') or (ath.get('flag') or {}).get('title') or cached_p.get('country','')
+                      entries.append({'rank':r.get('current') or r.get('rank') or len(entries)+1,
+                          'id':aid,'name':name,'country':country,
+                          'points':r.get('points') or 0,'change':r.get('change') or r.get('rankChange') or 0})
+                  if entries:
+                      cache[f'{league}-rankings']={'data':{'players':entries,'updated':today_str},'_updated':today_str}
+                      print(f"  {league.upper()}: {len(entries)} players cached")
+                  else: print(f"  {league.upper()}: no ranks found in response")
+              else: print(f"  {league.upper()}: rankings fetch failed")
           for racing_sport in [('nascar','nascar-cup','nascar-drivers'),('f1','f1','f1-drivers')]:
               espn_slug, espn_path, cache_key = racing_sport
               print(f"\n--- {espn_slug.upper()} Drivers ---")
