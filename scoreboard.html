@@ -1807,7 +1807,7 @@ function renderEditorStep(sbOverride){
   }
   else if(_editorStep===2){
     const _enabledSportIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
-    const _motorSports=['f1','nascar','pga'];
+    const _motorSports=['f1','nascar','pga','atp','wta'];
     const _isMotorOnly=_enabledSportIds.length>0&&_enabledSportIds.every(id=>_motorSports.includes(id));
     if(_isMotorOnly){ window._motorPanelSbId=_editorDraft.id||_activeSbId||null; body=buildMotorsportEditorPanel(_editorDraft); } else {
     const groups=[
@@ -4220,10 +4220,12 @@ function renderScoreboard(){
 
 function buildMotorsportEditorPanel(draft){
   const sc=draft.sport_config||{},mc=draft.motor_config||{};
-  const hasF1=!!sc['f1'],hasNascar=!!sc['nascar'];
+  const hasF1=!!sc['f1'],hasNascar=!!sc['nascar'],hasATP=!!sc['atp'],hasWTA=!!sc['wta'];
   const f1Next=mc.f1_next_race!==false,f1Last=mc.f1_last_race!==false,f1Stand=mc.f1_standings!==false;
   const nasLive=mc.nascar_live!==false,nasLast=mc.nascar_last!==false,nasStand=mc.nascar_standings!==false;
   const nasMaxRaces=mc.nascar_max_races||3,f1MaxRaces=mc.f1_max_races||3,pgaMaxEventsUI=mc.pga_max_events||3;
+  const tenLive=mc.tennis_live!==false,tenUpcoming=mc.tennis_upcoming!==false,tenCompleted=mc.tennis_completed!==false;
+  const tenMaxCompleted=mc.tennis_max_completed||5,tenMaxUpcoming=mc.tennis_max_upcoming||10;
   // Bake the numeric ID at render time — no runtime variable lookup in onclick/onchange
   const _mcSbId=parseInt((draft&&draft.id)||0)||parseInt(_activeSbId)||0;
   const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked,${_mcSbId})" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
@@ -4233,8 +4235,9 @@ function buildMotorsportEditorPanel(draft){
   const hasPGA=(_editorDraft.sport_config||{})['pga'];
   const pgaHistory=mc.pga_history!==false,pgaLive=mc.pga_live!==false,pgaShowCut=mc.pga_show_cut!==false;
   const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${row(pgaShowCut,'pga_show_cut','#00594f','✂️ Show Cut Players','Include players who missed the cut (CUT/MC/WD/DQ) in results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}</div>`:'';
-  const none=!hasF1&&!hasNascar&&!hasPGA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Motorsport Enabled</div><div style="font-size:11px;margin-top:4px;">Go to Settings → Sports Library to enable Formula 1 or NASCAR</div></div>`:'';
-  return `<div id="motorPanel" style=""><div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this motorsport scoreboard displays:</div>${f1Sec}${nasSec}${pgaSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go to <strong>Settings → Sports Library → Motorsport</strong></div>`;
+  const tenSec=(hasATP||hasWTA)?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #0066cc;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🎾</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#0066cc;">TENNIS${hasATP&&hasWTA?' (ATP + WTA)':hasATP?' (ATP)':' (WTA)'}</span></div>${row(tenLive,'tennis_live','#0066cc','🟢 Live Matches','Show active matches with set-by-set scores')}${row(tenUpcoming,'tennis_upcoming','#0066cc','📅 Upcoming Matches','Show scheduled matches not yet started')}${row(tenCompleted,'tennis_completed','#0066cc','🏆 Completed Matches','Show recently finished match results')}<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📋 Completed Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_completed',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxCompleted?'#0066cc':'var(--border)'};background:${n===tenMaxCompleted?'#0066cc':'var(--bg-card)'};color:${n===tenMaxCompleted?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📅 Upcoming Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_upcoming',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxUpcoming?'#0066cc':'var(--border)'};background:${n===tenMaxUpcoming?'#0066cc':'var(--bg-card)'};color:${n===tenMaxUpcoming?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div></div>`:'' ;
+  const none=!hasF1&&!hasNascar&&!hasPGA&&!hasATP&&!hasWTA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Sport Configured</div><div style="font-size:11px;margin-top:4px;">Go to Step 2 → Sports to enable Formula 1, NASCAR, PGA, or Tennis</div></div>`:'';
+  return `<div id="motorPanel" style=""><div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this scoreboard displays:</div>${f1Sec}${nasSec}${pgaSec}${tenSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go back to Step 2 → Sports</div>`;
 }
 function sbToggleDefault(group, toggleEl){
   const key = group==='fonts' ? 'use_default_fonts' : group==='colors' ? 'use_default_colors' : 'use_default_card_size';
@@ -4256,7 +4259,7 @@ function setMotorConfig(key,val,explicitSbId){
     _editorDraft.motor_config=Object.assign({},currentMc);
   }
   // Update only the count selector buttons for this key — surgical, no DOM restructuring
-  const colors={'nascar_max_races':'#ffd700','f1_max_races':'#e10600','pga_max_events':'#00594f'};
+  const colors={'nascar_max_races':'#ffd700','f1_max_races':'#e10600','pga_max_events':'#00594f','tennis_max_completed':'#0066cc','tennis_max_upcoming':'#0066cc'};
   const col=colors[key]||'#ffd700';
   document.querySelectorAll('button[onclick*="setMotorConfig"]').forEach(btn=>{
     const oc=btn.getAttribute('onclick')||'';
@@ -4348,6 +4351,12 @@ function buildLeaderboardCard(g){
 // ── Tennis (ATP / WTA) ────────────────────────────────────────────────────────
 async function fetchTennisData(sport, sbConfig){
   try{
+    const mc=(sbConfig&&sbConfig.motor_config)||{};
+    const showLive=mc.tennis_live!==false;
+    const showUpcoming=mc.tennis_upcoming!==false;
+    const showCompleted=mc.tennis_completed!==false;
+    const maxCompleted=mc.tennis_max_completed||5;
+    const maxUpcoming=mc.tennis_max_upcoming||10;
     const r=await fetch(sport.url,{signal:AbortSignal.timeout(7000)});
     if(!r.ok) return [];
     const data=await r.json();
@@ -4399,12 +4408,17 @@ async function fetchTennisData(sport, sbConfig){
         });
       }
     }
-    // Sort: live first, then scheduled, then final
-    cards.sort((a,b)=>(a.isLive?0:a.isScheduled?1:2)-(b.isLive?0:b.isScheduled?1:2));
-    // Limit completed matches — keep all live + scheduled, cap recent finals at 10
-    const live=cards.filter(c=>c.isLive);
-    const sched=cards.filter(c=>c.isScheduled);
-    const finals=cards.filter(c=>c.isFinal).slice(0,10);
+    // Sort: live first, then scheduled by date, then final by date (most recent first)
+    cards.sort((a,b)=>{
+      const order=v=>v.isLive?0:v.isScheduled?1:2;
+      const od=order(a)-order(b);
+      if(od!==0) return od;
+      return (a.date||'').localeCompare(b.date||'');
+    });
+    // Apply motor_config filters
+    const live=showLive?cards.filter(c=>c.isLive):[];
+    const sched=showUpcoming?cards.filter(c=>c.isScheduled).slice(0,maxUpcoming):[];
+    const finals=showCompleted?cards.filter(c=>c.isFinal).slice(0,maxCompleted):[];
     return [...live,...sched,...finals];
   }catch(e){
     console.warn('[tennis] fetch error',e);
@@ -4432,7 +4446,7 @@ function buildTennisCard(g){
     return{s1,s2,p1won,p2won};
   }):[];
   // Determine left-element width for header alignment
-  const leftW = (p1.headshot||p2.headshot) ? 38 : (p1.flag||p2.flag) ? 30 : 0;
+  const leftW = (p1.headshot||p2.headshot) ? 38 : (p1.flag||p2.flag) ? 36 : 0;
   const setHeader=setCols.map((_,i)=>`<span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;width:18px;text-align:center;">S${i+1}</span>`).join('');
   const renderPlayer=(p,sets)=>{
     const setsWonColor=p.winner?'var(--accent-green)':'var(--text-secondary)';
@@ -4449,7 +4463,10 @@ function buildTennisCard(g){
         ${p.country?`<span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:0.5px;">${p.country}</span>`:''}
       </div>`;
     } else if(p.flag){
-      leftEl=`<img src="${p.flag}" style="width:24px;height:15px;object-fit:cover;border-radius:2px;flex-shrink:0;border:1px solid var(--border);" onerror="this.style.display='none'">`;
+      leftEl=`<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;width:30px;">
+        <img src="${p.flag}" style="width:24px;height:15px;object-fit:cover;border-radius:2px;border:1px solid var(--border);" onerror="this.parentElement.style.display='none'">
+        ${p.country?`<span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:0.3px;text-transform:uppercase;">${p.country.slice(0,3)}</span>`:''}
+      </div>`;
     }
     return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);">
       ${leftEl}
