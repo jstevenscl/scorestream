@@ -970,15 +970,26 @@ body.stream-mode .card-header{padding:4px 10px;}
         <div style="margin-bottom:24px;">
           <div class="modal-section-title" style="margin-bottom:4px;">📐 Default Card Size</div>
           <div class="wiz-sublabel" style="margin-bottom:14px;">Applied to all scoreboards using Default Card Size.</div>
-          <div class="modal-slider-row">
-            <span class="modal-slider-label">Card Scale</span>
-            <input type="range" min="50" max="200" id="ddCardScale" oninput="document.getElementById('ddCardScaleVal').textContent=Math.round(this.value)+'%';ddPreview()">
-            <span class="modal-slider-val" id="ddCardScaleVal">100%</span>
-          </div>
-          <div class="modal-slider-row">
-            <span class="modal-slider-label">Rotation Timer</span>
-            <input type="range" min="5" max="120" id="ddRotationSecs" oninput="document.getElementById('ddRotationSecsVal').textContent=this.value+'s'">
-            <span class="modal-slider-val" id="ddRotationSecsVal">15s</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px;">Card Scale</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="number" class="wiz-input" id="ddCardScale" min="50" max="300" step="5" value="100"
+                  oninput="document.getElementById('ddCardScaleVal').textContent=Math.round(this.value)+'%';ddPreviewApplyScale()"
+                  style="width:72px;text-align:center;">
+                <span style="font-size:12px;color:var(--text-dim);" id="ddCardScaleVal">100%</span>
+              </div>
+              <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">50–300% · affects card size on stream</div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px;">Rotation Timer</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="number" class="wiz-input" id="ddRotationSecs" min="0" max="300" step="1" value="15"
+                  style="width:72px;text-align:center;">
+                <span style="font-size:12px;color:var(--text-dim);">sec</span>
+              </div>
+              <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">0 = no rotation between pages</div>
+            </div>
           </div>
           <div class="modal-slider-row">
             <span class="modal-slider-label">Team Logo Size</span>
@@ -986,18 +997,18 @@ body.stream-mode .card-header{padding:4px 10px;}
             <span class="modal-slider-val" id="ddLogoSizeVal">34px</span>
           </div>
           <div style="margin-bottom:12px;">
-            <div class="modal-section-title" style="font-size:11px;margin-bottom:8px;">Default Layout</div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:8px;">Default Layout</div>
             <div style="display:flex;gap:8px;">
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);">
-                <input type="radio" name="ddLayout" value="grid" id="ddLayoutGrid" style="accent-color:var(--accent);">
+                <input type="radio" name="ddLayout" value="grid" id="ddLayoutGrid" style="accent-color:var(--accent);" onchange="ddPreviewLayout('grid')">
                 <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;">Grid</span>
               </label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);">
-                <input type="radio" name="ddLayout" value="fullscreen" id="ddLayoutFull" style="accent-color:var(--accent);">
+                <input type="radio" name="ddLayout" value="fullscreen" id="ddLayoutFull" style="accent-color:var(--accent);" onchange="ddPreviewLayout('fullscreen')">
                 <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;">Fullscreen</span>
               </label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);">
-                <input type="radio" name="ddLayout" value="ticker" id="ddLayoutTicker" style="accent-color:var(--accent);">
+                <input type="radio" name="ddLayout" value="ticker" id="ddLayoutTicker" style="accent-color:var(--accent);" onchange="ddPreviewLayout('ticker')">
                 <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;">Ticker</span>
               </label>
             </div>
@@ -2303,8 +2314,9 @@ function ddPopulateUI(def){
   s('ddAbbrSize', def.card_abbr_size||18);  t('ddAbbrSizeVal',(def.card_abbr_size||18)+'px');
   s('ddScoreSize', def.card_score_size||34); t('ddScoreSizeVal',(def.card_score_size||34)+'px');
   s('ddNameSize',  def.card_name_size||11);  t('ddNameSizeVal',(def.card_name_size||11)+'px');
-  s('ddCardScale', Math.round((def.stream_card_scale||1.0)*100)); t('ddCardScaleVal',Math.round((def.stream_card_scale||1.0)*100)+'%');
-  s('ddRotationSecs', def.stream_rotation_secs||15); t('ddRotationSecsVal',(def.stream_rotation_secs||15)+'s');
+  const _scale=Math.round((def.stream_card_scale||1.0)*100);
+  s('ddCardScale', _scale); t('ddCardScaleVal',_scale+'%');
+  s('ddRotationSecs', def.stream_rotation_secs??15);
   const color = def.card_name_color||'#3d5a78';
   s('ddNameColor', color);
   const sw=document.getElementById('ddNameColorSwatch'); if(sw) sw.style.background=color;
@@ -2338,16 +2350,28 @@ function ddGetValues(){
 function ddBuildPreview(){
   const inner=document.getElementById('ddPreviewInner');
   if(!inner)return;
+  const layout=document.querySelector('input[name="ddLayout"]:checked')?.value||'grid';
   const teams=[
     {abbr:'KC', name:'Kansas City Chiefs',color:'#e31837',homeAway:'away',score:'21'},
     {abbr:'SF', name:'San Francisco 49ers',color:'#aa0000',homeAway:'home',score:'17'}
   ];
-  const g1=buildFullCard({id:'dd-prev1',sportName:'NFL',sportEmoji:'🏈',sportColor:'#4169e1',isLive:true,isFinal:false,isScheduled:false,periodDesc:'4th · 2:14',date:new Date().toISOString(),teams,networks:['ESPN']});
-  const g2=buildFullCard({id:'dd-prev2',sportName:'NFL',sportEmoji:'🏈',sportColor:'#4169e1',isLive:false,isFinal:false,isScheduled:true,periodDesc:'',date:new Date().toISOString(),teams:teams.map(t=>({...t,score:'–'})),networks:['TNT']});
+  const gData1={id:'dd-prev1',sportName:'NFL',sportEmoji:'🏈',sportColor:'#4169e1',isLive:true,isFinal:false,isScheduled:false,periodDesc:'4th · 2:14',date:new Date().toISOString(),teams,networks:['ESPN']};
+  const gData2={id:'dd-prev2',sportName:'NFL',sportEmoji:'🏈',sportColor:'#4169e1',isLive:false,isFinal:false,isScheduled:true,periodDesc:'',date:new Date().toISOString(),teams:teams.map(t=>({...t,score:'–'})),networks:['TNT']};
+  const buildCard = layout==='ticker' ? buildTickerCard : buildFullCard;
+  const g1=buildCard(gData1), g2=buildCard(gData2);
   [g1,g2].forEach(g=>g.style.pointerEvents='none');
   inner.innerHTML='';
-  inner.appendChild(g1);
-  inner.appendChild(g2);
+  if(layout==='grid'){
+    inner.style.gridTemplateColumns='1fr 1fr';
+    inner.appendChild(g1); inner.appendChild(g2);
+  } else if(layout==='fullscreen'){
+    inner.style.gridTemplateColumns='1fr';
+    g1.style.maxWidth='100%';
+    inner.appendChild(g1);
+  } else { // ticker
+    inner.style.gridTemplateColumns='1fr';
+    inner.appendChild(g1); inner.appendChild(g2);
+  }
   // Push current dd vals into the preview container
   const vals=ddGetValues();
   inner.style.setProperty('--card-abbr-size',vals.card_abbr_size+'px');
@@ -2355,6 +2379,25 @@ function ddBuildPreview(){
   inner.style.setProperty('--card-name-size',vals.card_name_size+'px');
   inner.style.setProperty('--card-name-color',vals.card_name_color);
   inner.style.setProperty('--team-logo-size',(vals.logo_size||34)+'px');
+  ddPreviewApplyScale();
+}
+
+function ddPreviewApplyScale(){
+  const inner=document.getElementById('ddPreviewInner');
+  if(!inner)return;
+  const pct=parseInt(document.getElementById('ddCardScale')?.value)||100;
+  document.getElementById('ddCardScaleVal').textContent=pct+'%';
+  const scale=pct/100;
+  // Show scale visually on the outer wrapper
+  const wrap=inner.parentElement;
+  inner.style.transform=`scale(${scale})`;
+  inner.style.transformOrigin='top left';
+  wrap.style.height=Math.round(inner.offsetHeight*scale+20)+'px';
+  wrap.style.overflow='hidden';
+}
+
+function ddPreviewLayout(layout){
+  ddBuildPreview();
 }
 
 function ddPreview(){
