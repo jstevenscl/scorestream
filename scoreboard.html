@@ -1518,6 +1518,7 @@ function renderEditorStep(sbOverride){
     const _motorSbIds=['f1','nascar','pga'];
     const _enabledIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
     const _isMotorSb=_enabledIds.length>0&&_enabledIds.every(id=>_motorSbIds.includes(id));
+    const _hasMotorSb=_enabledIds.some(id=>_motorSbIds.includes(id));
     body=`
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
@@ -1592,14 +1593,14 @@ function renderEditorStep(sbOverride){
               oninput="document.getElementById('sbEditScoreSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-score-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditScoreSizeVal">${_editorDraft.display_config.card_score_size || 34}px</span>
           </div>`}
-          <div class="modal-slider-row">
+          ${_hasMotorSb?`<div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="Size of the race/event title (e.g. Daytona 500, Japanese Grand Prix)">Title Size</span>
             <input type="range" min="10" max="22" step="1"
               value="${_editorDraft.display_config.card_title_size || 13}"
               id="sbEditTitleSize"
               oninput="document.getElementById('sbEditTitleSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-title-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditTitleSizeVal">${_editorDraft.display_config.card_title_size || 13}px</span>
-          </div>
+          </div>`:''}
           <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="${_isMotorSb?'Size of secondary label text (car number, manufacturer, points, track info)':'Size of the full team name shown below the abbreviation'}">${_isMotorSb?'Detail/Label Text Size':'Team Name Size'}</span>
             <input type="range" min="9" max="16" step="1"
@@ -1621,7 +1622,7 @@ function renderEditorStep(sbOverride){
               <span class="modal-slider-val" id="sbEditNameColorVal">${_editorDraft.display_config.card_name_color || '#3d5a78'}</span>
             </div>
           </div>`}
-          <div class="modal-slider-row" style="align-items:center;">
+          ${_hasMotorSb?`<div class="modal-slider-row" style="align-items:center;">
             <span class="modal-slider-label" data-tip="Color of label/dim text on motor sport cards (series name, section headers, track name)">Motor Label Color</span>
             <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
               <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
@@ -1646,7 +1647,7 @@ function renderEditorStep(sbOverride){
               </div>
               <span class="modal-slider-val" id="sbEditMotorSecColorVal">${_editorDraft.display_config.motor_secondary_color || '#7a9ab8'}</span>
             </div>
-          </div>
+          </div>`:''}
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
