@@ -145,7 +145,8 @@ jobs:
                   completed = [t for t in tournaments if t.get('is_complete')][-10:]
                   upcoming = [t for t in tournaments if not t.get('is_complete')]
                   cache['pga-2026-tournaments'] = {'data':{'tournaments':upcoming+completed,'updated':today_str},'_updated':today_str}
-          def fetch_athlete(league, aid, existing):
+          def cache_athlete_from_scoreboard(league, aid, existing):
+              """Fetch full athlete detail from site API using scoreboard athlete ID."""
               if str(aid) in existing: return False
               details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/athletes/{aid}',ESPN_HDR)
               if not details: return False
@@ -159,14 +160,30 @@ jobs:
                   'country':(ath.get('flag') or {}).get('alt') or (ath.get('citizenship') or ''),
               }
               return True
+          def cache_athlete_from_ref(ref_url, existing):
+              """Fetch athlete from core API $ref URL and cache using their ID."""
+              data=fetch(ref_url, ESPN_HDR)
+              if not data: return False
+              aid=str(data.get('id',''))
+              if not aid or aid in existing: return False
+              existing[aid]={
+                  'id':aid,
+                  'name':data.get('displayName',''),
+                  'shortName':data.get('shortName',''),
+                  'headshot':(data.get('headshot') or {}).get('href') or '',
+                  'flag':(data.get('flag') or {}).get('href') or '',
+                  'country':(data.get('flag') or {}).get('alt') or (data.get('citizenship') or ''),
+              }
+              return True
           for league in ['atp','wta']:
               print(f"\n--- {league.upper()} Players ---")
               existing = cache.get(f'{league}-players',{}).get('data',{})
               if isinstance(existing,str): existing=json.loads(existing)
-              athlete_ids=set()
-              # Source 1: active scoreboard (current tournament participants)
+              new_count=0
+              # Source 1: active scoreboard participants — use site API athlete detail
               scoreboard=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/scoreboard',ESPN_HDR)
               if scoreboard:
+                  sb_ids=set()
                   for event in scoreboard.get('events',[]):
                       for grp in event.get('groupings',[]):
                           gname=(grp.get('abbreviation') or grp.get('name') or '').lower()
@@ -174,22 +191,21 @@ jobs:
                           for comp in grp.get('competitions',[]):
                               for c in comp.get('competitors',[]):
                                   aid=c.get('athlete',{}).get('id')
-                                  if aid: athlete_ids.add(str(aid))
-              print(f"  Scoreboard IDs: {len(athlete_ids)}")
-              # Source 2: ESPN rankings (top 100 — ensures cache is ready before tournaments start)
+                                  if aid: sb_ids.add(str(aid))
+                  print(f"  Scoreboard: {len(sb_ids)} IDs")
+                  for aid in sb_ids:
+                      if cache_athlete_from_scoreboard(league, aid, existing):
+                          new_count+=1; p=existing[str(aid)]
+                          print(f"  + {p['name']} ({aid}) hs={'yes' if p['headshot'] else 'no'}")
+              # Source 2: core API rankings — follow $ref URLs directly (different ID space)
               rankings=fetch(f'https://sports.core.api.espn.com/v2/sports/tennis/leagues/{league}/athletes?limit=100&active=true',ESPN_HDR)
               if rankings:
-                  for item in rankings.get('items',[]):
-                      ref=item.get('$ref','')
-                      aid=ref.rstrip('/').split('/')[-1] if ref else item.get('id','')
-                      if aid: athlete_ids.add(str(aid))
-              print(f"  Total IDs to process (scoreboard + rankings): {len(athlete_ids)}")
-              new_count=0
-              for aid in sorted(athlete_ids):
-                  if fetch_athlete(league, aid, existing):
-                      new_count+=1
-                      p=existing[str(aid)]
-                      print(f"  + {p['name']} ({aid}) hs={'yes' if p['headshot'] else 'no'}")
+                  refs=[item.get('$ref','') for item in rankings.get('items',[]) if item.get('$ref')]
+                  print(f"  Rankings $refs: {len(refs)}")
+                  for ref in refs:
+                      if cache_athlete_from_ref(ref, existing):
+                          new_count+=1; aid=list(existing.keys())[-1]; p=existing[aid]
+                          print(f"  + {p['name']} ({aid}) hs={'yes' if p['headshot'] else 'no'}")
               print(f"  {league.upper()}: {new_count} new, {len(existing)} total in cache")
               cache[f'{league}-players']={'data':existing,'_updated':today_str}
           with open(cache_path,'w') as f: json.dump(cache,f,indent=2)
