@@ -3843,6 +3843,7 @@ function getMotorSectionName(sport, sampleCard) {
     const raceName = (sampleCard.name||'').replace(/ \(\d+\/\d+\)$/,'').replace(/ Result$/,'').split(' (')[0].trim();
     return `${sport.name} — ${raceName} Final${sampleCard.raceDate?' · '+sampleCard.raceDate:''}`;
   }
+  if (sampleCard.isNascarNext) return `${sport.name} — Upcoming Race`;
   if (sampleCard.isF1Next || sampleCard.isNascarInfo) return `${sport.name} — Upcoming`;
   if (sampleCard.isLive) return `${sport.name} — Live`;
   if (sampleCard.isPGAHistory || sampleCard.isPGALive) {
@@ -4257,7 +4258,7 @@ async function fetchNascarData(sport, sbConfig){
             const seasonData=typeof sd==='string'?JSON.parse(sd):sd;
             const allStand=seasonData.standings||[];
             if(allStand.length){
-              const chunkSize=8,total=allStand.length,totalPages=Math.ceil(total/chunkSize);
+              const chunkSize=10,total=allStand.length,totalPages=Math.ceil(total/chunkSize);
               for(let i=0;i<total;i+=chunkSize){
                 const chunk=allStand.slice(i,i+chunkSize);
                 const pageNum=Math.floor(i/chunkSize)+1;
@@ -6151,8 +6152,9 @@ function renderStreamCanvas() {
   const _eff_namePx = (state.display.nameSize || 11) * scale;
   // Each motor card row: driver name (abbrPx) + secondary line (namePx) + 10px padding
   const _motorRowH = _eff_abbrPx * 1.2 + _eff_namePx * 1.2 + 10;
-  // card-header(30) + race title(30) + 8 rows + bottom pad(20)
-  const _motorCardH = Math.round(60 + 8 * _motorRowH + 20);
+  // card-header(30) + race title(30) + 6 rows + bottom pad(20)
+  // Using 6-row estimate (not 8) so 2 rows fit at larger font sizes; shrink-to-fit handles actual overflow
+  const _motorCardH = Math.round(60 + 6 * _motorRowH + 20);
   const cardH = hasMotorSports ? Math.max(_motorCardH, Math.round(220 * scale))
     : hasIndividualSports ? Math.round(260 * scale)
     : Math.round(130 * scale);
