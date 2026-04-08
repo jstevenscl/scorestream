@@ -6185,7 +6185,14 @@ function renderStreamCanvas() {
         }
         return;
       }
-      // PGA falls through to normal page-filling logic below - each tournament fills available space
+      // PGA: each tournament section gets its own dedicated page(s), multiple rows allowed
+      if (currentPageSections.length > 0) { pages.push(currentPageSections); currentPageSections = []; currentPageH = 0; }
+      const rowsFit = Math.max(1, Math.floor((availH - sectionHeaderH - gridGap - 26) / (cardH + gridGap)));
+      const cardsPerPage = rowsFit * cols;
+      for (let i = 0; i < games.length; i += cardsPerPage) {
+        pages.push([{ sport, games: games.slice(i, i + cardsPerPage), isFinalSection: false, finalDate: null, isMotorCard: true, sectionName }]);
+      }
+      return;
     }
     let remainingGames = games;
 
