@@ -1673,8 +1673,8 @@ function renderEditorStep(sbOverride){
               <span class="modal-slider-val" id="sbEditNameColorVal">${_editorDraft.display_config.card_name_color || '#3d5a78'}</span>
             </div>
           </div>`}
-          ${_hasMotorSb?`<div class="modal-slider-row" style="align-items:center;">
-            <span class="modal-slider-label" data-tip="Color of label/dim text on motor sport cards (series name, section headers, track name)">Motor Label Color</span>
+          ${(_hasMotorSb||_isTennisSb)?`<div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="${_isTennisSb?'Color of sport label, tournament name, set column headers, and dim text on tennis cards':'Color of label/dim text on motor sport cards (series name, section headers, track name)'}">${_isTennisSb?'Label / Dim Text Color':'Motor Label Color'}</span>
             <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
               <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
                 <div id="sbEditMotorLabelColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.motor_label_color || '#3d5a78'};"></div>
@@ -1687,7 +1687,7 @@ function renderEditorStep(sbOverride){
             </div>
           </div>
           <div class="modal-slider-row" style="align-items:center;">
-            <span class="modal-slider-label" data-tip="Color of secondary text on motor sport cards (driver number, car type, manufacturer, points)">Motor Secondary Color</span>
+            <span class="modal-slider-label" data-tip="${_isTennisSb?'Color of sets won numbers (non-winner side) on tennis cards':'Color of secondary text on motor sport cards (driver number, car type, manufacturer, points)'}">${_isTennisSb?'Sets Won / Secondary Color':'Motor Secondary Color'}</span>
             <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
               <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
                 <div id="sbEditMotorSecColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.motor_secondary_color || '#7a9ab8'};"></div>
@@ -1747,6 +1747,14 @@ function renderEditorStep(sbOverride){
             <div class="wiz-sublabel">Card layout used in the stream output</div>
           </div>
         </div>
+
+        ${_isTennisSb?`<div style="margin-top:12px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🖼️ Player Headshots</div>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">Show player headshot photos on cards — loaded from ESPN CDN when available</div>
+          </div>
+          <div class="small-toggle${_editorDraft.display_config.player_headshots!==false?' on':''}" id="sb-headshots-toggle" onclick="(function(el){const on=el.classList.toggle('on');_editorDraft.display_config.player_headshots=on;setTimeout(buildEditorPreview,50);})(this)"></div>
+        </div>`:''}
 
         <div style="margin-top:16px;">
           <div class="wiz-label" style="margin-bottom:8px;">Card Scale Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(live)</span></div>
@@ -2012,6 +2020,8 @@ function collectEditorStepData(){
     if(motorLabelEl) _editorDraft.display_config.motor_label_color=motorLabelEl.value;
     const motorSecEl=document.getElementById('sbEditMotorSecColor');
     if(motorSecEl) _editorDraft.display_config.motor_secondary_color=motorSecEl.value;
+    const headshotsToggle=document.getElementById('sb-headshots-toggle');
+    if(headshotsToggle) _editorDraft.display_config.player_headshots=headshotsToggle.classList.contains('on');
     const logoSzEl=document.getElementById('sbEditLogoSize');
     if(logoSzEl) _editorDraft.display_config.logo_size=parseInt(logoSzEl.value);
     const rotEl=document.getElementById('sbEditRotation');
@@ -2179,8 +2189,10 @@ function buildEditorPreview(){
 
   if(isTennisOnly){
     var tSport=ids[0]==='atp'?{name:'ATP Tour',emoji:'🎾',color:'#0066cc'}:{name:'WTA Tour',emoji:'🎾',color:'#cc0066'};
-    var g1=buildTennisCard({id:'ten-prev1',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:'Monte-Carlo Masters · QF',date:new Date().toISOString(),isLive:true,isFinal:false,isScheduled:false,periodDesc:'3rd Set',isTennis:true,teams:[{abbr:'Sinner J.',name:'Jannik Sinner',score:'2',flag:null,country:'ITA',homeAway:'away',winner:false,setGames:[6,3,4]},{abbr:'Alcaraz C.',name:'Carlos Alcaraz',score:'1',flag:null,country:'ESP',homeAway:'home',winner:false,setGames:[4,6,3]}]});
-    var g2=buildTennisCard({id:'ten-prev2',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:'Monte-Carlo Masters · R32',date:new Date().toISOString(),isLive:false,isFinal:true,isScheduled:false,periodDesc:'',isTennis:true,teams:[{abbr:'Djokovic N.',name:'Novak Djokovic',score:'2',flag:null,country:'SRB',homeAway:'away',winner:true,setGames:[6,7]},{abbr:'Rune H.',name:'Holger Rune',score:'0',flag:null,country:'DEN',homeAway:'home',winner:false,setGames:[3,5]}]});
+    var _showHs=_editorDraft&&_editorDraft.display_config&&_editorDraft.display_config.player_headshots!==false;
+    // Use real ESPN CDN headshot IDs (Sinner=4573232, Alcaraz=4534976, Djokovic=3483, Rune=4897469)
+    var g1=buildTennisCard({id:'ten-prev1',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:'Monte-Carlo Masters · QF',date:new Date().toISOString(),isLive:true,isFinal:false,isScheduled:false,periodDesc:'3rd Set',isTennis:true,teams:[{abbr:'Sinner J.',name:'Jannik Sinner',score:'2',headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4573232.png':null,flag:null,country:'ITA',homeAway:'away',winner:false,setGames:[6,3,4]},{abbr:'Alcaraz C.',name:'Carlos Alcaraz',score:'1',headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4534976.png':null,flag:null,country:'ESP',homeAway:'home',winner:false,setGames:[4,6,3]}]});
+    var g2=buildTennisCard({id:'ten-prev2',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:'Monte-Carlo Masters · R32',date:new Date().toISOString(),isLive:false,isFinal:true,isScheduled:false,periodDesc:'',isTennis:true,teams:[{abbr:'Djokovic N.',name:'Novak Djokovic',score:'2',headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/3483.png':null,flag:null,country:'SRB',homeAway:'away',winner:true,setGames:[6,7]},{abbr:'Rune H.',name:'Holger Rune',score:'0',headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4897469.png':null,flag:null,country:'DEN',homeAway:'home',winner:false,setGames:[3,5]}]});
     g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
     inner.appendChild(g1); inner.appendChild(g2);
   } else if(isMotorOnly&&isF1){
@@ -4360,11 +4372,13 @@ function buildLeaderboardCard(g){
 async function fetchTennisData(sport, sbConfig){
   try{
     const mc=(sbConfig&&sbConfig.motor_config)||{};
+    const dc=(sbConfig&&sbConfig.display_config)||{};
     const showLive=mc.tennis_live!==false;
     const showUpcoming=mc.tennis_upcoming!==false;
     const showCompleted=mc.tennis_completed!==false;
     const maxCompleted=mc.tennis_max_completed||5;
     const maxUpcoming=mc.tennis_max_upcoming||10;
+    const showHeadshots=dc.player_headshots!==false;
     const r=await fetch(sport.url,{signal:AbortSignal.timeout(7000)});
     if(!r.ok) return [];
     const data=await r.json();
@@ -4395,7 +4409,7 @@ async function fetchTennisData(sport, sbConfig){
             name: c.athlete?.displayName||'Unknown',
             score: (isLive||isFinal)?String(setsWon):'–',
             color:'#1a1a2e',
-            headshot: c.athlete?.headshot?.href||null,
+            headshot: showHeadshots&&c.athlete?.id ? `https://a.espncdn.com/i/headshots/tennis/players/full/${c.athlete.id}.png` : null,
             flag: c.athlete?.flag?.href||null,
             country: c.athlete?.flag?.alt||c.athlete?.flag?.title||'',
             homeAway: c.homeAway||'away',
@@ -4439,7 +4453,7 @@ function buildTennisCard(g){
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
   const p1=g.teams.find(t=>t.homeAway==='away')||g.teams[0];
   const p2=g.teams.find(t=>t.homeAway==='home')||g.teams[1];
-  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>`;
+  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--motor-label-color,var(--text-dim));">${g.sportEmoji} ${g.sportName}</span>`;
   const sh=g.isLive
     ?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc||'LIVE'}</div>`
     :g.isFinal?`<span class="status-final">FINAL</span>`
@@ -4455,13 +4469,13 @@ function buildTennisCard(g){
   }):[];
   // Determine left-element width for header alignment
   const leftW = (p1.headshot||p2.headshot) ? 38 : (p1.flag||p2.flag) ? 36 : 0;
-  const setHeader=setCols.map((_,i)=>`<span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;width:18px;text-align:center;">S${i+1}</span>`).join('');
+  const setHeader=setCols.map((_,i)=>`<span style="font-size:9px;color:var(--motor-label-color,var(--text-dim));font-family:'Share Tech Mono',monospace;width:18px;text-align:center;">S${i+1}</span>`).join('');
   const renderPlayer=(p,sets)=>{
-    const setsWonColor=p.winner?'var(--accent-green)':'var(--text-secondary)';
+    const setsWonColor=p.winner?'var(--accent-green)':'var(--motor-secondary-color,var(--text-secondary))';
     const setsHtml=sets.map(s=>{
       const mine=p===p1?s.s1:s.s2;
       const won=p===p1?s.p1won:s.p2won;
-      return `<span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);font-weight:${won?'900':'400'};color:${won?'var(--text-primary)':'var(--text-dim)'};width:18px;text-align:center;">${mine}</span>`;
+      return `<span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);font-weight:${won?'900':'400'};color:${won?'var(--text-primary)':'var(--motor-label-color,var(--text-dim))'};width:18px;text-align:center;">${mine}</span>`;
     }).join('');
     // Left element: headshot (with country below) or flag image
     let leftEl='';
@@ -4485,11 +4499,11 @@ function buildTennisCard(g){
   };
   card.innerHTML=`
     <div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${sh}</div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;color:var(--text-dim);margin:4px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:700;color:var(--motor-label-color,var(--text-dim));margin:4px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
     ${numSets>0?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
       ${leftW?`<span style="width:${leftW}px;flex-shrink:0;"></span>`:''}
       <span style="flex:1;"></span>
-      <span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;width:16px;text-align:center;">W</span>
+      <span style="font-size:9px;color:var(--motor-label-color,var(--text-dim));font-family:'Share Tech Mono',monospace;width:16px;text-align:center;">W</span>
       ${setHeader}
     </div>`:''}
     ${renderPlayer(p1,setCols)}
