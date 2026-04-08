@@ -982,7 +982,7 @@ body.stream-mode .card-header{padding:4px 10px;}
           </div>
           <div class="modal-slider-row">
             <span class="modal-slider-label">Team Logo Size</span>
-            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';document.documentElement.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);">
+            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';document.documentElement.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);const _pi=document.getElementById('ddPreviewInner');if(_pi)_pi.style.setProperty('--team-logo-size',this.value+'px');">
             <span class="modal-slider-val" id="ddLogoSizeVal">34px</span>
           </div>
           <div style="margin-bottom:12px;">
@@ -1001,6 +1001,16 @@ body.stream-mode .card-header{padding:4px 10px;}
                 <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;">Ticker</span>
               </label>
             </div>
+          </div>
+        </div>
+
+        <!-- PREVIEW -->
+        <div style="margin-bottom:20px;padding-top:4px;">
+          <div class="modal-section-title" style="margin-bottom:4px;">👁 Live Preview</div>
+          <div class="wiz-sublabel" style="margin-bottom:12px;">Updates as you adjust settings above.</div>
+          <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px 14px 10px;overflow:hidden;">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT PREVIEW</div>
+            <div id="ddPreviewInner" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;"></div>
           </div>
         </div>
 
@@ -2283,6 +2293,7 @@ async function loadDisplayDefaults(){
     ddPopulateUI(_displayDefaults);
     document.getElementById('ddLoadingMsg').style.display='none';
     document.getElementById('ddContent').style.display='block';
+    setTimeout(ddBuildPreview,0);
   }catch(e){ console.warn('loadDisplayDefaults error',e); }
 }
 
@@ -2324,6 +2335,28 @@ function ddGetValues(){
   };
 }
 
+function ddBuildPreview(){
+  const inner=document.getElementById('ddPreviewInner');
+  if(!inner)return;
+  const teams=[
+    {abbr:'KC', name:'Kansas City Chiefs',color:'#e31837',homeAway:'away',score:'21'},
+    {abbr:'SF', name:'San Francisco 49ers',color:'#aa0000',homeAway:'home',score:'17'}
+  ];
+  const g1=buildFullCard({id:'dd-prev1',sportName:'NFL',sportEmoji:'🏈',sportColor:'#4169e1',isLive:true,isFinal:false,isScheduled:false,periodDesc:'4th · 2:14',date:new Date().toISOString(),teams,networks:['ESPN']});
+  const g2=buildFullCard({id:'dd-prev2',sportName:'NFL',sportEmoji:'🏈',sportColor:'#4169e1',isLive:false,isFinal:false,isScheduled:true,periodDesc:'',date:new Date().toISOString(),teams:teams.map(t=>({...t,score:'–'})),networks:['TNT']});
+  [g1,g2].forEach(g=>g.style.pointerEvents='none');
+  inner.innerHTML='';
+  inner.appendChild(g1);
+  inner.appendChild(g2);
+  // Push current dd vals into the preview container
+  const vals=ddGetValues();
+  inner.style.setProperty('--card-abbr-size',vals.card_abbr_size+'px');
+  inner.style.setProperty('--card-score-size',vals.card_score_size+'px');
+  inner.style.setProperty('--card-name-size',vals.card_name_size+'px');
+  inner.style.setProperty('--card-name-color',vals.card_name_color);
+  inner.style.setProperty('--team-logo-size',(vals.logo_size||34)+'px');
+}
+
 function ddPreview(){
   const vals = ddGetValues();
   const root = document.documentElement;
@@ -2331,7 +2364,16 @@ function ddPreview(){
   root.style.setProperty('--card-score-size', vals.card_score_size+'px');
   root.style.setProperty('--card-name-size', vals.card_name_size+'px');
   root.style.setProperty('--card-name-color', vals.card_name_color);
-  // Also update any visible preview cards
+  // Push into dd preview inner if visible
+  const inner=document.getElementById('ddPreviewInner');
+  if(inner){
+    inner.style.setProperty('--card-abbr-size', vals.card_abbr_size+'px');
+    inner.style.setProperty('--card-score-size', vals.card_score_size+'px');
+    inner.style.setProperty('--card-name-size', vals.card_name_size+'px');
+    inner.style.setProperty('--card-name-color', vals.card_name_color);
+    inner.style.setProperty('--team-logo-size', (vals.logo_size||34)+'px');
+  }
+  // Also update editor preview if open
   document.querySelectorAll('.sbCardScaleInner,.dd-preview-card').forEach(el=>{
     el.style.setProperty('--card-abbr-size', vals.card_abbr_size+'px');
     el.style.setProperty('--card-score-size', vals.card_score_size+'px');
