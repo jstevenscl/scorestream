@@ -1559,10 +1559,11 @@ function renderEditorStep(sbOverride){
     const tzOptions=['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','Pacific/Honolulu','Europe/London','Europe/Paris','Europe/Berlin','Asia/Tokyo','Asia/Shanghai','Australia/Sydney'];
     const currentTz=_editorDraft.display_config.timezone||'America/New_York';
     // Detect motor-only scoreboard to hide sport-specific sliders that don't apply
-    const _motorSbIds=['f1','nascar','pga'];
+    const _motorSbIds=['f1','nascar','pga','atp','wta'];
     const _enabledIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
     const _isMotorSb=_enabledIds.length>0&&_enabledIds.every(id=>_motorSbIds.includes(id));
-    const _hasMotorSb=_enabledIds.some(id=>_motorSbIds.includes(id));
+    const _hasMotorSb=_enabledIds.some(id=>['f1','nascar','pga'].includes(id));
+    const _isTennisSb=_enabledIds.length>0&&_enabledIds.every(id=>id==='atp'||id==='wta');
     body=`
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
@@ -1628,14 +1629,14 @@ function renderEditorStep(sbOverride){
 
           <div class="modal-section-title" style="font-size:11px;margin-bottom:10px;letter-spacing:2px;">CARD TYPOGRAPHY</div>
           <div class="modal-slider-row">
-            <span class="modal-slider-label" data-tip="${_isMotorSb?'Size of driver/player name text on motor sport cards':'Size of the team abbreviation (e.g. LAL, BOS) on stream cards'}">${_isMotorSb?'Driver/Player Name Size':'Abbreviation Size'}</span>
+            <span class="modal-slider-label" data-tip="${_isTennisSb?'Size of player name/abbreviation on tennis cards':_isMotorSb?'Size of driver/player name text on motor sport cards':'Size of the team abbreviation (e.g. LAL, BOS) on stream cards'}">${_isTennisSb?'Player Name Size':_isMotorSb?'Driver/Player Name Size':'Abbreviation Size'}</span>
             <input type="range" min="14" max="28" step="1"
               value="${_editorDraft.display_config.card_abbr_size || 18}"
               id="sbEditAbbrSize"
               oninput="document.getElementById('sbEditAbbrSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-abbr-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditAbbrSizeVal">${_editorDraft.display_config.card_abbr_size || 18}px</span>
           </div>
-          ${_isMotorSb?'':`<div class="modal-slider-row">
+          ${(_isMotorSb||_isTennisSb)?'':`<div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="Size of the score numbers on stream cards">Score Size</span>
             <input type="range" min="24" max="52" step="1"
               value="${_editorDraft.display_config.card_score_size || 34}"
@@ -1643,8 +1644,8 @@ function renderEditorStep(sbOverride){
               oninput="document.getElementById('sbEditScoreSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-score-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditScoreSizeVal">${_editorDraft.display_config.card_score_size || 34}px</span>
           </div>`}
-          ${_hasMotorSb?`<div class="modal-slider-row">
-            <span class="modal-slider-label" data-tip="Size of the race/event title (e.g. Daytona 500, Japanese Grand Prix)">Title Size</span>
+          ${(_hasMotorSb||_isTennisSb)?`<div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="${_isTennisSb?'Size of the tournament name shown on tennis cards':'Size of the race/event title (e.g. Daytona 500, Japanese Grand Prix)'}">${_isTennisSb?'Tournament Name Size':'Title Size'}</span>
             <input type="range" min="10" max="22" step="1"
               value="${_editorDraft.display_config.card_title_size || 13}"
               id="sbEditTitleSize"
@@ -1652,14 +1653,14 @@ function renderEditorStep(sbOverride){
             <span class="modal-slider-val" id="sbEditTitleSizeVal">${_editorDraft.display_config.card_title_size || 13}px</span>
           </div>`:''}
           <div class="modal-slider-row">
-            <span class="modal-slider-label" data-tip="${_isMotorSb?'Size of secondary label text (car number, manufacturer, points, track info)':'Size of the full team name shown below the abbreviation'}">${_isMotorSb?'Detail/Label Text Size':'Team Name Size'}</span>
+            <span class="modal-slider-label" data-tip="${_isTennisSb?'Size of set scores, country code, and label text on tennis cards':_isMotorSb?'Size of secondary label text (car number, manufacturer, points, track info)':'Size of the full team name shown below the abbreviation'}">${_isTennisSb?'Set Score / Label Size':_isMotorSb?'Detail/Label Text Size':'Team Name Size'}</span>
             <input type="range" min="9" max="16" step="1"
               value="${_editorDraft.display_config.card_name_size || 11}"
               id="sbEditNameSize"
               oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-name-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditNameSizeVal">${_editorDraft.display_config.card_name_size || 11}px</span>
           </div>
-          ${_isMotorSb?'':`<div class="modal-slider-row" style="align-items:center;">
+          ${(_isMotorSb||_isTennisSb)?'':`<div class="modal-slider-row" style="align-items:center;">
             <span class="modal-slider-label" data-tip="Color of the full team name subtitle text on stream cards">Team Name Color</span>
             <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
               <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
@@ -1715,7 +1716,7 @@ function renderEditorStep(sbOverride){
           </div>
           
 
-        ${_isMotorSb?'':`<div style="margin-bottom:12px;">
+        ${(_isMotorSb||_isTennisSb)?'':`<div style="margin-bottom:12px;">
           <div class="wiz-label">Team Logo Size</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <input type="range" min="20" max="64" value="${Math.round(state.display.logoSize||34)}" id="sbEditLogoSize"
@@ -2173,9 +2174,16 @@ function buildEditorPreview(){
   var isF1=ids.indexOf('f1')>=0;
   var isNascar=ids.indexOf('nascar')>=0;
   var isPGA=ids.length===1&&ids[0]==='pga';
+  var isTennisOnly=ids.length>0&&ids.every(function(id){return id==='atp'||id==='wta';});
   var isMotorOnly=ids.length>0&&ids.every(function(id){return id==='f1'||id==='nascar';});
 
-  if(isMotorOnly&&isF1){
+  if(isTennisOnly){
+    var tSport=ids[0]==='atp'?{name:'ATP Tour',emoji:'🎾',color:'#0066cc'}:{name:'WTA Tour',emoji:'🎾',color:'#cc0066'};
+    var g1=buildTennisCard({id:'ten-prev1',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:'Monte-Carlo Masters · QF',date:new Date().toISOString(),isLive:true,isFinal:false,isScheduled:false,periodDesc:'3rd Set',isTennis:true,teams:[{abbr:'Sinner J.',name:'Jannik Sinner',score:'2',flag:null,country:'ITA',homeAway:'away',winner:false,setGames:[6,3,4]},{abbr:'Alcaraz C.',name:'Carlos Alcaraz',score:'1',flag:null,country:'ESP',homeAway:'home',winner:false,setGames:[4,6,3]}]});
+    var g2=buildTennisCard({id:'ten-prev2',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:'Monte-Carlo Masters · R32',date:new Date().toISOString(),isLive:false,isFinal:true,isScheduled:false,periodDesc:'',isTennis:true,teams:[{abbr:'Djokovic N.',name:'Novak Djokovic',score:'2',flag:null,country:'SRB',homeAway:'away',winner:true,setGames:[6,7]},{abbr:'Rune H.',name:'Holger Rune',score:'0',flag:null,country:'DEN',homeAway:'home',winner:false,setGames:[3,5]}]});
+    g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
+    inner.appendChild(g1); inner.appendChild(g2);
+  } else if(isMotorOnly&&isF1){
     var g1=buildF1Card({id:'f1-next',name:'Next: Japanese Grand Prix',sportName:'Formula 1',sportEmoji:'\uD83C\uDFCE\uFE0F',sportColor:'#e10600',isLive:false,isFinal:false,isScheduled:true,isF1Next:true,circuit:'Suzuka Circuit',country:'Japan',date:'2026-04-06',countdown:'in 11d',round:'3'});
     var g2=buildF1Card({id:'f1-last',name:'Chinese Grand Prix Result',sportName:'Formula 1',sportEmoji:'\uD83C\uDFCE\uFE0F',sportColor:'#e10600',isLive:false,isFinal:true,isScheduled:false,isF1Last:true,podium:[{pos:'1',driver:'Max Verstappen',team:'Red Bull Racing',time:'1:24:34',points:'25'},{pos:'2',driver:'Lewis Hamilton',team:'Mercedes',time:'+8.4s',points:'18'},{pos:'3',driver:'Charles Leclerc',team:'Ferrari',time:'+12.9s',points:'15'}]});
     g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
@@ -2202,7 +2210,7 @@ function buildEditorPreview(){
       epl: [{abbr:'ARS',name:'Arsenal',           color:'#ef0107',homeAway:'away',score:'2'}, {abbr:'MCI',name:'Man City',             color:'#6cabdd',homeAway:'home',score:'1'}],
       mls: [{abbr:'LAG',name:'LA Galaxy',         color:'#00245d',homeAway:'away',score:'1'}, {abbr:'ATL',name:'Atlanta United',       color:'#80000a',homeAway:'home',score:'2'}],
     };
-    var _sp=SPORTS.find(function(s){return ids.indexOf(s.id)>=0&&!s.fetchFn;})||{id:'nhl',name:'NHL',emoji:'\uD83C\uDFD2',color:'#003087'};
+    var _sp=ALL_SPORTS.find(function(s){return ids.indexOf(s.id)>=0&&!s.fetchFn;})||{id:'nhl',name:'NHL',emoji:'\uD83C\uDFD2',color:'#003087'};
     var _pt=_previewTeams[_sp.id]||_previewTeams.nhl;
     var g1=buildFullCard({id:'prev-live',sportName:_sp.name,sportEmoji:_sp.emoji,sportColor:_sp.color,isLive:true,isFinal:false,isScheduled:false,periodDesc:'3rd \u00B7 7:42',date:new Date().toISOString(),teams:_pt,networks:['ESPN']});
     var g2=buildFullCard({id:'prev-sched',sportName:_sp.name,sportEmoji:_sp.emoji,sportColor:_sp.color,isLive:false,isFinal:false,isScheduled:true,periodDesc:'',date:new Date().toISOString(),teams:_pt.map(function(t){return Object.assign({},t,{score:'\u2013'});}),networks:['TNT']});
