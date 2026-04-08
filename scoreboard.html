@@ -906,6 +906,29 @@ body.stream-mode .card-header{padding:4px 10px;}
       <div id="ddLoadingMsg" style="color:var(--text-dim);font-size:13px;padding:20px 0;">Loading defaults...</div>
       <div id="ddContent" style="display:none;">
 
+        <!-- THEME -->
+        <div style="margin-bottom:24px;">
+          <div class="modal-section-title" style="margin-bottom:4px;">🎨 Theme</div>
+          <div class="wiz-sublabel" style="margin-bottom:14px;">Choose a preset color scheme or create your own. Applied globally unless overridden per scoreboard.</div>
+          <div id="ddThemeSwatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="ddOpenThemeCustomizer()" style="padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;cursor:pointer;">✏️ Edit Current</button>
+            <button onclick="ddNewCustomTheme()" style="padding:6px 14px;border-radius:7px;border:1px solid var(--accent);background:rgba(0,212,255,0.08);color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;cursor:pointer;">＋ New Custom Theme</button>
+          </div>
+          <div id="ddThemeCustomizer" style="display:none;margin-top:14px;padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:10px;">Customize Theme</div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11px;color:var(--text-dim);">Theme Name</label>
+              <input type="text" id="ddCustomThemeName" class="wiz-input" placeholder="My Theme" style="width:100%;margin-top:4px;">
+            </div>
+            <div id="ddThemeColorPickers" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="ddSaveCustomTheme()" style="flex:2;padding:7px;border-radius:7px;border:none;background:var(--accent);color:#000;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;cursor:pointer;">💾 Save Theme</button>
+              <button onclick="document.getElementById('ddThemeCustomizer').style.display='none'" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;cursor:pointer;">Cancel</button>
+            </div>
+          </div>
+        </div>
+
         <!-- FONT SIZES -->
         <div style="margin-bottom:24px;">
           <div class="modal-section-title" style="margin-bottom:4px;">📝 Default Font Sizes</div>
@@ -1576,6 +1599,12 @@ function renderEditorStep(sbOverride){
             </label>
           </div>
 
+          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+            <div class="modal-section-title" style="font-size:11px;margin-bottom:8px;letter-spacing:2px;">THEME OVERRIDE</div>
+            <div class="wiz-sublabel" style="margin-bottom:10px;">Use a different theme for this scoreboard, or leave on "Use Global".</div>
+            <div id="sbEditThemeSwatches" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+          </div>
+
           <div class="modal-section-title" style="font-size:11px;margin-bottom:10px;letter-spacing:2px;">CARD TYPOGRAPHY</div>
           <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="${_isMotorSb?'Size of driver/player name text on motor sport cards':'Size of the team abbreviation (e.g. LAL, BOS) on stream cards'}">${_isMotorSb?'Driver/Player Name Size':'Abbreviation Size'}</span>
@@ -1737,6 +1766,8 @@ function renderEditorStep(sbOverride){
       </div>`;
   // Init preview to current scale after render
   setTimeout(()=>{
+    _sbEditThemeId=_editorDraft.display_config?.theme_id||null;
+    ddRenderSbThemeSwatches();
     const sel=document.getElementById('sbEditCardScale');
     if(sel) sbPreviewCardScale(parseFloat(sel.value)/100);
     const inner=document.getElementById('sbCardScaleInner');
@@ -1962,6 +1993,8 @@ function collectEditorStepData(){
     if(logoSzEl) _editorDraft.display_config.logo_size=parseInt(logoSzEl.value);
     const rotEl=document.getElementById('sbEditRotation');
     if(rotEl) _editorDraft.display_config.stream_rotation_secs=parseInt(rotEl.value);
+    // Theme override — null means use global
+    _editorDraft.display_config.theme_id = _sbEditThemeId || null;
     // Audio settings are updated live via sbAudioModeChange/sbAudioUrlChange, no collection needed here
   }
   if(_editorStep===2){
@@ -2268,6 +2301,11 @@ function ddPopulateUI(def){
   const layout = def.stream_layout||'grid';
   const rb = document.querySelector(`input[name="ddLayout"][value="${layout}"]`);
   if(rb) rb.checked=true;
+  // Apply theme
+  _activeThemeId = def.theme_id || 'dark-blue';
+  const _t = _getThemeById(_activeThemeId) || BUILT_IN_THEMES[0];
+  if(_t) applyTheme(_t.vars);
+  ddRenderThemeSwatches();
 }
 
 function ddGetValues(){
@@ -2303,7 +2341,7 @@ function ddPreview(){
 }
 
 async function ddSave(){
-  const vals = ddGetValues();
+  const vals = { ...ddGetValues(), theme_id: _activeThemeId, custom_themes: _displayDefaults.custom_themes||[] };
   // Check how many scoreboards are using each default group
   const linked = {fonts:[], colors:[], cardSize:[]};
   (_scoreboards||[]).forEach(sb=>{
@@ -3183,6 +3221,117 @@ async function wizCreateStreamProfile(){
 let _cachedStreamProfiles=null;
 const _origLoadStreamProfiles=typeof loadStreamProfiles!=='undefined'?loadStreamProfiles:null;
 
+
+// ── Theme System ─────────────────────────────────────────────────────────────
+const BUILT_IN_THEMES=[
+  {id:'dark-blue',  name:'Dark Blue',  swatch:'#1e2d42', vars:{'--bg-primary':'#080b10','--bg-secondary':'#0d1117','--bg-card':'#111722','--bg-card-hover':'#161e2e','--border':'#1e2d42','--border-bright':'#2a4060','--accent':'#00d4ff','--accent2':'#ff6b00','--accent-green':'#00ff88','--accent-red':'#ff3b5c','--text-primary':'#e8f0fe','--text-secondary':'#7a9ab8','--text-dim':'#3d5a78'}},
+  {id:'dark-carbon',name:'Carbon',     swatch:'#2d2d2d', vars:{'--bg-primary':'#0a0a0a','--bg-secondary':'#121212','--bg-card':'#1c1c1c','--bg-card-hover':'#242424','--border':'#2d2d2d','--border-bright':'#404040','--accent':'#e0e0e0','--accent2':'#ff6b00','--accent-green':'#00e676','--accent-red':'#ff1744','--text-primary':'#f5f5f5','--text-secondary':'#9e9e9e','--text-dim':'#616161'}},
+  {id:'dark-red',   name:'Dark Red',   swatch:'#3d1520', vars:{'--bg-primary':'#0d0608','--bg-secondary':'#130a0c','--bg-card':'#1c0f12','--bg-card-hover':'#261318','--border':'#3d1520','--border-bright':'#5a2030','--accent':'#ff4466','--accent2':'#ff8c00','--accent-green':'#00ff88','--accent-red':'#ff1744','--text-primary':'#f8e8ec','--text-secondary':'#b87a8a','--text-dim':'#7a3d50'}},
+  {id:'dark-green', name:'Dark Green', swatch:'#1a3d25', vars:{'--bg-primary':'#060d08','--bg-secondary':'#0a1410','--bg-card':'#0f1d16','--bg-card-hover':'#152519','--border':'#1a3d25','--border-bright':'#245c35','--accent':'#00e676','--accent2':'#ffd600','--accent-green':'#00ff88','--accent-red':'#ff3b5c','--text-primary':'#e8f8ec','--text-secondary':'#7ab87e','--text-dim':'#3d7845'}},
+  {id:'light',      name:'Light',      swatch:'#d0d7de', vars:{'--bg-primary':'#f0f2f5','--bg-secondary':'#ffffff','--bg-card':'#ffffff','--bg-card-hover':'#f5f7fa','--border':'#d0d7de','--border-bright':'#aab4be','--accent':'#0066cc','--accent2':'#ff6b00','--accent-green':'#00aa44','--accent-red':'#cc0022','--text-primary':'#1a1a2e','--text-secondary':'#4a5568','--text-dim':'#718096'}},
+];
+const THEME_VARS=[
+  {key:'--bg-primary',   label:'Page Background', group:'Backgrounds'},
+  {key:'--bg-secondary', label:'Panel Background',group:'Backgrounds'},
+  {key:'--bg-card',      label:'Card Background', group:'Backgrounds'},
+  {key:'--border',       label:'Border Color',    group:'Borders'},
+  {key:'--accent',       label:'Main Accent',     group:'Accents'},
+  {key:'--accent-green', label:'Live Indicator',  group:'Accents'},
+  {key:'--accent-red',   label:'Alert / Score',   group:'Accents'},
+  {key:'--text-primary', label:'Primary Text',    group:'Text'},
+  {key:'--text-dim',     label:'Dim / Labels',    group:'Text'},
+];
+let _activeThemeId='dark-blue';
+function _getAllThemes(){return[...BUILT_IN_THEMES,...(_displayDefaults.custom_themes||[])];}
+function _getThemeById(id){return _getAllThemes().find(t=>t.id===id);}
+function applyTheme(vars){const r=document.documentElement;Object.entries(vars).forEach(([k,v])=>r.style.setProperty(k,v));}
+function ddRenderThemeSwatches(){
+  const cont=document.getElementById('ddThemeSwatches');if(!cont)return;
+  cont.innerHTML=_getAllThemes().map(t=>{
+    const isActive=_activeThemeId===t.id;
+    const isCustom=!BUILT_IN_THEMES.find(b=>b.id===t.id);
+    return `<div onclick="ddSelectTheme('${t.id}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:2px solid ${isActive?'var(--accent)':'var(--border)'};background:${t.swatch};transition:all 0.15s;" title="${t.name}">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.7);">${t.name}</span>
+      ${isActive?'<span style="font-size:10px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.7);">✓</span>':''}
+      ${isCustom?`<button onclick="event.stopPropagation();ddDeleteCustomTheme('${t.id}')" style="background:none;border:none;cursor:pointer;color:#f44;font-size:12px;line-height:1;padding:0 2px;" title="Delete">✕</button>`:''}
+    </div>`;
+  }).join('');
+  // Also refresh per-scoreboard picker if open
+  const sbPicker=document.getElementById('sbEditThemeSwatches');if(sbPicker)ddRenderSbThemeSwatches();
+}
+function ddSelectTheme(id){
+  _activeThemeId=id;
+  const t=_getThemeById(id);if(t)applyTheme(t.vars);
+  ddRenderThemeSwatches();
+}
+function ddOpenThemeCustomizer(baseId){
+  const t=_getThemeById(baseId||_activeThemeId)||BUILT_IN_THEMES[0];
+  const isCustom=!BUILT_IN_THEMES.find(b=>b.id===t.id);
+  const nameEl=document.getElementById('ddCustomThemeName');
+  if(nameEl)nameEl.value=isCustom?t.name:t.name+' (Copy)';
+  const cont=document.getElementById('ddThemeColorPickers');
+  if(cont)cont.innerHTML=THEME_VARS.map(v=>{
+    const safeKey=v.key.replace(/--/,'').replace(/-/g,'_');
+    const val=t.vars[v.key]||'#000000';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-card);border-radius:7px;border:1px solid var(--border);">
+      <div style="position:relative;width:32px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+        <div id="ddTS_${safeKey}" style="position:absolute;inset:0;background:${val};"></div>
+        <input type="color" id="ddTC_${safeKey}" value="${val}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+          oninput="document.getElementById('ddTS_${safeKey}').style.background=this.value;document.documentElement.style.setProperty('${v.key}',this.value)">
+      </div>
+      <span style="font-size:11px;color:var(--text-primary);flex:1;">${v.label}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('ddThemeCustomizer').style.display='block';
+}
+function ddNewCustomTheme(){
+  ddOpenThemeCustomizer(_activeThemeId);
+  const nameEl=document.getElementById('ddCustomThemeName');
+  if(nameEl)nameEl.value='Custom Theme '+(((_displayDefaults.custom_themes||[]).length)+1);
+}
+function ddSaveCustomTheme(){
+  const name=(document.getElementById('ddCustomThemeName')?.value||'').trim()||'Custom Theme';
+  const base=_getThemeById(_activeThemeId)||BUILT_IN_THEMES[0];
+  const vars=Object.assign({},base.vars);
+  THEME_VARS.forEach(v=>{
+    const safeKey=v.key.replace(/--/,'').replace(/-/g,'_');
+    const el=document.getElementById('ddTC_'+safeKey);if(el)vars[v.key]=el.value;
+  });
+  const id='custom-'+Date.now();
+  const theme={id,name,swatch:vars['--bg-card'],vars};
+  if(!_displayDefaults.custom_themes)_displayDefaults.custom_themes=[];
+  _displayDefaults.custom_themes.push(theme);
+  _activeThemeId=id;applyTheme(vars);
+  ddRenderThemeSwatches();
+  document.getElementById('ddThemeCustomizer').style.display='none';
+  ddSave();
+}
+function ddDeleteCustomTheme(id){
+  if(!confirm('Delete this custom theme?'))return;
+  _displayDefaults.custom_themes=(_displayDefaults.custom_themes||[]).filter(t=>t.id!==id);
+  if(_activeThemeId===id){_activeThemeId='dark-blue';ddSelectTheme('dark-blue');}
+  ddRenderThemeSwatches();ddSave();
+}
+// Per-scoreboard theme picker
+let _sbEditThemeId=null; // null = use global
+function ddRenderSbThemeSwatches(){
+  const cont=document.getElementById('sbEditThemeSwatches');if(!cont)return;
+  const useGlobal=_sbEditThemeId===null;
+  cont.innerHTML=`<div onclick="ddSbSelectTheme(null)" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:2px solid ${useGlobal?'var(--accent)':'var(--border)'};background:var(--bg-secondary);margin-bottom:6px;">
+    <span style="font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--text-primary);">Use Global${useGlobal?' ✓':''}</span>
+  </div> `+_getAllThemes().map(t=>{
+    const isActive=_sbEditThemeId===t.id;
+    return `<div onclick="ddSbSelectTheme('${t.id}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:2px solid ${isActive?'var(--accent)':'var(--border)'};background:${t.swatch};margin-bottom:6px;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.7);">${t.name}${isActive?' ✓':''}</span>
+    </div>`;
+  }).join(' ');
+}
+function ddSbSelectTheme(id){
+  _sbEditThemeId=id;
+  if(id){const t=_getThemeById(id);if(t)applyTheme(t.vars);}
+  else{const t=_getThemeById(_activeThemeId);if(t)applyTheme(t.vars);}
+  ddRenderSbThemeSwatches();
+}
 
 const ALL_SPORTS=[
   // Pro Team Sports
@@ -5892,6 +6041,16 @@ renderFavSummary();
       // Re-apply display settings now that display_config is loaded
       // (initDisplayControls ran at page load before this, with empty display_config)
       initDisplayControls();
+      // Apply theme: per-scoreboard override > global display defaults
+      const _sbThemeId = sb.display_config?.theme_id;
+      fetch(`${API_BASE}/settings/display-defaults`).then(r=>r.ok?r.json():null).then(d=>{
+        if(!d) return;
+        const _dd = d.defaults||{};
+        if(_dd.custom_themes) _displayDefaults.custom_themes = _dd.custom_themes;
+        const _resolvedThemeId = _sbThemeId || _dd.theme_id || 'dark-blue';
+        const _theme = _getThemeById(_resolvedThemeId) || BUILT_IN_THEMES[0];
+        if(_theme) applyTheme(_theme.vars);
+      }).catch(()=>{});
     }
   }catch(e){
     console.warn('[stream] Failed to load scoreboard config:',e.message);
