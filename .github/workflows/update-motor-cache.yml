@@ -208,6 +208,42 @@ jobs:
                       print(f"  + {p['name']} ({aid}) hs={'yes' if p['headshot'] else 'no'}")
               print(f"  {league.upper()}: {new_count} new, {len(existing)} total in cache")
               cache[f'{league}-players']={'data':existing,'_updated':today_str}
+          for racing_sport in [('nascar','nascar-cup','nascar-drivers'),('f1','f1','f1-drivers')]:
+              espn_slug, espn_path, cache_key = racing_sport
+              print(f"\n--- {espn_slug.upper()} Drivers ---")
+              existing_drivers = cache.get(cache_key,{}).get('data',{})
+              if isinstance(existing_drivers,str): existing_drivers=json.loads(existing_drivers)
+              racing_ids=set()
+              sb=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/scoreboard',ESPN_HDR)
+              if sb:
+                  for event in sb.get('events',[]):
+                      for comp in (event.get('competitions') or []):
+                          for c in comp.get('competitors',[]):
+                              aid=(c.get('athlete') or {}).get('id')
+                              if aid: racing_ids.add(str(aid))
+              # Also try standings endpoint for off-season coverage
+              stand=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/standings',ESPN_HDR)
+              if stand:
+                  for entry in (stand.get('standings',{}).get('entries') or stand.get('entries') or []):
+                      aid=(entry.get('athlete') or {}).get('id') or (entry.get('team') or {}).get('id')
+                      if aid: racing_ids.add(str(aid))
+              print(f"  IDs found: {len(racing_ids)}")
+              new_count=0
+              for aid in racing_ids:
+                  if aid in existing_drivers and existing_drivers[aid].get('headshot'): continue
+                  details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/athletes/{aid}',ESPN_HDR)
+                  if not details: continue
+                  ath=details.get('athlete') or details
+                  existing_drivers[aid]={
+                      'id':aid,'name':ath.get('displayName',''),
+                      'headshot':(ath.get('headshot') or {}).get('href') or '',
+                      'flag':(ath.get('flag') or {}).get('href') or '',
+                      'country':(ath.get('flag') or {}).get('alt') or '',
+                  }
+                  new_count+=1
+                  print(f"  + {existing_drivers[aid]['name']} ({aid}) hs={'yes' if existing_drivers[aid]['headshot'] else 'no'}")
+              print(f"  {espn_slug.upper()}: {new_count} new, {len(existing_drivers)} total in cache")
+              cache[cache_key]={'data':existing_drivers,'_updated':today_str}
           with open(cache_path,'w') as f: json.dump(cache,f,indent=2)
           print(f"\nWritten {len(cache)} keys ({os.path.getsize(cache_path):,} bytes)")
           PYEOF
