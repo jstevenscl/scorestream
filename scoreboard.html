@@ -4399,8 +4399,13 @@ async function fetchTennisData(sport, sbConfig){
         });
       }
     }
+    // Sort: live first, then scheduled, then final
     cards.sort((a,b)=>(a.isLive?0:a.isScheduled?1:2)-(b.isLive?0:b.isScheduled?1:2));
-    return cards;
+    // Limit completed matches — keep all live + scheduled, cap recent finals at 10
+    const live=cards.filter(c=>c.isLive);
+    const sched=cards.filter(c=>c.isScheduled);
+    const finals=cards.filter(c=>c.isFinal).slice(0,10);
+    return [...live,...sched,...finals];
   }catch(e){
     console.warn('[tennis] fetch error',e);
     return [];
@@ -4426,6 +4431,8 @@ function buildTennisCard(g){
     const p2won=s1!==''&&s2!==''&&s2>s1;
     return{s1,s2,p1won,p2won};
   }):[];
+  // Determine left-element width for header alignment
+  const leftW = (p1.headshot||p2.headshot) ? 38 : (p1.flag||p2.flag) ? 30 : 0;
   const setHeader=setCols.map((_,i)=>`<span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;width:18px;text-align:center;">S${i+1}</span>`).join('');
   const renderPlayer=(p,sets)=>{
     const setsWonColor=p.winner?'var(--accent-green)':'var(--text-secondary)';
@@ -4454,7 +4461,12 @@ function buildTennisCard(g){
   card.innerHTML=`
     <div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${sh}</div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;color:var(--text-dim);margin:4px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
-    ${numSets>0?`<div style="display:flex;justify-content:flex-end;gap:6px;padding-right:0;margin-bottom:2px;"><span style="flex:1;"></span><span style="width:16px;"></span>${setHeader}</div>`:''}
+    ${numSets>0?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+      ${leftW?`<span style="width:${leftW}px;flex-shrink:0;"></span>`:''}
+      <span style="flex:1;"></span>
+      <span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;width:16px;text-align:center;">W</span>
+      ${setHeader}
+    </div>`:''}
     ${renderPlayer(p1,setCols)}
     ${renderPlayer(p2,setCols)}`;
   return card;
@@ -6406,8 +6418,9 @@ function renderStreamCanvas() {
     }
 
     // Separate live/upcoming from finals
-    // Motor sport cards (F1/NASCAR) always show regardless of showEnded setting
-    const isMotorSport = !!(sport.fetchFn);
+    // Motor sport cards (F1/NASCAR/PGA) always show regardless of showEnded setting
+    // Tennis uses fetchFn but should paginate like regular sports
+    const isMotorSport = !!(sport.fetchFn) && sport.group !== 'tennis';
     const motorCards = isMotorSport ? games : [];
     const regularGames = isMotorSport ? [] : games;
     const liveUpcoming = regularGames.filter(g => !g.isFinal);
