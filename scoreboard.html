@@ -4346,13 +4346,17 @@ function buildLeaderboardCard(g){
     :g.isFinal?`<span class="status-final">FINAL</span>`
     :`<span class="status-upcoming">${formatTime(g.date)}</span>`;
   const rows=(g.teams||[]).map((p,i)=>{
-    const pos=p.position||(i+1);
-    const scoreColor=p.score&&p.score.startsWith('-')?'var(--accent-green)':p.score==='E'?'var(--text-secondary)':'#f87171';
+    const pos=p.position||(String(i+1));
+    const scoreStr=String(p.score||'–');
+    const scoreColor=scoreStr.startsWith('-')?'var(--accent-green)':scoreStr==='E'?'var(--text-secondary)':'#f87171';
+    // thru: show "F" in green (round done), hole number in dim, blank if not started
+    const thruStr=String(p.thru||'');
+    const thruColor=thruStr==='F'?'var(--accent-green)':'var(--text-dim)';
     return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--border);">
-      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:22px;text-align:right;">${pos}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:26px;text-align:right;flex-shrink:0;">${pos}</span>
       <span style="flex:1;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);font-weight:700;color:${scoreColor};">${p.score||'–'}</span>
-      ${p.thru?`<span style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;">${p.thru}</span>`:''}
+      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);font-weight:700;color:${scoreColor};min-width:34px;text-align:right;">${scoreStr}</span>
+      ${thruStr?`<span style="font-size:var(--card-name-size,11px);color:${thruColor};font-family:'Share Tech Mono',monospace;min-width:18px;text-align:right;">${thruStr}</span>`:''}
     </div>`;
   }).join('');
   card.innerHTML=`
@@ -4550,8 +4554,10 @@ async function fetchPGAData(sport, sbConfig){
           // Show upcoming tournaments as a single info card instead of skipping
           const hasScores = (t.players||[]).some(p=>p.r1&&p.r1!==''&&p.r1!=='-'&&p.r1!=='0');
           const isCurrentlyLive=!t.is_complete&&t.date<=todayStr2;
-          // Live tournament with no cached player data — let ESPN live fetch handle it
-          if(isCurrentlyLive && !hasScores) return;
+          // Always skip live tournaments from cache — ESPN live feed is always fresher.
+          // (previously only skipped when hasScores=false, but once GHA caches partial
+          // round scores the guard broke and stale cache blocked the live ESPN data)
+          if(isCurrentlyLive) return;
           if(!t.is_complete && !hasScores && !isCurrentlyLive){
             cards.push({
               id:`pga-upcoming-${t.date}`,
@@ -4615,17 +4621,25 @@ async function fetchPGAData(sport, sbConfig){
           if(existingNames.has((ev.name||'').trim())) return;
           const competitors=(comp.competitors||[])
             .filter(c=>showCut||_madeCut(c.status?.position?.displayName))
-            .map(c=>({
-              name:c.athlete?.displayName||c.team?.displayName||'?',
-              score:c.score||'–',
-              position:c.status?.position||null,
-              thru:c.status?.thru||null,
-            }));
+            .map(c=>{
+              // Build stats lookup — ESPN puts scoreToPar here during live/completed rounds
+              const statsMap=Object.fromEntries((c.statistics||[]).map(s=>[s.name,s.displayValue]));
+              // Score-to-par: prefer stats, fall back to status display, then raw score
+              const score=statsMap.scoreToPar||statsMap.score||c.status?.displayValue||c.score||'–';
+              // Thru: hole number (1-18), "F" for finished, blank if not started
+              const thru=c.status?.thru!=null?String(c.status.thru):(c.status?.type?.shortDetail||'');
+              return{
+                name: c.athlete?.displayName||c.team?.displayName||'?',
+                score,
+                position: c.status?.position?.displayName||'',
+                thru,
+              };
+            });
           if(!competitors.length) return;
-          const hasScores = competitors.some(p=>p.r1&&p.r1!==''&&p.r1!=='-'&&p.r1!=='0');
-          const isLive = ev.status?.type?.state==='in';
-          const isFinal = ev.status?.type?.state==='post';
-          const effectiveHasScores = hasScores || isLive;
+          const hasScores=competitors.some(p=>p.score&&p.score!=='–');
+          const isLive=ev.status?.type?.state==='in';
+          const isFinal=ev.status?.type?.state==='post';
+          const effectiveHasScores=hasScores||isLive||isFinal;
           // Skip events already in cache from motor_cache.json seed (avoid duplicates)
           // Show upcoming as single info card if no scores yet
           if(!effectiveHasScores && !isLive && !isFinal){
