@@ -79,7 +79,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta-${{ steps.sha.outputs.short }}
-          no-cache: true
+          cache-from: type=gha,scope=stream
+          cache-to: type=gha,mode=max,scope=stream
 
       - name: Summary
         run: |
