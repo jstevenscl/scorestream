@@ -4094,7 +4094,7 @@ function buildLeaderboardCard(g){
 async function fetchPGAData(sport, sbConfig){
   const mc=(sbConfig&&sbConfig.motor_config)||{};
   const showLive=mc.pga_live!==false, showHistory=mc.pga_history!==false, showCut=mc.pga_show_cut!==false;
-  const _cutStatuses=new Set(['CUT','MC','WD','DQ']);
+  const _madeCut=pos=>/^T?\d+$/.test((pos||'').trim());
   const cards = [];
 
   // Fetch historical tournaments from cache
@@ -4136,7 +4136,7 @@ async function fetchPGAData(sport, sbConfig){
           // Live: show even without cached round scores (ESPN adds live data)
           if(t.is_complete && pgaShown>=pgaMax) return;
           if(t.is_complete) pgaShown++;
-          const players = (t.players||[]).filter(p=>showCut||!_cutStatuses.has((p.pos||'').toUpperCase()));
+          const players = (t.players||[]).filter(p=>showCut||_madeCut(p.pos));
           const chunkSize=8, total=players.length, totalPages=Math.ceil(total/chunkSize);
           const statusLabel = t.is_complete ? 'FINAL' : 'IN PROGRESS';
           for(let i=0;i<total;i+=chunkSize){
@@ -4180,7 +4180,7 @@ async function fetchPGAData(sport, sbConfig){
           // Skip if this tournament is already shown from cache
           if(existingNames.has((ev.name||'').trim())) return;
           const competitors=(comp.competitors||[])
-            .filter(c=>showCut||!_cutStatuses.has((c.status?.position?.displayName||c.score||'').toUpperCase()))
+            .filter(c=>showCut||_madeCut(c.status?.position?.displayName))
             .map(c=>({
               name:c.athlete?.displayName||c.team?.displayName||'?',
               score:c.score||'–',
@@ -5837,6 +5837,7 @@ renderFavSummary();
         state.display.scoreSize=dc.card_score_size||state.display.scoreSize;
         state.display.nameSize=dc.card_name_size||state.display.nameSize;
         state.display.nameColor=dc.card_name_color||state.display.nameColor;
+        state.display.logoSize=dc.logo_size||state.display.logoSize;
       }
       // Update topbar title
       const titleEl=document.getElementById('topbarTitle');
