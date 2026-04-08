@@ -4283,6 +4283,7 @@ function buildGameCard(g){
   if(g.isIndividual||g.isPGAHistory||g.isPGALive) return buildLeaderboardCard(g);
   if(g.isNascarLive||g.isNascarStandings||g.isNascarLast||g.isNascarInfo||g.isNascarNext) return buildNascarCard(g);
   if(g.isF1Next || g.isF1Last || g.isF1Standings || g.isF1History) return buildF1Card(g);
+  if(g.isTennis) return buildTennisCard(g);
   return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);
 }
 
@@ -4353,7 +4354,7 @@ async function fetchTennisData(sport, sbConfig){
     const cards=[];
     for(const ev of (data.events||[])){
       const tournamentName=ev.name||'';
-      // Flatten all singles competitions from groupings (skip doubles)
+      // Flatten singles competitions from groupings (skip doubles)
       const comps=[];
       for(const grp of (ev.groupings||[])){
         const gname=(grp.abbreviation||grp.name||'').toLowerCase();
@@ -4365,17 +4366,24 @@ async function fetchTennisData(sport, sbConfig){
         const isLive=st?.state==='in';
         const isFinal=st?.state==='post';
         const periodDesc=st?.shortDetail||'';
-        const players=(comp.competitors||[]).map(c=>{
+        const rawPlayers=(comp.competitors||[]);
+        // Skip matches where any player is TBD / unknown
+        if(rawPlayers.some(c=>!c.athlete?.displayName||c.athlete.displayName==='TBD')) continue;
+        const players=rawPlayers.map(c=>{
           const sets=c.linescores||[];
           const setsWon=sets.filter(s=>s.winner).length;
+          const setGames=sets.map(s=>s.value!=null?Math.round(s.value):null).filter(v=>v!==null);
           return{
             abbr: c.athlete?.shortName||'???',
             name: c.athlete?.displayName||'Unknown',
             score: (isLive||isFinal)?String(setsWon):'–',
-            color: '#1a1a2e',
-            logo: c.athlete?.headshot?.href||c.athlete?.flag?.href||null,
+            color:'#1a1a2e',
+            headshot: c.athlete?.headshot?.href||null,
+            flag: c.athlete?.flag?.href||null,
+            country: c.athlete?.flag?.alt||c.athlete?.flag?.title||'',
             homeAway: c.homeAway||'away',
             winner: c.winner||false,
+            setGames,
           };
         });
         if(players.length<2) continue;
@@ -4387,16 +4395,69 @@ async function fetchTennisData(sport, sbConfig){
           periodDesc,
           teams:players, networks:[], stats:[],
           isLive, isFinal, isScheduled:!isLive&&!isFinal,
+          isTennis:true,
         });
       }
     }
-    // Live first, then scheduled, then final
     cards.sort((a,b)=>(a.isLive?0:a.isScheduled?1:2)-(b.isLive?0:b.isScheduled?1:2));
     return cards;
   }catch(e){
     console.warn('[tennis] fetch error',e);
     return [];
   }
+}
+
+function buildTennisCard(g){
+  const card=document.createElement('div');
+  card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
+  const p1=g.teams.find(t=>t.homeAway==='away')||g.teams[0];
+  const p2=g.teams.find(t=>t.homeAway==='home')||g.teams[1];
+  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>`;
+  const sh=g.isLive
+    ?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc||'LIVE'}</div>`
+    :g.isFinal?`<span class="status-final">FINAL</span>`
+    :`<span class="status-upcoming">${formatTime(g.date)}</span>`;
+  // Build set columns — pair scores from both players per set
+  const numSets=Math.max((p1.setGames||[]).length,(p2.setGames||[]).length);
+  const setCols=numSets>0?Array.from({length:numSets},(_,i)=>{
+    const s1=(p1.setGames||[])[i]??'';
+    const s2=(p2.setGames||[])[i]??'';
+    const p1won=s1!==''&&s2!==''&&s1>s2;
+    const p2won=s1!==''&&s2!==''&&s2>s1;
+    return{s1,s2,p1won,p2won};
+  }):[];
+  const setHeader=setCols.map((_,i)=>`<span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;width:18px;text-align:center;">S${i+1}</span>`).join('');
+  const renderPlayer=(p,sets)=>{
+    const setsWonColor=p.winner?'var(--accent-green)':'var(--text-secondary)';
+    const setsHtml=sets.map(s=>{
+      const mine=p===p1?s.s1:s.s2;
+      const won=p===p1?s.p1won:s.p2won;
+      return `<span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);font-weight:${won?'900':'400'};color:${won?'var(--text-primary)':'var(--text-dim)'};width:18px;text-align:center;">${mine}</span>`;
+    }).join('');
+    // Left element: headshot (with country below) or flag image
+    let leftEl='';
+    if(p.headshot){
+      leftEl=`<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;width:32px;">
+        <img src="${p.headshot}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--border);" onerror="this.style.display='none'">
+        ${p.country?`<span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:0.5px;">${p.country}</span>`:''}
+      </div>`;
+    } else if(p.flag){
+      leftEl=`<img src="${p.flag}" style="width:24px;height:15px;object-fit:cover;border-radius:2px;flex-shrink:0;border:1px solid var(--border);" onerror="this.style.display='none'">`;
+    }
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);">
+      ${leftEl}
+      <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.abbr}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);font-weight:900;color:${setsWonColor};width:16px;text-align:center;">${(g.isLive||g.isFinal)?p.score:''}</span>
+      ${setsHtml}
+    </div>`;
+  };
+  card.innerHTML=`
+    <div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${sh}</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;color:var(--text-dim);margin:4px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
+    ${numSets>0?`<div style="display:flex;justify-content:flex-end;gap:6px;padding-right:0;margin-bottom:2px;"><span style="flex:1;"></span><span style="width:16px;"></span>${setHeader}</div>`:''}
+    ${renderPlayer(p1,setCols)}
+    ${renderPlayer(p2,setCols)}`;
+  return card;
 }
 
 // ── PGA Tour Data (live + historical from cache) ────────────────────────────
