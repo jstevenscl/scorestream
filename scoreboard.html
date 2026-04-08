@@ -1514,6 +1514,10 @@ function renderEditorStep(sbOverride){
   if(_editorStep===1){
     const tzOptions=['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','Pacific/Honolulu','Europe/London','Europe/Paris','Europe/Berlin','Asia/Tokyo','Asia/Shanghai','Australia/Sydney'];
     const currentTz=_editorDraft.display_config.timezone||'America/New_York';
+    // Detect motor-only scoreboard to hide sport-specific sliders that don't apply
+    const _motorSbIds=['f1','nascar','pga'];
+    const _enabledIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
+    const _isMotorSb=_enabledIds.length>0&&_enabledIds.every(id=>_motorSbIds.includes(id));
     body=`
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
@@ -1573,21 +1577,21 @@ function renderEditorStep(sbOverride){
 
           <div class="modal-section-title" style="font-size:11px;margin-bottom:10px;letter-spacing:2px;">CARD TYPOGRAPHY</div>
           <div class="modal-slider-row">
-            <span class="modal-slider-label" data-tip="Size of the team abbreviation (e.g. LAL, BOS) on stream cards">Abbreviation Size</span>
+            <span class="modal-slider-label" data-tip="${_isMotorSb?'Size of driver/player name text on motor sport cards':'Size of the team abbreviation (e.g. LAL, BOS) on stream cards'}">${_isMotorSb?'Driver/Player Name Size':'Abbreviation Size'}</span>
             <input type="range" min="14" max="28" step="1"
               value="${_editorDraft.display_config.card_abbr_size || 18}"
               id="sbEditAbbrSize"
               oninput="document.getElementById('sbEditAbbrSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-abbr-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditAbbrSizeVal">${_editorDraft.display_config.card_abbr_size || 18}px</span>
           </div>
-          <div class="modal-slider-row">
+          ${_isMotorSb?'':`<div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="Size of the score numbers on stream cards">Score Size</span>
             <input type="range" min="24" max="52" step="1"
               value="${_editorDraft.display_config.card_score_size || 34}"
               id="sbEditScoreSize"
               oninput="document.getElementById('sbEditScoreSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-score-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditScoreSizeVal">${_editorDraft.display_config.card_score_size || 34}px</span>
-          </div>
+          </div>`}
           <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="Size of the race/event title (e.g. Daytona 500, Japanese Grand Prix)">Title Size</span>
             <input type="range" min="10" max="22" step="1"
@@ -1597,15 +1601,15 @@ function renderEditorStep(sbOverride){
             <span class="modal-slider-val" id="sbEditTitleSizeVal">${_editorDraft.display_config.card_title_size || 13}px</span>
           </div>
           <div class="modal-slider-row">
-            <span class="modal-slider-label" data-tip="Size of the full team name shown below the abbreviation">Team Name Size</span>
+            <span class="modal-slider-label" data-tip="${_isMotorSb?'Size of secondary label text (car number, manufacturer, points, track info)':'Size of the full team name shown below the abbreviation'}">${_isMotorSb?'Detail/Label Text Size':'Team Name Size'}</span>
             <input type="range" min="9" max="16" step="1"
               value="${_editorDraft.display_config.card_name_size || 11}"
               id="sbEditNameSize"
               oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-name-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditNameSizeVal">${_editorDraft.display_config.card_name_size || 11}px</span>
           </div>
-          <div class="modal-slider-row" style="align-items:center;">
-            <span class="modal-slider-label" data-tip="Color of the full team name subtitle text on stream cards">Team Name Color</span>
+          ${_isMotorSb?'':`<div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="Color of the full team name subtitle text on stream cards">Team Name Color</span>`}
             <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
               <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
                 <div id="sbEditNameColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.card_name_color || '#3d5a78'};"></div>
@@ -1616,7 +1620,7 @@ function renderEditorStep(sbOverride){
               </div>
               <span class="modal-slider-val" id="sbEditNameColorVal">${_editorDraft.display_config.card_name_color || '#3d5a78'}</span>
             </div>
-          </div>
+          </div>`}
           <div class="modal-slider-row" style="align-items:center;">
             <span class="modal-slider-label" data-tip="Color of label/dim text on motor sport cards (series name, section headers, track name)">Motor Label Color</span>
             <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
@@ -1660,7 +1664,7 @@ function renderEditorStep(sbOverride){
           </div>
           
 
-        <div style="margin-bottom:12px;">
+        ${_isMotorSb?'':`<div style="margin-bottom:12px;">
           <div class="wiz-label">Team Logo Size</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <input type="range" min="20" max="64" value="${Math.round(state.display.logoSize||34)}" id="sbEditLogoSize"
@@ -1668,7 +1672,7 @@ function renderEditorStep(sbOverride){
             <span style="font-size:12px;color:var(--text-dim);" id="sbEditLogoSizeVal">${Math.round(state.display.logoSize||34)}px</span>
           </div>
           <div class="wiz-sublabel">Logo size on stream cards</div>
-        </div>
+        </div>`}
 
 <div>
             <div class="wiz-label" data-tip="When there are more games than fit on one screen, the stream automatically pages through them. This controls how long each page is shown before advancing. Set to 0 to disable auto-rotation.">Page Rotation</div>
@@ -4032,8 +4036,31 @@ function buildLeaderboardCard(g){
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
   card.style.setProperty('--text-dim','var(--motor-label-color,#3d5a78)');
   card.style.setProperty('--text-secondary','var(--motor-secondary-color,#7a9ab8)');
+  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>`;
+
+  // ── Upcoming PGA tournament — rich info card (like F1 next race) ──────────
+  const todayISO=new Date().toISOString().slice(0,10);
+  const isUpcomingPGA=g.isPGAHistory&&g.tournamentDate&&g.tournamentDate>todayISO&&!(g.teams||[]).length;
+  if(isUpcomingPGA){
+    // Compute countdown
+    const startMs=new Date(g.tournamentDate+'T12:00:00').getTime();
+    const diffDays=Math.round((startMs-Date.now())/(86400000));
+    const countdown=diffDays<=0?'Starting soon':`in ${diffDays}d`;
+    const tvBadge=g.tv?buildNetworkBadges([g.tv]):'';
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><div style="display:flex;align-items:center;gap:4px;">${tvBadge}<span class="status-upcoming">UPCOMING</span></div></div>`;
+    const dateFormatted=new Date(g.tournamentDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    card.innerHTML=hdr+`<div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,15px);font-weight:900;color:var(--text-primary);margin:4px 0 8px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${g.name}</div>
+    <div style="display:flex;flex-direction:column;gap:5px;font-size:var(--card-name-size,11px);">
+      ${g.course?`<div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📍</span><span style="color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;">${g.course}</span></div>`:''}
+      <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);">📅</span><span style="color:var(--text-primary);">${dateFormatted}</span><span style="color:var(--accent-green);font-family:'Share Tech Mono',monospace;margin-left:auto;">${countdown}</span></div>
+      ${g.rounds?`<div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text-dim);font-family:'Share Tech Mono',monospace;">${g.rounds}</span></div>`:''}
+    </div>`;
+    return card;
+  }
+
+  // ── Live / completed leaderboard ─────────────────────────────────────────
   const sh=g.isPGAHistory
-    ?(g.isComplete?`<span class="status-final">FINAL</span>`:g.tournamentDate&&g.tournamentDate>new Date().toISOString().slice(0,10)?`<span class="status-upcoming">UPCOMING</span>`:`<span class="status-live"><div class="status-live-dot"></div>IN PROGRESS</span>`)
+    ?(g.isComplete?`<span class="status-final">FINAL</span>`:`<span class="status-live"><div class="status-live-dot"></div>IN PROGRESS</span>`)
     :g.isLive
     ?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`
     :g.isFinal?`<span class="status-final">FINAL</span>`
@@ -4050,14 +4077,11 @@ function buildLeaderboardCard(g){
   }).join('');
   card.innerHTML=`
     <div class="card-header">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div>
-        <span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>
-      </div>
+      <div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>
       ${sh}
     </div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:900;letter-spacing:0.5px;color:var(--text-primary);margin:6px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${g.name}">${g.name}</div>
-    <div style="display:flex;flex-direction:column;gap:1px;display:flex;flex-direction:column;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:900;letter-spacing:0.5px;color:var(--text-primary);margin:6px 0 6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;" title="${g.name}">${g.name}</div>
+    <div style="display:flex;flex-direction:column;gap:1px;">
       ${rows}
     </div>`;
   return card;
@@ -4099,6 +4123,7 @@ async function fetchPGAData(sport, sbConfig){
               isPGAHistory:true, isPGALive:false,
               isComplete:false, isLive:false,
               tournamentDate: t.date,
+              course: t.course||'', tv: t.tv||'', rounds: t.rounds||'',
               players:[], teams:[],
               pageNum:1, totalPages:1,
             });
