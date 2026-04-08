@@ -1748,10 +1748,10 @@ function renderEditorStep(sbOverride){
           </div>
         </div>
 
-        ${(_isTennisSb||_enabledIds.some(id=>id==='pga'))?`<div style="margin-top:12px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        ${(_isTennisSb||_enabledIds.some(id=>['pga','nascar','f1'].includes(id)))?`<div style="margin-top:12px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🖼️ Player Headshots</div>
-            <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">Show player headshot photos on cards — loaded from ESPN CDN when available</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🖼️ Driver / Player Headshots</div>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">Show driver/player headshot photos on cards — loaded from ESPN CDN when available</div>
           </div>
           <div class="small-toggle${_editorDraft.display_config.player_headshots!==false?' on':''}" id="sb-headshots-toggle" onclick="(function(el){const on=el.classList.toggle('on');_editorDraft.display_config.player_headshots=on;setTimeout(buildEditorPreview,50);})(this)"></div>
         </div>`:''}
@@ -4707,10 +4707,20 @@ async function fetchPGAData(sport, sbConfig){
 
 async function fetchNascarData(sport, sbConfig){
   const mc=(sbConfig&&sbConfig.motor_config)||{};
+  const dc=(sbConfig&&sbConfig.display_config)||{};
   const showLive=mc.nascar_live!==false;
   const showLast=mc.nascar_last!==false;
   const showStand=mc.nascar_standings!==false;
   const maxRaces=mc.nascar_max_races||3;
+  const showHeadshots=dc.player_headshots!==false;
+  // Load NASCAR driver cache (ESPN CDN headshots) — built by GHA workflow
+  const nameToNascarHs={};
+  try{
+    const pcRes=await fetch(`${API_BASE}/motor/cache/nascar-drivers`,{signal:AbortSignal.timeout(3000)});
+    if(pcRes.ok){ const pd=await pcRes.json(); const cache=pd.data||{}; Object.values(cache).forEach(d=>{if(d.name&&d.headshot)nameToNascarHs[d.name.toLowerCase()]=d.headshot;}); }
+    console.log(`[nascar] driver cache: ${Object.keys(nameToNascarHs).length} entries`);
+  }catch(e){ console.warn('[nascar] driver cache unavailable',e); }
+  const _nasHs=name=>showHeadshots?(nameToNascarHs[(name||'').toLowerCase()]||null):null;
   try{
     const r=await fetch('https://cf.nascar.com/live/feeds/live-feed.json',{signal:AbortSignal.timeout(6000)});
     if(!r.ok) return [];
@@ -4745,7 +4755,7 @@ async function fetchNascarData(sport, sbConfig){
                   name:totalPages>1?`NASCAR Cup Series Point Standings (${pageNum}/${totalPages})`:'NASCAR Cup Series Point Standings',
                   sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
                   isLive:false,isFinal:false,isScheduled:false,isIndividual:false,
-                  isNascarStandings:true,drivers:chunk,pageNum,totalPages,
+                  isNascarStandings:true,drivers:chunk.map(d=>({...d,headshot:_nasHs(d.driver)})),pageNum,totalPages,
                 });
               }
             }
@@ -4788,7 +4798,7 @@ async function fetchNascarData(sport, sbConfig){
                 flagEmoji:'\uD83C\uDFC1',flagState:9,
                 trackName:cd.track_name||'',raceDate:cd.race_date||'',
                 lapNumber:0,lapsInRace:cd.laps_in_race||0,lapsToGo:0,
-                drivers:chunk,pageNum,totalPages,
+                drivers:chunk.map(d=>({...d,headshot:_nasHs(d.driver)})),pageNum,totalPages,
               });
             }
           }
@@ -4834,15 +4844,19 @@ async function fetchNascarData(sport, sbConfig){
     // ── Live race ──
     const flagEmoji={1:'\uD83D\uDFE2',2:'\uD83D\uDFE1',3:'\uD83D\uDD34',4:'\uD83D\uDFE1',8:'\u2B1C',9:'\uD83C\uDFC1'}[flagState]||'\u2B1B';
     const sorted=[...vehicles].sort((a,b)=>(a.running_position||99)-(b.running_position||99));
-    const allDrivers=sorted.map(v=>({
-      pos:v.running_position,
-      driver:v.driver?.full_name||(v.driver?`${v.driver.first_name||''} ${v.driver.last_name||''}`.trim():'Unknown'),
-      car:v.vehicle_number||'?',
-      manufacturer:v.vehicle_manufacturer||'',
-      status:v.status||'Running',
-      delta:v.delta||null,
-      laps:v.laps_completed||0,
-    }));
+    const allDrivers=sorted.map(v=>{
+      const driverName=v.driver?.full_name||(v.driver?`${v.driver.first_name||''} ${v.driver.last_name||''}`.trim():'Unknown');
+      return{
+        pos:v.running_position,
+        driver:driverName,
+        car:v.vehicle_number||'?',
+        manufacturer:v.vehicle_manufacturer||'',
+        status:v.status||'Running',
+        delta:v.delta||null,
+        laps:v.laps_completed||0,
+        headshot:_nasHs(driverName),
+      };
+    });
     const chunkSize=8;
     const nasCards=[];
     for(let i=0;i<allDrivers.length;i+=chunkSize){
@@ -4881,7 +4895,17 @@ async function fetchNascarData(sport, sbConfig){
 }
 async function fetchF1Data(sport, sbConfig){
   const mc=(sbConfig&&sbConfig.motor_config)||{};
+  const dc=(sbConfig&&sbConfig.display_config)||{};
   const showNext=mc.f1_next_race!==false,showLast=mc.f1_last_race!==false,showStand=mc.f1_standings!==false;
+  const showHeadshots=dc.player_headshots!==false;
+  // Load F1 driver cache (ESPN CDN headshots) — built by GHA workflow
+  const nameToF1Hs={};
+  try{
+    const pcRes=await fetch(`${API_BASE}/motor/cache/f1-drivers`,{signal:AbortSignal.timeout(3000)});
+    if(pcRes.ok){ const pd=await pcRes.json(); const cache=pd.data||{}; Object.values(cache).forEach(d=>{if(d.name&&d.headshot)nameToF1Hs[d.name.toLowerCase()]=d.headshot;}); }
+    console.log(`[f1] driver cache: ${Object.keys(nameToF1Hs).length} entries`);
+  }catch(e){ console.warn('[f1] driver cache unavailable',e); }
+  const _f1Hs=name=>showHeadshots?(nameToF1Hs[(name||'').toLowerCase()]||null):null;
   try{
     const [nextR, lastR, standR] = await Promise.all([
       fetch('https://api.jolpi.ca/ergast/f1/current/next.json',{signal:AbortSignal.timeout(6000)}).then(r=>r.json()),
@@ -4926,15 +4950,19 @@ async function fetchF1Data(sport, sbConfig){
     }
     // Cards 2+: Last race ALL finishers paginated (8 per card)
     if(lastRace?.Results?.length&&showLast){
-      const allResults = lastRace.Results.map(r=>({
-        pos: parseInt(r.position),
-        driver: `${r.Driver.givenName} ${r.Driver.familyName}`,
-        team: r.Constructor.name,
-        time: r.Time?.time || r.status,
-        points: r.points,
-        number: r.Driver.permanentNumber||'',
-        laps: r.laps,
-      }));
+      const allResults = lastRace.Results.map(r=>{
+        const driverName=`${r.Driver.givenName} ${r.Driver.familyName}`;
+        return{
+          pos: parseInt(r.position),
+          driver: driverName,
+          team: r.Constructor.name,
+          time: r.Time?.time || r.status,
+          points: r.points,
+          number: r.Driver.permanentNumber||'',
+          laps: r.laps,
+          headshot: _f1Hs(driverName),
+        };
+      });
       const chunkSize=8, total=allResults.length, totalPages=Math.ceil(total/chunkSize);
       for(let i=0;i<total;i+=chunkSize){
         const chunk=allResults.slice(i,i+chunkSize);
@@ -4952,13 +4980,17 @@ async function fetchF1Data(sport, sbConfig){
     }
     // Cards: Driver standings ALL drivers paginated (8 per card)
     if(standings.length&&showStand){
-      const allDrivers = standings.map(d=>({
-        pos: parseInt(d.position),
-        driver: `${d.Driver.givenName} ${d.Driver.familyName}`,
-        team: d.Constructors?.[0]?.name||'',
-        points: d.points,
-        wins: parseInt(d.wins),
-      }));
+      const allDrivers = standings.map(d=>{
+        const driverName=`${d.Driver.givenName} ${d.Driver.familyName}`;
+        return{
+          pos: parseInt(d.position),
+          driver: driverName,
+          team: d.Constructors?.[0]?.name||'',
+          points: d.points,
+          wins: parseInt(d.wins),
+          headshot: _f1Hs(driverName),
+        };
+      });
       const chunkSize=8, total=allDrivers.length, totalPages=Math.ceil(total/chunkSize);
       for(let i=0;i<total;i+=chunkSize){
         const chunk=allDrivers.slice(i,i+chunkSize);
@@ -4987,7 +5019,7 @@ async function fetchF1Data(sport, sbConfig){
           for(const race of cachedRaces){
             if(added>=maxR) break;
             if(existingRaces.has(race.raceName)) continue;
-            const allRes=race.results||[];
+            const allRes=(race.results||[]).map(r=>({...r,headshot:_f1Hs(r.driver)}));
             const chunkSize=8,total=allRes.length,totalPages=Math.ceil(total/chunkSize);
             for(let i=0;i<total;i+=chunkSize){
               const chunk=allRes.slice(i,i+chunkSize);
@@ -5075,7 +5107,8 @@ function buildNascarCard(g){
   }
   if(g.isNascarStandings){
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-name-size,11px);font-family:'Share Tech Mono',monospace;color:var(--text-dim);">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
-    const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-secondary);width:20px;text-align:right;">${d.pos}</span><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||'').replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`).join('');
+    const _nasHsImg=hs=>hs?`<img src="${hs}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`:'';
+    const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-secondary);width:20px;text-align:right;flex-shrink:0;">${d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||'').replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
   }
@@ -5083,7 +5116,7 @@ function buildNascarCard(g){
     const medals=['🥇','🥈','🥉'];
     const statusBadge=g.isFinal?'<span class="status-final">RESULT</span>':`<span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'Share Tech Mono',monospace;color:#4ade80;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span>LIVE</span>`;
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${statusBadge}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${g.name}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.trackName||''} ${g.raceDate?' · '+g.raceDate:''}</div>`;
-    const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;">${d.pos<=3?medals[d.pos-1]:d.pos}</span><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||d.number||'').toString().replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`).join('');
+    const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;flex-shrink:0;">${d.pos<=3?medals[d.pos-1]:d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||d.number||'').toString().replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
   }
@@ -5111,6 +5144,7 @@ function buildF1Card(g){
   <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${g.name}</div>`;
 
   let body = '';
+  const _f1HsImg=hs=>hs?`<img src="${hs}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`:'';
   if(g.isF1Next){
     body = `<div style="display:flex;flex-direction:column;gap:4px;font-size:var(--card-name-size,11px);font-family:'Barlow Condensed',sans-serif;">
       <div style="display:flex;gap:6px;align-items:center;">
@@ -5130,7 +5164,8 @@ function buildF1Card(g){
     const rows = (g.results||g.podium||[]);
     body = `<div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.circuit||''} ${g.raceDate?'· '+g.raceDate:''}</div>` +
     rows.map((d,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
-      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:18px;text-align:right;">${d.pos<=3?['🥇','🥈','🥉'][d.pos-1]:d.pos}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:18px;text-align:right;flex-shrink:0;">${d.pos<=3?['🥇','🥈','🥉'][d.pos-1]:d.pos}</span>
+      ${_f1HsImg(d.headshot)}
       <div style="flex:1;min-width:0;">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div>
         <div style="font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.team}</div>
@@ -5142,7 +5177,8 @@ function buildF1Card(g){
     </div>`).join('');
   } else if(g.isF1Standings){
     body = `<div style="display:flex;flex-direction:column;">` + g.drivers.map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
-      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:14px;text-align:right;">${d.pos}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:14px;text-align:right;flex-shrink:0;">${d.pos}</span>
+      ${_f1HsImg(d.headshot)}
       <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span>
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</span>
       ${d.wins>0?`<span style="font-size:var(--card-name-size,11px);color:#ffd700;font-family:'Share Tech Mono',monospace;">🏆${d.wins}</span>`:''}
