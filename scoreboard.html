@@ -4379,6 +4379,13 @@ async function fetchTennisData(sport, sbConfig){
     const maxCompleted=mc.tennis_max_completed||5;
     const maxUpcoming=mc.tennis_max_upcoming||10;
     const showHeadshots=dc.player_headshots!==false;
+    // Load player cache (headshots, flags, country) — built by GHA workflow
+    let playerCache={};
+    try{
+      const pcRes=await fetch(`${API_BASE}/motor/cache/${sport.id}-players`,{signal:AbortSignal.timeout(3000)});
+      if(pcRes.ok){ const pd=await pcRes.json(); playerCache=pd.data||{}; }
+      console.log(`[tennis] ${sport.id} player cache: ${Object.keys(playerCache).length} entries`);
+    }catch(e){ console.warn('[tennis] player cache unavailable',e); }
     const r=await fetch(sport.url,{signal:AbortSignal.timeout(7000)});
     if(!r.ok) return [];
     const data=await r.json();
@@ -4404,14 +4411,18 @@ async function fetchTennisData(sport, sbConfig){
           const sets=c.linescores||[];
           const setsWon=sets.filter(s=>s.winner).length;
           const setGames=sets.map(s=>s.value!=null?Math.round(s.value):null).filter(v=>v!==null);
+          const aid=String(c.athlete?.id||'');
+          const cached=playerCache[aid]||{};
+          // Headshot: prefer DB cache (verified URL), fallback to live API field, then null
+          const headshotUrl=cached.headshot||(c.athlete?.headshot?.href)||null;
           return{
-            abbr: c.athlete?.shortName||'???',
-            name: c.athlete?.displayName||'Unknown',
+            abbr: c.athlete?.shortName||cached.shortName||'???',
+            name: c.athlete?.displayName||cached.name||'Unknown',
             score: (isLive||isFinal)?String(setsWon):'–',
             color:'#1a1a2e',
-            headshot: showHeadshots&&c.athlete?.id ? `https://a.espncdn.com/i/headshots/tennis/players/full/${c.athlete.id}.png` : null,
-            flag: c.athlete?.flag?.href||null,
-            country: c.athlete?.flag?.alt||c.athlete?.flag?.title||'',
+            headshot: showHeadshots ? headshotUrl : null,
+            flag: c.athlete?.flag?.href||cached.flag||null,
+            country: c.athlete?.flag?.alt||c.athlete?.flag?.title||cached.country||'',
             homeAway: c.homeAway||'away',
             winner: c.winner||false,
             setGames,

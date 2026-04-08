@@ -145,6 +145,42 @@ jobs:
                   completed = [t for t in tournaments if t.get('is_complete')][-10:]
                   upcoming = [t for t in tournaments if not t.get('is_complete')]
                   cache['pga-2026-tournaments'] = {'data':{'tournaments':upcoming+completed,'updated':today_str},'_updated':today_str}
+          for league in ['atp','wta']:
+              print(f"\n--- {league.upper()} Players ---")
+              existing = cache.get(f'{league}-players',{}).get('data',{})
+              if isinstance(existing,str): existing=json.loads(existing)
+              scoreboard = fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/scoreboard',ESPN_HDR)
+              if not scoreboard:
+                  print(f"  {league.upper()} scoreboard unavailable — skipping")
+                  continue
+              athlete_ids=set()
+              for event in scoreboard.get('events',[]):
+                  for grp in event.get('groupings',[]):
+                      gname=(grp.get('abbreviation') or grp.get('name') or '').lower()
+                      if 'double' in gname or 'dbl' in gname: continue
+                      for comp in grp.get('competitions',[]):
+                          for c in comp.get('competitors',[]):
+                              aid=c.get('athlete',{}).get('id')
+                              if aid: athlete_ids.add(str(aid))
+              print(f"  Found {len(athlete_ids)} active player IDs in scoreboard")
+              new_count=0
+              for aid in athlete_ids:
+                  if aid in existing: continue
+                  details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/athletes/{aid}',ESPN_HDR)
+                  if not details: continue
+                  ath=details.get('athlete') or details
+                  existing[aid]={
+                      'id':aid,
+                      'name':ath.get('displayName',''),
+                      'shortName':ath.get('shortName',''),
+                      'headshot':(ath.get('headshot') or {}).get('href') or '',
+                      'flag':(ath.get('flag') or {}).get('href') or '',
+                      'country':(ath.get('flag') or {}).get('alt') or (ath.get('citizenship') or ''),
+                  }
+                  new_count+=1
+                  print(f"  Cached: {existing[aid]['name']} (id={aid}, hs={'yes' if existing[aid]['headshot'] else 'no'})")
+              print(f"  {league.upper()}: {new_count} new, {len(existing)} total in cache")
+              cache[f'{league}-players']={'data':existing,'_updated':today_str}
           with open(cache_path,'w') as f: json.dump(cache,f,indent=2)
           print(f"\nWritten {len(cache)} keys ({os.path.getsize(cache_path):,} bytes)")
           PYEOF
