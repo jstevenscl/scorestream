@@ -1813,6 +1813,7 @@ function renderEditorStep(sbOverride){
     const groups=[
       {key:'pro',    label:'Pro Leagues',         sports: ALL_SPORTS.filter(s=>s.group==='pro')},
       {key:'motor',  label:'Motorsport',           sports: ALL_SPORTS.filter(s=>s.group==='motor')},
+      {key:'tennis', label:'Tennis',               sports: ALL_SPORTS.filter(s=>s.group==='tennis')},
       {key:'soccer', label:'International Soccer', sports: ALL_SPORTS.filter(s=>s.group==='soccer')},
       {key:'ncaam',  label:"NCAA Men's",           sports: ALL_SPORTS.filter(s=>s.group==='ncaam')},
       {key:'ncaaw',  label:"NCAA Women's",         sports: ALL_SPORTS.filter(s=>s.group==='ncaaw')},
@@ -3434,7 +3435,9 @@ const ALL_SPORTS=[
   // Motorsport (custom APIs — Jolpica for F1, cf.nascar.com for NASCAR)
   {id:'f1',         name:'Formula 1',              group:'motor', color:'#e10600',emoji:'🏎️',fetchFn:'fetchF1Data'},
   {id:'nascar',     name:'NASCAR Cup Series',       group:'motor', color:'#ffd700',emoji:'🏁',fetchFn:'fetchNascarData'},
-  // Tennis — parked until live match endpoint confirmed
+  // Tennis
+  {id:'atp',        name:'ATP Tour',                group:'tennis',color:'#0066cc',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard'},
+  {id:'wta',        name:'WTA Tour',                group:'tennis',color:'#cc0066',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard'},
   // International Soccer
   {id:'epl',        name:'Premier League',         group:'soccer',color:'#3d195b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard'},
   {id:'ucl',        name:'Champions League',       group:'soccer',color:'#1b3f8b',emoji:'⚽',url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard'},
@@ -3907,7 +3910,7 @@ function parseGame(ev,sport){
     abbr:c.team?.abbreviation||c.athlete?.shortName||'???',
     name:c.team?.displayName||c.team?.name||c.athlete?.displayName||'Unknown',
     score:c.score||'E',color:c.team?.color?`#${c.team.color}`:'#333',
-    logo:c.team?.logo||c.athlete?.flag?.href||null,
+    logo:c.team?.logo||c.athlete?.headshot?.href||c.athlete?.flag?.href||null,
     homeAway:c.homeAway||'away',winner:c.winner||false,
     position:c.status?.position||null,thru:c.status?.thru||null,
   }));
@@ -4369,6 +4372,8 @@ async function fetchPGAData(sport, sbConfig){
           // Show upcoming tournaments as a single info card instead of skipping
           const hasScores = (t.players||[]).some(p=>p.r1&&p.r1!==''&&p.r1!=='-'&&p.r1!=='0');
           const isCurrentlyLive=!t.is_complete&&t.date<=todayStr2;
+          // Live tournament with no cached player data — let ESPN live fetch handle it
+          if(isCurrentlyLive && !hasScores) return;
           if(!t.is_complete && !hasScores && !isCurrentlyLive){
             cards.push({
               id:`pga-upcoming-${t.date}`,
