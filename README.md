@@ -312,6 +312,9 @@ ScoreStream can mix background music into the HLS stream output.
 
 The **Global Default** playlist is used by any scoreboard that has audio enabled but no specific playlist assigned.
 
+**Built-in music:**
+The stream container ships with 6 royalty-free instrumental tracks that play when you select the **Built-in Music** option. No upload or configuration is needed. Full attribution for each track is included in [`stream/audio/ATTRIBUTION.txt`](./stream/audio/ATTRIBUTION.txt). Tracks are sourced from [Bensound](https://www.bensound.com), [Uppbeat](https://uppbeat.io), and [freetouse.com](https://freetouse.com/music).
+
 ---
 
 ### Assigning Audio to a Scoreboard
@@ -357,6 +360,9 @@ When you change a scoreboard's name or settings after it has already been pushed
 2. Click **Push to Dispatcharr** again — ScoreStream will **update** the existing channel (it does not create a duplicate)
 
 The HLS stream URL does not change between updates (it is based on the scoreboard's slug), so Dispatcharr does not need to re-import anything. The stream content updates automatically every 30 seconds regardless.
+
+**Live streams update automatically:**
+If the stream is already playing in VLC, an IPTV player, or any HLS-compatible app, you do not need to do anything after saving changes. The stream re-renders every 30 seconds in the background — new scores, typography changes, theme changes, and layout changes all appear on the live feed within that window. The player continues playing uninterrupted; it simply receives updated HLS segments as they are generated.
 
 **If you delete a scoreboard:** The channel remains in Dispatcharr. Remove it manually in Dispatcharr's channel list if you no longer want it.
 
