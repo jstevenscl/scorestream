@@ -22,3 +22,6 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local assets — not for repo
+Logo/
