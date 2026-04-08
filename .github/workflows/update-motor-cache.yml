@@ -123,6 +123,7 @@ jobs:
                           stats = {s.get('name',''):s.get('displayValue','') for s in c.get('statistics',[])}
                           competitors.append({'pos':c.get('status',{}).get('position',{}).get('displayName',''),
                                               'name':c.get('athlete',{}).get('displayName',''),
+                                              'athlete_id':str(c.get('athlete',{}).get('id','')),
                                               'score':stats.get('scoreToPar',c.get('score','')),
                                               'r1':stats.get('round1',''),'r2':stats.get('round2',''),
                                               'r3':stats.get('round3',''),'r4':stats.get('round4',''),
@@ -144,6 +145,32 @@ jobs:
                   completed = [t for t in tournaments if t.get('is_complete')][-10:]
                   upcoming = [t for t in tournaments if not t.get('is_complete')]
                   cache['pga-2026-tournaments'] = {'data':{'tournaments':upcoming+completed,'updated':today_str},'_updated':today_str}
+                  # Cache PGA player headshots — collect IDs from all tournaments
+                  print("\n--- PGA Players ---")
+                  pga_players = cache.get('pga-players',{}).get('data',{})
+                  if isinstance(pga_players,str): pga_players=json.loads(pga_players)
+                  all_ids={}
+                  for t in upcoming+completed:
+                      for p in t.get('players',[]):
+                          aid=str(p.get('athlete_id',''))
+                          if aid and aid!='None': all_ids[aid]=p.get('name','')
+                  print(f"  Known athlete IDs across all tournaments: {len(all_ids)}")
+                  new_count=0
+                  for aid,name in all_ids.items():
+                      if aid in pga_players and pga_players[aid].get('headshot'): continue
+                      details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/golf/pga/athletes/{aid}',ESPN_HDR)
+                      if not details: continue
+                      ath=details.get('athlete') or details
+                      pga_players[aid]={
+                          'id':aid,'name':ath.get('displayName',name),
+                          'headshot':(ath.get('headshot') or {}).get('href') or '',
+                          'flag':(ath.get('flag') or {}).get('href') or '',
+                          'country':(ath.get('flag') or {}).get('alt') or '',
+                      }
+                      new_count+=1
+                      print(f"  + {pga_players[aid]['name']} ({aid}) hs={'yes' if pga_players[aid]['headshot'] else 'no'}")
+                  print(f"  PGA: {new_count} new, {len(pga_players)} total in cache")
+                  cache['pga-players']={'data':pga_players,'_updated':today_str}
           for league in ['atp','wta']:
               print(f"\n--- {league.upper()} Players ---")
               existing = cache.get(f'{league}-players',{}).get('data',{})
