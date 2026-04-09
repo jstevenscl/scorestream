@@ -4482,15 +4482,13 @@ async function fetchTennisData(sport, sbConfig){
               name:totalPages>1?`${leagueLabel} World Rankings (${pageNum}/${totalPages})`:`${leagueLabel} World Rankings`,
               sportName:sport.name, sportColor:sport.color, sportEmoji:sport.emoji,
               isTennisRankings:true, rankingLeague:sport.id,
-              drivers:chunk.map(p=>{
-                const cached=playerCache[p.id]||{};
-                return{
-                  pos:p.rank, name:p.name, country:p.country||cached.country||'',
-                  points:p.points, change:p.change||0,
-                  headshot:showHeadshots?(cached.headshot||null):null,
-                  flag:cached.flag||null,
-                };
-              }),
+              drivers:chunk.map(p=>({
+                pos:p.rank, name:p.name, country:p.country||'',
+                points:p.points, change:p.change||0,
+                // headshot is stored directly in the ranking entry by GHA workflow
+                headshot:showHeadshots?(p.headshot||null):null,
+                flag:null,
+              })),
               pageNum, totalPages,
             });
           }
