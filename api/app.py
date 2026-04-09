@@ -1201,11 +1201,22 @@ def ticker_enable():
         original_params = profile.get('parameters','')
         if not original_params:
             return jsonify({'error':'Stream profile has no parameters'}),400
-        modified_params = _build_ticker_params(original_params,font_size,position,bg_opacity,test_text,scroll_speed)
-        if modified_params == original_params:
+        # Strip any existing drawtext filters to prevent stacking
+        import re as _re
+        clean_params = _re.sub(r',?drawtext=[^\s"]*', '', original_params)
+        if clean_params != original_params:
+            # Profile already had drawtext — restore the -c:v copy if we injected libx264 before
+            clean_params = _re.sub(
+                r'-vf\s+""\s+-c:v\s+libx264\s+-preset\s+ultrafast\s+-tune\s+zerolatency',
+                '-c:v copy', clean_params)
+            # Clean up empty -vf ""
+            clean_params = _re.sub(r'-vf\s+""\s*', '', clean_params)
+        modified_params = _build_ticker_params(clean_params,font_size,position,bg_opacity,test_text,scroll_speed)
+        if modified_params == clean_params:
             return jsonify({'error':'Could not inject ticker — "-c:v copy" not found in profile parameters.'}),400
-        # Create ticker profile
-        ticker_name = f'{profile["name"]} (Ticker)'
+        # Create ticker profile — avoid double-suffixing
+        base_name = profile['name'].removesuffix(' (Ticker)')
+        ticker_name = f'{base_name} (Ticker)'
         r = s.post(f'{c["url"]}/api/core/streamprofiles/',
                    json={'name':ticker_name,'command':profile.get('command','ffmpeg'),
                          'parameters':modified_params,'is_active':True},timeout=15)
@@ -1228,10 +1239,26 @@ def ticker_enable():
                         'modified_params':modified_params})
     except Exception as e: return jsonify({'error':str(e)}),500
 
+def _disable_ticker_row(backup_row, session, creds):
+    """Shared logic to disable a single ticker backup entry. Returns list of warnings."""
+    warnings = []
+    try:
+        r = session.patch(f'{creds["url"]}/api/channels/channels/{backup_row["channel_id"]}/',
+                          json={'stream_profile_id':backup_row['original_profile_id']},timeout=15)
+        r.raise_for_status()
+    except Exception as e:
+        warnings.append(f'Restore channel profile: {e}')
+    try:
+        r = session.delete(f'{creds["url"]}/api/core/streamprofiles/{backup_row["ticker_profile_id"]}/',timeout=15)
+        if r.status_code not in (200,204):
+            warnings.append(f'Delete ticker profile: HTTP {r.status_code}')
+    except Exception as e:
+        warnings.append(f'Delete ticker profile: {e}')
+    return warnings
+
 @app.route('/ticker/disable', methods=['POST'])
 def ticker_disable():
     b = request.get_json(force=True) or {}
-    # Default to scoreboard_id=0 (global ticker)
     sb_id = int(b.get('scoreboard_id', 0))
     with get_db() as conn:
         backup = conn.execute(
@@ -1240,32 +1267,57 @@ def ticker_disable():
     if not backup: return jsonify({'error':'No active ticker found'}),404
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
-    warnings = []
-    try:
-        r = s.patch(f'{c["url"]}/api/channels/channels/{backup["channel_id"]}/',
-                    json={'stream_profile_id':backup['original_profile_id']},timeout=15)
-        r.raise_for_status()
-    except Exception as e:
-        warnings.append(f'Restore channel profile: {e}')
-    try:
-        r = s.delete(f'{c["url"]}/api/core/streamprofiles/{backup["ticker_profile_id"]}/',timeout=15)
-        if r.status_code not in (200,204):
-            warnings.append(f'Delete ticker profile: HTTP {r.status_code}')
-    except Exception as e:
-        warnings.append(f'Delete ticker profile: {e}')
+    warnings = _disable_ticker_row(backup, s, c)
     with get_db() as conn:
         conn.execute('DELETE FROM ticker_profile_backup WHERE scoreboard_id=?',(sb_id,))
         conn.commit()
     return jsonify({'ok':True,'warnings':warnings} if warnings else {'ok':True})
+
+@app.route('/ticker/disable-all', methods=['POST'])
+def ticker_disable_all():
+    """Kill all active tickers at once."""
+    with get_db() as conn:
+        rows = conn.execute(
+            'SELECT scoreboard_id,channel_id,original_profile_id,ticker_profile_id FROM ticker_profile_backup').fetchall()
+    if not rows: return jsonify({'error':'No active tickers found'}),404
+    c = get_creds(); s,err = dispatcharr_session(c)
+    if err: return jsonify({'error':err}),400
+    all_warnings = []
+    for row in rows:
+        all_warnings.extend(_disable_ticker_row(row, s, c))
+    with get_db() as conn:
+        conn.execute('DELETE FROM ticker_profile_backup')
+        conn.commit()
+    return jsonify({'ok':True,'disabled':len(rows),'warnings':all_warnings} if all_warnings
+                   else {'ok':True,'disabled':len(rows)})
 
 @app.route('/ticker/status', methods=['GET'])
 def ticker_status():
     try:
         with get_db() as conn:
             rows = conn.execute(
-                'SELECT scoreboard_id,channel_id,ticker_profile_id FROM ticker_profile_backup').fetchall()
-        return jsonify({'active':[{'scoreboard_id':r['scoreboard_id'],'channel_id':r['channel_id'],
-                                   'ticker_profile_id':r['ticker_profile_id']} for r in rows]})
+                'SELECT scoreboard_id,channel_id,original_profile_id,ticker_profile_id,created_at '
+                'FROM ticker_profile_backup').fetchall()
+        if not rows:
+            return jsonify({'active':[]})
+        # Enrich with channel names from Dispatcharr
+        active = []
+        c = get_creds(); s, err = dispatcharr_session(c)
+        for r in rows:
+            entry = {'scoreboard_id':r['scoreboard_id'],'channel_id':r['channel_id'],
+                     'original_profile_id':r['original_profile_id'],
+                     'ticker_profile_id':r['ticker_profile_id'],
+                     'created_at':r['created_at'],
+                     'channel_name':f'Channel {r["channel_id"]}'}
+            if s and not err:
+                try:
+                    cr = s.get(f'{c["url"]}/api/channels/channels/{r["channel_id"]}/',timeout=8)
+                    if cr.ok:
+                        entry['channel_name'] = cr.json().get('name', entry['channel_name'])
+                except Exception:
+                    pass
+            active.append(entry)
+        return jsonify({'active':active})
     except Exception as e: return jsonify({'error':str(e)}),500
 
 @app.route('/ticker/text', methods=['GET'])

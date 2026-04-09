@@ -1227,13 +1227,16 @@ body.stream-mode .card-header{padding:4px 10px;}
         <p>Overlay a live score ticker onto a Dispatcharr channel. Pick your sports, choose a channel, and enable — ScoreStream handles the rest.</p>
       </div>
 
-      <!-- Status bar -->
-      <div id="tickerStatusBar" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:20px;">
-        <div id="tickerStatusDot" style="width:11px;height:11px;border-radius:50%;background:var(--text-dim);flex-shrink:0;"></div>
-        <div style="flex:1;">
-          <div id="tickerStatusText" style="font-size:13px;color:var(--text-secondary);">Not active</div>
-          <div id="tickerProfileBadge" style="display:none;font-size:11px;color:var(--accent);font-family:'Share Tech Mono',monospace;margin-top:2px;"></div>
+      <!-- Status panel -->
+      <div id="tickerStatusPanel" style="margin-bottom:20px;">
+        <div id="tickerStatusBar" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px 10px 0 0;">
+          <div id="tickerStatusDot" style="width:11px;height:11px;border-radius:50%;background:var(--text-dim);flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div id="tickerStatusText" style="font-size:13px;color:var(--text-secondary);">Not active</div>
+          </div>
+          <button id="tickerKillAllBtn" onclick="disableAllTickers()" style="display:none;padding:5px 12px;background:rgba(255,59,92,0.1);border:1px solid var(--accent-red);border-radius:6px;color:var(--accent-red);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;cursor:pointer;">KILL ALL</button>
         </div>
+        <div id="tickerActiveList" style="display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;background:var(--bg-secondary);overflow:hidden;"></div>
       </div>
 
       <!-- Dispatcharr channel -->
@@ -6627,17 +6630,81 @@ function onTickerChannelRadio(chId){
 function updateTickerStatusUI(cfg){
   const dot=document.getElementById('tickerStatusDot');
   const txt=document.getElementById('tickerStatusText');
-  const badge=document.getElementById('tickerProfileBadge');
   if(!dot||!txt)return;
   if(cfg.ticker_active){
     dot.style.background='var(--accent-green)';dot.style.boxShadow='0 0 7px var(--accent-green)';
     txt.textContent='Ticker ACTIVE';txt.style.color='var(--accent-green)';txt.style.fontWeight='700';
-    if(badge){badge.style.display='block';badge.textContent='Ticker Profile ID: '+cfg.active_ticker_profile_id;}
   }else{
     dot.style.background='var(--text-dim)';dot.style.boxShadow='none';
     txt.textContent='Not active';txt.style.color='var(--text-secondary)';txt.style.fontWeight='';
-    if(badge)badge.style.display='none';
   }
+  // Fetch full status with channel names
+  refreshTickerStatusPanel();
+}
+
+async function refreshTickerStatusPanel(){
+  const listEl=document.getElementById('tickerActiveList');
+  const killAllBtn=document.getElementById('tickerKillAllBtn');
+  const dot=document.getElementById('tickerStatusDot');
+  const txt=document.getElementById('tickerStatusText');
+  try{
+    const r=await fetch(`${API_BASE}/ticker/status`,{signal:AbortSignal.timeout(10000)});
+    const d=await r.json();
+    const active=d.active||[];
+    if(active.length===0){
+      if(listEl)listEl.style.display='none';
+      if(killAllBtn)killAllBtn.style.display='none';
+      if(dot){dot.style.background='var(--text-dim)';dot.style.boxShadow='none';}
+      if(txt){txt.textContent='Not active';txt.style.color='var(--text-secondary)';txt.style.fontWeight='';}
+      return;
+    }
+    if(dot){dot.style.background='var(--accent-green)';dot.style.boxShadow='0 0 7px var(--accent-green)';}
+    if(txt){txt.innerHTML=`<strong style="color:var(--accent-green);">${active.length}</strong> active ticker${active.length>1?'s':''}`;txt.style.color='var(--text-secondary)';txt.style.fontWeight='';}
+    if(killAllBtn)killAllBtn.style.display=active.length>1?'inline-block':'none';
+    if(listEl){
+      listEl.style.display='block';
+      listEl.innerHTML=active.map(t=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);" data-sb="${t.scoreboard_id}">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;color:var(--text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.channel_name||'Channel '+t.channel_id}</div>
+            <div style="font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-top:2px;">Profile #${t.ticker_profile_id} · since ${t.created_at?new Date(t.created_at+'Z').toLocaleTimeString():''}</div>
+          </div>
+          <button onclick="disableTickerBySb(${t.scoreboard_id})" style="padding:4px 10px;background:rgba(255,59,92,0.08);border:1px solid var(--accent-red);border-radius:6px;color:var(--accent-red);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;flex-shrink:0;">KILL</button>
+        </div>`).join('');
+      // Remove bottom border from last item
+      const last=listEl.lastElementChild;
+      if(last)last.style.borderBottom='none';
+    }
+  }catch(e){}
+}
+
+async function disableTickerBySb(sbId){
+  try{
+    const r=await fetch(`${API_BASE}/ticker/disable`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({scoreboard_id:sbId}),signal:AbortSignal.timeout(20000)
+    });
+    const d=await r.json();
+    if(r.ok&&d.ok){
+      showTickerResult('Ticker disabled — original profile restored.',true);
+    }else{showTickerResult('Error: '+(d.error||JSON.stringify(d)),false);}
+  }catch(e){showTickerResult('Error: '+e.message,false);}
+  loadTickerConfig();
+}
+
+async function disableAllTickers(){
+  showTickerResult('Disabling all tickers...',true);
+  try{
+    const r=await fetch(`${API_BASE}/ticker/disable-all`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({}),signal:AbortSignal.timeout(30000)
+    });
+    const d=await r.json();
+    if(r.ok&&d.ok){
+      showTickerResult(`${d.disabled} ticker${d.disabled>1?'s':''} disabled — all original profiles restored.`+(d.warnings?.length?' Warnings: '+d.warnings.join(', '):''),true);
+    }else{showTickerResult('Error: '+(d.error||JSON.stringify(d)),false);}
+  }catch(e){showTickerResult('Error: '+e.message,false);}
+  loadTickerConfig();
 }
 
 async function onTickerChannelChange(){
