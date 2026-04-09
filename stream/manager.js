@@ -636,11 +636,15 @@ async function main() {
   console.log(`[manager] ${WIDTH}x${HEIGHT} @ ${FPS}fps | ${SEG_DURATION}s segs x ${PLAYLIST_SIZE} | idle=${IDLE_TIMEOUT}s`);
   ensureDir(HLS_DIR);
   ensureDir(FRAMES_DIR);
-  prebakeAll();
+  // Start HTTP server FIRST so Dispatcharr/VLC can connect immediately.
+  // The m3u8 handler waits up to 20s for pre-bake to produce the file,
+  // so starting the server before pre-baking is safe.
   startHttpServer();
   startIdleWatcher();
   startTickerWriter();
-  console.log('[manager] Ready');
+  // Pre-bake on next event-loop tick so the server port is bound first
+  setImmediate(() => prebakeAll());
+  console.log('[manager] Ready — pre-baking HLS in background');
   process.on('SIGTERM', async () => {
     console.log('[manager] Shutting down');
     for (const slug of [...streams.keys()]) await stopStream(slug);

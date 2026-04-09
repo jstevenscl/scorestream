@@ -6713,7 +6713,9 @@ function updateScrollLabel(){
 
 function setSettingsScale(px){
   const content=document.querySelector('.settings-content');
-  if(content) content.style.fontSize=px+'px';
+  // Use zoom so all descendants (even those with explicit px font-sizes) scale uniformly
+  const zoomMap={13:0.84,15:1.0,17:1.15,20:1.38};
+  if(content) content.style.zoom=(zoomMap[px]||1.0)+'';
   for(const id of ['scaleS','scaleM','scaleL','scaleXL'])
     document.getElementById(id)?.classList.remove('active');
   const map={13:'scaleS',15:'scaleM',17:'scaleL',20:'scaleXL'};

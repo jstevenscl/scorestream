@@ -1024,6 +1024,19 @@ def get_channels():
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
     try:
+        # Fetch groups first for name lookup
+        group_names = {}
+        try:
+            gr = s.get(f'{c["url"]}/api/channels/groups/', params={'page_size':500}, timeout=20)
+            if gr.ok:
+                gdata = gr.json()
+                gitems = gdata.get('results', gdata) if isinstance(gdata, dict) else gdata
+                if isinstance(gitems, list):
+                    for g in gitems:
+                        if isinstance(g, dict) and 'id' in g:
+                            group_names[g['id']] = g.get('name', '')
+        except Exception:
+            pass
         channels,page = [],1
         while True:
             r = s.get(f'{c["url"]}/api/channels/channels/',params={'page':page,'page_size':100},timeout=30)
@@ -1034,8 +1047,18 @@ def get_channels():
             channels.extend(items)
             if not (isinstance(data,dict) and data.get('next')): break
             page += 1
-        result = [{'id':ch['id'],'name':ch.get('name',''),'channel_number':ch.get('channel_number'),
-                   'stream_profile_id':ch.get('stream_profile_id')} for ch in channels if 'id' in ch]
+        result = []
+        for ch in channels:
+            if 'id' not in ch: continue
+            gid = ch.get('channel_group_id') or ch.get('channel_group')
+            result.append({
+                'id': ch['id'],
+                'name': ch.get('name', ''),
+                'channel_number': ch.get('channel_number'),
+                'stream_profile_id': ch.get('stream_profile_id'),
+                'channel_group_id': gid,
+                'channel_group_name': group_names.get(gid, '') if gid else '',
+            })
         return jsonify({'channels':sorted(result,key=lambda x:x['name'])})
     except Exception as e: return jsonify({'error':str(e)}),500
 
@@ -2238,6 +2261,32 @@ def display_defaults_set():
         return jsonify({'error': str(e)}), 500
 
 # ── Motor Cache (NASCAR/F1 result storage) ──────────────────────────────────
+@app.route('/motor/reseed', methods=['POST'])
+def motor_reseed():
+    """Re-fetch motor_cache.json from GitHub data branch and repopulate DB."""
+    try:
+        import json as _jr
+        DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream/data/motor_cache.json'
+        rg = http.get(DATA_URL, timeout=20)
+        if not rg.ok:
+            return jsonify({'error': f'GitHub fetch failed: {rg.status_code}'}), 502
+        gdata = rg.json()
+        updated_count = 0
+        with get_db() as conn:
+            for key, value in gdata.items():
+                new_data = _jr.dumps(value.get('data', value))
+                gh_updated = value.get('_updated', '2026-01-01')
+                conn.execute(
+                    "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
+                    (key, new_data, gh_updated + ' 00:00:00')
+                )
+                updated_count += 1
+            conn.commit()
+        log.info(f'[reseed] Motor cache refreshed: {updated_count}/{len(gdata)} keys')
+        return jsonify({'ok': True, 'keys_updated': updated_count})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/motor/cache/<key>', methods=['GET'])
 def motor_cache_get(key):
     try:
@@ -2342,8 +2391,10 @@ if __name__ == '__main__':
     # ── Background motor sport data refresh ──────────────────────────────────
     def _refresh_motor_data():
         """Fetch NASCAR and PGA data from live APIs and store in motor_cache.
+        Also re-seeds player caches (PGA/ATP/WTA headshots) from GitHub data branch.
         Runs once on startup then every 6 hours automatically."""
         import time as _time
+        import json as _jr2
         _time.sleep(10)  # Wait for DB to be fully ready
         while True:
             try:
@@ -2354,6 +2405,27 @@ if __name__ == '__main__':
                 _auto_refresh_pga()
             except Exception as e:
                 log.warning(f'[auto] PGA refresh error: {e}')
+            # Re-seed player caches (headshots) from GitHub data branch
+            try:
+                DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream/data/motor_cache.json'
+                rg = http.get(DATA_URL, timeout=20)
+                if rg.ok:
+                    gdata = rg.json()
+                    player_keys = {k for k in gdata if k.endswith('-players') or k.endswith('-rankings')}
+                    if player_keys:
+                        with get_db() as conn:
+                            for key in player_keys:
+                                value = gdata[key]
+                                new_data = _jr2.dumps(value.get('data', value))
+                                gh_updated = value.get('_updated', '2026-01-01')
+                                conn.execute(
+                                    "INSERT OR REPLACE INTO motor_cache(key,data,updated_at) VALUES(?,?,?)",
+                                    (key, new_data, gh_updated + ' 00:00:00')
+                                )
+                            conn.commit()
+                        log.info(f'[auto] Player caches refreshed from GitHub: {len(player_keys)} keys')
+            except Exception as e:
+                log.warning(f'[auto] Player cache refresh error: {e}')
             _time.sleep(6 * 3600)  # Refresh every 6 hours
 
     def _auto_refresh_nascar():
