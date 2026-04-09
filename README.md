@@ -519,7 +519,7 @@ Both should return an empty directory with no error. If you get `No such file or
 
 Navigate to **Ticker Overlay** in the ScoreStream settings sidebar.
 
-**Status bar** — shows whether a ticker is currently active and which Dispatcharr profile is assigned.
+**Active Ticker Status Panel** — shows all active tickers with channel names, profile IDs, and start times. Each active ticker has a **KILL** button to disable it individually. When multiple tickers are active, a **KILL ALL** button appears to disable them all at once.
 
 **1. Select a Dispatcharr channel**
 
@@ -545,8 +545,10 @@ Sports are organized into groups: Pro Leagues, Motorsport, Tennis, International
 
 **4. Enable / Disable**
 
-- **ENABLE TICKER** — saves config, creates the ticker stream profile in Dispatcharr, and assigns it to the channel. ScoreStream begins writing `/ticker/scores.txt` immediately.
+- **ENABLE TICKER** — saves config, creates the ticker stream profile in Dispatcharr, and assigns it to the channel. ScoreStream begins writing `/ticker/scores.txt` immediately. Re-enabling on a channel that already has a ticker safely replaces the existing filter (no stacking).
 - **DISABLE TICKER** — restores the channel's original stream profile and deletes the ticker copy.
+- **KILL (per-ticker)** — in the status panel, instantly disables a single active ticker and restores its original profile.
+- **KILL ALL** — disables every active ticker across all channels in one click.
 
 > After enabling, **restart the channel in Dispatcharr** to pick up the new stream profile. Existing ffmpeg processes use the old profile until restarted.
 
