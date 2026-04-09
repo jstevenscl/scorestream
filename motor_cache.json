@@ -163,7 +163,7 @@
         },
         {
           "pos": 20,
-          "driver": "D. Suárez",
+          "driver": "D. Su\u00e1rez",
           "car": "#7",
           "manufacturer": "Chevrolet",
           "status": "Finished",
@@ -475,7 +475,7 @@
             },
             {
               "pos": 20,
-              "driver": "D. Suárez",
+              "driver": "D. Su\u00e1rez",
               "car": "#7",
               "manufacturer": "Chevrolet",
               "status": "Finished",
@@ -677,7 +677,7 @@
             },
             {
               "pos": 7,
-              "driver": "D. Suárez",
+              "driver": "D. Su\u00e1rez",
               "car": "#7",
               "manufacturer": "Chevrolet",
               "status": "Finished",
@@ -1071,7 +1071,7 @@
             },
             {
               "pos": 18,
-              "driver": "D. Suárez",
+              "driver": "D. Su\u00e1rez",
               "car": "#7",
               "manufacturer": "Chevrolet",
               "status": "Finished",
@@ -1465,7 +1465,7 @@
             },
             {
               "pos": 30,
-              "driver": "D. Suárez",
+              "driver": "D. Su\u00e1rez",
               "car": "#7",
               "manufacturer": "Chevrolet",
               "status": "DNF",
@@ -1731,7 +1731,7 @@
             },
             {
               "pos": 25,
-              "driver": "D. Suárez",
+              "driver": "D. Su\u00e1rez",
               "car": "#7",
               "manufacturer": "Chevrolet",
               "status": "Finished",
@@ -1877,7 +1877,7 @@
             },
             {
               "pos": 5,
-              "driver": "D. Suárez",
+              "driver": "D. Su\u00e1rez",
               "car": "#7",
               "manufacturer": "Chevrolet",
               "status": "Finished",
@@ -2255,7 +2255,7 @@
             },
             {
               "pos": 13,
-              "driver": "D. Suárez",
+              "driver": "D. Su\u00e1rez",
               "car": "#7",
               "manufacturer": "Chevrolet",
               "status": "Finished",
@@ -2638,7 +2638,7 @@
         },
         {
           "pos": 15,
-          "driver": "D. Suárez",
+          "driver": "D. Su\u00e1rez",
           "car": ",#7",
           "manufacturer": ",Chevrolet",
           "points": 163,
@@ -3022,7 +3022,7 @@
           "winner_score": null,
           "course": "Augusta National Golf Club",
           "tv": "ESPN",
-          "rounds": "Apr 9-12 · 4 Rounds",
+          "rounds": "Apr 9-12 \u00b7 4 Rounds",
           "players": [],
           "is_live": false
         },
@@ -3057,7 +3057,7 @@
             },
             {
               "pos": "2",
-              "name": "Nicolai Højgaard",
+              "name": "Nicolai H\u00f8jgaard",
               "score": "-17",
               "r1": "68",
               "r2": "62",
@@ -3249,7 +3249,7 @@
             },
             {
               "pos": "T18",
-              "name": "Thorbjørn Olesen",
+              "name": "Thorbj\u00f8rn Olesen",
               "score": "-7",
               "r1": "68",
               "r2": "68",
@@ -3657,7 +3657,7 @@
             },
             {
               "pos": "T45",
-              "name": "Rasmus Højgaard",
+              "name": "Rasmus H\u00f8jgaard",
               "score": "-4",
               "r1": "68",
               "r2": "67",
@@ -4388,7 +4388,7 @@
             },
             {
               "pos": "T30",
-              "name": "Séamus Power",
+              "name": "S\u00e9amus Power",
               "score": "-2",
               "r1": "72",
               "r2": "68",
@@ -4652,7 +4652,7 @@
             },
             {
               "pos": "T55",
-              "name": "Nicolai Højgaard",
+              "name": "Nicolai H\u00f8jgaard",
               "score": "+1",
               "r1": "69",
               "r2": "70",
@@ -4772,7 +4772,7 @@
             },
             {
               "pos": "T68",
-              "name": "Rasmus Højgaard",
+              "name": "Rasmus H\u00f8jgaard",
               "score": "+3",
               "r1": "71",
               "r2": "71",
@@ -4880,7 +4880,7 @@
             },
             {
               "pos": "-",
-              "name": "Thorbjørn Olesen",
+              "name": "Thorbj\u00f8rn Olesen",
               "score": "CUT",
               "r1": "73",
               "r2": "71",
@@ -5659,7 +5659,7 @@
             },
             {
               "pos": "T5",
-              "name": "Ludvig Åberg",
+              "name": "Ludvig \u00c5berg",
               "score": "-9",
               "r1": "69",
               "r2": "63",
@@ -5911,7 +5911,7 @@
             },
             {
               "pos": "T27",
-              "name": "Nicolai Højgaard",
+              "name": "Nicolai H\u00f8jgaard",
               "score": "-3",
               "r1": "71",
               "r2": "74",
@@ -6427,7 +6427,7 @@
             },
             {
               "pos": "T70",
-              "name": "Séamus Power",
+              "name": "S\u00e9amus Power",
               "score": "+8",
               "r1": "74",
               "r2": "72",
@@ -6487,7 +6487,7 @@
             },
             {
               "pos": "-",
-              "name": "Rasmus Højgaard",
+              "name": "Rasmus H\u00f8jgaard",
               "score": "CUT",
               "r1": "75",
               "r2": "72",
@@ -6679,7 +6679,7 @@
             },
             {
               "pos": "-",
-              "name": "Thorbjørn Olesen",
+              "name": "Thorbj\u00f8rn Olesen",
               "score": "CUT",
               "r1": "79",
               "r2": "70",
@@ -6907,7 +6907,7 @@
             },
             {
               "pos": "-",
-              "name": "Sami Välimäki",
+              "name": "Sami V\u00e4lim\u00e4ki",
               "score": "CUT",
               "r1": "78",
               "r2": "74",
@@ -7098,7 +7098,7 @@
             },
             {
               "pos": "T3",
-              "name": "Ludvig Åberg",
+              "name": "Ludvig \u00c5berg",
               "score": "-12",
               "r1": "66",
               "r2": "71",
@@ -7374,7 +7374,7 @@
             },
             {
               "pos": "T24",
-              "name": "Nicolai Højgaard",
+              "name": "Nicolai H\u00f8jgaard",
               "score": "-2",
               "r1": "72",
               "r2": "73",
@@ -8873,7 +8873,7 @@
             },
             {
               "pos": "-",
-              "name": "Séamus Power",
+              "name": "S\u00e9amus Power",
               "score": "CUT",
               "r1": "75",
               "r2": "69",
@@ -8969,7 +8969,7 @@
             },
             {
               "pos": "-",
-              "name": "Fabián Gómez",
+              "name": "Fabi\u00e1n G\u00f3mez",
               "score": "CUT",
               "r1": "72",
               "r2": "73",
@@ -9245,7 +9245,7 @@
             },
             {
               "pos": "-",
-              "name": "Rasmus Højgaard",
+              "name": "Rasmus H\u00f8jgaard",
               "score": "CUT",
               "r1": "71",
               "r2": "77",
@@ -9703,7 +9703,7 @@
             },
             {
               "pos": 11,
-              "driver": "N. Hülkenberg",
+              "driver": "N. H\u00fclkenberg",
               "team": "Audi",
               "time": "+1 Lap",
               "points": 0,
@@ -9739,7 +9739,7 @@
             },
             {
               "pos": 15,
-              "driver": "S. Pérez",
+              "driver": "S. P\u00e9rez",
               "team": "Cadillac",
               "time": "+1 Lap",
               "points": 0,
@@ -9918,7 +9918,7 @@
             },
             {
               "pos": 16,
-              "driver": "S. Pérez",
+              "driver": "S. P\u00e9rez",
               "team": "Cadillac",
               "time": "+3 Laps",
               "points": 0,
@@ -13278,7 +13278,7 @@
         },
         {
           "pos": 15,
-          "driver": "A. Pérez de Lara",
+          "driver": "A. P\u00e9rez de Lara",
           "car": "",
           "manufacturer": "Chevrolet",
           "points": 95,
@@ -17250,7 +17250,7 @@
         },
         {
           "pos": 33,
-          "driver": "A. Labbé",
+          "driver": "A. Labb\u00e9",
           "car": "",
           "manufacturer": "",
           "points": 44,
@@ -17412,7 +17412,7 @@
         },
         {
           "pos": 51,
-          "driver": "B. Leguizamón",
+          "driver": "B. Leguizam\u00f3n",
           "car": "",
           "manufacturer": "",
           "points": 1,
