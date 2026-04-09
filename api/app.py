@@ -1050,16 +1050,28 @@ def get_channel(channel_id):
 
 TICKER_FILE = '/ticker/scores.txt'
 
-def _build_ticker_params(original_params, font_size=24, position='bottom', bg_opacity=0.75):
+def _build_ticker_params(original_params, font_size=24, position='bottom', bg_opacity=0.75, test_text=None):
     import re
     params = original_params.strip()
     y_expr = 'H-th-6' if position == 'bottom' else '6'
-    drawtext = (
-        f'drawtext=textfile={TICKER_FILE}:reload=1'
-        f':fontsize={font_size}:fontcolor=white'
-        f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
-        f':x=0:y={y_expr}'
-    )
+    if test_text:
+        # Escape special drawtext characters
+        safe = test_text.replace('\\','\\\\').replace("'",'\\u0027').replace(':','\\:')
+        text_src = f'text={safe!r}' if "'" not in safe else f'text=\'{safe}\''
+        text_src = f"text='{safe}'"
+        drawtext = (
+            f'drawtext={text_src}'
+            f':fontsize={font_size}:fontcolor=white'
+            f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
+            f':x=0:y={y_expr}'
+        )
+    else:
+        drawtext = (
+            f'drawtext=textfile={TICKER_FILE}:reload=1'
+            f':fontsize={font_size}:fontcolor=white'
+            f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
+            f':x=0:y={y_expr}'
+        )
     if '-c:v copy' in params:
         params = params.replace(
             '-c:v copy',
@@ -1117,6 +1129,7 @@ def ticker_enable():
     font_size = int(b.get('font_size',24))
     position = b.get('position','bottom')
     bg_opacity = float(b.get('bg_opacity',0.75))
+    test_text = b.get('test_text','').strip() or None
     if not sb_id or not channel_id:
         return jsonify({'error':'scoreboard_id and channel_id required'}),400
     c = get_creds(); s,err = dispatcharr_session(c)
@@ -1138,7 +1151,7 @@ def ticker_enable():
         original_params = profile.get('parameters','')
         if not original_params:
             return jsonify({'error':'Stream profile has no parameters'}),400
-        modified_params = _build_ticker_params(original_params,font_size,position,bg_opacity)
+        modified_params = _build_ticker_params(original_params,font_size,position,bg_opacity,test_text)
         if modified_params == original_params:
             return jsonify({'error':'Could not inject ticker — "-c:v copy" not found in profile parameters.'}),400
         # Create ticker profile
