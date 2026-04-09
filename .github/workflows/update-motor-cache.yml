@@ -101,8 +101,12 @@ jobs:
                           cache[hist_key] = {'data':{'races':races,'updated':today_str},'_updated':today_str}
                           print(f"  {prefix}: last race '{live['run_name']}' {len(drivers)} drivers")
               # Standings for all three series
-              series_map = [(1,'nascar','nascar-2026-season'),(2,'nascar-xfinity','nascar-xfinity-season'),(3,'nascar-trucks','nascar-trucks-season')]
-              for sid, prefix, stand_key in series_map:
+              series_map = [
+                  (1,'nascar','nascar-2026-season','NASCAR Cup Series'),
+                  (2,'nascar-xfinity','nascar-xfinity-season',"NASCAR O'Reilly Auto Parts Series"),
+                  (3,'nascar-trucks','nascar-trucks-season','NASCAR Craftsman Truck Series'),
+              ]
+              for sid, prefix, stand_key, series_name in series_map:
                   for year in ['2026','2025']:
                       data = fetch(f'https://cf.nascar.com/cacher/{year}/{sid}/standings/driver-standings.json', NASCAR_HDR)
                       if data:
@@ -114,6 +118,7 @@ jobs:
                               existing = cache.get(stand_key,{}).get('data',{})
                               if isinstance(existing,str): existing=json.loads(existing)
                               existing['standings'] = standings
+                              existing['series_name'] = series_name  # authoritative name — update if sponsorship changes
                               existing['updated'] = today_str
                               cache[stand_key] = {'data':existing,'_updated':today_str}
                               print(f"  {prefix} standings: {len(standings)} drivers from {year}")

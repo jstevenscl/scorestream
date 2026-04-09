@@ -3454,9 +3454,9 @@ const ALL_SPORTS=[
   {id:'pga',        name:'PGA Tour',               group:'pro',   color:'#00594f',emoji:'⛳',url:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',isIndividualSport:true,fetchFn:'fetchPGAData'},
   // Motorsport (custom APIs — Jolpica for F1, cf.nascar.com for NASCAR)
   {id:'f1',         name:'Formula 1',              group:'motor', color:'#e10600',emoji:'🏎️',fetchFn:'fetchF1Data'},
-  {id:'nascar',         name:'NASCAR Cup Series',     group:'motor', color:'#ffd700',emoji:'🏁',fetchFn:'fetchNascarData'},
-  {id:'nascar-xfinity', name:'NASCAR Xfinity Series', group:'motor', color:'#ff6b35',emoji:'🏁',fetchFn:'fetchNascarData'},
-  {id:'nascar-trucks',  name:'NASCAR Truck Series',   group:'motor', color:'#00b4d8',emoji:'🏁',fetchFn:'fetchNascarData'},
+  {id:'nascar',         name:'NASCAR Cup Series',                   group:'motor', color:'#ffd700',emoji:'🏁',fetchFn:'fetchNascarData'},
+  {id:'nascar-xfinity', name:"NASCAR O'Reilly Auto Parts Series",   group:'motor', color:'#ff6b35',emoji:'🏁',fetchFn:'fetchNascarData'},
+  {id:'nascar-trucks',  name:'NASCAR Craftsman Truck Series',        group:'motor', color:'#00b4d8',emoji:'🏁',fetchFn:'fetchNascarData'},
   // Tennis
   {id:'atp',        name:'ATP Tour',                group:'tennis',color:'#0066cc',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',fetchFn:'fetchTennisData'},
   {id:'wta',        name:'WTA Tour',                group:'tennis',color:'#cc0066',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',fetchFn:'fetchTennisData'},
@@ -4257,8 +4257,8 @@ function buildMotorsportEditorPanel(draft){
   const countSel=(val,key,color,label)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div></div><div style="display:flex;gap:4px;">${[1,2,3,5,10].map(n=>`<button onclick="setMotorConfig('${key}',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===val?color:'var(--border)'};background:${n===val?color:'var(--bg-card)'};color:${n===val?'#000':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>`;
   const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Results','Full finishing order pages')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Championship standings')}${countSel(f1MaxRaces,'f1_max_races','#e10600','📋 Past Races to Show')}</div>`:'';
   const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}</div>`:'';
-  const xfinSec=hasXfinity?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ff6b35;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ff6b35;">NASCAR XFINITY SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(xfinLive,'xfinity_live','#ff6b35','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(xfinLast,'xfinity_last','#ff6b35','🏁 Last Race Result','Final finishing order from last race')}${row(xfinStand,'xfinity_standings','#ff6b35','📊 Driver Standings','Season points standings')}${countSel(xfinMaxRaces,'xfinity_max_races','#ff6b35','📋 Past Races to Show')}</div>`:'';
-  const truckSec=hasTrucks?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00b4d8;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00b4d8;">NASCAR TRUCK SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(truckLive,'trucks_live','#00b4d8','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(truckLast,'trucks_last','#00b4d8','🏁 Last Race Result','Final finishing order from last race')}${row(truckStand,'trucks_standings','#00b4d8','📊 Driver Standings','Season points standings')}${countSel(truckMaxRaces,'trucks_max_races','#00b4d8','📋 Past Races to Show')}</div>`:'';
+  const xfinSec=hasXfinity?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ff6b35;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ff6b35;">NOAPS · O'REILLY AUTO PARTS SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(xfinLive,'xfinity_live','#ff6b35','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(xfinLast,'xfinity_last','#ff6b35','🏁 Last Race Result','Final finishing order from last race')}${row(xfinStand,'xfinity_standings','#ff6b35','📊 Driver Standings','Season points standings')}${countSel(xfinMaxRaces,'xfinity_max_races','#ff6b35','📋 Past Races to Show')}</div>`:'';
+  const truckSec=hasTrucks?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00b4d8;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00b4d8;">NASCAR CRAFTSMAN TRUCK SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(truckLive,'trucks_live','#00b4d8','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(truckLast,'trucks_last','#00b4d8','🏁 Last Race Result','Final finishing order from last race')}${row(truckStand,'trucks_standings','#00b4d8','📊 Driver Standings','Season points standings')}${countSel(truckMaxRaces,'trucks_max_races','#00b4d8','📋 Past Races to Show')}</div>`:'';
   const hasPGA=(_editorDraft.sport_config||{})['pga'];
   const pgaHistory=mc.pga_history!==false,pgaLive=mc.pga_live!==false,pgaShowCut=mc.pga_show_cut!==false;
   const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${row(pgaShowCut,'pga_show_cut','#00594f','✂️ Show Cut Players','Include players who missed the cut (CUT/MC/WD/DQ) in results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}</div>`:'';
@@ -4822,6 +4822,8 @@ async function fetchNascarData(sport, sbConfig){
   const showLast=mc[`${mcPrefix}_last`]!==false;
   const showStand=mc[`${mcPrefix}_standings`]!==false;
   const maxRaces=mc[`${mcPrefix}_max_races`]||3;
+  // series_name from cache is authoritative — allows name changes without code deploy
+  let seriesDisplayName=sport.name;
 
   // Load NASCAR driver cache (ESPN CDN headshots) — all series share the same pool
   const nameToNascarHs={};
@@ -4856,6 +4858,8 @@ async function fetchNascarData(sport, sbConfig){
           if(sr.ok){
             const sd=(await sr.json()).data||{};
             const seasonData=typeof sd==='string'?JSON.parse(sd):sd;
+            // Use cached series_name if available — authoritative, requires no code deploy on name change
+            if(seasonData.series_name) seriesDisplayName=seasonData.series_name;
             const allStand=seasonData.standings||[];
             if(allStand.length){
               const chunkSize=10,total=allStand.length,totalPages=Math.ceil(total/chunkSize);
@@ -4864,8 +4868,8 @@ async function fetchNascarData(sport, sbConfig){
                 const pageNum=Math.floor(i/chunkSize)+1;
                 cards.push({
                   id:`${sport.id}-stand-${pageNum}`,
-                  name:totalPages>1?`${sport.name} Point Standings (${pageNum}/${totalPages})`:`${sport.name} Point Standings`,
-                  sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+                  name:totalPages>1?`${seriesDisplayName} Point Standings (${pageNum}/${totalPages})`:`${seriesDisplayName} Point Standings`,
+                  sportName:seriesDisplayName,sportEmoji:sport.emoji,sportColor:sport.color,
                   isLive:false,isFinal:false,isScheduled:false,isIndividual:false,
                   isNascarStandings:true,drivers:chunk.map(e=>({...e,headshot:_nasHs(e.driver)})),pageNum,totalPages,
                 });
@@ -4905,7 +4909,7 @@ async function fetchNascarData(sport, sbConfig){
               cards.push({
                 id:`${sport.id}-last-${(cd.run_name||'race').replace(/\s/g,'')}-${pageNum}`,
                 name:totalPages>1?`${cd.run_name||'Last Race'} (${pageNum}/${totalPages})`:`${cd.run_name||'Last Race'}`,
-                sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+                sportName:seriesDisplayName,sportEmoji:sport.emoji,sportColor:sport.color,
                 isLive:false,isFinal:true,isNascarLive:true,isNascarLast:true,
                 flagEmoji:'\uD83C\uDFC1',flagState:9,
                 trackName:cd.track_name||'',raceDate:cd.race_date||'',
@@ -4934,7 +4938,7 @@ async function fetchNascarData(sport, sbConfig){
             cards.push({
               id:`${sport.id}-next`,
               name:nextR.name,
-              sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+              sportName:seriesDisplayName,sportEmoji:sport.emoji,sportColor:sport.color,
               isLive:false,isFinal:false,isScheduled:true,isIndividual:false,isNascarInfo:false,
               isNascarNext:true,
               track:nextR.track,raceDate:nextR.date,raceTime:nextR.time,tv:nextR.tv,
@@ -4945,8 +4949,8 @@ async function fetchNascarData(sport, sbConfig){
       }catch(e){}
 
       if(!cards.length){
-        return [{id:`${sport.id}-no-data`,name:sport.name,
-          sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+        return [{id:`${sport.id}-no-data`,name:seriesDisplayName,
+          sportName:seriesDisplayName,sportEmoji:sport.emoji,sportColor:sport.color,
           isLive:false,isFinal:false,isScheduled:true,isIndividual:false,isNascarInfo:true,
           message:'No race data available.',track:'',runName:''}];
       }
@@ -4979,7 +4983,7 @@ async function fetchNascarData(sport, sbConfig){
       nasCards.push({
         id:`${sport.id}-live-${pageNum}`,
         name:totalPages>1?`${baseName} (P${pageNum}/${totalPages})`:baseName,
-        sportName:sport.name,sportEmoji:sport.emoji,sportColor:sport.color,
+        sportName:seriesDisplayName,sportEmoji:sport.emoji,sportColor:sport.color,
         isLive,isFinal,isScheduled:false,isIndividual:false,
         isNascarLive:true,flagEmoji,flagState,
         trackName:d.track_name||'',
