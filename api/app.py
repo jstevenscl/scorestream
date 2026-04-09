@@ -1217,6 +1217,126 @@ def ticker_status():
                                    'ticker_profile_id':r['ticker_profile_id']} for r in rows]})
     except Exception as e: return jsonify({'error':str(e)}),500
 
+@app.route('/ticker/text/<int:sb_id>', methods=['GET'])
+def ticker_text(sb_id):
+    import json as _jt
+    ESPN_PATHS = {
+        'nfl':   'sports/football/nfl',
+        'nba':   'sports/basketball/nba',
+        'mlb':   'sports/baseball/mlb',
+        'nhl':   'sports/hockey/nhl',
+        'mls':   'sports/soccer/usa.1',
+        'ncaaf': 'sports/football/college-football',
+        'ncaab': 'sports/basketball/mens-college-basketball',
+        'atp':   'sports/tennis/atp',
+        'wta':   'sports/tennis/wta',
+    }
+    LABELS = {
+        'nfl':'NFL','nba':'NBA','mlb':'MLB','nhl':'NHL','mls':'MLS',
+        'ncaaf':'NCAAF','ncaab':'NCAAB','f1':'F1',
+        'nascar':'NASCAR','nascar-noaps':'NOAPS','nascar-trucks':'Trucks',
+        'pga':'PGA','atp':'ATP','wta':'WTA',
+    }
+    try:
+        with get_db() as conn:
+            row = conn.execute('SELECT ticker_config FROM scoreboards WHERE id=?',(sb_id,)).fetchone()
+        if not row: return jsonify({'error':'scoreboard not found'}),404
+        cfg = _jt.loads(row['ticker_config'] or '{}')
+    except Exception as e:
+        return jsonify({'error':str(e)}),500
+
+    sports = cfg.get('sports', [])
+    parts = []
+
+    for sport_id in sports:
+        label = LABELS.get(sport_id, sport_id.upper())
+        try:
+            if sport_id in ESPN_PATHS:
+                url = f'https://site.api.espn.com/apis/site/v2/{ESPN_PATHS[sport_id]}/scoreboard'
+                r = http.get(url, timeout=8)
+                if not r.ok: continue
+                events = r.json().get('events', [])
+                if not events: continue
+                game_strs = []
+                for ev in events[:8]:
+                    comp = ev.get('competitions', [{}])[0]
+                    competitors = comp.get('competitors', [])
+                    if len(competitors) < 2: continue
+                    home = next((c for c in competitors if c.get('homeAway') == 'home'), competitors[0])
+                    away = next((c for c in competitors if c.get('homeAway') == 'away'), competitors[1])
+                    away_abbr = away.get('team', {}).get('abbreviation', '?')
+                    home_abbr = home.get('team', {}).get('abbreviation', '?')
+                    away_score = away.get('score', '')
+                    home_score = home.get('score', '')
+                    st = comp.get('status', {}).get('type', {})
+                    detail = st.get('shortDetail', '')
+                    if st.get('completed'):
+                        game_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} FINAL')
+                    elif away_score and home_score:
+                        game_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} {detail}')
+                    else:
+                        game_strs.append(f'{away_abbr} @ {home_abbr} {detail}')
+                if game_strs:
+                    parts.append(f'{label}: {"  ".join(game_strs)}')
+
+            elif sport_id == 'nascar':
+                with get_db() as conn:
+                    mc = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-last'").fetchone()
+                if not mc: continue
+                nd = _jt.loads(mc['data'])
+                if isinstance(nd, str): nd = _jt.loads(nd)
+                drivers = nd.get('drivers', [])[:5]
+                race = nd.get('run_name', '')
+                flag = nd.get('flag_state', 0)
+                status_str = 'FINAL' if flag == 9 else 'LIVE'
+                d_strs = [f"P{d['pos']} {d['driver'].split()[-1]}"
+                          for d in drivers if d.get('pos') and d.get('driver')]
+                if d_strs:
+                    parts.append(f"NASCAR ({race}): {'  '.join(d_strs)}  {status_str}")
+
+            elif sport_id == 'f1':
+                with get_db() as conn:
+                    mc = conn.execute("SELECT data FROM motor_cache WHERE key='f1-history'").fetchone()
+                if not mc: continue
+                fd = _jt.loads(mc['data'])
+                if isinstance(fd, str): fd = _jt.loads(fd)
+                races = fd.get('races', [])
+                if not races: continue
+                last = races[-1]
+                race_name = last.get('raceName', '')
+                results = last.get('results', [])[:5]
+                d_strs = [f"P{r['pos']} {r['driver'].split()[-1]}"
+                          for r in results if r.get('pos') and r.get('driver')]
+                if d_strs:
+                    parts.append(f"F1 ({race_name}): {'  '.join(d_strs)}")
+
+            elif sport_id == 'pga':
+                with get_db() as conn:
+                    mc = conn.execute("SELECT data FROM motor_cache WHERE key='pga-2026-tournaments'").fetchone()
+                if not mc: continue
+                pd = _jt.loads(mc['data'])
+                if isinstance(pd, str): pd = _jt.loads(pd)
+                tours = pd.get('tournaments', [])
+                if not tours: continue
+                active = next((t for t in tours if not t.get('is_complete') and t.get('players')), None)
+                if not active:
+                    active = next((t for t in tours if not t.get('is_complete')), tours[0])
+                name = active.get('name', '')
+                players = active.get('players', [])
+                if players:
+                    p_strs = [f"{p.get('player','').split()[-1]} {p.get('total','E')}"
+                              for p in players[:5]]
+                    parts.append(f"PGA ({name}): {'  '.join(p_strs)}")
+                else:
+                    parts.append(f"PGA: {name} {active.get('date','')}")
+
+        except Exception as e:
+            log.warning(f'[ticker/text] sport={sport_id} error: {e}')
+            continue
+
+    text = '    ·    '.join(parts) if parts else 'ScoreStream Live'
+    return jsonify({'text': text})
+
 @app.route('/dispatcharr/groups', methods=['POST'])
 def create_group():
     b = request.get_json(force=True)

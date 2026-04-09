@@ -587,6 +587,58 @@ function prebakeAll() {
   console.log('[manager] Pre-bake complete — ready for instant playback');
 }
 
+// ── Ticker Writer ─────────────────────────────────────────────────────────────
+const TICKER_FILE     = process.env.TICKER_FILE      || '/ticker/scores.txt';
+const TICKER_API_BASE = process.env.TICKER_API_BASE  || 'http://scorestream-api:5000';
+const TICKER_INTERVAL = parseInt(process.env.TICKER_INTERVAL || '30') * 1000;
+
+function httpGetJson(url) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(url, { timeout: 10000 }, res => {
+      let raw = '';
+      res.on('data', chunk => raw += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(raw)); }
+        catch(e) { reject(new Error('JSON parse error')); }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('request timeout')); });
+  });
+}
+
+async function updateTickerFile() {
+  try {
+    const db   = new Database(DB_PATH, { fileMustExist: true });
+    const rows = db.prepare('SELECT scoreboard_id FROM ticker_profile_backup').all();
+    db.close();
+    if (!rows.length) return;
+    const parts = [];
+    for (const { scoreboard_id } of rows) {
+      try {
+        const data = await httpGetJson(`${TICKER_API_BASE}/ticker/text/${scoreboard_id}`);
+        if (data.text) parts.push(data.text);
+      } catch(e) {
+        console.warn(`[ticker] sb ${scoreboard_id}: ${e.message}`);
+      }
+    }
+    if (parts.length) {
+      const text = parts.join('    ·    ');
+      const dir  = path.dirname(TICKER_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(TICKER_FILE, text, 'utf8');
+    }
+  } catch(e) {
+    console.warn(`[ticker] update error: ${e.message}`);
+  }
+}
+
+function startTickerWriter() {
+  updateTickerFile();
+  setInterval(updateTickerFile, TICKER_INTERVAL);
+  console.log(`[manager] Ticker writer started — interval=${TICKER_INTERVAL / 1000}s`);
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   console.log('[manager] ScoreStream Stream Manager starting');
@@ -596,6 +648,7 @@ async function main() {
   prebakeAll();
   startHttpServer();
   startIdleWatcher();
+  startTickerWriter();
   console.log('[manager] Ready');
   process.on('SIGTERM', async () => {
     console.log('[manager] Shutting down');
