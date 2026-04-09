@@ -283,6 +283,13 @@ jobs:
                           if not isinstance(entry,dict): continue
                           aid=(entry.get('athlete') or {}).get('id') or (entry.get('team') or {}).get('id')
                           if aid: racing_ids.add(str(aid))
+                  # Fallback: direct athletes list (works year-round, no active event needed)
+                  ath_list=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/athletes?limit=100',ESPN_HDR)
+                  if ath_list and isinstance(ath_list,dict):
+                      for item in (ath_list.get('items') or ath_list.get('athletes') or []):
+                          if not isinstance(item,dict): continue
+                          aid=str(item.get('id') or (item.get('athlete') or {}).get('id') or '')
+                          if aid: racing_ids.add(aid)
                   print(f"  IDs found: {len(racing_ids)}")
                   new_count=0
                   for aid in racing_ids:
@@ -302,6 +309,36 @@ jobs:
                   print(f"  {espn_slug.upper()}: {new_count} new, {len(existing_drivers)} total in cache")
                   cache[cache_key]={'data':existing_drivers,'_updated':today_str}
               except Exception as e: print(f"  {espn_slug.upper()} drivers error: {e}")
+          print("\n--- PGA Players (pre-populate) ---")
+          try:
+              pga_players=cache.get('pga-players',{}).get('data',{})
+              if isinstance(pga_players,str): pga_players=json.loads(pga_players)
+              pga_ids=set()
+              # Direct athletes list — works year-round
+              pga_ath=fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/athletes?limit=300',ESPN_HDR)
+              if pga_ath and isinstance(pga_ath,dict):
+                  for item in (pga_ath.get('items') or pga_ath.get('athletes') or []):
+                      if not isinstance(item,dict): continue
+                      aid=str(item.get('id') or (item.get('athlete') or {}).get('id') or '')
+                      if aid: pga_ids.add(aid)
+              print(f"  PGA athlete IDs found: {len(pga_ids)}")
+              new_count=0
+              for aid in pga_ids:
+                  if aid in pga_players and pga_players[aid].get('headshot'): continue
+                  details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/golf/pga/athletes/{aid}',ESPN_HDR)
+                  if not details: continue
+                  ath=details.get('athlete') or details
+                  if not isinstance(ath,dict): continue
+                  pga_players[aid]={
+                      'id':aid,'name':ath.get('displayName',''),
+                      'headshot':(ath.get('headshot') or {}).get('href') or '',
+                      'flag':(ath.get('flag') or {}).get('href') or '',
+                      'country':(ath.get('flag') or {}).get('alt') or '',
+                  }
+                  new_count+=1
+              print(f"  PGA: {new_count} new, {len(pga_players)} total in cache")
+              cache['pga-players']={'data':pga_players,'_updated':today_str}
+          except Exception as e: print(f"  PGA pre-populate error: {e}")
           with open(cache_path,'w') as f: json.dump(cache,f,indent=2)
           print(f"\nWritten {len(cache)} keys ({os.path.getsize(cache_path):,} bytes)")
           PYEOF
