@@ -210,66 +210,82 @@ jobs:
               cache[f'{league}-players']={'data':existing,'_updated':today_str}
           for league in ['atp','wta']:
               print(f"\n--- {league.upper()} Rankings ---")
-              rankings_raw=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/rankings',ESPN_HDR)
-              if rankings_raw:
-                  ranks=[]
-                  for rlist in (rankings_raw.get('rankings') or []):
-                      ranks=rlist.get('ranks') or rlist.get('entries') or []
-                      if ranks: break
-                  if not ranks: ranks=rankings_raw.get('ranks') or rankings_raw.get('entries') or []
-                  entries=[]
-                  player_cache=cache.get(f'{league}-players',{}).get('data',{})
-                  if isinstance(player_cache,str): player_cache=json.loads(player_cache)
-                  for r in ranks[:50]:
-                      ath=r.get('athlete') or r.get('team') or {}
-                      aid=str(ath.get('id',''))
-                      cached_p=player_cache.get(aid,{})
-                      name=ath.get('displayName','') or cached_p.get('name','')
-                      country=(ath.get('flag') or {}).get('alt') or (ath.get('flag') or {}).get('title') or cached_p.get('country','')
-                      entries.append({'rank':r.get('current') or r.get('rank') or len(entries)+1,
-                          'id':aid,'name':name,'country':country,
-                          'points':r.get('points') or 0,'change':r.get('change') or r.get('rankChange') or 0})
-                  if entries:
-                      cache[f'{league}-rankings']={'data':{'players':entries,'updated':today_str},'_updated':today_str}
-                      print(f"  {league.upper()}: {len(entries)} players cached")
-                  else: print(f"  {league.upper()}: no ranks found in response")
-              else: print(f"  {league.upper()}: rankings fetch failed")
+              try:
+                  rankings_raw=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/rankings',ESPN_HDR)
+                  if rankings_raw:
+                      ranks=[]
+                      for rlist in (rankings_raw.get('rankings') or []):
+                          if not isinstance(rlist,dict): continue
+                          ranks=rlist.get('ranks') or rlist.get('entries') or []
+                          if ranks: break
+                      if not ranks: ranks=rankings_raw.get('ranks') or rankings_raw.get('entries') or []
+                      entries=[]
+                      player_cache=cache.get(f'{league}-players',{}).get('data',{})
+                      if isinstance(player_cache,str): player_cache=json.loads(player_cache)
+                      for r in (ranks if isinstance(ranks,list) else [])[:50]:
+                          if not isinstance(r,dict): continue
+                          ath=r.get('athlete') or r.get('team') or {}
+                          if not isinstance(ath,dict): ath={}
+                          aid=str(ath.get('id',''))
+                          cached_p=player_cache.get(aid,{}) if isinstance(player_cache,dict) else {}
+                          name=ath.get('displayName','') or cached_p.get('name','')
+                          flag_obj=ath.get('flag') or {}
+                          country=(flag_obj.get('alt') if isinstance(flag_obj,dict) else '') or cached_p.get('country','')
+                          entries.append({'rank':r.get('current') or r.get('rank') or len(entries)+1,
+                              'id':aid,'name':name,'country':country,
+                              'points':r.get('points') or 0,'change':r.get('change') or r.get('rankChange') or 0})
+                      if entries:
+                          cache[f'{league}-rankings']={'data':{'players':entries,'updated':today_str},'_updated':today_str}
+                          print(f"  {league.upper()}: {len(entries)} players cached")
+                      else: print(f"  {league.upper()}: no ranks found in response")
+                  else: print(f"  {league.upper()}: rankings fetch failed")
+              except Exception as e: print(f"  {league.upper()} rankings error: {e}")
           for racing_sport in [('nascar','nascar-cup','nascar-drivers'),('f1','f1','f1-drivers')]:
               espn_slug, espn_path, cache_key = racing_sport
               print(f"\n--- {espn_slug.upper()} Drivers ---")
-              existing_drivers = cache.get(cache_key,{}).get('data',{})
-              if isinstance(existing_drivers,str): existing_drivers=json.loads(existing_drivers)
-              racing_ids=set()
-              sb=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/scoreboard',ESPN_HDR)
-              if sb:
-                  for event in sb.get('events',[]):
-                      for comp in (event.get('competitions') or []):
-                          for c in comp.get('competitors',[]):
-                              aid=(c.get('athlete') or {}).get('id')
-                              if aid: racing_ids.add(str(aid))
-              # Also try standings endpoint for off-season coverage
-              stand=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/standings',ESPN_HDR)
-              if stand:
-                  for entry in (stand.get('standings',{}).get('entries') or stand.get('entries') or []):
-                      aid=(entry.get('athlete') or {}).get('id') or (entry.get('team') or {}).get('id')
-                      if aid: racing_ids.add(str(aid))
-              print(f"  IDs found: {len(racing_ids)}")
-              new_count=0
-              for aid in racing_ids:
-                  if aid in existing_drivers and existing_drivers[aid].get('headshot'): continue
-                  details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/athletes/{aid}',ESPN_HDR)
-                  if not details: continue
-                  ath=details.get('athlete') or details
-                  existing_drivers[aid]={
-                      'id':aid,'name':ath.get('displayName',''),
-                      'headshot':(ath.get('headshot') or {}).get('href') or '',
-                      'flag':(ath.get('flag') or {}).get('href') or '',
-                      'country':(ath.get('flag') or {}).get('alt') or '',
-                  }
-                  new_count+=1
-                  print(f"  + {existing_drivers[aid]['name']} ({aid}) hs={'yes' if existing_drivers[aid]['headshot'] else 'no'}")
-              print(f"  {espn_slug.upper()}: {new_count} new, {len(existing_drivers)} total in cache")
-              cache[cache_key]={'data':existing_drivers,'_updated':today_str}
+              try:
+                  existing_drivers = cache.get(cache_key,{}).get('data',{})
+                  if isinstance(existing_drivers,str): existing_drivers=json.loads(existing_drivers)
+                  racing_ids=set()
+                  sb=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/scoreboard',ESPN_HDR)
+                  if sb and isinstance(sb,dict):
+                      for event in (sb.get('events') or []):
+                          for comp in (event.get('competitions') or []):
+                              for c in comp.get('competitors',[]):
+                                  aid=(c.get('athlete') or {}).get('id')
+                                  if aid: racing_ids.add(str(aid))
+                  stand=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/standings',ESPN_HDR)
+                  if stand and isinstance(stand,dict):
+                      raw_s=stand.get('standings')
+                      stand_entries=[]
+                      if isinstance(raw_s,list):
+                          for s in raw_s:
+                              if isinstance(s,dict): stand_entries.extend(s.get('entries') or [])
+                      elif isinstance(raw_s,dict): stand_entries=raw_s.get('entries') or []
+                      else: stand_entries=stand.get('entries') or []
+                      for entry in stand_entries:
+                          if not isinstance(entry,dict): continue
+                          aid=(entry.get('athlete') or {}).get('id') or (entry.get('team') or {}).get('id')
+                          if aid: racing_ids.add(str(aid))
+                  print(f"  IDs found: {len(racing_ids)}")
+                  new_count=0
+                  for aid in racing_ids:
+                      if aid in existing_drivers and existing_drivers[aid].get('headshot'): continue
+                      details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/athletes/{aid}',ESPN_HDR)
+                      if not details: continue
+                      ath=details.get('athlete') or details
+                      if not isinstance(ath,dict): continue
+                      existing_drivers[aid]={
+                          'id':aid,'name':ath.get('displayName',''),
+                          'headshot':(ath.get('headshot') or {}).get('href') or '',
+                          'flag':(ath.get('flag') or {}).get('href') or '',
+                          'country':(ath.get('flag') or {}).get('alt') or '',
+                      }
+                      new_count+=1
+                      print(f"  + {existing_drivers[aid]['name']} ({aid}) hs={'yes' if existing_drivers[aid]['headshot'] else 'no'}")
+                  print(f"  {espn_slug.upper()}: {new_count} new, {len(existing_drivers)} total in cache")
+                  cache[cache_key]={'data':existing_drivers,'_updated':today_str}
+              except Exception as e: print(f"  {espn_slug.upper()} drivers error: {e}")
           with open(cache_path,'w') as f: json.dump(cache,f,indent=2)
           print(f"\nWritten {len(cache)} keys ({os.path.getsize(cache_path):,} bytes)")
           PYEOF
