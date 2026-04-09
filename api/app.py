@@ -1220,6 +1220,9 @@ def ticker_status():
 @app.route('/ticker/text/<int:sb_id>', methods=['GET'])
 def ticker_text(sb_id):
     import json as _jt
+    from datetime import date as _date, datetime as _dt
+    today = str(_date.today())  # 'YYYY-MM-DD'
+
     ESPN_PATHS = {
         'nfl':   'sports/football/nfl',
         'nba':   'sports/basketball/nba',
@@ -1246,54 +1249,101 @@ def ticker_text(sb_id):
         return jsonify({'error':str(e)}),500
 
     sports = cfg.get('sports', [])
-    parts = []
+    # Collect live games first, then today's finals — two separate buckets merged at the end
+    live_parts  = []
+    final_parts = []
 
     for sport_id in sports:
         label = LABELS.get(sport_id, sport_id.upper())
         try:
+            # ── ESPN team / tennis sports ────────────────────────────────────
             if sport_id in ESPN_PATHS:
                 url = f'https://site.api.espn.com/apis/site/v2/{ESPN_PATHS[sport_id]}/scoreboard'
                 r = http.get(url, timeout=8)
                 if not r.ok: continue
                 events = r.json().get('events', [])
                 if not events: continue
-                game_strs = []
-                for ev in events[:8]:
+                live_strs  = []
+                final_strs = []
+                for ev in events[:12]:
                     comp = ev.get('competitions', [{}])[0]
                     competitors = comp.get('competitors', [])
                     if len(competitors) < 2: continue
                     home = next((c for c in competitors if c.get('homeAway') == 'home'), competitors[0])
                     away = next((c for c in competitors if c.get('homeAway') == 'away'), competitors[1])
-                    away_abbr = away.get('team', {}).get('abbreviation', '?')
-                    home_abbr = home.get('team', {}).get('abbreviation', '?')
+                    away_abbr  = away.get('team', {}).get('abbreviation', '?')
+                    home_abbr  = home.get('team', {}).get('abbreviation', '?')
                     away_score = away.get('score', '')
                     home_score = home.get('score', '')
-                    st = comp.get('status', {}).get('type', {})
-                    detail = st.get('shortDetail', '')
-                    if st.get('completed'):
-                        game_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} FINAL')
-                    elif away_score and home_score:
-                        game_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} {detail}')
-                    else:
-                        game_strs.append(f'{away_abbr} @ {home_abbr} {detail}')
-                if game_strs:
-                    parts.append(f'{label}: {"  ".join(game_strs)}')
+                    status     = comp.get('status', {})
+                    st         = status.get('type', {})
+                    state      = st.get('state', '')      # 'pre' | 'in' | 'post'
+                    detail     = st.get('shortDetail', '')
+                    if state == 'in':
+                        # Live game — include score + clock/period
+                        live_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} ({detail})')
+                    elif state == 'post':
+                        # Finished today (ESPN scoreboard only returns today's slate)
+                        final_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} FINAL')
+                    # state == 'pre' (scheduled, no score yet) — omit from ticker
+                if live_strs:
+                    live_parts.append(f'{label}: {"  ".join(live_strs)}')
+                if final_strs:
+                    final_parts.append(f'{label}: {"  ".join(final_strs)}')
 
+            # ── NASCAR ──────────────────────────────────────────────────────
             elif sport_id == 'nascar':
-                with get_db() as conn:
-                    mc = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-last'").fetchone()
-                if not mc: continue
-                nd = _jt.loads(mc['data'])
-                if isinstance(nd, str): nd = _jt.loads(nd)
-                drivers = nd.get('drivers', [])[:5]
-                race = nd.get('run_name', '')
-                flag = nd.get('flag_state', 0)
-                status_str = 'FINAL' if flag == 9 else 'LIVE'
-                d_strs = [f"P{d['pos']} {d['driver'].split()[-1]}"
-                          for d in drivers if d.get('pos') and d.get('driver')]
-                if d_strs:
-                    parts.append(f"NASCAR ({race}): {'  '.join(d_strs)}  {status_str}")
+                nascar_headers = {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'application/json',
+                    'Referer': 'https://www.nascar.com/',
+                    'Origin': 'https://www.nascar.com',
+                }
+                # Always try the live feed first
+                live_data = None
+                try:
+                    lr = http.get('https://cf.nascar.com/live/feeds/live-feed.json',
+                                  headers=nascar_headers, timeout=8)
+                    if lr.ok:
+                        lf = lr.json()
+                        # Active Cup race: series_id=1, flag_state 1-8 = green/yellow/etc
+                        if lf.get('series_id') == 1 and 1 <= lf.get('flag_state', 0) <= 8:
+                            live_data = lf
+                except Exception:
+                    pass
 
+                if live_data:
+                    run_name = live_data.get('run_name', '')
+                    flag     = live_data.get('flag_state', 1)
+                    lap      = live_data.get('lap_number', 0)
+                    total    = live_data.get('laps_in_race', 0)
+                    vehicles = sorted(live_data.get('vehicles', []),
+                                      key=lambda v: v.get('running_position', 99))
+                    d_strs = []
+                    for v in vehicles[:5]:
+                        pos    = v.get('running_position', '')
+                        name   = (v.get('driver', {}).get('full_name') or
+                                  f"{v.get('driver',{}).get('first_name','')} {v.get('driver',{}).get('last_name','')}").strip()
+                        last   = name.split()[-1] if name else '?'
+                        d_strs.append(f"P{pos} {last}")
+                    lap_str = f'Lap {lap}/{total}' if total else ''
+                    live_parts.append(f"NASCAR ({run_name}): {'  '.join(d_strs)}  {lap_str}")
+                else:
+                    # Fall back to motor_cache — only show if race was today
+                    with get_db() as conn:
+                        mc = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-last'").fetchone()
+                    if not mc: continue
+                    nd = _jt.loads(mc['data'])
+                    if isinstance(nd, str): nd = _jt.loads(nd)
+                    if nd.get('race_date', '') != today: continue  # stale — skip
+                    drivers = nd.get('drivers', [])[:5]
+                    race    = nd.get('run_name', '')
+                    d_strs  = [f"P{d['pos']} {d['driver'].split()[-1]}"
+                               for d in drivers if d.get('pos') and d.get('driver')]
+                    if d_strs:
+                        final_parts.append(f"NASCAR ({race}): {'  '.join(d_strs)}  FINAL")
+
+            # ── F1 ──────────────────────────────────────────────────────────
             elif sport_id == 'f1':
                 with get_db() as conn:
                     mc = conn.execute("SELECT data FROM motor_cache WHERE key='f1-history'").fetchone()
@@ -1303,13 +1353,15 @@ def ticker_text(sb_id):
                 races = fd.get('races', [])
                 if not races: continue
                 last = races[-1]
+                if last.get('date', '') != today: continue  # race was not today — skip
                 race_name = last.get('raceName', '')
-                results = last.get('results', [])[:5]
-                d_strs = [f"P{r['pos']} {r['driver'].split()[-1]}"
-                          for r in results if r.get('pos') and r.get('driver')]
+                results   = last.get('results', [])[:5]
+                d_strs    = [f"P{r['pos']} {r['driver'].split()[-1]}"
+                             for r in results if r.get('pos') and r.get('driver')]
                 if d_strs:
-                    parts.append(f"F1 ({race_name}): {'  '.join(d_strs)}")
+                    final_parts.append(f"F1 ({race_name}): {'  '.join(d_strs)}  FINAL")
 
+            # ── PGA ─────────────────────────────────────────────────────────
             elif sport_id == 'pga':
                 with get_db() as conn:
                     mc = conn.execute("SELECT data FROM motor_cache WHERE key='pga-2026-tournaments'").fetchone()
@@ -1318,23 +1370,23 @@ def ticker_text(sb_id):
                 if isinstance(pd, str): pd = _jt.loads(pd)
                 tours = pd.get('tournaments', [])
                 if not tours: continue
+                # Only show a tournament that is actively in progress (has player scores)
                 active = next((t for t in tours if not t.get('is_complete') and t.get('players')), None)
-                if not active:
-                    active = next((t for t in tours if not t.get('is_complete')), tours[0])
-                name = active.get('name', '')
+                if not active: continue  # no active tournament with live scores — skip
+                name    = active.get('name', '')
                 players = active.get('players', [])
-                if players:
-                    p_strs = [f"{p.get('player','').split()[-1]} {p.get('total','E')}"
-                              for p in players[:5]]
-                    parts.append(f"PGA ({name}): {'  '.join(p_strs)}")
-                else:
-                    parts.append(f"PGA: {name} {active.get('date','')}")
+                p_strs  = [f"{p.get('player','').split()[-1]} {p.get('total','E')}"
+                           for p in players[:5] if p.get('player')]
+                if p_strs:
+                    live_parts.append(f"PGA ({name}): {'  '.join(p_strs)}")
 
         except Exception as e:
             log.warning(f'[ticker/text] sport={sport_id} error: {e}')
             continue
 
-    text = '    ·    '.join(parts) if parts else 'ScoreStream Live'
+    # Live games lead; today's finals follow
+    all_parts = live_parts + final_parts
+    text = '    ·    '.join(all_parts) if all_parts else ''
     return jsonify({'text': text})
 
 @app.route('/dispatcharr/groups', methods=['POST'])
