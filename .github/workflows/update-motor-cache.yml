@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout data branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           ref: data
           token: ${{ secrets.GITHUB_TOKEN }}
