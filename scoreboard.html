@@ -6643,9 +6643,31 @@ function renderStreamCanvas() {
     // Separate live/upcoming from finals
     // Motor sport cards (F1/NASCAR/PGA) always show regardless of showEnded setting
     // Tennis uses fetchFn but should paginate like regular sports
-    const isMotorSport = !!(sport.fetchFn) && sport.group !== 'tennis';
+    const isTennisSport = sport.group === 'tennis';
+    const isMotorSport = !!(sport.fetchFn) && !isTennisSport;
     const motorCards = isMotorSport ? games : [];
-    const regularGames = isMotorSport ? [] : games;
+
+    // Tennis: ranking cards get their own section(s) per league; match cards go through the normal live/finals flow
+    let regularGames = isMotorSport ? [] : (isTennisSport ? [] : games);
+    if (isTennisSport) {
+      const tennisRankCards = games.filter(g => g.isTennisRankings || g.isTennisRankingsHeader);
+      const tennisMatchCards = games.filter(g => !g.isTennisRankings && !g.isTennisRankingsHeader);
+      if (tennisRankCards.length > 0) {
+        const byLeague = {};
+        tennisRankCards.forEach(g => {
+          const league = g.rankingLeague || sport.id;
+          if (!byLeague[league]) byLeague[league] = [];
+          byLeague[league].push(g);
+        });
+        // Push each league's ranking cards as its own isolated section (ATP before WTA alphabetically)
+        Object.keys(byLeague).sort().forEach(league => {
+          const leagueLabel = league.toUpperCase();
+          allSections.push({ sport, games: byLeague[league], isMotorCard: true, isTennisRankSection: true, sectionName: `${leagueLabel} World Rankings` });
+        });
+      }
+      regularGames = tennisMatchCards;
+    }
+
     const liveUpcoming = regularGames.filter(g => !g.isFinal);
     const finalGames = regularGames.filter(g => g.isFinal);
 
@@ -6795,12 +6817,13 @@ function renderStreamCanvas() {
   let currentPageSections = [];
   let currentPageH = 0;
 
-  allSections.forEach(({ sport, games, isFinalSection, finalDate, isMotorCard, sectionName }) => {
+  allSections.forEach(({ sport, games, isFinalSection, finalDate, isMotorCard, isTennisRankSection, sectionName }) => {
     // Motor sport cards: each section gets its own page(s), split by cols so each
     // page has at most one row of cards — guarantees nothing clips vertically.
     if (isMotorCard && games.length > 0) {
       const isPGA = games[0]?.isPGAHistory || games[0]?.isPGALive;
-      if (!isPGA) {
+      // Tennis ranking sections paginate like PGA (multiple rows per page, own dedicated pages)
+      if (!isPGA && !isTennisRankSection) {
         if (currentPageSections.length > 0) { pages.push(currentPageSections); currentPageSections = []; currentPageH = 0; }
         // Slice into pages of at most `cols` cards (1 row per stream page)
         for (let i = 0; i < games.length; i += cols) {
