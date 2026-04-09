@@ -184,6 +184,8 @@ ScoreStream uses named Docker volumes. The first three are created automatically
 | `scorestream_audio` | Uploaded audio files for background music |
 | `scorestream_ticker` | Ticker text file shared with Dispatcharr — **required only for Ticker Overlay** (see [Ticker Overlay](#ticker-overlay)) |
 
+> The `scorestream_ticker` volume is **not created automatically**. You must create it manually and add it to both stacks before using the Ticker Overlay feature. See [Shared Volume Setup](#shared-volume-setup).
+
 **To back up your configuration:**
 
 ```bash
@@ -240,10 +242,12 @@ A **Scoreboard** is a named configuration that defines which sports, teams, and 
 
 In the editor Step 2, you can enable any combination of:
 
-- **Pro leagues:** NFL, NBA, MLB, NHL, WNBA, CFL, XFL, UFL, MLS, NWSL, PGA Tour, ATP Tennis, WTA Tennis
+- **Pro leagues:** NFL, NBA, MLB, NHL, WNBA, CFL, XFL, UFL, MLS, NWSL, PGA Tour
 - **Motorsport:** Formula 1, NASCAR Cup Series, NASCAR O'Reilly Auto Parts Series (NOAPS), NASCAR Craftsman Truck Series
-- **International soccer:** Premier League, Champions League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Liga MX, NWSL, and more
-- **NCAA:** Men's basketball, Women's basketball, Football, Baseball, Softball, Men's soccer, Women's soccer, Men's hockey
+- **Tennis:** ATP Tour, WTA Tour
+- **International soccer:** Premier League, Champions League, La Liga, Bundesliga, Serie A, Ligue 1
+- **NCAA Men:** Football, Basketball, Baseball
+- **NCAA Women:** Basketball, Softball, Volleyball, Lacrosse
 
 When only motorsport/golf sports are enabled, a dedicated settings panel appears for that scoreboard instead of the standard team-sport settings.
 
@@ -399,81 +403,6 @@ Channels are placed in a group called **ScoreStream** by default. Channel number
 
 ---
 
----
-
-## Ticker Overlay
-
-The Ticker Overlay feature overlays a live scrolling score ticker onto any channel that Dispatcharr is streaming. It works by creating a modified copy of the channel's stream profile that injects an ffmpeg `drawtext` filter, re-encodes the video on the fly, and reads score text from a shared file that ScoreStream updates continuously.
-
-### How It Works
-
-1. You select a scoreboard and a Dispatcharr channel in ScoreStream's **Ticker Overlay** settings
-2. When you click **Enable Ticker**, ScoreStream:
-   - Reads the channel's current stream profile from Dispatcharr
-   - Creates a new profile named `"[Original Name] (Ticker)"` with a modified ffmpeg command that adds a scrolling drawtext overlay
-   - Assigns that new profile to the channel via the Dispatcharr API
-   - Begins writing live score text to `/ticker/scores.txt`
-3. When you click **Disable Ticker**, ScoreStream restores the original profile and deletes the ticker copy
-
-> **Note:** The original stream profile is never modified. ScoreStream creates a copy and assigns it. On disable, the original is restored cleanly.
-
-> **Re-encoding required:** Adding a drawtext overlay requires re-encoding the video. The ticker uses `libx264 -preset ultrafast -tune zerolatency` which adds minimal latency. Streams using `-c:v copy` (pass-through) will be switched to encode mode while the ticker is active.
-
-### Shared Volume Setup
-
-The ticker text file (`/ticker/scores.txt`) must be accessible to both the ScoreStream stream container (writer) and Dispatcharr's ffmpeg process (reader). This requires a shared Docker volume.
-
-**Step 1 — Create the volume on your host (once):**
-
-```bash
-docker volume create scorestream_ticker
-```
-
-**Step 2 — Add the volume to your ScoreStream stack:**
-
-```yaml
-services:
-  scorestream-stream:
-    volumes:
-      - scorestream_ticker:/ticker   # add this line
-
-volumes:
-  scorestream_ticker:
-    name: scorestream_ticker
-    external: true
-```
-
-**Step 3 — Add the volume to your Dispatcharr stack:**
-
-```yaml
-services:
-  dispatcharr:    # your Dispatcharr service name
-    volumes:
-      - scorestream_ticker:/ticker   # add this line
-
-volumes:
-  scorestream_ticker:
-    name: scorestream_ticker
-    external: true
-```
-
-> **Same stack:** If ScoreStream and Dispatcharr are in the same `docker-compose.yml`, use a regular named volume (no `external: true`) and add it to both services.
-
-**Step 4 — Restart both stacks** to mount the new volume.
-
-### Using the Ticker Overlay UI
-
-1. Go to **Ticker Overlay** in the ScoreStream sidebar
-2. Select the scoreboard whose sport data should feed the ticker
-3. Select the Dispatcharr channel to apply it to — ScoreStream shows the channel's current stream profile and warns if it is locked
-4. Choose which sports appear in the ticker. Enable **Favs only** per sport to show only games involving your favorited teams
-5. Adjust appearance — font size, scroll speed (0 = static), position (top/bottom), background opacity
-6. Click **Enable Ticker** — the modified profile is created and assigned in Dispatcharr immediately
-7. **Restart the channel** in Dispatcharr to pick up the new stream profile (existing ffmpeg processes use the old profile until restarted)
-8. To stop the ticker, click **Disable Ticker** — the original profile is restored automatically
-
----
-
 ### Updating After Pushing to Dispatcharr
 
 When you change a scoreboard's name or settings after it has already been pushed:
@@ -490,7 +419,144 @@ If the stream is already playing in VLC, an IPTV player, or any HLS-compatible a
 
 ---
 
+## Ticker Overlay
+
+The Ticker Overlay feature overlays a live scrolling score ticker onto any channel that Dispatcharr is streaming. It works by injecting an ffmpeg `drawtext` filter into a copy of the channel's stream profile, re-encoding the video on the fly, and reading score text from a shared file that ScoreStream writes continuously.
+
+### How It Works
+
+1. You select a Dispatcharr channel, choose your sports sources, and configure appearance in ScoreStream's **Ticker Overlay** settings panel
+2. When you click **Enable Ticker**, ScoreStream:
+   - Reads the channel's current stream profile from Dispatcharr via API
+   - Creates a new profile named `"[Original Name] (Ticker)"` with a modified ffmpeg command that injects a scrolling `drawtext` overlay
+   - Assigns that new profile to the channel via the Dispatcharr API
+   - Begins writing live score text to `/ticker/scores.txt` every 30 seconds
+3. ffmpeg in Dispatcharr reads the text file on every frame (`reload=1`) — no stream restart needed when scores update
+4. When you click **Disable Ticker**, ScoreStream restores the original profile ID and deletes the ticker copy
+
+> **The original stream profile is never modified.** ScoreStream creates a copy and assigns it. On disable, the original is restored cleanly.
+
+> **Re-encoding required:** Adding a drawtext overlay requires re-encoding the video. The ticker uses `-c:v libx264 -preset ultrafast -tune zerolatency` which adds minimal latency. Profiles already using `-c:v copy` (pass-through) are automatically switched to encode mode while the ticker is active.
+
+> **Live data only:** The ticker only shows games or races that are currently in progress or finished today. Games from prior days are excluded. If there is nothing live or completed today for a selected sport, that sport is silently omitted from the ticker.
+
+---
+
+### Shared Volume Setup
+
+The ticker text file (`/ticker/scores.txt`) must be accessible to both the ScoreStream stream container (writer) and Dispatcharr's ffmpeg process (reader). This requires a shared Docker named volume.
+
+> **This setup is required once.** After the volume is created and both stacks are updated, the ticker feature will work for all future use.
+
+---
+
+**Step 1 — Create the volume on your host (once)**
+
+Run this from the host machine (SSH or Portainer console), not inside any container:
+
+```bash
+docker volume create scorestream_ticker
+```
+
+Or in Portainer: **Volumes → Add volume**, name it `scorestream_ticker`, leave everything else default, click **Create**.
+
+---
+
+**Step 2 — Add the volume to your ScoreStream stack**
+
+In your ScoreStream `docker-compose.yml`, add the volume mount to the `scorestream-stream` service and declare it at the bottom:
+
+```yaml
+services:
+  scorestream-stream:
+    # ... existing config ...
+    volumes:
+      - scorestream_ticker:/ticker    # add this line
+
+volumes:
+  scorestream_ticker:
+    external: true                    # add this block
+```
+
+---
+
+**Step 3 — Add the volume to your Dispatcharr stack**
+
+In your Dispatcharr `docker-compose.yml`, add the same volume to the Dispatcharr service:
+
+```yaml
+services:
+  dispatcharr:
+    # ... existing config ...
+    volumes:
+      - scorestream_ticker:/ticker    # add this line
+
+volumes:
+  scorestream_ticker:
+    external: true                    # add this block
+```
+
+> **Same stack:** If ScoreStream and Dispatcharr are in the same `docker-compose.yml`, declare `scorestream_ticker` as a regular named volume (no `external: true`) once under `volumes:` and mount it in both services.
+
+---
+
+**Step 4 — Redeploy both stacks**
+
+In Portainer, click **Update the stack** (or **Stop → Remove → Redeploy**) for both stacks. The containers must be recreated — a simple restart does not apply new volume mounts.
+
+**Verify the volume is mounted:**
+
+```bash
+docker exec scorestream-stream ls /ticker
+docker exec dispatcharr ls /ticker
+```
+
+Both should return an empty directory with no error. If you get `No such file or directory`, the container was not recreated with the new mount.
+
+---
+
+### Using the Ticker Overlay UI
+
+Navigate to **Ticker Overlay** in the ScoreStream settings sidebar.
+
+**Status bar** — shows whether a ticker is currently active and which Dispatcharr profile is assigned.
+
+**1. Select a Dispatcharr channel**
+
+Choose the channel from the dropdown. ScoreStream fetches the channel's current stream profile from Dispatcharr and shows its name. If the profile is marked as locked in Dispatcharr, it cannot be used as the ticker base — duplicate it in Dispatcharr first.
+
+**2. Choose ticker sources**
+
+Sports are organized into groups: Pro Leagues, Motorsport, Tennis, International Soccer, NCAA Men, NCAA Women.
+
+- Check the sports you want to include in the ticker
+- Toggle the **FAVS** pill button on any sport to restrict that sport's ticker output to only games or races involving your favorited teams (favorites are set per sport in each scoreboard's team config)
+
+**Import from scoreboard shortcut:** Use the **Import from scoreboard** dropdown to pre-fill the sport checkboxes from an existing scoreboard's enabled sports. This is a one-time copy — you can modify the selection afterward.
+
+**3. Appearance**
+
+| Setting | Description |
+|---|---|
+| **Position** | Bottom (default) or Top of the video frame |
+| **Font size** | 16–48px. Recommended: 24–32px for 1080p streams |
+| **Scroll speed** | 0 = static text, 1–400 px/s for scrolling marquee. Recommended: 100–200 px/s |
+| **Background opacity** | Darkness of the black bar behind the ticker text (0–100%) |
+
+**4. Enable / Disable**
+
+- **ENABLE TICKER** — saves config, creates the ticker stream profile in Dispatcharr, and assigns it to the channel. ScoreStream begins writing `/ticker/scores.txt` immediately.
+- **DISABLE TICKER** — restores the channel's original stream profile and deletes the ticker copy.
+
+> After enabling, **restart the channel in Dispatcharr** to pick up the new stream profile. Existing ffmpeg processes use the old profile until restarted.
+
+> Score text updates every 30 seconds automatically. No stream restart is needed when scores change — ffmpeg re-reads the file on each frame.
+
+---
+
 ## Supported Sports
+
+### Scoreboard (stream cards)
 
 | League | Type | Live Scores | Schedules | Final Scores |
 |---|---|---|---|---|
@@ -500,23 +566,44 @@ If the stream is already playing in VLC, an IPTV player, or any HLS-compatible a
 | NHL | Team | ✓ | ✓ | ✓ |
 | WNBA | Team | ✓ | ✓ | ✓ |
 | CFL | Team | ✓ | ✓ | ✓ |
+| XFL | Team | ✓ | ✓ | ✓ |
+| UFL | Team | ✓ | ✓ | ✓ |
 | MLS | Team | ✓ | ✓ | ✓ |
 | NWSL | Team | ✓ | ✓ | ✓ |
 | Premier League | Team | ✓ | ✓ | ✓ |
 | Champions League | Team | ✓ | ✓ | ✓ |
-| + 10 more soccer | Team | ✓ | ✓ | ✓ |
-| NCAA Basketball (M/W) | Team | ✓ | ✓ | ✓ |
+| La Liga | Team | ✓ | ✓ | ✓ |
+| Bundesliga | Team | ✓ | ✓ | ✓ |
+| Serie A | Team | ✓ | ✓ | ✓ |
+| Ligue 1 | Team | ✓ | ✓ | ✓ |
 | NCAA Football | Team | ✓ | ✓ | ✓ |
-| NCAA Baseball/Softball | Team | ✓ | ✓ | ✓ |
-| NCAA Soccer (M/W) | Team | ✓ | ✓ | ✓ |
-| NCAA Hockey | Team | ✓ | ✓ | ✓ |
+| NCAA Men's Basketball | Team | ✓ | ✓ | ✓ |
+| NCAA Women's Basketball | Team | ✓ | ✓ | ✓ |
+| NCAA Baseball | Team | ✓ | ✓ | ✓ |
+| NCAA Softball | Team | ✓ | ✓ | ✓ |
+| NCAA Women's Volleyball | Team | ✓ | ✓ | ✓ |
+| NCAA Women's Lacrosse | Team | ✓ | ✓ | ✓ |
 | PGA Tour | Individual | ✓ | ✓ | ✓ |
 | Formula 1 | Individual | ✓ | ✓ | ✓ |
 | NASCAR Cup Series | Individual | ✓ | ✓ | ✓ |
-| NASCAR O'Reilly Auto Parts Series (NOAPS) | Individual | ✓ | ✓ | ✓ |
+| NASCAR O'Reilly Auto Parts Series | Individual | ✓ | ✓ | ✓ |
 | NASCAR Craftsman Truck Series | Individual | ✓ | ✓ | ✓ |
-| ATP Tennis | Individual | — | ✓ | ✓ |
-| WTA Tennis | Individual | — | ✓ | ✓ |
+| ATP Tour | Individual | — | ✓ | ✓ |
+| WTA Tour | Individual | — | ✓ | ✓ |
+
+### Ticker Overlay
+
+The ticker overlay supports all sports in the table above. Data sources:
+
+| Sport group | Live data source |
+|---|---|
+| NFL, NBA, MLB, NHL, WNBA, CFL, XFL, UFL, MLS, NWSL | ESPN Scoreboard API (live + today's finals) |
+| Premier League, Champions League, La Liga, Bundesliga, Serie A, Ligue 1 | ESPN Scoreboard API (live + today's finals) |
+| ATP, WTA | ESPN Scoreboard API (live + today's finals) |
+| NCAA Football, Basketball (M/W), Baseball, Softball, Volleyball, Lacrosse | ESPN Scoreboard API (live + today's finals) |
+| NASCAR Cup | NASCAR live feed API (live positions + lap count); falls back to motor cache if race was today |
+| Formula 1 | Motor cache (race results — shown only on race day) |
+| PGA Tour | Motor cache (leaderboard — shown only when a tournament is actively in progress with scores) |
 
 ---
 
@@ -541,6 +628,17 @@ If the stream is already playing in VLC, an IPTV player, or any HLS-compatible a
 **Changes not appearing on stream:**
 - The stream refreshes every 30 seconds. Wait up to 30 seconds after saving.
 - For display setting changes (fonts, colors, scale), the stream container picks these up on next page render
+
+**Ticker overlay not appearing after enabling:**
+- Restart the channel in Dispatcharr — existing ffmpeg processes use the old stream profile until restarted
+- Confirm the `scorestream_ticker` volume is mounted in both containers: `docker exec scorestream-stream ls /ticker` and `docker exec dispatcharr ls /ticker` — both should return an empty directory or `scores.txt` with no error
+- Check that at least one enabled sport has live or today's completed data — the ticker writes an empty file if no data is available
+- Check stream container logs: `docker logs scorestream-stream`
+
+**Ticker text file not updating:**
+- The stream container writes `/ticker/scores.txt` every 30 seconds when a ticker is active
+- Verify a ticker is active: check the **Ticker Overlay** status bar in the UI
+- The file is only written when there is at least one active ticker profile in the database
 
 **Updating ScoreStream:**
 ```bash
