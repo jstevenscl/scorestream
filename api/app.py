@@ -362,6 +362,16 @@ def init_db():
             conn.execute('ALTER TABLE scoreboards ADD COLUMN audio_source_url TEXT')
         except Exception:
             pass
+        try:
+            conn.execute("ALTER TABLE scoreboards ADD COLUMN ticker_config TEXT NOT NULL DEFAULT '{}'")
+        except Exception:
+            pass
+        conn.execute('''CREATE TABLE IF NOT EXISTS ticker_profile_backup(
+            scoreboard_id INTEGER PRIMARY KEY,
+            channel_id    INTEGER NOT NULL,
+            original_profile_id INTEGER NOT NULL,
+            ticker_profile_id   INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')))''')
         # Audio library table for uploaded music files
         conn.execute('''CREATE TABLE IF NOT EXISTS audio_library(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1000,6 +1010,199 @@ def create_stream_profile():
         r.raise_for_status()
         d = r.json()
         return jsonify({'id':d['id'],'name':d['name'],'parameters':d.get('parameters','')})
+    except Exception as e: return jsonify({'error':str(e)}),500
+
+@app.route('/dispatcharr/streamprofiles/<int:profile_id>', methods=['GET'])
+def get_stream_profile(profile_id):
+    data,err = dispatcharr_get(f'/api/core/streamprofiles/{profile_id}/', timeout=15)
+    if err: return jsonify({'error':err}),400
+    return jsonify({'id':data['id'],'name':data['name'],'command':data.get('command',''),
+                    'parameters':data.get('parameters',''),'locked':data.get('locked',False)})
+
+@app.route('/dispatcharr/channels', methods=['GET'])
+def get_channels():
+    c = get_creds(); s,err = dispatcharr_session(c)
+    if err: return jsonify({'error':err}),400
+    try:
+        channels,page = [],1
+        while True:
+            r = s.get(f'{c["url"]}/api/channels/channels/',params={'page':page,'page_size':100},timeout=30)
+            r.raise_for_status()
+            data = r.json()
+            items = data.get('results',data) if isinstance(data,dict) else data
+            if not isinstance(items,list): break
+            channels.extend(items)
+            if not (isinstance(data,dict) and data.get('next')): break
+            page += 1
+        result = [{'id':ch['id'],'name':ch.get('name',''),'channel_number':ch.get('channel_number'),
+                   'stream_profile_id':ch.get('stream_profile_id')} for ch in channels if 'id' in ch]
+        return jsonify({'channels':sorted(result,key=lambda x:x['name'])})
+    except Exception as e: return jsonify({'error':str(e)}),500
+
+@app.route('/dispatcharr/channels/<int:channel_id>', methods=['GET'])
+def get_channel(channel_id):
+    data,err = dispatcharr_get(f'/api/channels/channels/{channel_id}/',timeout=15)
+    if err: return jsonify({'error':err}),400
+    return jsonify({'id':data['id'],'name':data.get('name',''),
+                    'stream_profile_id':data.get('stream_profile_id')})
+
+# ── Ticker Overlay ────────────────────────────────────────────────────────────
+
+TICKER_FILE = '/ticker/scores.txt'
+
+def _build_ticker_params(original_params, font_size=24, position='bottom', bg_opacity=0.75):
+    import re
+    params = original_params.strip()
+    y_expr = 'H-th-6' if position == 'bottom' else '6'
+    drawtext = (
+        f'drawtext=textfile={TICKER_FILE}:reload=1'
+        f':fontsize={font_size}:fontcolor=white'
+        f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
+        f':x=0:y={y_expr}'
+    )
+    if '-c:v copy' in params:
+        params = params.replace(
+            '-c:v copy',
+            f'-vf "{drawtext}" -c:v libx264 -preset ultrafast -tune zerolatency'
+        )
+    elif '-vf ' in params:
+        params = re.sub(r'-vf\s+"([^"]+)"', f'-vf "\\1,{drawtext}"', params)
+    else:
+        params = re.sub(r'(-f\s+\S+\s*(?:pipe:\d+)?)\s*$', f'-vf "{drawtext}" \\1', params.rstrip())
+    return params
+
+@app.route('/ticker/preview-params', methods=['POST'])
+def ticker_preview_params():
+    b = request.get_json(force=True) or {}
+    original = b.get('parameters','').strip()
+    if not original: return jsonify({'error':'parameters required'}),400
+    modified = _build_ticker_params(original, int(b.get('font_size',24)),
+                                    b.get('position','bottom'), float(b.get('bg_opacity',0.75)))
+    return jsonify({'original':original,'modified':modified})
+
+@app.route('/ticker/config/<int:sb_id>', methods=['GET'])
+def get_ticker_config(sb_id):
+    try:
+        with get_db() as conn:
+            row = conn.execute('SELECT ticker_config FROM scoreboards WHERE id=?',(sb_id,)).fetchone()
+            if not row: return jsonify({'error':'not found'}),404
+            cfg = _json.loads(row['ticker_config'] or '{}')
+            backup = conn.execute(
+                'SELECT channel_id,original_profile_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=?',
+                (sb_id,)).fetchone()
+            cfg['ticker_active'] = backup is not None
+            if backup:
+                cfg['active_channel_id'] = backup['channel_id']
+                cfg['active_ticker_profile_id'] = backup['ticker_profile_id']
+            return jsonify(cfg)
+    except Exception as e: return jsonify({'error':str(e)}),500
+
+@app.route('/ticker/config/<int:sb_id>', methods=['POST'])
+def save_ticker_config(sb_id):
+    b = request.get_json(force=True) or {}
+    try:
+        with get_db() as conn:
+            if not conn.execute('SELECT id FROM scoreboards WHERE id=?',(sb_id,)).fetchone():
+                return jsonify({'error':'not found'}),404
+            conn.execute('UPDATE scoreboards SET ticker_config=? WHERE id=?',(_json.dumps(b),sb_id))
+            conn.commit()
+        return jsonify({'ok':True})
+    except Exception as e: return jsonify({'error':str(e)}),500
+
+@app.route('/ticker/enable', methods=['POST'])
+def ticker_enable():
+    b = request.get_json(force=True) or {}
+    sb_id = b.get('scoreboard_id')
+    channel_id = b.get('channel_id')
+    font_size = int(b.get('font_size',24))
+    position = b.get('position','bottom')
+    bg_opacity = float(b.get('bg_opacity',0.75))
+    if not sb_id or not channel_id:
+        return jsonify({'error':'scoreboard_id and channel_id required'}),400
+    c = get_creds(); s,err = dispatcharr_session(c)
+    if err: return jsonify({'error':err}),400
+    try:
+        # Get channel's current stream profile
+        r = s.get(f'{c["url"]}/api/channels/channels/{channel_id}/',timeout=15)
+        r.raise_for_status()
+        channel = r.json()
+        original_profile_id = channel.get('stream_profile_id')
+        if not original_profile_id:
+            return jsonify({'error':'Channel has no stream profile assigned. Assign one in Dispatcharr first.'}),400
+        # Get the profile
+        r = s.get(f'{c["url"]}/api/core/streamprofiles/{original_profile_id}/',timeout=15)
+        r.raise_for_status()
+        profile = r.json()
+        if profile.get('locked'):
+            return jsonify({'error':f'Profile "{profile["name"]}" is locked. Duplicate it in Dispatcharr first.'}),400
+        original_params = profile.get('parameters','')
+        if not original_params:
+            return jsonify({'error':'Stream profile has no parameters'}),400
+        modified_params = _build_ticker_params(original_params,font_size,position,bg_opacity)
+        if modified_params == original_params:
+            return jsonify({'error':'Could not inject ticker — "-c:v copy" not found in profile parameters.'}),400
+        # Create ticker profile
+        ticker_name = f'{profile["name"]} (Ticker)'
+        r = s.post(f'{c["url"]}/api/core/streamprofiles/',
+                   json={'name':ticker_name,'command':profile.get('command','ffmpeg'),
+                         'parameters':modified_params,'is_active':True},timeout=15)
+        r.raise_for_status()
+        ticker_profile_id = r.json()['id']
+        # Assign ticker profile to channel
+        r = s.patch(f'{c["url"]}/api/channels/channels/{channel_id}/',
+                    json={'stream_profile_id':ticker_profile_id},timeout=15)
+        r.raise_for_status()
+        # Store backup
+        with get_db() as conn:
+            conn.execute('''INSERT OR REPLACE INTO ticker_profile_backup
+                            (scoreboard_id,channel_id,original_profile_id,ticker_profile_id)
+                            VALUES(?,?,?,?)''',
+                         (sb_id,channel_id,original_profile_id,ticker_profile_id))
+            conn.commit()
+        return jsonify({'ok':True,'ticker_profile_id':ticker_profile_id,
+                        'ticker_profile_name':ticker_name,
+                        'original_profile_id':original_profile_id,
+                        'modified_params':modified_params})
+    except Exception as e: return jsonify({'error':str(e)}),500
+
+@app.route('/ticker/disable', methods=['POST'])
+def ticker_disable():
+    b = request.get_json(force=True) or {}
+    sb_id = b.get('scoreboard_id')
+    if not sb_id: return jsonify({'error':'scoreboard_id required'}),400
+    with get_db() as conn:
+        backup = conn.execute(
+            'SELECT channel_id,original_profile_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=?',
+            (sb_id,)).fetchone()
+    if not backup: return jsonify({'error':'No active ticker for this scoreboard'}),404
+    c = get_creds(); s,err = dispatcharr_session(c)
+    if err: return jsonify({'error':err}),400
+    warnings = []
+    try:
+        r = s.patch(f'{c["url"]}/api/channels/channels/{backup["channel_id"]}/',
+                    json={'stream_profile_id':backup['original_profile_id']},timeout=15)
+        r.raise_for_status()
+    except Exception as e:
+        warnings.append(f'Restore channel profile: {e}')
+    try:
+        r = s.delete(f'{c["url"]}/api/core/streamprofiles/{backup["ticker_profile_id"]}/',timeout=15)
+        if r.status_code not in (200,204):
+            warnings.append(f'Delete ticker profile: HTTP {r.status_code}')
+    except Exception as e:
+        warnings.append(f'Delete ticker profile: {e}')
+    with get_db() as conn:
+        conn.execute('DELETE FROM ticker_profile_backup WHERE scoreboard_id=?',(sb_id,))
+        conn.commit()
+    return jsonify({'ok':True,'warnings':warnings} if warnings else {'ok':True})
+
+@app.route('/ticker/status', methods=['GET'])
+def ticker_status():
+    try:
+        with get_db() as conn:
+            rows = conn.execute(
+                'SELECT scoreboard_id,channel_id,ticker_profile_id FROM ticker_profile_backup').fetchall()
+        return jsonify({'active':[{'scoreboard_id':r['scoreboard_id'],'channel_id':r['channel_id'],
+                                   'ticker_profile_id':r['ticker_profile_id']} for r in rows]})
     except Exception as e: return jsonify({'error':str(e)}),500
 
 @app.route('/dispatcharr/groups', methods=['POST'])
