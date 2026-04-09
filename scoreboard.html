@@ -7676,7 +7676,6 @@ function updateStreamScoresInPlace() {
   const hasMotorSports = sports.some(s => s.fetchFn && (state.games[s.id]||[]).length > 0);
   if (hasMotorSports) {
     renderStreamCanvas();
-    updateTopbarCounts();
     return;
   }
 
