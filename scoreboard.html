@@ -6351,20 +6351,42 @@ function updateDsStatus(connected,st=''){
 //  TICKER OVERLAY
 // =====================
 const TICKER_SPORTS=[
-  {id:'nfl',   name:'NFL',           emoji:'🏈'},
-  {id:'nba',   name:'NBA',           emoji:'🏀'},
-  {id:'mlb',   name:'MLB',           emoji:'⚾'},
-  {id:'nhl',   name:'NHL',           emoji:'🏒'},
-  {id:'mls',   name:'MLS',           emoji:'⚽'},
-  {id:'ncaaf', name:'NCAAF',         emoji:'🏈'},
-  {id:'ncaab', name:'NCAAB',         emoji:'🏀'},
-  {id:'f1',    name:'F1',            emoji:'🏎'},
-  {id:'nascar',name:'NASCAR Cup',    emoji:'🏁'},
-  {id:'nascar-noaps', name:'NOAPS',  emoji:'🏁'},
-  {id:'nascar-trucks',name:'Trucks', emoji:'🏁'},
-  {id:'pga',   name:'PGA Golf',      emoji:'⛳'},
-  {id:'atp',   name:'ATP Tennis',    emoji:'🎾'},
-  {id:'wta',   name:'WTA Tennis',    emoji:'🎾'},
+  // Pro Leagues
+  {id:'nfl',          name:'NFL',                    group:'pro',    emoji:'🏈'},
+  {id:'nba',          name:'NBA',                    group:'pro',    emoji:'🏀'},
+  {id:'mlb',          name:'MLB',                    group:'pro',    emoji:'⚾'},
+  {id:'nhl',          name:'NHL',                    group:'pro',    emoji:'🏒'},
+  {id:'wnba',         name:'WNBA',                   group:'pro',    emoji:'🏀'},
+  {id:'cfl',          name:'CFL',                    group:'pro',    emoji:'🏈'},
+  {id:'xfl',          name:'XFL',                    group:'pro',    emoji:'🏈'},
+  {id:'ufl',          name:'UFL',                    group:'pro',    emoji:'🏈'},
+  {id:'mls',          name:'MLS',                    group:'pro',    emoji:'⚽'},
+  {id:'nwsl',         name:'NWSL',                   group:'pro',    emoji:'⚽'},
+  {id:'pga',          name:'PGA Tour',               group:'pro',    emoji:'⛳'},
+  // Motorsport
+  {id:'f1',           name:'Formula 1',              group:'motor',  emoji:'🏎️'},
+  {id:'nascar',       name:'NASCAR Cup',             group:'motor',  emoji:'🏁'},
+  {id:'nascar-noaps', name:"NASCAR OAPS",            group:'motor',  emoji:'🏁'},
+  {id:'nascar-trucks',name:'NASCAR Trucks',          group:'motor',  emoji:'🏁'},
+  // Tennis
+  {id:'atp',          name:'ATP Tour',               group:'tennis', emoji:'🎾'},
+  {id:'wta',          name:'WTA Tour',               group:'tennis', emoji:'🎾'},
+  // International Soccer
+  {id:'epl',          name:'Premier League',         group:'soccer', emoji:'⚽'},
+  {id:'ucl',          name:'Champions League',       group:'soccer', emoji:'⚽'},
+  {id:'laliga',       name:'La Liga',                group:'soccer', emoji:'⚽'},
+  {id:'bundesliga',   name:'Bundesliga',             group:'soccer', emoji:'⚽'},
+  {id:'seriea',       name:'Serie A',                group:'soccer', emoji:'⚽'},
+  {id:'ligue1',       name:'Ligue 1',                group:'soccer', emoji:'⚽'},
+  // NCAA Men
+  {id:'ncaafb',       name:'NCAA Football',          group:'ncaam',  emoji:'🏈'},
+  {id:'ncaamb',       name:"NCAA Men's Basketball",  group:'ncaam',  emoji:'🏀'},
+  {id:'ncaabase',     name:"NCAA Baseball",          group:'ncaam',  emoji:'⚾'},
+  // NCAA Women
+  {id:'ncaawb',       name:"NCAA Women's Basketball",group:'ncaaw',  emoji:'🏀'},
+  {id:'ncaasb',       name:'NCAA Softball',          group:'ncaaw',  emoji:'🥎'},
+  {id:'ncaavb',       name:"NCAA Volleyball",        group:'ncaaw',  emoji:'🏐'},
+  {id:'ncaalax',      name:"NCAA Lacrosse",          group:'ncaaw',  emoji:'🥍'},
 ];
 let _tickerChannels=[];
 let _tickerPos='bottom';

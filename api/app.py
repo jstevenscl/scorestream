@@ -1224,21 +1224,48 @@ def ticker_text(sb_id):
     today = str(_date.today())  # 'YYYY-MM-DD'
 
     ESPN_PATHS = {
-        'nfl':   'sports/football/nfl',
-        'nba':   'sports/basketball/nba',
-        'mlb':   'sports/baseball/mlb',
-        'nhl':   'sports/hockey/nhl',
-        'mls':   'sports/soccer/usa.1',
-        'ncaaf': 'sports/football/college-football',
-        'ncaab': 'sports/basketball/mens-college-basketball',
-        'atp':   'sports/tennis/atp',
-        'wta':   'sports/tennis/wta',
+        # Pro leagues
+        'nfl':        'sports/football/nfl',
+        'nba':        'sports/basketball/nba',
+        'mlb':        'sports/baseball/mlb',
+        'nhl':        'sports/hockey/nhl',
+        'wnba':       'sports/basketball/wnba',
+        'cfl':        'sports/football/cfl',
+        'xfl':        'sports/football/xfl',
+        'ufl':        'sports/football/ufl',
+        'mls':        'sports/soccer/usa.1',
+        'nwsl':       'sports/soccer/usa.nwsl',
+        # Tennis
+        'atp':        'sports/tennis/atp',
+        'wta':        'sports/tennis/wta',
+        # International soccer
+        'epl':        'sports/soccer/eng.1',
+        'ucl':        'sports/soccer/uefa.champions',
+        'laliga':     'sports/soccer/esp.1',
+        'bundesliga': 'sports/soccer/ger.1',
+        'seriea':     'sports/soccer/ita.1',
+        'ligue1':     'sports/soccer/fra.1',
+        # NCAA Men
+        'ncaafb':     'sports/football/college-football',
+        'ncaamb':     'sports/basketball/mens-college-basketball',
+        'ncaabase':   'sports/baseball/college-baseball',
+        # NCAA Women
+        'ncaawb':     'sports/basketball/womens-college-basketball',
+        'ncaasb':     'sports/baseball/college-softball',
+        'ncaavb':     'sports/volleyball/womens-college-volleyball',
+        'ncaalax':    'sports/lacrosse/womens-college-lacrosse',
     }
     LABELS = {
-        'nfl':'NFL','nba':'NBA','mlb':'MLB','nhl':'NHL','mls':'MLS',
-        'ncaaf':'NCAAF','ncaab':'NCAAB','f1':'F1',
-        'nascar':'NASCAR','nascar-noaps':'NOAPS','nascar-trucks':'Trucks',
-        'pga':'PGA','atp':'ATP','wta':'WTA',
+        'nfl':'NFL','nba':'NBA','mlb':'MLB','nhl':'NHL','wnba':'WNBA',
+        'cfl':'CFL','xfl':'XFL','ufl':'UFL','mls':'MLS','nwsl':'NWSL',
+        'atp':'ATP','wta':'WTA',
+        'epl':'EPL','ucl':'UCL','laliga':'La Liga','bundesliga':'Bundesliga',
+        'seriea':'Serie A','ligue1':'Ligue 1',
+        'ncaafb':'NCAAF','ncaamb':'NCAAB','ncaabase':'NCAA Baseball',
+        'ncaawb':"NCAA WBB",'ncaasb':'NCAA Softball',
+        'ncaavb':'NCAA VB','ncaalax':'NCAA Lax',
+        'f1':'F1','nascar':'NASCAR','nascar-noaps':'NOAPS','nascar-trucks':'Trucks',
+        'pga':'PGA',
     }
     try:
         with get_db() as conn:
