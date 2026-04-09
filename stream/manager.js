@@ -327,9 +327,10 @@ function startFfmpeg(slug) {
 // ── Puppeteer ────────────────────────────────────────────────────────────────
 async function startRenderer(slug) {
   const url = `${WEB_BASE}/?stream&slug=${slug}`;
-  console.log(`[manager][${slug}] Launching browser → ${url}`);
+  const chromiumPath = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium';
+  console.log(`[manager][${slug}] Launching browser chromium=${chromiumPath} → ${url}`);
   const browser = await puppeteer.launch({
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+    executablePath: chromiumPath,
     headless: true,
     args: [
       '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
@@ -338,9 +339,18 @@ async function startRenderer(slug) {
     ],
   });
   const page = await browser.newPage();
+  // Log console errors from the page to help diagnose JS failures
+  page.on('console', msg => {
+    if (msg.type() === 'error') console.error(`[page][${slug}] ${msg.text()}`);
+  });
+  page.on('pageerror', err => console.error(`[page][${slug}] pageerror: ${err.message}`));
   await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: 1 });
+  // Use 'domcontentloaded' instead of 'networkidle2' — the scoreboard makes
+  // continuous XHR calls for score updates, so networkidle2 always times out.
   try {
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    // Brief pause to let JS initialise after DOMContentLoaded
+    await new Promise(r => setTimeout(r, 3000));
   } catch (e) {
     console.error(`[manager][${slug}] Nav warning: ${e.message}`);
   }

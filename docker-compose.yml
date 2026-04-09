@@ -44,10 +44,13 @@ services:
       - HLS_SEGMENT_DURATION=${HLS_SEGMENT_DURATION:-2}
       - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-4}
       - AUDIO_DIR=/audio
+      - TICKER_FILE=/ticker/scores.txt
+      - TICKER_API_BASE=http://scorestream-api:5000
     volumes:
       - scorestream_config:/config
       - scorestream_hls:/hls
       - scorestream_audio:/audio_library
+      - scorestream_ticker:/ticker
     networks:
       - scorestream_net
     shm_size: 512mb
@@ -64,3 +67,6 @@ volumes:
     name: scorestream_hls
   scorestream_audio:
     name: scorestream_audio
+  scorestream_ticker:
+    name: scorestream_ticker
+    external: true
