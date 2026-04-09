@@ -609,24 +609,15 @@ function httpGetJson(url) {
 
 async function updateTickerFile() {
   try {
-    const db   = new Database(DB_PATH, { fileMustExist: true });
-    const rows = db.prepare('SELECT scoreboard_id FROM ticker_profile_backup').all();
+    const db      = new Database(DB_PATH, { fileMustExist: true });
+    const active  = db.prepare('SELECT COUNT(*) as n FROM ticker_profile_backup').get();
     db.close();
-    if (!rows.length) return;
-    const parts = [];
-    for (const { scoreboard_id } of rows) {
-      try {
-        const data = await httpGetJson(`${TICKER_API_BASE}/ticker/text/${scoreboard_id}`);
-        if (data.text) parts.push(data.text);
-      } catch(e) {
-        console.warn(`[ticker] sb ${scoreboard_id}: ${e.message}`);
-      }
-    }
-    if (parts.length) {
-      const text = parts.join('    ·    ');
-      const dir  = path.dirname(TICKER_FILE);
+    if (!active || active.n === 0) return;  // no active ticker — nothing to write
+    const data = await httpGetJson(`${TICKER_API_BASE}/ticker/text`);
+    if (data.text) {
+      const dir = path.dirname(TICKER_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(TICKER_FILE, text, 'utf8');
+      fs.writeFileSync(TICKER_FILE, data.text, 'utf8');
     }
   } catch(e) {
     console.warn(`[ticker] update error: ${e.message}`);

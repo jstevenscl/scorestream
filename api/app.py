@@ -1090,6 +1090,35 @@ def ticker_preview_params():
                                     b.get('position','bottom'), float(b.get('bg_opacity',0.75)))
     return jsonify({'original':original,'modified':modified})
 
+@app.route('/ticker/config', methods=['GET'])
+def get_ticker_config_global():
+    try:
+        with get_db() as conn:
+            row    = conn.execute("SELECT value FROM global_settings WHERE key='ticker_config'").fetchone()
+            backup = conn.execute('SELECT channel_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=0').fetchone()
+        cfg = _json.loads(row['value']) if row else {}
+        cfg['ticker_active'] = backup is not None
+        if backup:
+            cfg['active_ticker_profile_id'] = backup['ticker_profile_id']
+        return jsonify(cfg)
+    except Exception as e: return jsonify({'error':str(e)}),500
+
+@app.route('/ticker/config', methods=['POST'])
+def save_ticker_config_global():
+    b = request.get_json(force=True) or {}
+    # Strip runtime-only fields before storing
+    cfg = {k:v for k,v in b.items() if k not in ('ticker_active','active_ticker_profile_id')}
+    try:
+        with get_db() as conn:
+            conn.execute(
+                "INSERT INTO global_settings(key,value,updated_at) VALUES('ticker_config',?,datetime('now')) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
+                (_json.dumps(cfg),))
+            conn.commit()
+        return jsonify({'ok':True})
+    except Exception as e: return jsonify({'error':str(e)}),500
+
+# Keep per-scoreboard endpoints for backward compat (scoreboard editor still uses them)
 @app.route('/ticker/config/<int:sb_id>', methods=['GET'])
 def get_ticker_config(sb_id):
     try:
@@ -1098,12 +1127,10 @@ def get_ticker_config(sb_id):
             if not row: return jsonify({'error':'not found'}),404
             cfg = _json.loads(row['ticker_config'] or '{}')
             backup = conn.execute(
-                'SELECT channel_id,original_profile_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=?',
+                'SELECT channel_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=?',
                 (sb_id,)).fetchone()
             cfg['ticker_active'] = backup is not None
-            if backup:
-                cfg['active_channel_id'] = backup['channel_id']
-                cfg['active_ticker_profile_id'] = backup['ticker_profile_id']
+            if backup: cfg['active_ticker_profile_id'] = backup['ticker_profile_id']
             return jsonify(cfg)
     except Exception as e: return jsonify({'error':str(e)}),500
 
@@ -1122,15 +1149,16 @@ def save_ticker_config(sb_id):
 @app.route('/ticker/enable', methods=['POST'])
 def ticker_enable():
     b = request.get_json(force=True) or {}
-    sb_id = b.get('scoreboard_id')
+    # scoreboard_id is optional — default 0 means global ticker
+    sb_id      = int(b.get('scoreboard_id', 0))
     channel_id = b.get('channel_id')
-    font_size = int(b.get('font_size',24))
-    position = b.get('position','bottom')
-    bg_opacity = float(b.get('bg_opacity',0.75))
-    test_text = b.get('test_text','').strip() or None
+    font_size  = int(b.get('font_size', 24))
+    position   = b.get('position', 'bottom')
+    bg_opacity = float(b.get('bg_opacity', 0.75))
+    test_text  = b.get('test_text', '').strip() or None
     scroll_speed = int(b.get('scroll_speed', 0))
-    if not sb_id or not channel_id:
-        return jsonify({'error':'scoreboard_id and channel_id required'}),400
+    if not channel_id:
+        return jsonify({'error':'channel_id required'}),400
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
     try:
@@ -1180,13 +1208,13 @@ def ticker_enable():
 @app.route('/ticker/disable', methods=['POST'])
 def ticker_disable():
     b = request.get_json(force=True) or {}
-    sb_id = b.get('scoreboard_id')
-    if not sb_id: return jsonify({'error':'scoreboard_id required'}),400
+    # Default to scoreboard_id=0 (global ticker)
+    sb_id = int(b.get('scoreboard_id', 0))
     with get_db() as conn:
         backup = conn.execute(
             'SELECT channel_id,original_profile_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=?',
             (sb_id,)).fetchone()
-    if not backup: return jsonify({'error':'No active ticker for this scoreboard'}),404
+    if not backup: return jsonify({'error':'No active ticker found'}),404
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
     warnings = []
@@ -1217,204 +1245,159 @@ def ticker_status():
                                    'ticker_profile_id':r['ticker_profile_id']} for r in rows]})
     except Exception as e: return jsonify({'error':str(e)}),500
 
-@app.route('/ticker/text/<int:sb_id>', methods=['GET'])
-def ticker_text(sb_id):
-    import json as _jt
-    from datetime import date as _date, datetime as _dt
-    today = str(_date.today())  # 'YYYY-MM-DD'
+@app.route('/ticker/text', methods=['GET'])
+def ticker_text_global():
+    """Global ticker text — reads sports config from global_settings."""
+    import json as _jg
+    try:
+        with get_db() as conn:
+            row = conn.execute("SELECT value FROM global_settings WHERE key='ticker_config'").fetchone()
+        if not row: return jsonify({'text':''}),200
+        cfg = _jg.loads(row['value'])
+        sports = cfg.get('sports', [])
+    except Exception as e:
+        return jsonify({'error':str(e)}),500
+    # Reuse per-sb logic by injecting sports into a mock config and calling the shared helper
+    from flask import g as _fg
+    _fg._ticker_sports_override = sports
+    return _ticker_text_for_sports(sports)
 
+def _ticker_text_for_sports(sports):
+    """Shared ticker text builder — called by both global and per-sb endpoints."""
+    import json as _jt
+    from datetime import date as _date
+    today = str(_date.today())
     ESPN_PATHS = {
-        # Pro leagues
-        'nfl':        'sports/football/nfl',
-        'nba':        'sports/basketball/nba',
-        'mlb':        'sports/baseball/mlb',
-        'nhl':        'sports/hockey/nhl',
-        'wnba':       'sports/basketball/wnba',
-        'cfl':        'sports/football/cfl',
-        'xfl':        'sports/football/xfl',
-        'ufl':        'sports/football/ufl',
-        'mls':        'sports/soccer/usa.1',
-        'nwsl':       'sports/soccer/usa.nwsl',
-        # Tennis
-        'atp':        'sports/tennis/atp',
-        'wta':        'sports/tennis/wta',
-        # International soccer
-        'epl':        'sports/soccer/eng.1',
-        'ucl':        'sports/soccer/uefa.champions',
-        'laliga':     'sports/soccer/esp.1',
-        'bundesliga': 'sports/soccer/ger.1',
-        'seriea':     'sports/soccer/ita.1',
-        'ligue1':     'sports/soccer/fra.1',
-        # NCAA Men
-        'ncaafb':     'sports/football/college-football',
-        'ncaamb':     'sports/basketball/mens-college-basketball',
-        'ncaabase':   'sports/baseball/college-baseball',
-        # NCAA Women
-        'ncaawb':     'sports/basketball/womens-college-basketball',
-        'ncaasb':     'sports/baseball/college-softball',
-        'ncaavb':     'sports/volleyball/womens-college-volleyball',
-        'ncaalax':    'sports/lacrosse/womens-college-lacrosse',
+        'nfl':'sports/football/nfl','nba':'sports/basketball/nba',
+        'mlb':'sports/baseball/mlb','nhl':'sports/hockey/nhl',
+        'wnba':'sports/basketball/wnba','cfl':'sports/football/cfl',
+        'xfl':'sports/football/xfl','ufl':'sports/football/ufl',
+        'mls':'sports/soccer/usa.1','nwsl':'sports/soccer/usa.nwsl',
+        'atp':'sports/tennis/atp','wta':'sports/tennis/wta',
+        'epl':'sports/soccer/eng.1','ucl':'sports/soccer/uefa.champions',
+        'laliga':'sports/soccer/esp.1','bundesliga':'sports/soccer/ger.1',
+        'seriea':'sports/soccer/ita.1','ligue1':'sports/soccer/fra.1',
+        'ncaafb':'sports/football/college-football',
+        'ncaamb':'sports/basketball/mens-college-basketball',
+        'ncaabase':'sports/baseball/college-baseball',
+        'ncaawb':'sports/basketball/womens-college-basketball',
+        'ncaasb':'sports/baseball/college-softball',
+        'ncaavb':'sports/volleyball/womens-college-volleyball',
+        'ncaalax':'sports/lacrosse/womens-college-lacrosse',
     }
     LABELS = {
         'nfl':'NFL','nba':'NBA','mlb':'MLB','nhl':'NHL','wnba':'WNBA',
         'cfl':'CFL','xfl':'XFL','ufl':'UFL','mls':'MLS','nwsl':'NWSL',
-        'atp':'ATP','wta':'WTA',
-        'epl':'EPL','ucl':'UCL','laliga':'La Liga','bundesliga':'Bundesliga',
-        'seriea':'Serie A','ligue1':'Ligue 1',
+        'atp':'ATP','wta':'WTA','epl':'EPL','ucl':'UCL','laliga':'La Liga',
+        'bundesliga':'Bundesliga','seriea':'Serie A','ligue1':'Ligue 1',
         'ncaafb':'NCAAF','ncaamb':'NCAAB','ncaabase':'NCAA Baseball',
-        'ncaawb':"NCAA WBB",'ncaasb':'NCAA Softball',
+        'ncaawb':'NCAA WBB','ncaasb':'NCAA Softball',
         'ncaavb':'NCAA VB','ncaalax':'NCAA Lax',
-        'f1':'F1','nascar':'NASCAR','nascar-noaps':'NOAPS','nascar-trucks':'Trucks',
-        'pga':'PGA',
+        'f1':'F1','nascar':'NASCAR','nascar-noaps':'NOAPS',
+        'nascar-trucks':'Trucks','pga':'PGA',
     }
+    live_parts=[]; final_parts=[]
+    for sport_id in sports:
+        label=LABELS.get(sport_id,sport_id.upper())
+        try:
+            if sport_id in ESPN_PATHS:
+                url=f'https://site.api.espn.com/apis/site/v2/{ESPN_PATHS[sport_id]}/scoreboard'
+                r=http.get(url,timeout=8)
+                if not r.ok: continue
+                events=r.json().get('events',[])
+                if not events: continue
+                live_strs=[]; final_strs=[]
+                for ev in events[:12]:
+                    comp=ev.get('competitions',[{}])[0]
+                    competitors=comp.get('competitors',[])
+                    if len(competitors)<2: continue
+                    home=next((c for c in competitors if c.get('homeAway')=='home'),competitors[0])
+                    away=next((c for c in competitors if c.get('homeAway')=='away'),competitors[1])
+                    away_abbr=away.get('team',{}).get('abbreviation','?')
+                    home_abbr=home.get('team',{}).get('abbreviation','?')
+                    away_score=away.get('score',''); home_score=home.get('score','')
+                    st=comp.get('status',{}).get('type',{})
+                    state=st.get('state',''); detail=st.get('shortDetail','')
+                    if state=='in':
+                        live_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} ({detail})')
+                    elif state=='post':
+                        final_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} FINAL')
+                if live_strs: live_parts.append(f'{label}: {"  ".join(live_strs)}')
+                if final_strs: final_parts.append(f'{label}: {"  ".join(final_strs)}')
+            elif sport_id=='nascar':
+                nascar_headers={'User-Agent':'Mozilla/5.0','Accept':'application/json',
+                                'Referer':'https://www.nascar.com/','Origin':'https://www.nascar.com'}
+                live_data=None
+                try:
+                    lr=http.get('https://cf.nascar.com/live/feeds/live-feed.json',headers=nascar_headers,timeout=8)
+                    if lr.ok:
+                        lf=lr.json()
+                        if lf.get('series_id')==1 and 1<=lf.get('flag_state',0)<=8: live_data=lf
+                except Exception: pass
+                if live_data:
+                    run_name=live_data.get('run_name','')
+                    lap=live_data.get('lap_number',0); total=live_data.get('laps_in_race',0)
+                    vehicles=sorted(live_data.get('vehicles',[]),key=lambda v:v.get('running_position',99))
+                    d_strs=[]
+                    for v in vehicles[:5]:
+                        pos=v.get('running_position','')
+                        name=(v.get('driver',{}).get('full_name') or
+                              f"{v.get('driver',{}).get('first_name','')} {v.get('driver',{}).get('last_name','')}").strip()
+                        d_strs.append(f"P{pos} {name.split()[-1] if name else '?'}")
+                    lap_str=f'Lap {lap}/{total}' if total else ''
+                    live_parts.append(f"NASCAR ({run_name}): {'  '.join(d_strs)}  {lap_str}")
+                else:
+                    with get_db() as conn:
+                        mc=conn.execute("SELECT data FROM motor_cache WHERE key='nascar-last'").fetchone()
+                    if not mc: continue
+                    nd=_jt.loads(mc['data'])
+                    if isinstance(nd,str): nd=_jt.loads(nd)
+                    if nd.get('race_date','')==today:
+                        drivers=nd.get('drivers',[])[:5]; race=nd.get('run_name','')
+                        d_strs=[f"P{d['pos']} {d['driver'].split()[-1]}" for d in drivers if d.get('pos') and d.get('driver')]
+                        if d_strs: final_parts.append(f"NASCAR ({race}): {'  '.join(d_strs)}  FINAL")
+            elif sport_id=='f1':
+                with get_db() as conn:
+                    mc=conn.execute("SELECT data FROM motor_cache WHERE key='f1-history'").fetchone()
+                if not mc: continue
+                fd=_jt.loads(mc['data'])
+                if isinstance(fd,str): fd=_jt.loads(fd)
+                races=fd.get('races',[])
+                if not races: continue
+                last=races[-1]
+                if last.get('date','')==today:
+                    race_name=last.get('raceName',''); results=last.get('results',[])[:5]
+                    d_strs=[f"P{r['pos']} {r['driver'].split()[-1]}" for r in results if r.get('pos') and r.get('driver')]
+                    if d_strs: final_parts.append(f"F1 ({race_name}): {'  '.join(d_strs)}  FINAL")
+            elif sport_id=='pga':
+                with get_db() as conn:
+                    mc=conn.execute("SELECT data FROM motor_cache WHERE key='pga-2026-tournaments'").fetchone()
+                if not mc: continue
+                pd=_jt.loads(mc['data'])
+                if isinstance(pd,str): pd=_jt.loads(pd)
+                tours=pd.get('tournaments',[])
+                active=next((t for t in tours if not t.get('is_complete') and t.get('players')),None)
+                if not active: continue
+                name=active.get('name',''); players=active.get('players',[])
+                p_strs=[f"{p.get('player','').split()[-1]} {p.get('total','E')}" for p in players[:5] if p.get('player')]
+                if p_strs: live_parts.append(f"PGA ({name}): {'  '.join(p_strs)}")
+        except Exception as e:
+            log.warning(f'[ticker/text] sport={sport_id} error: {e}')
+    all_parts=live_parts+final_parts
+    return jsonify({'text':'    ·    '.join(all_parts) if all_parts else ''})
+
+@app.route('/ticker/text/<int:sb_id>', methods=['GET'])
+def ticker_text(sb_id):
+    """Per-scoreboard ticker text (backward compat). Delegates to shared helper."""
+    import json as _jt
     try:
         with get_db() as conn:
             row = conn.execute('SELECT ticker_config FROM scoreboards WHERE id=?',(sb_id,)).fetchone()
         if not row: return jsonify({'error':'scoreboard not found'}),404
-        cfg = _jt.loads(row['ticker_config'] or '{}')
+        sports = _jt.loads(row['ticker_config'] or '{}').get('sports',[])
     except Exception as e:
         return jsonify({'error':str(e)}),500
-
-    sports = cfg.get('sports', [])
-    # Collect live games first, then today's finals — two separate buckets merged at the end
-    live_parts  = []
-    final_parts = []
-
-    for sport_id in sports:
-        label = LABELS.get(sport_id, sport_id.upper())
-        try:
-            # ── ESPN team / tennis sports ────────────────────────────────────
-            if sport_id in ESPN_PATHS:
-                url = f'https://site.api.espn.com/apis/site/v2/{ESPN_PATHS[sport_id]}/scoreboard'
-                r = http.get(url, timeout=8)
-                if not r.ok: continue
-                events = r.json().get('events', [])
-                if not events: continue
-                live_strs  = []
-                final_strs = []
-                for ev in events[:12]:
-                    comp = ev.get('competitions', [{}])[0]
-                    competitors = comp.get('competitors', [])
-                    if len(competitors) < 2: continue
-                    home = next((c for c in competitors if c.get('homeAway') == 'home'), competitors[0])
-                    away = next((c for c in competitors if c.get('homeAway') == 'away'), competitors[1])
-                    away_abbr  = away.get('team', {}).get('abbreviation', '?')
-                    home_abbr  = home.get('team', {}).get('abbreviation', '?')
-                    away_score = away.get('score', '')
-                    home_score = home.get('score', '')
-                    status     = comp.get('status', {})
-                    st         = status.get('type', {})
-                    state      = st.get('state', '')      # 'pre' | 'in' | 'post'
-                    detail     = st.get('shortDetail', '')
-                    if state == 'in':
-                        # Live game — include score + clock/period
-                        live_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} ({detail})')
-                    elif state == 'post':
-                        # Finished today (ESPN scoreboard only returns today's slate)
-                        final_strs.append(f'{away_abbr} {away_score} @ {home_abbr} {home_score} FINAL')
-                    # state == 'pre' (scheduled, no score yet) — omit from ticker
-                if live_strs:
-                    live_parts.append(f'{label}: {"  ".join(live_strs)}')
-                if final_strs:
-                    final_parts.append(f'{label}: {"  ".join(final_strs)}')
-
-            # ── NASCAR ──────────────────────────────────────────────────────
-            elif sport_id == 'nascar':
-                nascar_headers = {
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json',
-                    'Referer': 'https://www.nascar.com/',
-                    'Origin': 'https://www.nascar.com',
-                }
-                # Always try the live feed first
-                live_data = None
-                try:
-                    lr = http.get('https://cf.nascar.com/live/feeds/live-feed.json',
-                                  headers=nascar_headers, timeout=8)
-                    if lr.ok:
-                        lf = lr.json()
-                        # Active Cup race: series_id=1, flag_state 1-8 = green/yellow/etc
-                        if lf.get('series_id') == 1 and 1 <= lf.get('flag_state', 0) <= 8:
-                            live_data = lf
-                except Exception:
-                    pass
-
-                if live_data:
-                    run_name = live_data.get('run_name', '')
-                    flag     = live_data.get('flag_state', 1)
-                    lap      = live_data.get('lap_number', 0)
-                    total    = live_data.get('laps_in_race', 0)
-                    vehicles = sorted(live_data.get('vehicles', []),
-                                      key=lambda v: v.get('running_position', 99))
-                    d_strs = []
-                    for v in vehicles[:5]:
-                        pos    = v.get('running_position', '')
-                        name   = (v.get('driver', {}).get('full_name') or
-                                  f"{v.get('driver',{}).get('first_name','')} {v.get('driver',{}).get('last_name','')}").strip()
-                        last   = name.split()[-1] if name else '?'
-                        d_strs.append(f"P{pos} {last}")
-                    lap_str = f'Lap {lap}/{total}' if total else ''
-                    live_parts.append(f"NASCAR ({run_name}): {'  '.join(d_strs)}  {lap_str}")
-                else:
-                    # Fall back to motor_cache — only show if race was today
-                    with get_db() as conn:
-                        mc = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-last'").fetchone()
-                    if not mc: continue
-                    nd = _jt.loads(mc['data'])
-                    if isinstance(nd, str): nd = _jt.loads(nd)
-                    if nd.get('race_date', '') != today: continue  # stale — skip
-                    drivers = nd.get('drivers', [])[:5]
-                    race    = nd.get('run_name', '')
-                    d_strs  = [f"P{d['pos']} {d['driver'].split()[-1]}"
-                               for d in drivers if d.get('pos') and d.get('driver')]
-                    if d_strs:
-                        final_parts.append(f"NASCAR ({race}): {'  '.join(d_strs)}  FINAL")
-
-            # ── F1 ──────────────────────────────────────────────────────────
-            elif sport_id == 'f1':
-                with get_db() as conn:
-                    mc = conn.execute("SELECT data FROM motor_cache WHERE key='f1-history'").fetchone()
-                if not mc: continue
-                fd = _jt.loads(mc['data'])
-                if isinstance(fd, str): fd = _jt.loads(fd)
-                races = fd.get('races', [])
-                if not races: continue
-                last = races[-1]
-                if last.get('date', '') != today: continue  # race was not today — skip
-                race_name = last.get('raceName', '')
-                results   = last.get('results', [])[:5]
-                d_strs    = [f"P{r['pos']} {r['driver'].split()[-1]}"
-                             for r in results if r.get('pos') and r.get('driver')]
-                if d_strs:
-                    final_parts.append(f"F1 ({race_name}): {'  '.join(d_strs)}  FINAL")
-
-            # ── PGA ─────────────────────────────────────────────────────────
-            elif sport_id == 'pga':
-                with get_db() as conn:
-                    mc = conn.execute("SELECT data FROM motor_cache WHERE key='pga-2026-tournaments'").fetchone()
-                if not mc: continue
-                pd = _jt.loads(mc['data'])
-                if isinstance(pd, str): pd = _jt.loads(pd)
-                tours = pd.get('tournaments', [])
-                if not tours: continue
-                # Only show a tournament that is actively in progress (has player scores)
-                active = next((t for t in tours if not t.get('is_complete') and t.get('players')), None)
-                if not active: continue  # no active tournament with live scores — skip
-                name    = active.get('name', '')
-                players = active.get('players', [])
-                p_strs  = [f"{p.get('player','').split()[-1]} {p.get('total','E')}"
-                           for p in players[:5] if p.get('player')]
-                if p_strs:
-                    live_parts.append(f"PGA ({name}): {'  '.join(p_strs)}")
-
-        except Exception as e:
-            log.warning(f'[ticker/text] sport={sport_id} error: {e}')
-            continue
-
-    # Live games lead; today's finals follow
-    all_parts = live_parts + final_parts
-    text = '    ·    '.join(all_parts) if all_parts else ''
-    return jsonify({'text': text})
+    return _ticker_text_for_sports(sports)
 
 @app.route('/dispatcharr/groups', methods=['POST'])
 def create_group():
