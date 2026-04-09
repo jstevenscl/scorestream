@@ -26,6 +26,10 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
   - [Assigning Audio to a Scoreboard](#assigning-audio-to-a-scoreboard)
   - [Pushing to Dispatcharr](#pushing-to-dispatcharr)
   - [Updating After Pushing to Dispatcharr](#updating-after-pushing-to-dispatcharr)
+- [Ticker Overlay](#ticker-overlay)
+  - [How It Works](#how-it-works)
+  - [Shared Volume Setup](#shared-volume-setup)
+  - [Using the Ticker Overlay UI](#using-the-ticker-overlay-ui)
 - [Supported Sports](#supported-sports)
 - [Troubleshooting](#troubleshooting)
 
@@ -102,13 +106,26 @@ Navigate to `http://YOUR_SERVER_IP:7777` in your browser.
 
 ## Finding Your STREAM\_BASE\_URL
 
-`STREAM_BASE_URL` is the address Dispatcharr will use to reach ScoreStream's HLS streams. It must be:
+`STREAM_BASE_URL` is the address Dispatcharr will use to reach ScoreStream's HLS streams. The correct value depends on how your stacks are arranged.
 
-- Your **server's LAN IP** — not `localhost` or `127.0.0.1` (Dispatcharr runs in its own container and cannot reach those)
-- Including the **port** (`WEB_PORT`, default `7777`)
-- **Without** a trailing slash
+---
 
-**Example:**
+**Option A — ScoreStream and Dispatcharr in the same Docker stack / network**
+
+They share a Docker network and can reach each other by container name. Use the ScoreStream web container name and its internal port:
+
+```
+STREAM_BASE_URL=http://scorestream-web:80
+```
+
+Or if you have defined a custom network alias, use that instead.
+
+---
+
+**Option B — ScoreStream and Dispatcharr in different stacks on the same host**
+
+Use your server's **LAN IP** and the exposed `WEB_PORT`. Do not use `localhost` — Dispatcharr runs in its own container and cannot reach `localhost` on the host.
+
 ```
 STREAM_BASE_URL=http://192.168.1.50:7777
 ```
@@ -123,19 +140,49 @@ ip addr show | grep 'inet ' | grep -v 127.0.0.1
 Get-NetIPAddress -AddressFamily IPv4 | Where InterfaceAlias -notlike '*Loopback*'
 ```
 
-You can verify it's working by opening `http://YOUR_IP:7777/hls/` in a browser — you should see a directory listing of active HLS playlists.
+To find the internal Docker IP of the ScoreStream web container (alternative to LAN IP):
+
+```bash
+docker inspect scorestream-web | grep '"IPAddress"'
+```
+
+You can then use that IP directly:
+```
+STREAM_BASE_URL=http://172.18.0.5:80
+```
+
+---
+
+**Option C — ScoreStream and Dispatcharr on different hosts / VMs**
+
+Use the LAN IP (or hostname) of the machine running ScoreStream, with the exposed `WEB_PORT`:
+
+```
+STREAM_BASE_URL=http://192.168.1.50:7777
+```
+
+---
+
+You can verify the URL is reachable from Dispatcharr's container by running:
+
+```bash
+docker exec dispatcharr curl -s http://YOUR_STREAM_BASE_URL/health
+```
+
+It should return `OK`.
 
 ---
 
 ## Volumes
 
-ScoreStream uses three named Docker volumes. You do not need to configure them — they are created automatically on first start.
+ScoreStream uses named Docker volumes. The first three are created automatically on first start.
 
 | Volume | Contents |
 |---|---|
 | `scorestream_config` | SQLite database (`scorestream.db`) — stores all scoreboard settings |
 | `scorestream_hls` | HLS stream segments — shared between the stream container and nginx |
 | `scorestream_audio` | Uploaded audio files for background music |
+| `scorestream_ticker` | Ticker text file shared with Dispatcharr — **required only for Ticker Overlay** (see [Ticker Overlay](#ticker-overlay)) |
 
 **To back up your configuration:**
 
@@ -193,8 +240,8 @@ A **Scoreboard** is a named configuration that defines which sports, teams, and 
 
 In the editor Step 2, you can enable any combination of:
 
-- **Pro leagues:** NFL, NBA, MLB, NHL, WNBA, CFL, XFL, UFL, MLS, NWSL, PGA Tour
-- **Motorsport:** Formula 1, NASCAR Cup Series
+- **Pro leagues:** NFL, NBA, MLB, NHL, WNBA, CFL, XFL, UFL, MLS, NWSL, PGA Tour, ATP Tennis, WTA Tennis
+- **Motorsport:** Formula 1, NASCAR Cup Series, NASCAR O'Reilly Auto Parts Series (NOAPS), NASCAR Craftsman Truck Series
 - **International soccer:** Premier League, Champions League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Liga MX, NWSL, and more
 - **NCAA:** Men's basketball, Women's basketball, Football, Baseball, Softball, Men's soccer, Women's soccer, Men's hockey
 
@@ -352,6 +399,81 @@ Channels are placed in a group called **ScoreStream** by default. Channel number
 
 ---
 
+---
+
+## Ticker Overlay
+
+The Ticker Overlay feature overlays a live scrolling score ticker onto any channel that Dispatcharr is streaming. It works by creating a modified copy of the channel's stream profile that injects an ffmpeg `drawtext` filter, re-encodes the video on the fly, and reads score text from a shared file that ScoreStream updates continuously.
+
+### How It Works
+
+1. You select a scoreboard and a Dispatcharr channel in ScoreStream's **Ticker Overlay** settings
+2. When you click **Enable Ticker**, ScoreStream:
+   - Reads the channel's current stream profile from Dispatcharr
+   - Creates a new profile named `"[Original Name] (Ticker)"` with a modified ffmpeg command that adds a scrolling drawtext overlay
+   - Assigns that new profile to the channel via the Dispatcharr API
+   - Begins writing live score text to `/ticker/scores.txt`
+3. When you click **Disable Ticker**, ScoreStream restores the original profile and deletes the ticker copy
+
+> **Note:** The original stream profile is never modified. ScoreStream creates a copy and assigns it. On disable, the original is restored cleanly.
+
+> **Re-encoding required:** Adding a drawtext overlay requires re-encoding the video. The ticker uses `libx264 -preset ultrafast -tune zerolatency` which adds minimal latency. Streams using `-c:v copy` (pass-through) will be switched to encode mode while the ticker is active.
+
+### Shared Volume Setup
+
+The ticker text file (`/ticker/scores.txt`) must be accessible to both the ScoreStream stream container (writer) and Dispatcharr's ffmpeg process (reader). This requires a shared Docker volume.
+
+**Step 1 — Create the volume on your host (once):**
+
+```bash
+docker volume create scorestream_ticker
+```
+
+**Step 2 — Add the volume to your ScoreStream stack:**
+
+```yaml
+services:
+  scorestream-stream:
+    volumes:
+      - scorestream_ticker:/ticker   # add this line
+
+volumes:
+  scorestream_ticker:
+    name: scorestream_ticker
+    external: true
+```
+
+**Step 3 — Add the volume to your Dispatcharr stack:**
+
+```yaml
+services:
+  dispatcharr:    # your Dispatcharr service name
+    volumes:
+      - scorestream_ticker:/ticker   # add this line
+
+volumes:
+  scorestream_ticker:
+    name: scorestream_ticker
+    external: true
+```
+
+> **Same stack:** If ScoreStream and Dispatcharr are in the same `docker-compose.yml`, use a regular named volume (no `external: true`) and add it to both services.
+
+**Step 4 — Restart both stacks** to mount the new volume.
+
+### Using the Ticker Overlay UI
+
+1. Go to **Ticker Overlay** in the ScoreStream sidebar
+2. Select the scoreboard whose sport data should feed the ticker
+3. Select the Dispatcharr channel to apply it to — ScoreStream shows the channel's current stream profile and warns if it is locked
+4. Choose which sports appear in the ticker. Enable **Favs only** per sport to show only games involving your favorited teams
+5. Adjust appearance — font size, scroll speed (0 = static), position (top/bottom), background opacity
+6. Click **Enable Ticker** — the modified profile is created and assigned in Dispatcharr immediately
+7. **Restart the channel** in Dispatcharr to pick up the new stream profile (existing ffmpeg processes use the old profile until restarted)
+8. To stop the ticker, click **Disable Ticker** — the original profile is restored automatically
+
+---
+
 ### Updating After Pushing to Dispatcharr
 
 When you change a scoreboard's name or settings after it has already been pushed:
@@ -391,6 +513,10 @@ If the stream is already playing in VLC, an IPTV player, or any HLS-compatible a
 | PGA Tour | Individual | ✓ | ✓ | ✓ |
 | Formula 1 | Individual | ✓ | ✓ | ✓ |
 | NASCAR Cup Series | Individual | ✓ | ✓ | ✓ |
+| NASCAR O'Reilly Auto Parts Series (NOAPS) | Individual | ✓ | ✓ | ✓ |
+| NASCAR Craftsman Truck Series | Individual | ✓ | ✓ | ✓ |
+| ATP Tennis | Individual | — | ✓ | ✓ |
+| WTA Tennis | Individual | — | ✓ | ✓ |
 
 ---
 
