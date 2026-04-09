@@ -11116,7 +11116,2659 @@
     "data": {},
     "_updated": "2026-04-09"
   },
-  "nascar-xfinity-history": {
+  "nascar-trucks-history": {
+    "data": {
+      "races": [
+        {
+          "run_name": "NASCAR Truck Series at Rockingham",
+          "track_name": "Rockingham Speedway",
+          "race_date": "2026-04-03",
+          "flag_state": 9,
+          "laps_in_race": 200,
+          "series_id": 3,
+          "series_name": "NASCAR Craftsman Truck Series",
+          "drivers": [
+            {
+              "pos": 1,
+              "driver": "Corey Heim",
+              "car": "#1",
+              "manufacturer": "Toyota",
+              "laps": 200,
+              "status": "Running",
+              "points": 76
+            },
+            {
+              "pos": 2,
+              "driver": "Kaden Honeycutt",
+              "car": "#11",
+              "manufacturer": "Toyota",
+              "laps": 200,
+              "status": "Running",
+              "points": 51
+            },
+            {
+              "pos": 3,
+              "driver": "Layne Riggs",
+              "car": "#34",
+              "manufacturer": "Ford",
+              "laps": 200,
+              "status": "Running",
+              "points": 48
+            },
+            {
+              "pos": 4,
+              "driver": "Stewart Friesen",
+              "car": "#52",
+              "manufacturer": "Toyota",
+              "laps": 200,
+              "status": "Running",
+              "points": 37
+            },
+            {
+              "pos": 5,
+              "driver": "Grant Enfinger",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
+              "laps": 200,
+              "status": "Running",
+              "points": 38
+            },
+            {
+              "pos": 6,
+              "driver": "Tyler Ankrum",
+              "car": "#18",
+              "manufacturer": "Chevrolet",
+              "laps": 200,
+              "status": "Running",
+              "points": 31
+            },
+            {
+              "pos": 7,
+              "driver": "Corey LaJoie",
+              "car": "#10",
+              "manufacturer": "RAM",
+              "laps": 200,
+              "status": "Running",
+              "points": 30
+            },
+            {
+              "pos": 8,
+              "driver": "Ty Majeski",
+              "car": "#88",
+              "manufacturer": "Ford",
+              "laps": 200,
+              "status": "Running",
+              "points": 47
+            },
+            {
+              "pos": 9,
+              "driver": "Jake Garcia",
+              "car": "#98",
+              "manufacturer": "Ford",
+              "laps": 199,
+              "status": "Running",
+              "points": 33
+            },
+            {
+              "pos": 10,
+              "driver": "Cole Butcher",
+              "car": "#13",
+              "manufacturer": "Ford",
+              "laps": 199,
+              "status": "Running",
+              "points": 34
+            },
+            {
+              "pos": 11,
+              "driver": "Sammy Smith",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
+              "laps": 199,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 12,
+              "driver": "Justin Haley",
+              "car": "#16",
+              "manufacturer": "RAM",
+              "laps": 199,
+              "status": "Running",
+              "points": 25
+            },
+            {
+              "pos": 13,
+              "driver": "Christian Eckes",
+              "car": "#91",
+              "manufacturer": "Chevrolet",
+              "laps": 199,
+              "status": "Running",
+              "points": 24
+            },
+            {
+              "pos": 14,
+              "driver": "Landen Lewis",
+              "car": "#45",
+              "manufacturer": "Chevrolet",
+              "laps": 199,
+              "status": "Running",
+              "points": 24
+            },
+            {
+              "pos": 15,
+              "driver": "Dawson Sutton",
+              "car": "#26",
+              "manufacturer": "Chevrolet",
+              "laps": 199,
+              "status": "Running",
+              "points": 22
+            },
+            {
+              "pos": 16,
+              "driver": "Tanner Gray",
+              "car": "#15",
+              "manufacturer": "Toyota",
+              "laps": 198,
+              "status": "Running",
+              "points": 32
+            },
+            {
+              "pos": 17,
+              "driver": "Giovanni Ruggiero",
+              "car": "#17",
+              "manufacturer": "Toyota",
+              "laps": 198,
+              "status": "Running",
+              "points": 22
+            },
+            {
+              "pos": 18,
+              "driver": "Ben Rhodes",
+              "car": "#99",
+              "manufacturer": "Ford",
+              "laps": 198,
+              "status": "Running",
+              "points": 19
+            },
+            {
+              "pos": 19,
+              "driver": "Kris Wright",
+              "car": "#81",
+              "manufacturer": "Chevrolet",
+              "laps": 198,
+              "status": "Running",
+              "points": 18
+            },
+            {
+              "pos": 20,
+              "driver": "Connor Hall",
+              "car": "#4",
+              "manufacturer": "Chevrolet",
+              "laps": 198,
+              "status": "Running",
+              "points": 17
+            },
+            {
+              "pos": 21,
+              "driver": "Luke Baldwin",
+              "car": "#2",
+              "manufacturer": "Ford",
+              "laps": 198,
+              "status": "Running",
+              "points": 16
+            },
+            {
+              "pos": 22,
+              "driver": "Ty Dillon",
+              "car": "#25",
+              "manufacturer": "RAM",
+              "laps": 197,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 23,
+              "driver": "Michael Christopher Jr.",
+              "car": "#62",
+              "manufacturer": "Toyota",
+              "laps": 197,
+              "status": "Running",
+              "points": 14
+            },
+            {
+              "pos": 24,
+              "driver": "Daniel Hemric",
+              "car": "#19",
+              "manufacturer": "Chevrolet",
+              "laps": 197,
+              "status": "Running",
+              "points": 16
+            },
+            {
+              "pos": 25,
+              "driver": "Mini Tyrrell",
+              "car": "#14",
+              "manufacturer": "RAM",
+              "laps": 197,
+              "status": "Running",
+              "points": 12
+            },
+            {
+              "pos": 26,
+              "driver": "Parker Eatmon",
+              "car": "#42",
+              "manufacturer": "Chevrolet",
+              "laps": 197,
+              "status": "Running",
+              "points": 14
+            },
+            {
+              "pos": 27,
+              "driver": "Brenden Queen",
+              "car": "#12",
+              "manufacturer": "RAM",
+              "laps": 196,
+              "status": "Running",
+              "points": 10
+            },
+            {
+              "pos": 28,
+              "driver": "Spencer Boyd",
+              "car": "#76",
+              "manufacturer": "Chevrolet",
+              "laps": 195,
+              "status": "Running",
+              "points": 9
+            },
+            {
+              "pos": 29,
+              "driver": "Clayton Green",
+              "car": "#22",
+              "manufacturer": "Ford",
+              "laps": 195,
+              "status": "Running",
+              "points": 8
+            },
+            {
+              "pos": 30,
+              "driver": "Timmy Hill",
+              "car": "#56",
+              "manufacturer": "Toyota",
+              "laps": 194,
+              "status": "Running",
+              "points": 7
+            },
+            {
+              "pos": 31,
+              "driver": "Frankie Muniz",
+              "car": "#33",
+              "manufacturer": "Ford",
+              "laps": 192,
+              "status": "Running",
+              "points": 6
+            },
+            {
+              "pos": 32,
+              "driver": "Andres Perez de Lara",
+              "car": "#44",
+              "manufacturer": "Chevrolet",
+              "laps": 187,
+              "status": "Running",
+              "points": 5
+            },
+            {
+              "pos": 33,
+              "driver": "Caleb Costner",
+              "car": "#93",
+              "manufacturer": "Chevrolet",
+              "laps": 187,
+              "status": "Running",
+              "points": 4
+            },
+            {
+              "pos": 34,
+              "driver": "Carson Hocevar",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
+              "laps": 116,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 35,
+              "driver": "Adam Andretti",
+              "car": "#5",
+              "manufacturer": "Toyota",
+              "laps": 58,
+              "status": "Running",
+              "points": 2
+            },
+            {
+              "pos": 36,
+              "driver": "Chandler Smith",
+              "car": "#38",
+              "manufacturer": "Ford",
+              "laps": 200,
+              "status": "Running",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "run_name": "NASCAR Truck Series at Darlington",
+          "track_name": "Darlington Raceway",
+          "race_date": "2026-03-20",
+          "flag_state": 9,
+          "laps_in_race": 157,
+          "series_id": 3,
+          "series_name": "NASCAR Craftsman Truck Series",
+          "drivers": [
+            {
+              "pos": 1,
+              "driver": "Corey Heim",
+              "car": "#5",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 70
+            },
+            {
+              "pos": 2,
+              "driver": "Ross Chastain",
+              "car": "#45",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 3,
+              "driver": "Christian Eckes",
+              "car": "#91",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 50
+            },
+            {
+              "pos": 4,
+              "driver": "Kaden Honeycutt",
+              "car": "#11",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 52
+            },
+            {
+              "pos": 5,
+              "driver": "Connor Mosack",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 32
+            },
+            {
+              "pos": 6,
+              "driver": "Christopher Bell",
+              "car": "#62",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 7,
+              "driver": "Grant Enfinger",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 30
+            },
+            {
+              "pos": 8,
+              "driver": "Giovanni Ruggiero",
+              "car": "#17",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 29
+            },
+            {
+              "pos": 9,
+              "driver": "Daniel Hemric",
+              "car": "#19",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 29
+            },
+            {
+              "pos": 10,
+              "driver": "William Sawalich",
+              "car": "#1",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 11,
+              "driver": "AJ Allmendinger",
+              "car": "#10",
+              "manufacturer": "RAM",
+              "laps": 157,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 12,
+              "driver": "Layne Riggs",
+              "car": "#34",
+              "manufacturer": "Ford",
+              "laps": 157,
+              "status": "Running",
+              "points": 35
+            },
+            {
+              "pos": 13,
+              "driver": "Tanner Gray",
+              "car": "#15",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 26
+            },
+            {
+              "pos": 14,
+              "driver": "Timmy Hill",
+              "car": "#56",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 23
+            },
+            {
+              "pos": 15,
+              "driver": "Justin Haley",
+              "car": "#16",
+              "manufacturer": "RAM",
+              "laps": 157,
+              "status": "Running",
+              "points": 22
+            },
+            {
+              "pos": 16,
+              "driver": "Conner Jones",
+              "car": "#42",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 21
+            },
+            {
+              "pos": 17,
+              "driver": "Chandler Smith",
+              "car": "#38",
+              "manufacturer": "Ford",
+              "laps": 157,
+              "status": "Running",
+              "points": 20
+            },
+            {
+              "pos": 18,
+              "driver": "Frankie Muniz",
+              "car": "#33",
+              "manufacturer": "Ford",
+              "laps": 157,
+              "status": "Running",
+              "points": 19
+            },
+            {
+              "pos": 19,
+              "driver": "Dawson Sutton",
+              "car": "#26",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 18
+            },
+            {
+              "pos": 20,
+              "driver": "Brenden Queen",
+              "car": "#12",
+              "manufacturer": "RAM",
+              "laps": 157,
+              "status": "Running",
+              "points": 17
+            },
+            {
+              "pos": 21,
+              "driver": "Corey LaJoie",
+              "car": "#25",
+              "manufacturer": "RAM",
+              "laps": 157,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 22,
+              "driver": "Carson Hocevar",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 23,
+              "driver": "Jake Garcia",
+              "car": "#98",
+              "manufacturer": "Ford",
+              "laps": 157,
+              "status": "Running",
+              "points": 16
+            },
+            {
+              "pos": 24,
+              "driver": "Tyler Ankrum",
+              "car": "#18",
+              "manufacturer": "Chevrolet",
+              "laps": 157,
+              "status": "Running",
+              "points": 18
+            },
+            {
+              "pos": 25,
+              "driver": "Stewart Friesen",
+              "car": "#52",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 12
+            },
+            {
+              "pos": 26,
+              "driver": "Justin Carroll",
+              "car": "#90",
+              "manufacturer": "Toyota",
+              "laps": 157,
+              "status": "Running",
+              "points": 11
+            },
+            {
+              "pos": 27,
+              "driver": "Caleb Costner",
+              "car": "#93",
+              "manufacturer": "Chevrolet",
+              "laps": 155,
+              "status": "Running",
+              "points": 10
+            },
+            {
+              "pos": 28,
+              "driver": "Cole Butcher",
+              "car": "#13",
+              "manufacturer": "Ford",
+              "laps": 153,
+              "status": "Running",
+              "points": 9
+            },
+            {
+              "pos": 29,
+              "driver": "Clayton Green",
+              "car": "#2",
+              "manufacturer": "Ford",
+              "laps": 148,
+              "status": "Running",
+              "points": 8
+            },
+            {
+              "pos": 30,
+              "driver": "Spencer Boyd",
+              "car": "#76",
+              "manufacturer": "Chevrolet",
+              "laps": 147,
+              "status": "Running",
+              "points": 7
+            },
+            {
+              "pos": 31,
+              "driver": "Ty Majeski",
+              "car": "#88",
+              "manufacturer": "Ford",
+              "laps": 123,
+              "status": "Running",
+              "points": 19
+            },
+            {
+              "pos": 32,
+              "driver": "Andres Perez de Lara",
+              "car": "#44",
+              "manufacturer": "Chevrolet",
+              "laps": 122,
+              "status": "Running",
+              "points": 5
+            },
+            {
+              "pos": 33,
+              "driver": "Kris Wright",
+              "car": "#81",
+              "manufacturer": "Chevrolet",
+              "laps": 111,
+              "status": "Running",
+              "points": 4
+            },
+            {
+              "pos": 34,
+              "driver": "Mini Tyrrell",
+              "car": "#14",
+              "manufacturer": "RAM",
+              "laps": 93,
+              "status": "Running",
+              "points": 3
+            },
+            {
+              "pos": 35,
+              "driver": "Josh Reaume",
+              "car": "#22",
+              "manufacturer": "Ford",
+              "laps": 51,
+              "status": "Running",
+              "points": 2
+            },
+            {
+              "pos": 36,
+              "driver": "Ben Rhodes",
+              "car": "#99",
+              "manufacturer": "Ford",
+              "laps": 2,
+              "status": "Running",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "run_name": "NASCAR Truck Series at St. Petersburg",
+          "track_name": "Streets Of St. Petersburg",
+          "race_date": "2026-02-28",
+          "flag_state": 9,
+          "laps_in_race": 80,
+          "series_id": 3,
+          "series_name": "NASCAR Craftsman Truck Series",
+          "drivers": [
+            {
+              "pos": 1,
+              "driver": "Layne Riggs",
+              "car": "#34",
+              "manufacturer": "Ford",
+              "laps": 80,
+              "status": "Running",
+              "points": 70
+            },
+            {
+              "pos": 2,
+              "driver": "Ty Majeski",
+              "car": "#88",
+              "manufacturer": "Ford",
+              "laps": 80,
+              "status": "Running",
+              "points": 42
+            },
+            {
+              "pos": 3,
+              "driver": "Ben Rhodes",
+              "car": "#99",
+              "manufacturer": "Ford",
+              "laps": 80,
+              "status": "Running",
+              "points": 50
+            },
+            {
+              "pos": 4,
+              "driver": "Chandler Smith",
+              "car": "#38",
+              "manufacturer": "Ford",
+              "laps": 80,
+              "status": "Running",
+              "points": 49
+            },
+            {
+              "pos": 5,
+              "driver": "Kaden Honeycutt",
+              "car": "#11",
+              "manufacturer": "Toyota",
+              "laps": 80,
+              "status": "Running",
+              "points": 34
+            },
+            {
+              "pos": 6,
+              "driver": "Landen Lewis",
+              "car": "#45",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 47
+            },
+            {
+              "pos": 7,
+              "driver": "Andres Perez de Lara",
+              "car": "#44",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 32
+            },
+            {
+              "pos": 8,
+              "driver": "Daniel Hemric",
+              "car": "#19",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 29
+            },
+            {
+              "pos": 9,
+              "driver": "Colin Braun",
+              "car": "#25",
+              "manufacturer": "RAM",
+              "laps": 80,
+              "status": "Running",
+              "points": 28
+            },
+            {
+              "pos": 10,
+              "driver": "James Hinchcliffe",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 27
+            },
+            {
+              "pos": 11,
+              "driver": "Ben Maier",
+              "car": "#4",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 26
+            },
+            {
+              "pos": 12,
+              "driver": "Justin Haley",
+              "car": "#16",
+              "manufacturer": "RAM",
+              "laps": 80,
+              "status": "Running",
+              "points": 25
+            },
+            {
+              "pos": 13,
+              "driver": "Connor Mosack",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 33
+            },
+            {
+              "pos": 14,
+              "driver": "Cole Butcher",
+              "car": "#13",
+              "manufacturer": "Ford",
+              "laps": 80,
+              "status": "Running",
+              "points": 23
+            },
+            {
+              "pos": 15,
+              "driver": "Christian Eckes",
+              "car": "#91",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 22
+            },
+            {
+              "pos": 16,
+              "driver": "Tyler Reif",
+              "car": "#42",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 21
+            },
+            {
+              "pos": 17,
+              "driver": "Daniel Dye",
+              "car": "#10",
+              "manufacturer": "RAM",
+              "laps": 80,
+              "status": "Running",
+              "points": 20
+            },
+            {
+              "pos": 18,
+              "driver": "Jake Garcia",
+              "car": "#98",
+              "manufacturer": "Ford",
+              "laps": 80,
+              "status": "Running",
+              "points": 19
+            },
+            {
+              "pos": 19,
+              "driver": "Kris Wright",
+              "car": "#81",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 18
+            },
+            {
+              "pos": 20,
+              "driver": "Tanner Gray",
+              "car": "#15",
+              "manufacturer": "Toyota",
+              "laps": 80,
+              "status": "Running",
+              "points": 17
+            },
+            {
+              "pos": 21,
+              "driver": "Carter Fartuch",
+              "car": "#2",
+              "manufacturer": "Ford",
+              "laps": 80,
+              "status": "Running",
+              "points": 16
+            },
+            {
+              "pos": 22,
+              "driver": "Grant Enfinger",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
+              "laps": 80,
+              "status": "Running",
+              "points": 17
+            },
+            {
+              "pos": 23,
+              "driver": "Adam Andretti",
+              "car": "#5",
+              "manufacturer": "Toyota",
+              "laps": 80,
+              "status": "Running",
+              "points": 14
+            },
+            {
+              "pos": 24,
+              "driver": "Brenden Queen",
+              "car": "#12",
+              "manufacturer": "RAM",
+              "laps": 80,
+              "status": "Running",
+              "points": 13
+            },
+            {
+              "pos": 25,
+              "driver": "Giovanni Ruggiero",
+              "car": "#17",
+              "manufacturer": "Toyota",
+              "laps": 79,
+              "status": "Running",
+              "points": 23
+            },
+            {
+              "pos": 26,
+              "driver": "Stewart Friesen",
+              "car": "#52",
+              "manufacturer": "Toyota",
+              "laps": 79,
+              "status": "Running",
+              "points": 11
+            },
+            {
+              "pos": 27,
+              "driver": "Dario Franchitti",
+              "car": "#1",
+              "manufacturer": "Toyota",
+              "laps": 79,
+              "status": "Running",
+              "points": 18
+            },
+            {
+              "pos": 28,
+              "driver": "Mini Tyrrell",
+              "car": "#14",
+              "manufacturer": "RAM",
+              "laps": 77,
+              "status": "Running",
+              "points": 9
+            },
+            {
+              "pos": 29,
+              "driver": "Jackson Lee",
+              "car": "#22",
+              "manufacturer": "Ford",
+              "laps": 75,
+              "status": "Running",
+              "points": 8
+            },
+            {
+              "pos": 30,
+              "driver": "Frankie Muniz",
+              "car": "#33",
+              "manufacturer": "Ford",
+              "laps": 74,
+              "status": "Running",
+              "points": 7
+            },
+            {
+              "pos": 31,
+              "driver": "Tyler Ankrum",
+              "car": "#18",
+              "manufacturer": "Chevrolet",
+              "laps": 70,
+              "status": "Running",
+              "points": 13
+            },
+            {
+              "pos": 32,
+              "driver": "Timmy Hill",
+              "car": "#56",
+              "manufacturer": "Toyota",
+              "laps": 63,
+              "status": "Running",
+              "points": 5
+            },
+            {
+              "pos": 33,
+              "driver": "Dawson Sutton",
+              "car": "#26",
+              "manufacturer": "Chevrolet",
+              "laps": 62,
+              "status": "Running",
+              "points": 4
+            },
+            {
+              "pos": 34,
+              "driver": "Nathan Nicholson",
+              "car": "#76",
+              "manufacturer": "Chevrolet",
+              "laps": 55,
+              "status": "Running",
+              "points": 3
+            },
+            {
+              "pos": 35,
+              "driver": "Derek White",
+              "car": "#69",
+              "manufacturer": "Ford",
+              "laps": 52,
+              "status": "Running",
+              "points": 2
+            },
+            {
+              "pos": 36,
+              "driver": "Wesley Slimp",
+              "car": "#62",
+              "manufacturer": "Toyota",
+              "laps": 15,
+              "status": "Running",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "run_name": "NASCAR Truck Series at Atlanta",
+          "track_name": "Echopark Speedway",
+          "race_date": "2026-02-21",
+          "flag_state": 9,
+          "laps_in_race": 125,
+          "series_id": 3,
+          "series_name": "NASCAR Craftsman Truck Series",
+          "drivers": [
+            {
+              "pos": 1,
+              "driver": "Kyle Busch",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
+              "laps": 125,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 2,
+              "driver": "Carson Hocevar",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
+              "laps": 125,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 3,
+              "driver": "Giovanni Ruggiero",
+              "car": "#17",
+              "manufacturer": "Toyota",
+              "laps": 125,
+              "status": "Running",
+              "points": 40
+            },
+            {
+              "pos": 4,
+              "driver": "Ben Rhodes",
+              "car": "#99",
+              "manufacturer": "Ford",
+              "laps": 125,
+              "status": "Running",
+              "points": 42
+            },
+            {
+              "pos": 5,
+              "driver": "Corey Heim",
+              "car": "#1",
+              "manufacturer": "Toyota",
+              "laps": 125,
+              "status": "Running",
+              "points": 44
+            },
+            {
+              "pos": 6,
+              "driver": "Chandler Smith",
+              "car": "#38",
+              "manufacturer": "Ford",
+              "laps": 125,
+              "status": "Running",
+              "points": 38
+            },
+            {
+              "pos": 7,
+              "driver": "Jake Garcia",
+              "car": "#98",
+              "manufacturer": "Ford",
+              "laps": 125,
+              "status": "Running",
+              "points": 34
+            },
+            {
+              "pos": 8,
+              "driver": "John Hunter Nemechek",
+              "car": "#62",
+              "manufacturer": "Toyota",
+              "laps": 125,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 9,
+              "driver": "Ricky Stenhouse Jr.",
+              "car": "#45",
+              "manufacturer": "Chevrolet",
+              "laps": 125,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 10,
+              "driver": "Justin Haley",
+              "car": "#16",
+              "manufacturer": "RAM",
+              "laps": 125,
+              "status": "Running",
+              "points": 27
+            },
+            {
+              "pos": 11,
+              "driver": "Ty Dillon",
+              "car": "#25",
+              "manufacturer": "RAM",
+              "laps": 125,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 12,
+              "driver": "Adam Andretti",
+              "car": "#5",
+              "manufacturer": "Toyota",
+              "laps": 125,
+              "status": "Running",
+              "points": 25
+            },
+            {
+              "pos": 13,
+              "driver": "Daniel Dye",
+              "car": "#10",
+              "manufacturer": "RAM",
+              "laps": 125,
+              "status": "Running",
+              "points": 24
+            },
+            {
+              "pos": 14,
+              "driver": "Tyler Ankrum",
+              "car": "#18",
+              "manufacturer": "Chevrolet",
+              "laps": 125,
+              "status": "Running",
+              "points": 23
+            },
+            {
+              "pos": 15,
+              "driver": "Andres Perez de Lara",
+              "car": "#44",
+              "manufacturer": "Chevrolet",
+              "laps": 125,
+              "status": "Running",
+              "points": 29
+            },
+            {
+              "pos": 16,
+              "driver": "Brenden Queen",
+              "car": "#12",
+              "manufacturer": "RAM",
+              "laps": 125,
+              "status": "Running",
+              "points": 21
+            },
+            {
+              "pos": 17,
+              "driver": "Tyler Reif",
+              "car": "#42",
+              "manufacturer": "Chevrolet",
+              "laps": 125,
+              "status": "Running",
+              "points": 20
+            },
+            {
+              "pos": 18,
+              "driver": "Kris Wright",
+              "car": "#81",
+              "manufacturer": "Chevrolet",
+              "laps": 125,
+              "status": "Running",
+              "points": 19
+            },
+            {
+              "pos": 19,
+              "driver": "Mini Tyrrell",
+              "car": "#14",
+              "manufacturer": "RAM",
+              "laps": 124,
+              "status": "Running",
+              "points": 18
+            },
+            {
+              "pos": 20,
+              "driver": "Stewart Friesen",
+              "car": "#52",
+              "manufacturer": "Toyota",
+              "laps": 124,
+              "status": "Running",
+              "points": 32
+            },
+            {
+              "pos": 21,
+              "driver": "Kaden Honeycutt",
+              "car": "#11",
+              "manufacturer": "Toyota",
+              "laps": 123,
+              "status": "Running",
+              "points": 19
+            },
+            {
+              "pos": 22,
+              "driver": "Grant Enfinger",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
+              "laps": 123,
+              "status": "Running",
+              "points": 15
+            },
+            {
+              "pos": 23,
+              "driver": "Clayton Green",
+              "car": "#2",
+              "manufacturer": "Ford",
+              "laps": 123,
+              "status": "Running",
+              "points": 14
+            },
+            {
+              "pos": 24,
+              "driver": "Josh Reaume",
+              "car": "#22",
+              "manufacturer": "Ford",
+              "laps": 123,
+              "status": "Running",
+              "points": 13
+            },
+            {
+              "pos": 25,
+              "driver": "Frankie Muniz",
+              "car": "#33",
+              "manufacturer": "Ford",
+              "laps": 123,
+              "status": "Running",
+              "points": 12
+            },
+            {
+              "pos": 26,
+              "driver": "Spencer Boyd",
+              "car": "#76",
+              "manufacturer": "Chevrolet",
+              "laps": 120,
+              "status": "Running",
+              "points": 11
+            },
+            {
+              "pos": 27,
+              "driver": "Layne Riggs",
+              "car": "#34",
+              "manufacturer": "Ford",
+              "laps": 119,
+              "status": "Running",
+              "points": 11
+            },
+            {
+              "pos": 28,
+              "driver": "Ty Majeski",
+              "car": "#88",
+              "manufacturer": "Ford",
+              "laps": 119,
+              "status": "Running",
+              "points": 15
+            },
+            {
+              "pos": 29,
+              "driver": "Tyler Tomassi",
+              "car": "#69",
+              "manufacturer": "Ford",
+              "laps": 119,
+              "status": "Running",
+              "points": 8
+            },
+            {
+              "pos": 30,
+              "driver": "Tanner Gray",
+              "car": "#15",
+              "manufacturer": "Toyota",
+              "laps": 116,
+              "status": "Running",
+              "points": 8
+            },
+            {
+              "pos": 31,
+              "driver": "Cole Butcher",
+              "car": "#13",
+              "manufacturer": "Ford",
+              "laps": 100,
+              "status": "Running",
+              "points": 6
+            },
+            {
+              "pos": 32,
+              "driver": "Dawson Sutton",
+              "car": "#26",
+              "manufacturer": "Chevrolet",
+              "laps": 100,
+              "status": "Running",
+              "points": 5
+            },
+            {
+              "pos": 33,
+              "driver": "Caleb Costner",
+              "car": "#93",
+              "manufacturer": "Chevrolet",
+              "laps": 99,
+              "status": "Running",
+              "points": 4
+            },
+            {
+              "pos": 34,
+              "driver": "Daniel Hemric",
+              "car": "#19",
+              "manufacturer": "Chevrolet",
+              "laps": 88,
+              "status": "Running",
+              "points": 5
+            },
+            {
+              "pos": 35,
+              "driver": "Justin Carroll",
+              "car": "#90",
+              "manufacturer": "Toyota",
+              "laps": 65,
+              "status": "Running",
+              "points": 2
+            },
+            {
+              "pos": 36,
+              "driver": "Christian Eckes",
+              "car": "#91",
+              "manufacturer": "Chevrolet",
+              "laps": 2,
+              "status": "Running",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "run_name": "NASCAR Truck Series at Daytona",
+          "track_name": "Daytona International Speedway",
+          "race_date": "2026-02-13",
+          "flag_state": 9,
+          "laps_in_race": 102,
+          "series_id": 3,
+          "series_name": "NASCAR Craftsman Truck Series",
+          "drivers": [
+            {
+              "pos": 1,
+              "driver": "Chandler Smith",
+              "car": "#38",
+              "manufacturer": "Ford",
+              "laps": 102,
+              "status": "Running",
+              "points": 65
+            },
+            {
+              "pos": 2,
+              "driver": "Giovanni Ruggiero",
+              "car": "#17",
+              "manufacturer": "Toyota",
+              "laps": 102,
+              "status": "Running",
+              "points": 35
+            },
+            {
+              "pos": 3,
+              "driver": "Christian Eckes",
+              "car": "#91",
+              "manufacturer": "Chevrolet",
+              "laps": 102,
+              "status": "Running",
+              "points": 46
+            },
+            {
+              "pos": 4,
+              "driver": "Ty Majeski",
+              "car": "#88",
+              "manufacturer": "Ford",
+              "laps": 102,
+              "status": "Running",
+              "points": 45
+            },
+            {
+              "pos": 5,
+              "driver": "John Hunter Nemechek",
+              "car": "#62",
+              "manufacturer": "Toyota",
+              "laps": 102,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 6,
+              "driver": "Ricky Stenhouse Jr.",
+              "car": "#45",
+              "manufacturer": "Chevrolet",
+              "laps": 102,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 7,
+              "driver": "Brenden Queen",
+              "car": "#12",
+              "manufacturer": "RAM",
+              "laps": 102,
+              "status": "Running",
+              "points": 32
+            },
+            {
+              "pos": 8,
+              "driver": "Kaden Honeycutt",
+              "car": "#11",
+              "manufacturer": "Toyota",
+              "laps": 102,
+              "status": "Running",
+              "points": 34
+            },
+            {
+              "pos": 9,
+              "driver": "Tyler Ankrum",
+              "car": "#18",
+              "manufacturer": "Chevrolet",
+              "laps": 102,
+              "status": "Running",
+              "points": 28
+            },
+            {
+              "pos": 10,
+              "driver": "Stewart Friesen",
+              "car": "#52",
+              "manufacturer": "Toyota",
+              "laps": 102,
+              "status": "Running",
+              "points": 27
+            },
+            {
+              "pos": 11,
+              "driver": "Nick Leitz",
+              "car": "#5",
+              "manufacturer": "Toyota",
+              "laps": 102,
+              "status": "Running",
+              "points": 31
+            },
+            {
+              "pos": 12,
+              "driver": "Ben Rhodes",
+              "car": "#99",
+              "manufacturer": "Ford",
+              "laps": 102,
+              "status": "Running",
+              "points": 26
+            },
+            {
+              "pos": 13,
+              "driver": "Andres Perez de Lara",
+              "car": "#44",
+              "manufacturer": "Chevrolet",
+              "laps": 102,
+              "status": "Running",
+              "points": 24
+            },
+            {
+              "pos": 14,
+              "driver": "Cole Butcher",
+              "car": "#13",
+              "manufacturer": "Ford",
+              "laps": 102,
+              "status": "Running",
+              "points": 23
+            },
+            {
+              "pos": 15,
+              "driver": "Travis Pastrana",
+              "car": "#42",
+              "manufacturer": "Chevrolet",
+              "laps": 102,
+              "status": "Running",
+              "points": 22
+            },
+            {
+              "pos": 16,
+              "driver": "Frankie Muniz",
+              "car": "#33",
+              "manufacturer": "Ford",
+              "laps": 102,
+              "status": "Running",
+              "points": 21
+            },
+            {
+              "pos": 17,
+              "driver": "Daniel Dye",
+              "car": "#10",
+              "manufacturer": "RAM",
+              "laps": 102,
+              "status": "Running",
+              "points": 20
+            },
+            {
+              "pos": 18,
+              "driver": "Clay Greenfield",
+              "car": "#95",
+              "manufacturer": "Chevrolet",
+              "laps": 102,
+              "status": "Running",
+              "points": 19
+            },
+            {
+              "pos": 19,
+              "driver": "Mini Tyrrell",
+              "car": "#14",
+              "manufacturer": "RAM",
+              "laps": 102,
+              "status": "Running",
+              "points": 18
+            },
+            {
+              "pos": 20,
+              "driver": "Josh Reaume",
+              "car": "#22",
+              "manufacturer": "Ford",
+              "laps": 102,
+              "status": "Running",
+              "points": 17
+            },
+            {
+              "pos": 21,
+              "driver": "Spencer Boyd",
+              "car": "#76",
+              "manufacturer": "Chevrolet",
+              "laps": 102,
+              "status": "Running",
+              "points": 16
+            },
+            {
+              "pos": 22,
+              "driver": "Justin Haley",
+              "car": "#16",
+              "manufacturer": "RAM",
+              "laps": 102,
+              "status": "Running",
+              "points": 15
+            },
+            {
+              "pos": 23,
+              "driver": "Tanner Gray",
+              "car": "#15",
+              "manufacturer": "Toyota",
+              "laps": 102,
+              "status": "Running",
+              "points": 23
+            },
+            {
+              "pos": 24,
+              "driver": "Michael McDowell",
+              "car": "#7",
+              "manufacturer": "Chevrolet",
+              "laps": 101,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 25,
+              "driver": "Kris Wright",
+              "car": "#81",
+              "manufacturer": "Chevrolet",
+              "laps": 101,
+              "status": "Running",
+              "points": 12
+            },
+            {
+              "pos": 26,
+              "driver": "Daniel Hemric",
+              "car": "#19",
+              "manufacturer": "Chevrolet",
+              "laps": 101,
+              "status": "Running",
+              "points": 12
+            },
+            {
+              "pos": 27,
+              "driver": "Dawson Sutton",
+              "car": "#26",
+              "manufacturer": "Chevrolet",
+              "laps": 101,
+              "status": "Running",
+              "points": 10
+            },
+            {
+              "pos": 28,
+              "driver": "Taylor Gray",
+              "car": "#1",
+              "manufacturer": "Toyota",
+              "laps": 101,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 29,
+              "driver": "Grant Enfinger",
+              "car": "#9",
+              "manufacturer": "Chevrolet",
+              "laps": 100,
+              "status": "Running",
+              "points": 9
+            },
+            {
+              "pos": 30,
+              "driver": "Jason Kitzmiller",
+              "car": "#97",
+              "manufacturer": "Chevrolet",
+              "laps": 100,
+              "status": "Running",
+              "points": 7
+            },
+            {
+              "pos": 31,
+              "driver": "Layne Riggs",
+              "car": "#34",
+              "manufacturer": "Ford",
+              "laps": 98,
+              "status": "Running",
+              "points": 15
+            },
+            {
+              "pos": 32,
+              "driver": "Jake Garcia",
+              "car": "#98",
+              "manufacturer": "Ford",
+              "laps": 98,
+              "status": "Running",
+              "points": 5
+            },
+            {
+              "pos": 33,
+              "driver": "Jason M. White",
+              "car": "#2",
+              "manufacturer": "Ford",
+              "laps": 98,
+              "status": "Running",
+              "points": 4
+            },
+            {
+              "pos": 34,
+              "driver": "Corey LaJoie",
+              "car": "#75",
+              "manufacturer": "Chevrolet",
+              "laps": 92,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 35,
+              "driver": "Carson Hocevar",
+              "car": "#77",
+              "manufacturer": "Chevrolet",
+              "laps": 88,
+              "status": "Running",
+              "points": 0
+            },
+            {
+              "pos": 36,
+              "driver": "Tony Stewart",
+              "car": "#25",
+              "manufacturer": "RAM",
+              "laps": 39,
+              "status": "Running",
+              "points": 1
+            },
+            {
+              "pos": 37,
+              "driver": "Cleetus McFarland",
+              "car": "#4",
+              "manufacturer": "Chevrolet",
+              "laps": 5,
+              "status": "Running",
+              "points": 0
+            }
+          ]
+        }
+      ],
+      "updated": "2026-04-08",
+      "series_name": "NASCAR Craftsman Truck Series"
+    },
+    "_updated": "2026-04-08"
+  },
+  "nascar-trucks-last": {
+    "data": {
+      "run_name": "NASCAR Truck Series at Rockingham",
+      "track_name": "Rockingham Speedway",
+      "race_date": "2026-04-03",
+      "flag_state": 9,
+      "laps_in_race": 200,
+      "series_id": 3,
+      "series_name": "NASCAR Craftsman Truck Series",
+      "drivers": [
+        {
+          "pos": 1,
+          "driver": "Corey Heim",
+          "car": "#1",
+          "manufacturer": "Toyota",
+          "laps": 200,
+          "status": "Running",
+          "points": 76
+        },
+        {
+          "pos": 2,
+          "driver": "Kaden Honeycutt",
+          "car": "#11",
+          "manufacturer": "Toyota",
+          "laps": 200,
+          "status": "Running",
+          "points": 51
+        },
+        {
+          "pos": 3,
+          "driver": "Layne Riggs",
+          "car": "#34",
+          "manufacturer": "Ford",
+          "laps": 200,
+          "status": "Running",
+          "points": 48
+        },
+        {
+          "pos": 4,
+          "driver": "Stewart Friesen",
+          "car": "#52",
+          "manufacturer": "Toyota",
+          "laps": 200,
+          "status": "Running",
+          "points": 37
+        },
+        {
+          "pos": 5,
+          "driver": "Grant Enfinger",
+          "car": "#9",
+          "manufacturer": "Chevrolet",
+          "laps": 200,
+          "status": "Running",
+          "points": 38
+        },
+        {
+          "pos": 6,
+          "driver": "Tyler Ankrum",
+          "car": "#18",
+          "manufacturer": "Chevrolet",
+          "laps": 200,
+          "status": "Running",
+          "points": 31
+        },
+        {
+          "pos": 7,
+          "driver": "Corey LaJoie",
+          "car": "#10",
+          "manufacturer": "RAM",
+          "laps": 200,
+          "status": "Running",
+          "points": 30
+        },
+        {
+          "pos": 8,
+          "driver": "Ty Majeski",
+          "car": "#88",
+          "manufacturer": "Ford",
+          "laps": 200,
+          "status": "Running",
+          "points": 47
+        },
+        {
+          "pos": 9,
+          "driver": "Jake Garcia",
+          "car": "#98",
+          "manufacturer": "Ford",
+          "laps": 199,
+          "status": "Running",
+          "points": 33
+        },
+        {
+          "pos": 10,
+          "driver": "Cole Butcher",
+          "car": "#13",
+          "manufacturer": "Ford",
+          "laps": 199,
+          "status": "Running",
+          "points": 34
+        },
+        {
+          "pos": 11,
+          "driver": "Sammy Smith",
+          "car": "#7",
+          "manufacturer": "Chevrolet",
+          "laps": 199,
+          "status": "Running",
+          "points": 0
+        },
+        {
+          "pos": 12,
+          "driver": "Justin Haley",
+          "car": "#16",
+          "manufacturer": "RAM",
+          "laps": 199,
+          "status": "Running",
+          "points": 25
+        },
+        {
+          "pos": 13,
+          "driver": "Christian Eckes",
+          "car": "#91",
+          "manufacturer": "Chevrolet",
+          "laps": 199,
+          "status": "Running",
+          "points": 24
+        },
+        {
+          "pos": 14,
+          "driver": "Landen Lewis",
+          "car": "#45",
+          "manufacturer": "Chevrolet",
+          "laps": 199,
+          "status": "Running",
+          "points": 24
+        },
+        {
+          "pos": 15,
+          "driver": "Dawson Sutton",
+          "car": "#26",
+          "manufacturer": "Chevrolet",
+          "laps": 199,
+          "status": "Running",
+          "points": 22
+        },
+        {
+          "pos": 16,
+          "driver": "Tanner Gray",
+          "car": "#15",
+          "manufacturer": "Toyota",
+          "laps": 198,
+          "status": "Running",
+          "points": 32
+        },
+        {
+          "pos": 17,
+          "driver": "Giovanni Ruggiero",
+          "car": "#17",
+          "manufacturer": "Toyota",
+          "laps": 198,
+          "status": "Running",
+          "points": 22
+        },
+        {
+          "pos": 18,
+          "driver": "Ben Rhodes",
+          "car": "#99",
+          "manufacturer": "Ford",
+          "laps": 198,
+          "status": "Running",
+          "points": 19
+        },
+        {
+          "pos": 19,
+          "driver": "Kris Wright",
+          "car": "#81",
+          "manufacturer": "Chevrolet",
+          "laps": 198,
+          "status": "Running",
+          "points": 18
+        },
+        {
+          "pos": 20,
+          "driver": "Connor Hall",
+          "car": "#4",
+          "manufacturer": "Chevrolet",
+          "laps": 198,
+          "status": "Running",
+          "points": 17
+        },
+        {
+          "pos": 21,
+          "driver": "Luke Baldwin",
+          "car": "#2",
+          "manufacturer": "Ford",
+          "laps": 198,
+          "status": "Running",
+          "points": 16
+        },
+        {
+          "pos": 22,
+          "driver": "Ty Dillon",
+          "car": "#25",
+          "manufacturer": "RAM",
+          "laps": 197,
+          "status": "Running",
+          "points": 0
+        },
+        {
+          "pos": 23,
+          "driver": "Michael Christopher Jr.",
+          "car": "#62",
+          "manufacturer": "Toyota",
+          "laps": 197,
+          "status": "Running",
+          "points": 14
+        },
+        {
+          "pos": 24,
+          "driver": "Daniel Hemric",
+          "car": "#19",
+          "manufacturer": "Chevrolet",
+          "laps": 197,
+          "status": "Running",
+          "points": 16
+        },
+        {
+          "pos": 25,
+          "driver": "Mini Tyrrell",
+          "car": "#14",
+          "manufacturer": "RAM",
+          "laps": 197,
+          "status": "Running",
+          "points": 12
+        },
+        {
+          "pos": 26,
+          "driver": "Parker Eatmon",
+          "car": "#42",
+          "manufacturer": "Chevrolet",
+          "laps": 197,
+          "status": "Running",
+          "points": 14
+        },
+        {
+          "pos": 27,
+          "driver": "Brenden Queen",
+          "car": "#12",
+          "manufacturer": "RAM",
+          "laps": 196,
+          "status": "Running",
+          "points": 10
+        },
+        {
+          "pos": 28,
+          "driver": "Spencer Boyd",
+          "car": "#76",
+          "manufacturer": "Chevrolet",
+          "laps": 195,
+          "status": "Running",
+          "points": 9
+        },
+        {
+          "pos": 29,
+          "driver": "Clayton Green",
+          "car": "#22",
+          "manufacturer": "Ford",
+          "laps": 195,
+          "status": "Running",
+          "points": 8
+        },
+        {
+          "pos": 30,
+          "driver": "Timmy Hill",
+          "car": "#56",
+          "manufacturer": "Toyota",
+          "laps": 194,
+          "status": "Running",
+          "points": 7
+        },
+        {
+          "pos": 31,
+          "driver": "Frankie Muniz",
+          "car": "#33",
+          "manufacturer": "Ford",
+          "laps": 192,
+          "status": "Running",
+          "points": 6
+        },
+        {
+          "pos": 32,
+          "driver": "Andres Perez de Lara",
+          "car": "#44",
+          "manufacturer": "Chevrolet",
+          "laps": 187,
+          "status": "Running",
+          "points": 5
+        },
+        {
+          "pos": 33,
+          "driver": "Caleb Costner",
+          "car": "#93",
+          "manufacturer": "Chevrolet",
+          "laps": 187,
+          "status": "Running",
+          "points": 4
+        },
+        {
+          "pos": 34,
+          "driver": "Carson Hocevar",
+          "car": "#77",
+          "manufacturer": "Chevrolet",
+          "laps": 116,
+          "status": "Running",
+          "points": 0
+        },
+        {
+          "pos": 35,
+          "driver": "Adam Andretti",
+          "car": "#5",
+          "manufacturer": "Toyota",
+          "laps": 58,
+          "status": "Running",
+          "points": 2
+        },
+        {
+          "pos": 36,
+          "driver": "Chandler Smith",
+          "car": "#38",
+          "manufacturer": "Ford",
+          "laps": 200,
+          "status": "Running",
+          "points": 1
+        }
+      ]
+    },
+    "_updated": "2026-04-08"
+  },
+  "nascar-trucks-season": {
+    "data": {
+      "standings": [
+        {
+          "pos": 1,
+          "driver": "C. Heim",
+          "car": "",
+          "manufacturer": "Toyota",
+          "points": 190,
+          "wins": 2,
+          "races": 0
+        },
+        {
+          "pos": 2,
+          "driver": "K. Honeycutt",
+          "car": "",
+          "manufacturer": "Toyota",
+          "points": 190,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 3,
+          "driver": "L. Riggs",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 179,
+          "wins": 1,
+          "races": 0
+        },
+        {
+          "pos": 4,
+          "driver": "C. Smith",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 173,
+          "wins": 1,
+          "races": 0
+        },
+        {
+          "pos": 5,
+          "driver": "T. Majeski",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 168,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 6,
+          "driver": "G. Ruggiero",
+          "car": "",
+          "manufacturer": "Toyota",
+          "points": 149,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 7,
+          "driver": "C. Eckes",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 143,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 8,
+          "driver": "B. Rhodes",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 138,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 9,
+          "driver": "S. Friesen",
+          "car": "",
+          "manufacturer": "Toyota",
+          "points": 119,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 10,
+          "driver": "J. Haley",
+          "car": "",
+          "manufacturer": "RAM NASCAR Trucks team",
+          "points": 114,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 11,
+          "driver": "T. Ankrum",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 113,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 12,
+          "driver": "G. Enfinger",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 109,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 13,
+          "driver": "J. Garcia",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 107,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 14,
+          "driver": "T. Gray",
+          "car": "",
+          "manufacturer": "Toyota",
+          "points": 106,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 15,
+          "driver": "A. Pérez de Lara",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 95,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 16,
+          "driver": "C. Butcher",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 95,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 17,
+          "driver": "B. Queen",
+          "car": "",
+          "manufacturer": "RAM NASCAR Trucks team",
+          "points": 93,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 18,
+          "driver": "D. Hemric",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 91,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 19,
+          "driver": "L. Lewis",
+          "car": "",
+          "manufacturer": "",
+          "points": 71,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 20,
+          "driver": "K. Wright",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 71,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 21,
+          "driver": "C. Mosack",
+          "car": "",
+          "manufacturer": "",
+          "points": 65,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 22,
+          "driver": "F. Muniz",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 65,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 23,
+          "driver": "D. Dye",
+          "car": "",
+          "manufacturer": "",
+          "points": 64,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 24,
+          "driver": "M. Tyrrell",
+          "car": "",
+          "manufacturer": "RAM NASCAR Trucks team",
+          "points": 60,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 25,
+          "driver": "D. Sutton",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 59,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 26,
+          "driver": "S. Boyd",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 43,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 27,
+          "driver": "A. Andretti",
+          "car": "",
+          "manufacturer": "",
+          "points": 41,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 28,
+          "driver": "T. Reif",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 41,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 29,
+          "driver": "T. Hill",
+          "car": "",
+          "manufacturer": "Toyota",
+          "points": 35,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 30,
+          "driver": "J. Reaume",
+          "car": "",
+          "manufacturer": "",
+          "points": 32,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 31,
+          "driver": "N. Leitz",
+          "car": "",
+          "manufacturer": "",
+          "points": 31,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 32,
+          "driver": "C. LaJoie",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 30,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 33,
+          "driver": "C. Green",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 30,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 34,
+          "driver": "C. Braun",
+          "car": "",
+          "manufacturer": "",
+          "points": 28,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 35,
+          "driver": "J. Hinchcliffe",
+          "car": "",
+          "manufacturer": "",
+          "points": 27,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 36,
+          "driver": "B. Maier",
+          "car": "",
+          "manufacturer": "",
+          "points": 26,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 37,
+          "driver": "T. Pastrana",
+          "car": "",
+          "manufacturer": "",
+          "points": 22,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 38,
+          "driver": "C. Jones",
+          "car": "",
+          "manufacturer": "",
+          "points": 21,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 39,
+          "driver": "C. Greenfield",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 19,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 40,
+          "driver": "C. Costner",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 18,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 41,
+          "driver": "D. Franchitti",
+          "car": "",
+          "manufacturer": "",
+          "points": 18,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 42,
+          "driver": "C. Hall",
+          "car": "",
+          "manufacturer": "",
+          "points": 17,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 43,
+          "driver": "L. Baldwin",
+          "car": "",
+          "manufacturer": "Ford",
+          "points": 16,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 44,
+          "driver": "C. Fartuch",
+          "car": "",
+          "manufacturer": "",
+          "points": 16,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 45,
+          "driver": "M. Christopher",
+          "car": "",
+          "manufacturer": "",
+          "points": 14,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 46,
+          "driver": "P. Eatmon",
+          "car": "",
+          "manufacturer": "",
+          "points": 14,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 47,
+          "driver": "J. Carroll",
+          "car": "",
+          "manufacturer": "Toyota",
+          "points": 13,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 48,
+          "driver": "J. Lee",
+          "car": "",
+          "manufacturer": "",
+          "points": 8,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 49,
+          "driver": "T. Tomassi",
+          "car": "",
+          "manufacturer": "",
+          "points": 8,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 50,
+          "driver": "J. Kitzmiller",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 7,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 51,
+          "driver": "J. White",
+          "car": "",
+          "manufacturer": "",
+          "points": 4,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 52,
+          "driver": "N. Nicholson",
+          "car": "",
+          "manufacturer": "",
+          "points": 3,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 53,
+          "driver": "D. White",
+          "car": "",
+          "manufacturer": "",
+          "points": 2,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 54,
+          "driver": "T. Stewart",
+          "car": "",
+          "manufacturer": "",
+          "points": 1,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 55,
+          "driver": "W. Slimp",
+          "car": "",
+          "manufacturer": "",
+          "points": 1,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 56,
+          "driver": "C. Mitchell",
+          "car": "",
+          "manufacturer": "",
+          "points": 1,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 57,
+          "driver": "K. Busch",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 0,
+          "wins": 1,
+          "races": 0
+        },
+        {
+          "pos": 58,
+          "driver": "C. Hocevar",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 59,
+          "driver": "R. Chastain",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 60,
+          "driver": "J. Nemechek",
+          "car": "",
+          "manufacturer": "",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 61,
+          "driver": "R. Stenhouse Jr.",
+          "car": "",
+          "manufacturer": "Chevrolet",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 62,
+          "driver": "C. Bell",
+          "car": "",
+          "manufacturer": "Toyota",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 63,
+          "driver": "W. Sawalich",
+          "car": "",
+          "manufacturer": "",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 64,
+          "driver": "T. Dillon",
+          "car": "",
+          "manufacturer": "",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 65,
+          "driver": "AJ Allmendinger",
+          "car": "",
+          "manufacturer": "",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 66,
+          "driver": "S. Smith",
+          "car": "",
+          "manufacturer": "",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 67,
+          "driver": "M. McDowell",
+          "car": "",
+          "manufacturer": "",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        },
+        {
+          "pos": 68,
+          "driver": "T. Gray",
+          "car": "",
+          "manufacturer": "",
+          "points": 0,
+          "wins": 0,
+          "races": 0
+        }
+      ],
+      "series_name": "NASCAR Craftsman Truck Series",
+      "updated": "2026-04-08"
+    },
+    "_updated": "2026-04-08"
+  },
+  "nascar-noaps-history": {
     "data": {
       "races": [
         {
@@ -13949,7 +16601,7 @@
     },
     "_updated": "2026-04-08"
   },
-  "nascar-xfinity-last": {
+  "nascar-noaps-last": {
     "data": {
       "run_name": "NASCAR O'Reilly Auto Parts Series at Rockingham",
       "track_name": "Rockingham Speedway",
@@ -14305,7 +16957,7 @@
     },
     "_updated": "2026-04-08"
   },
-  "nascar-xfinity-season": {
+  "nascar-noaps-season": {
     "data": {
       "standings": [
         {
@@ -14922,2658 +17574,6 @@
         }
       ],
       "series_name": "NASCAR O'Reilly Auto Parts Series",
-      "updated": "2026-04-08"
-    },
-    "_updated": "2026-04-08"
-  },
-  "nascar-trucks-history": {
-    "data": {
-      "races": [
-        {
-          "run_name": "NASCAR Truck Series at Rockingham",
-          "track_name": "Rockingham Speedway",
-          "race_date": "2026-04-03",
-          "flag_state": 9,
-          "laps_in_race": 200,
-          "series_id": 3,
-          "series_name": "NASCAR Craftsman Truck Series",
-          "drivers": [
-            {
-              "pos": 1,
-              "driver": "Corey Heim",
-              "car": "#1",
-              "manufacturer": "Toyota",
-              "laps": 200,
-              "status": "Running",
-              "points": 76
-            },
-            {
-              "pos": 2,
-              "driver": "Kaden Honeycutt",
-              "car": "#11",
-              "manufacturer": "Toyota",
-              "laps": 200,
-              "status": "Running",
-              "points": 51
-            },
-            {
-              "pos": 3,
-              "driver": "Layne Riggs",
-              "car": "#34",
-              "manufacturer": "Ford",
-              "laps": 200,
-              "status": "Running",
-              "points": 48
-            },
-            {
-              "pos": 4,
-              "driver": "Stewart Friesen",
-              "car": "#52",
-              "manufacturer": "Toyota",
-              "laps": 200,
-              "status": "Running",
-              "points": 37
-            },
-            {
-              "pos": 5,
-              "driver": "Grant Enfinger",
-              "car": "#9",
-              "manufacturer": "Chevrolet",
-              "laps": 200,
-              "status": "Running",
-              "points": 38
-            },
-            {
-              "pos": 6,
-              "driver": "Tyler Ankrum",
-              "car": "#18",
-              "manufacturer": "Chevrolet",
-              "laps": 200,
-              "status": "Running",
-              "points": 31
-            },
-            {
-              "pos": 7,
-              "driver": "Corey LaJoie",
-              "car": "#10",
-              "manufacturer": "RAM",
-              "laps": 200,
-              "status": "Running",
-              "points": 30
-            },
-            {
-              "pos": 8,
-              "driver": "Ty Majeski",
-              "car": "#88",
-              "manufacturer": "Ford",
-              "laps": 200,
-              "status": "Running",
-              "points": 47
-            },
-            {
-              "pos": 9,
-              "driver": "Jake Garcia",
-              "car": "#98",
-              "manufacturer": "Ford",
-              "laps": 199,
-              "status": "Running",
-              "points": 33
-            },
-            {
-              "pos": 10,
-              "driver": "Cole Butcher",
-              "car": "#13",
-              "manufacturer": "Ford",
-              "laps": 199,
-              "status": "Running",
-              "points": 34
-            },
-            {
-              "pos": 11,
-              "driver": "Sammy Smith",
-              "car": "#7",
-              "manufacturer": "Chevrolet",
-              "laps": 199,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 12,
-              "driver": "Justin Haley",
-              "car": "#16",
-              "manufacturer": "RAM",
-              "laps": 199,
-              "status": "Running",
-              "points": 25
-            },
-            {
-              "pos": 13,
-              "driver": "Christian Eckes",
-              "car": "#91",
-              "manufacturer": "Chevrolet",
-              "laps": 199,
-              "status": "Running",
-              "points": 24
-            },
-            {
-              "pos": 14,
-              "driver": "Landen Lewis",
-              "car": "#45",
-              "manufacturer": "Chevrolet",
-              "laps": 199,
-              "status": "Running",
-              "points": 24
-            },
-            {
-              "pos": 15,
-              "driver": "Dawson Sutton",
-              "car": "#26",
-              "manufacturer": "Chevrolet",
-              "laps": 199,
-              "status": "Running",
-              "points": 22
-            },
-            {
-              "pos": 16,
-              "driver": "Tanner Gray",
-              "car": "#15",
-              "manufacturer": "Toyota",
-              "laps": 198,
-              "status": "Running",
-              "points": 32
-            },
-            {
-              "pos": 17,
-              "driver": "Giovanni Ruggiero",
-              "car": "#17",
-              "manufacturer": "Toyota",
-              "laps": 198,
-              "status": "Running",
-              "points": 22
-            },
-            {
-              "pos": 18,
-              "driver": "Ben Rhodes",
-              "car": "#99",
-              "manufacturer": "Ford",
-              "laps": 198,
-              "status": "Running",
-              "points": 19
-            },
-            {
-              "pos": 19,
-              "driver": "Kris Wright",
-              "car": "#81",
-              "manufacturer": "Chevrolet",
-              "laps": 198,
-              "status": "Running",
-              "points": 18
-            },
-            {
-              "pos": 20,
-              "driver": "Connor Hall",
-              "car": "#4",
-              "manufacturer": "Chevrolet",
-              "laps": 198,
-              "status": "Running",
-              "points": 17
-            },
-            {
-              "pos": 21,
-              "driver": "Luke Baldwin",
-              "car": "#2",
-              "manufacturer": "Ford",
-              "laps": 198,
-              "status": "Running",
-              "points": 16
-            },
-            {
-              "pos": 22,
-              "driver": "Ty Dillon",
-              "car": "#25",
-              "manufacturer": "RAM",
-              "laps": 197,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 23,
-              "driver": "Michael Christopher Jr.",
-              "car": "#62",
-              "manufacturer": "Toyota",
-              "laps": 197,
-              "status": "Running",
-              "points": 14
-            },
-            {
-              "pos": 24,
-              "driver": "Daniel Hemric",
-              "car": "#19",
-              "manufacturer": "Chevrolet",
-              "laps": 197,
-              "status": "Running",
-              "points": 16
-            },
-            {
-              "pos": 25,
-              "driver": "Mini Tyrrell",
-              "car": "#14",
-              "manufacturer": "RAM",
-              "laps": 197,
-              "status": "Running",
-              "points": 12
-            },
-            {
-              "pos": 26,
-              "driver": "Parker Eatmon",
-              "car": "#42",
-              "manufacturer": "Chevrolet",
-              "laps": 197,
-              "status": "Running",
-              "points": 14
-            },
-            {
-              "pos": 27,
-              "driver": "Brenden Queen",
-              "car": "#12",
-              "manufacturer": "RAM",
-              "laps": 196,
-              "status": "Running",
-              "points": 10
-            },
-            {
-              "pos": 28,
-              "driver": "Spencer Boyd",
-              "car": "#76",
-              "manufacturer": "Chevrolet",
-              "laps": 195,
-              "status": "Running",
-              "points": 9
-            },
-            {
-              "pos": 29,
-              "driver": "Clayton Green",
-              "car": "#22",
-              "manufacturer": "Ford",
-              "laps": 195,
-              "status": "Running",
-              "points": 8
-            },
-            {
-              "pos": 30,
-              "driver": "Timmy Hill",
-              "car": "#56",
-              "manufacturer": "Toyota",
-              "laps": 194,
-              "status": "Running",
-              "points": 7
-            },
-            {
-              "pos": 31,
-              "driver": "Frankie Muniz",
-              "car": "#33",
-              "manufacturer": "Ford",
-              "laps": 192,
-              "status": "Running",
-              "points": 6
-            },
-            {
-              "pos": 32,
-              "driver": "Andres Perez de Lara",
-              "car": "#44",
-              "manufacturer": "Chevrolet",
-              "laps": 187,
-              "status": "Running",
-              "points": 5
-            },
-            {
-              "pos": 33,
-              "driver": "Caleb Costner",
-              "car": "#93",
-              "manufacturer": "Chevrolet",
-              "laps": 187,
-              "status": "Running",
-              "points": 4
-            },
-            {
-              "pos": 34,
-              "driver": "Carson Hocevar",
-              "car": "#77",
-              "manufacturer": "Chevrolet",
-              "laps": 116,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 35,
-              "driver": "Adam Andretti",
-              "car": "#5",
-              "manufacturer": "Toyota",
-              "laps": 58,
-              "status": "Running",
-              "points": 2
-            },
-            {
-              "pos": 36,
-              "driver": "Chandler Smith",
-              "car": "#38",
-              "manufacturer": "Ford",
-              "laps": 200,
-              "status": "Running",
-              "points": 1
-            }
-          ]
-        },
-        {
-          "run_name": "NASCAR Truck Series at Darlington",
-          "track_name": "Darlington Raceway",
-          "race_date": "2026-03-20",
-          "flag_state": 9,
-          "laps_in_race": 157,
-          "series_id": 3,
-          "series_name": "NASCAR Craftsman Truck Series",
-          "drivers": [
-            {
-              "pos": 1,
-              "driver": "Corey Heim",
-              "car": "#5",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 70
-            },
-            {
-              "pos": 2,
-              "driver": "Ross Chastain",
-              "car": "#45",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 3,
-              "driver": "Christian Eckes",
-              "car": "#91",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 50
-            },
-            {
-              "pos": 4,
-              "driver": "Kaden Honeycutt",
-              "car": "#11",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 52
-            },
-            {
-              "pos": 5,
-              "driver": "Connor Mosack",
-              "car": "#7",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 32
-            },
-            {
-              "pos": 6,
-              "driver": "Christopher Bell",
-              "car": "#62",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 7,
-              "driver": "Grant Enfinger",
-              "car": "#9",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 30
-            },
-            {
-              "pos": 8,
-              "driver": "Giovanni Ruggiero",
-              "car": "#17",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 29
-            },
-            {
-              "pos": 9,
-              "driver": "Daniel Hemric",
-              "car": "#19",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 29
-            },
-            {
-              "pos": 10,
-              "driver": "William Sawalich",
-              "car": "#1",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 11,
-              "driver": "AJ Allmendinger",
-              "car": "#10",
-              "manufacturer": "RAM",
-              "laps": 157,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 12,
-              "driver": "Layne Riggs",
-              "car": "#34",
-              "manufacturer": "Ford",
-              "laps": 157,
-              "status": "Running",
-              "points": 35
-            },
-            {
-              "pos": 13,
-              "driver": "Tanner Gray",
-              "car": "#15",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 26
-            },
-            {
-              "pos": 14,
-              "driver": "Timmy Hill",
-              "car": "#56",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 23
-            },
-            {
-              "pos": 15,
-              "driver": "Justin Haley",
-              "car": "#16",
-              "manufacturer": "RAM",
-              "laps": 157,
-              "status": "Running",
-              "points": 22
-            },
-            {
-              "pos": 16,
-              "driver": "Conner Jones",
-              "car": "#42",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 21
-            },
-            {
-              "pos": 17,
-              "driver": "Chandler Smith",
-              "car": "#38",
-              "manufacturer": "Ford",
-              "laps": 157,
-              "status": "Running",
-              "points": 20
-            },
-            {
-              "pos": 18,
-              "driver": "Frankie Muniz",
-              "car": "#33",
-              "manufacturer": "Ford",
-              "laps": 157,
-              "status": "Running",
-              "points": 19
-            },
-            {
-              "pos": 19,
-              "driver": "Dawson Sutton",
-              "car": "#26",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 18
-            },
-            {
-              "pos": 20,
-              "driver": "Brenden Queen",
-              "car": "#12",
-              "manufacturer": "RAM",
-              "laps": 157,
-              "status": "Running",
-              "points": 17
-            },
-            {
-              "pos": 21,
-              "driver": "Corey LaJoie",
-              "car": "#25",
-              "manufacturer": "RAM",
-              "laps": 157,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 22,
-              "driver": "Carson Hocevar",
-              "car": "#77",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 23,
-              "driver": "Jake Garcia",
-              "car": "#98",
-              "manufacturer": "Ford",
-              "laps": 157,
-              "status": "Running",
-              "points": 16
-            },
-            {
-              "pos": 24,
-              "driver": "Tyler Ankrum",
-              "car": "#18",
-              "manufacturer": "Chevrolet",
-              "laps": 157,
-              "status": "Running",
-              "points": 18
-            },
-            {
-              "pos": 25,
-              "driver": "Stewart Friesen",
-              "car": "#52",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 12
-            },
-            {
-              "pos": 26,
-              "driver": "Justin Carroll",
-              "car": "#90",
-              "manufacturer": "Toyota",
-              "laps": 157,
-              "status": "Running",
-              "points": 11
-            },
-            {
-              "pos": 27,
-              "driver": "Caleb Costner",
-              "car": "#93",
-              "manufacturer": "Chevrolet",
-              "laps": 155,
-              "status": "Running",
-              "points": 10
-            },
-            {
-              "pos": 28,
-              "driver": "Cole Butcher",
-              "car": "#13",
-              "manufacturer": "Ford",
-              "laps": 153,
-              "status": "Running",
-              "points": 9
-            },
-            {
-              "pos": 29,
-              "driver": "Clayton Green",
-              "car": "#2",
-              "manufacturer": "Ford",
-              "laps": 148,
-              "status": "Running",
-              "points": 8
-            },
-            {
-              "pos": 30,
-              "driver": "Spencer Boyd",
-              "car": "#76",
-              "manufacturer": "Chevrolet",
-              "laps": 147,
-              "status": "Running",
-              "points": 7
-            },
-            {
-              "pos": 31,
-              "driver": "Ty Majeski",
-              "car": "#88",
-              "manufacturer": "Ford",
-              "laps": 123,
-              "status": "Running",
-              "points": 19
-            },
-            {
-              "pos": 32,
-              "driver": "Andres Perez de Lara",
-              "car": "#44",
-              "manufacturer": "Chevrolet",
-              "laps": 122,
-              "status": "Running",
-              "points": 5
-            },
-            {
-              "pos": 33,
-              "driver": "Kris Wright",
-              "car": "#81",
-              "manufacturer": "Chevrolet",
-              "laps": 111,
-              "status": "Running",
-              "points": 4
-            },
-            {
-              "pos": 34,
-              "driver": "Mini Tyrrell",
-              "car": "#14",
-              "manufacturer": "RAM",
-              "laps": 93,
-              "status": "Running",
-              "points": 3
-            },
-            {
-              "pos": 35,
-              "driver": "Josh Reaume",
-              "car": "#22",
-              "manufacturer": "Ford",
-              "laps": 51,
-              "status": "Running",
-              "points": 2
-            },
-            {
-              "pos": 36,
-              "driver": "Ben Rhodes",
-              "car": "#99",
-              "manufacturer": "Ford",
-              "laps": 2,
-              "status": "Running",
-              "points": 1
-            }
-          ]
-        },
-        {
-          "run_name": "NASCAR Truck Series at St. Petersburg",
-          "track_name": "Streets Of St. Petersburg",
-          "race_date": "2026-02-28",
-          "flag_state": 9,
-          "laps_in_race": 80,
-          "series_id": 3,
-          "series_name": "NASCAR Craftsman Truck Series",
-          "drivers": [
-            {
-              "pos": 1,
-              "driver": "Layne Riggs",
-              "car": "#34",
-              "manufacturer": "Ford",
-              "laps": 80,
-              "status": "Running",
-              "points": 70
-            },
-            {
-              "pos": 2,
-              "driver": "Ty Majeski",
-              "car": "#88",
-              "manufacturer": "Ford",
-              "laps": 80,
-              "status": "Running",
-              "points": 42
-            },
-            {
-              "pos": 3,
-              "driver": "Ben Rhodes",
-              "car": "#99",
-              "manufacturer": "Ford",
-              "laps": 80,
-              "status": "Running",
-              "points": 50
-            },
-            {
-              "pos": 4,
-              "driver": "Chandler Smith",
-              "car": "#38",
-              "manufacturer": "Ford",
-              "laps": 80,
-              "status": "Running",
-              "points": 49
-            },
-            {
-              "pos": 5,
-              "driver": "Kaden Honeycutt",
-              "car": "#11",
-              "manufacturer": "Toyota",
-              "laps": 80,
-              "status": "Running",
-              "points": 34
-            },
-            {
-              "pos": 6,
-              "driver": "Landen Lewis",
-              "car": "#45",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 47
-            },
-            {
-              "pos": 7,
-              "driver": "Andres Perez de Lara",
-              "car": "#44",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 32
-            },
-            {
-              "pos": 8,
-              "driver": "Daniel Hemric",
-              "car": "#19",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 29
-            },
-            {
-              "pos": 9,
-              "driver": "Colin Braun",
-              "car": "#25",
-              "manufacturer": "RAM",
-              "laps": 80,
-              "status": "Running",
-              "points": 28
-            },
-            {
-              "pos": 10,
-              "driver": "James Hinchcliffe",
-              "car": "#77",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 27
-            },
-            {
-              "pos": 11,
-              "driver": "Ben Maier",
-              "car": "#4",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 26
-            },
-            {
-              "pos": 12,
-              "driver": "Justin Haley",
-              "car": "#16",
-              "manufacturer": "RAM",
-              "laps": 80,
-              "status": "Running",
-              "points": 25
-            },
-            {
-              "pos": 13,
-              "driver": "Connor Mosack",
-              "car": "#7",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 33
-            },
-            {
-              "pos": 14,
-              "driver": "Cole Butcher",
-              "car": "#13",
-              "manufacturer": "Ford",
-              "laps": 80,
-              "status": "Running",
-              "points": 23
-            },
-            {
-              "pos": 15,
-              "driver": "Christian Eckes",
-              "car": "#91",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 22
-            },
-            {
-              "pos": 16,
-              "driver": "Tyler Reif",
-              "car": "#42",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 21
-            },
-            {
-              "pos": 17,
-              "driver": "Daniel Dye",
-              "car": "#10",
-              "manufacturer": "RAM",
-              "laps": 80,
-              "status": "Running",
-              "points": 20
-            },
-            {
-              "pos": 18,
-              "driver": "Jake Garcia",
-              "car": "#98",
-              "manufacturer": "Ford",
-              "laps": 80,
-              "status": "Running",
-              "points": 19
-            },
-            {
-              "pos": 19,
-              "driver": "Kris Wright",
-              "car": "#81",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 18
-            },
-            {
-              "pos": 20,
-              "driver": "Tanner Gray",
-              "car": "#15",
-              "manufacturer": "Toyota",
-              "laps": 80,
-              "status": "Running",
-              "points": 17
-            },
-            {
-              "pos": 21,
-              "driver": "Carter Fartuch",
-              "car": "#2",
-              "manufacturer": "Ford",
-              "laps": 80,
-              "status": "Running",
-              "points": 16
-            },
-            {
-              "pos": 22,
-              "driver": "Grant Enfinger",
-              "car": "#9",
-              "manufacturer": "Chevrolet",
-              "laps": 80,
-              "status": "Running",
-              "points": 17
-            },
-            {
-              "pos": 23,
-              "driver": "Adam Andretti",
-              "car": "#5",
-              "manufacturer": "Toyota",
-              "laps": 80,
-              "status": "Running",
-              "points": 14
-            },
-            {
-              "pos": 24,
-              "driver": "Brenden Queen",
-              "car": "#12",
-              "manufacturer": "RAM",
-              "laps": 80,
-              "status": "Running",
-              "points": 13
-            },
-            {
-              "pos": 25,
-              "driver": "Giovanni Ruggiero",
-              "car": "#17",
-              "manufacturer": "Toyota",
-              "laps": 79,
-              "status": "Running",
-              "points": 23
-            },
-            {
-              "pos": 26,
-              "driver": "Stewart Friesen",
-              "car": "#52",
-              "manufacturer": "Toyota",
-              "laps": 79,
-              "status": "Running",
-              "points": 11
-            },
-            {
-              "pos": 27,
-              "driver": "Dario Franchitti",
-              "car": "#1",
-              "manufacturer": "Toyota",
-              "laps": 79,
-              "status": "Running",
-              "points": 18
-            },
-            {
-              "pos": 28,
-              "driver": "Mini Tyrrell",
-              "car": "#14",
-              "manufacturer": "RAM",
-              "laps": 77,
-              "status": "Running",
-              "points": 9
-            },
-            {
-              "pos": 29,
-              "driver": "Jackson Lee",
-              "car": "#22",
-              "manufacturer": "Ford",
-              "laps": 75,
-              "status": "Running",
-              "points": 8
-            },
-            {
-              "pos": 30,
-              "driver": "Frankie Muniz",
-              "car": "#33",
-              "manufacturer": "Ford",
-              "laps": 74,
-              "status": "Running",
-              "points": 7
-            },
-            {
-              "pos": 31,
-              "driver": "Tyler Ankrum",
-              "car": "#18",
-              "manufacturer": "Chevrolet",
-              "laps": 70,
-              "status": "Running",
-              "points": 13
-            },
-            {
-              "pos": 32,
-              "driver": "Timmy Hill",
-              "car": "#56",
-              "manufacturer": "Toyota",
-              "laps": 63,
-              "status": "Running",
-              "points": 5
-            },
-            {
-              "pos": 33,
-              "driver": "Dawson Sutton",
-              "car": "#26",
-              "manufacturer": "Chevrolet",
-              "laps": 62,
-              "status": "Running",
-              "points": 4
-            },
-            {
-              "pos": 34,
-              "driver": "Nathan Nicholson",
-              "car": "#76",
-              "manufacturer": "Chevrolet",
-              "laps": 55,
-              "status": "Running",
-              "points": 3
-            },
-            {
-              "pos": 35,
-              "driver": "Derek White",
-              "car": "#69",
-              "manufacturer": "Ford",
-              "laps": 52,
-              "status": "Running",
-              "points": 2
-            },
-            {
-              "pos": 36,
-              "driver": "Wesley Slimp",
-              "car": "#62",
-              "manufacturer": "Toyota",
-              "laps": 15,
-              "status": "Running",
-              "points": 1
-            }
-          ]
-        },
-        {
-          "run_name": "NASCAR Truck Series at Atlanta",
-          "track_name": "Echopark Speedway",
-          "race_date": "2026-02-21",
-          "flag_state": 9,
-          "laps_in_race": 125,
-          "series_id": 3,
-          "series_name": "NASCAR Craftsman Truck Series",
-          "drivers": [
-            {
-              "pos": 1,
-              "driver": "Kyle Busch",
-              "car": "#7",
-              "manufacturer": "Chevrolet",
-              "laps": 125,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 2,
-              "driver": "Carson Hocevar",
-              "car": "#77",
-              "manufacturer": "Chevrolet",
-              "laps": 125,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 3,
-              "driver": "Giovanni Ruggiero",
-              "car": "#17",
-              "manufacturer": "Toyota",
-              "laps": 125,
-              "status": "Running",
-              "points": 40
-            },
-            {
-              "pos": 4,
-              "driver": "Ben Rhodes",
-              "car": "#99",
-              "manufacturer": "Ford",
-              "laps": 125,
-              "status": "Running",
-              "points": 42
-            },
-            {
-              "pos": 5,
-              "driver": "Corey Heim",
-              "car": "#1",
-              "manufacturer": "Toyota",
-              "laps": 125,
-              "status": "Running",
-              "points": 44
-            },
-            {
-              "pos": 6,
-              "driver": "Chandler Smith",
-              "car": "#38",
-              "manufacturer": "Ford",
-              "laps": 125,
-              "status": "Running",
-              "points": 38
-            },
-            {
-              "pos": 7,
-              "driver": "Jake Garcia",
-              "car": "#98",
-              "manufacturer": "Ford",
-              "laps": 125,
-              "status": "Running",
-              "points": 34
-            },
-            {
-              "pos": 8,
-              "driver": "John Hunter Nemechek",
-              "car": "#62",
-              "manufacturer": "Toyota",
-              "laps": 125,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 9,
-              "driver": "Ricky Stenhouse Jr.",
-              "car": "#45",
-              "manufacturer": "Chevrolet",
-              "laps": 125,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 10,
-              "driver": "Justin Haley",
-              "car": "#16",
-              "manufacturer": "RAM",
-              "laps": 125,
-              "status": "Running",
-              "points": 27
-            },
-            {
-              "pos": 11,
-              "driver": "Ty Dillon",
-              "car": "#25",
-              "manufacturer": "RAM",
-              "laps": 125,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 12,
-              "driver": "Adam Andretti",
-              "car": "#5",
-              "manufacturer": "Toyota",
-              "laps": 125,
-              "status": "Running",
-              "points": 25
-            },
-            {
-              "pos": 13,
-              "driver": "Daniel Dye",
-              "car": "#10",
-              "manufacturer": "RAM",
-              "laps": 125,
-              "status": "Running",
-              "points": 24
-            },
-            {
-              "pos": 14,
-              "driver": "Tyler Ankrum",
-              "car": "#18",
-              "manufacturer": "Chevrolet",
-              "laps": 125,
-              "status": "Running",
-              "points": 23
-            },
-            {
-              "pos": 15,
-              "driver": "Andres Perez de Lara",
-              "car": "#44",
-              "manufacturer": "Chevrolet",
-              "laps": 125,
-              "status": "Running",
-              "points": 29
-            },
-            {
-              "pos": 16,
-              "driver": "Brenden Queen",
-              "car": "#12",
-              "manufacturer": "RAM",
-              "laps": 125,
-              "status": "Running",
-              "points": 21
-            },
-            {
-              "pos": 17,
-              "driver": "Tyler Reif",
-              "car": "#42",
-              "manufacturer": "Chevrolet",
-              "laps": 125,
-              "status": "Running",
-              "points": 20
-            },
-            {
-              "pos": 18,
-              "driver": "Kris Wright",
-              "car": "#81",
-              "manufacturer": "Chevrolet",
-              "laps": 125,
-              "status": "Running",
-              "points": 19
-            },
-            {
-              "pos": 19,
-              "driver": "Mini Tyrrell",
-              "car": "#14",
-              "manufacturer": "RAM",
-              "laps": 124,
-              "status": "Running",
-              "points": 18
-            },
-            {
-              "pos": 20,
-              "driver": "Stewart Friesen",
-              "car": "#52",
-              "manufacturer": "Toyota",
-              "laps": 124,
-              "status": "Running",
-              "points": 32
-            },
-            {
-              "pos": 21,
-              "driver": "Kaden Honeycutt",
-              "car": "#11",
-              "manufacturer": "Toyota",
-              "laps": 123,
-              "status": "Running",
-              "points": 19
-            },
-            {
-              "pos": 22,
-              "driver": "Grant Enfinger",
-              "car": "#9",
-              "manufacturer": "Chevrolet",
-              "laps": 123,
-              "status": "Running",
-              "points": 15
-            },
-            {
-              "pos": 23,
-              "driver": "Clayton Green",
-              "car": "#2",
-              "manufacturer": "Ford",
-              "laps": 123,
-              "status": "Running",
-              "points": 14
-            },
-            {
-              "pos": 24,
-              "driver": "Josh Reaume",
-              "car": "#22",
-              "manufacturer": "Ford",
-              "laps": 123,
-              "status": "Running",
-              "points": 13
-            },
-            {
-              "pos": 25,
-              "driver": "Frankie Muniz",
-              "car": "#33",
-              "manufacturer": "Ford",
-              "laps": 123,
-              "status": "Running",
-              "points": 12
-            },
-            {
-              "pos": 26,
-              "driver": "Spencer Boyd",
-              "car": "#76",
-              "manufacturer": "Chevrolet",
-              "laps": 120,
-              "status": "Running",
-              "points": 11
-            },
-            {
-              "pos": 27,
-              "driver": "Layne Riggs",
-              "car": "#34",
-              "manufacturer": "Ford",
-              "laps": 119,
-              "status": "Running",
-              "points": 11
-            },
-            {
-              "pos": 28,
-              "driver": "Ty Majeski",
-              "car": "#88",
-              "manufacturer": "Ford",
-              "laps": 119,
-              "status": "Running",
-              "points": 15
-            },
-            {
-              "pos": 29,
-              "driver": "Tyler Tomassi",
-              "car": "#69",
-              "manufacturer": "Ford",
-              "laps": 119,
-              "status": "Running",
-              "points": 8
-            },
-            {
-              "pos": 30,
-              "driver": "Tanner Gray",
-              "car": "#15",
-              "manufacturer": "Toyota",
-              "laps": 116,
-              "status": "Running",
-              "points": 8
-            },
-            {
-              "pos": 31,
-              "driver": "Cole Butcher",
-              "car": "#13",
-              "manufacturer": "Ford",
-              "laps": 100,
-              "status": "Running",
-              "points": 6
-            },
-            {
-              "pos": 32,
-              "driver": "Dawson Sutton",
-              "car": "#26",
-              "manufacturer": "Chevrolet",
-              "laps": 100,
-              "status": "Running",
-              "points": 5
-            },
-            {
-              "pos": 33,
-              "driver": "Caleb Costner",
-              "car": "#93",
-              "manufacturer": "Chevrolet",
-              "laps": 99,
-              "status": "Running",
-              "points": 4
-            },
-            {
-              "pos": 34,
-              "driver": "Daniel Hemric",
-              "car": "#19",
-              "manufacturer": "Chevrolet",
-              "laps": 88,
-              "status": "Running",
-              "points": 5
-            },
-            {
-              "pos": 35,
-              "driver": "Justin Carroll",
-              "car": "#90",
-              "manufacturer": "Toyota",
-              "laps": 65,
-              "status": "Running",
-              "points": 2
-            },
-            {
-              "pos": 36,
-              "driver": "Christian Eckes",
-              "car": "#91",
-              "manufacturer": "Chevrolet",
-              "laps": 2,
-              "status": "Running",
-              "points": 1
-            }
-          ]
-        },
-        {
-          "run_name": "NASCAR Truck Series at Daytona",
-          "track_name": "Daytona International Speedway",
-          "race_date": "2026-02-13",
-          "flag_state": 9,
-          "laps_in_race": 102,
-          "series_id": 3,
-          "series_name": "NASCAR Craftsman Truck Series",
-          "drivers": [
-            {
-              "pos": 1,
-              "driver": "Chandler Smith",
-              "car": "#38",
-              "manufacturer": "Ford",
-              "laps": 102,
-              "status": "Running",
-              "points": 65
-            },
-            {
-              "pos": 2,
-              "driver": "Giovanni Ruggiero",
-              "car": "#17",
-              "manufacturer": "Toyota",
-              "laps": 102,
-              "status": "Running",
-              "points": 35
-            },
-            {
-              "pos": 3,
-              "driver": "Christian Eckes",
-              "car": "#91",
-              "manufacturer": "Chevrolet",
-              "laps": 102,
-              "status": "Running",
-              "points": 46
-            },
-            {
-              "pos": 4,
-              "driver": "Ty Majeski",
-              "car": "#88",
-              "manufacturer": "Ford",
-              "laps": 102,
-              "status": "Running",
-              "points": 45
-            },
-            {
-              "pos": 5,
-              "driver": "John Hunter Nemechek",
-              "car": "#62",
-              "manufacturer": "Toyota",
-              "laps": 102,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 6,
-              "driver": "Ricky Stenhouse Jr.",
-              "car": "#45",
-              "manufacturer": "Chevrolet",
-              "laps": 102,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 7,
-              "driver": "Brenden Queen",
-              "car": "#12",
-              "manufacturer": "RAM",
-              "laps": 102,
-              "status": "Running",
-              "points": 32
-            },
-            {
-              "pos": 8,
-              "driver": "Kaden Honeycutt",
-              "car": "#11",
-              "manufacturer": "Toyota",
-              "laps": 102,
-              "status": "Running",
-              "points": 34
-            },
-            {
-              "pos": 9,
-              "driver": "Tyler Ankrum",
-              "car": "#18",
-              "manufacturer": "Chevrolet",
-              "laps": 102,
-              "status": "Running",
-              "points": 28
-            },
-            {
-              "pos": 10,
-              "driver": "Stewart Friesen",
-              "car": "#52",
-              "manufacturer": "Toyota",
-              "laps": 102,
-              "status": "Running",
-              "points": 27
-            },
-            {
-              "pos": 11,
-              "driver": "Nick Leitz",
-              "car": "#5",
-              "manufacturer": "Toyota",
-              "laps": 102,
-              "status": "Running",
-              "points": 31
-            },
-            {
-              "pos": 12,
-              "driver": "Ben Rhodes",
-              "car": "#99",
-              "manufacturer": "Ford",
-              "laps": 102,
-              "status": "Running",
-              "points": 26
-            },
-            {
-              "pos": 13,
-              "driver": "Andres Perez de Lara",
-              "car": "#44",
-              "manufacturer": "Chevrolet",
-              "laps": 102,
-              "status": "Running",
-              "points": 24
-            },
-            {
-              "pos": 14,
-              "driver": "Cole Butcher",
-              "car": "#13",
-              "manufacturer": "Ford",
-              "laps": 102,
-              "status": "Running",
-              "points": 23
-            },
-            {
-              "pos": 15,
-              "driver": "Travis Pastrana",
-              "car": "#42",
-              "manufacturer": "Chevrolet",
-              "laps": 102,
-              "status": "Running",
-              "points": 22
-            },
-            {
-              "pos": 16,
-              "driver": "Frankie Muniz",
-              "car": "#33",
-              "manufacturer": "Ford",
-              "laps": 102,
-              "status": "Running",
-              "points": 21
-            },
-            {
-              "pos": 17,
-              "driver": "Daniel Dye",
-              "car": "#10",
-              "manufacturer": "RAM",
-              "laps": 102,
-              "status": "Running",
-              "points": 20
-            },
-            {
-              "pos": 18,
-              "driver": "Clay Greenfield",
-              "car": "#95",
-              "manufacturer": "Chevrolet",
-              "laps": 102,
-              "status": "Running",
-              "points": 19
-            },
-            {
-              "pos": 19,
-              "driver": "Mini Tyrrell",
-              "car": "#14",
-              "manufacturer": "RAM",
-              "laps": 102,
-              "status": "Running",
-              "points": 18
-            },
-            {
-              "pos": 20,
-              "driver": "Josh Reaume",
-              "car": "#22",
-              "manufacturer": "Ford",
-              "laps": 102,
-              "status": "Running",
-              "points": 17
-            },
-            {
-              "pos": 21,
-              "driver": "Spencer Boyd",
-              "car": "#76",
-              "manufacturer": "Chevrolet",
-              "laps": 102,
-              "status": "Running",
-              "points": 16
-            },
-            {
-              "pos": 22,
-              "driver": "Justin Haley",
-              "car": "#16",
-              "manufacturer": "RAM",
-              "laps": 102,
-              "status": "Running",
-              "points": 15
-            },
-            {
-              "pos": 23,
-              "driver": "Tanner Gray",
-              "car": "#15",
-              "manufacturer": "Toyota",
-              "laps": 102,
-              "status": "Running",
-              "points": 23
-            },
-            {
-              "pos": 24,
-              "driver": "Michael McDowell",
-              "car": "#7",
-              "manufacturer": "Chevrolet",
-              "laps": 101,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 25,
-              "driver": "Kris Wright",
-              "car": "#81",
-              "manufacturer": "Chevrolet",
-              "laps": 101,
-              "status": "Running",
-              "points": 12
-            },
-            {
-              "pos": 26,
-              "driver": "Daniel Hemric",
-              "car": "#19",
-              "manufacturer": "Chevrolet",
-              "laps": 101,
-              "status": "Running",
-              "points": 12
-            },
-            {
-              "pos": 27,
-              "driver": "Dawson Sutton",
-              "car": "#26",
-              "manufacturer": "Chevrolet",
-              "laps": 101,
-              "status": "Running",
-              "points": 10
-            },
-            {
-              "pos": 28,
-              "driver": "Taylor Gray",
-              "car": "#1",
-              "manufacturer": "Toyota",
-              "laps": 101,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 29,
-              "driver": "Grant Enfinger",
-              "car": "#9",
-              "manufacturer": "Chevrolet",
-              "laps": 100,
-              "status": "Running",
-              "points": 9
-            },
-            {
-              "pos": 30,
-              "driver": "Jason Kitzmiller",
-              "car": "#97",
-              "manufacturer": "Chevrolet",
-              "laps": 100,
-              "status": "Running",
-              "points": 7
-            },
-            {
-              "pos": 31,
-              "driver": "Layne Riggs",
-              "car": "#34",
-              "manufacturer": "Ford",
-              "laps": 98,
-              "status": "Running",
-              "points": 15
-            },
-            {
-              "pos": 32,
-              "driver": "Jake Garcia",
-              "car": "#98",
-              "manufacturer": "Ford",
-              "laps": 98,
-              "status": "Running",
-              "points": 5
-            },
-            {
-              "pos": 33,
-              "driver": "Jason M. White",
-              "car": "#2",
-              "manufacturer": "Ford",
-              "laps": 98,
-              "status": "Running",
-              "points": 4
-            },
-            {
-              "pos": 34,
-              "driver": "Corey LaJoie",
-              "car": "#75",
-              "manufacturer": "Chevrolet",
-              "laps": 92,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 35,
-              "driver": "Carson Hocevar",
-              "car": "#77",
-              "manufacturer": "Chevrolet",
-              "laps": 88,
-              "status": "Running",
-              "points": 0
-            },
-            {
-              "pos": 36,
-              "driver": "Tony Stewart",
-              "car": "#25",
-              "manufacturer": "RAM",
-              "laps": 39,
-              "status": "Running",
-              "points": 1
-            },
-            {
-              "pos": 37,
-              "driver": "Cleetus McFarland",
-              "car": "#4",
-              "manufacturer": "Chevrolet",
-              "laps": 5,
-              "status": "Running",
-              "points": 0
-            }
-          ]
-        }
-      ],
-      "updated": "2026-04-08",
-      "series_name": "NASCAR Craftsman Truck Series"
-    },
-    "_updated": "2026-04-08"
-  },
-  "nascar-trucks-last": {
-    "data": {
-      "run_name": "NASCAR Truck Series at Rockingham",
-      "track_name": "Rockingham Speedway",
-      "race_date": "2026-04-03",
-      "flag_state": 9,
-      "laps_in_race": 200,
-      "series_id": 3,
-      "series_name": "NASCAR Craftsman Truck Series",
-      "drivers": [
-        {
-          "pos": 1,
-          "driver": "Corey Heim",
-          "car": "#1",
-          "manufacturer": "Toyota",
-          "laps": 200,
-          "status": "Running",
-          "points": 76
-        },
-        {
-          "pos": 2,
-          "driver": "Kaden Honeycutt",
-          "car": "#11",
-          "manufacturer": "Toyota",
-          "laps": 200,
-          "status": "Running",
-          "points": 51
-        },
-        {
-          "pos": 3,
-          "driver": "Layne Riggs",
-          "car": "#34",
-          "manufacturer": "Ford",
-          "laps": 200,
-          "status": "Running",
-          "points": 48
-        },
-        {
-          "pos": 4,
-          "driver": "Stewart Friesen",
-          "car": "#52",
-          "manufacturer": "Toyota",
-          "laps": 200,
-          "status": "Running",
-          "points": 37
-        },
-        {
-          "pos": 5,
-          "driver": "Grant Enfinger",
-          "car": "#9",
-          "manufacturer": "Chevrolet",
-          "laps": 200,
-          "status": "Running",
-          "points": 38
-        },
-        {
-          "pos": 6,
-          "driver": "Tyler Ankrum",
-          "car": "#18",
-          "manufacturer": "Chevrolet",
-          "laps": 200,
-          "status": "Running",
-          "points": 31
-        },
-        {
-          "pos": 7,
-          "driver": "Corey LaJoie",
-          "car": "#10",
-          "manufacturer": "RAM",
-          "laps": 200,
-          "status": "Running",
-          "points": 30
-        },
-        {
-          "pos": 8,
-          "driver": "Ty Majeski",
-          "car": "#88",
-          "manufacturer": "Ford",
-          "laps": 200,
-          "status": "Running",
-          "points": 47
-        },
-        {
-          "pos": 9,
-          "driver": "Jake Garcia",
-          "car": "#98",
-          "manufacturer": "Ford",
-          "laps": 199,
-          "status": "Running",
-          "points": 33
-        },
-        {
-          "pos": 10,
-          "driver": "Cole Butcher",
-          "car": "#13",
-          "manufacturer": "Ford",
-          "laps": 199,
-          "status": "Running",
-          "points": 34
-        },
-        {
-          "pos": 11,
-          "driver": "Sammy Smith",
-          "car": "#7",
-          "manufacturer": "Chevrolet",
-          "laps": 199,
-          "status": "Running",
-          "points": 0
-        },
-        {
-          "pos": 12,
-          "driver": "Justin Haley",
-          "car": "#16",
-          "manufacturer": "RAM",
-          "laps": 199,
-          "status": "Running",
-          "points": 25
-        },
-        {
-          "pos": 13,
-          "driver": "Christian Eckes",
-          "car": "#91",
-          "manufacturer": "Chevrolet",
-          "laps": 199,
-          "status": "Running",
-          "points": 24
-        },
-        {
-          "pos": 14,
-          "driver": "Landen Lewis",
-          "car": "#45",
-          "manufacturer": "Chevrolet",
-          "laps": 199,
-          "status": "Running",
-          "points": 24
-        },
-        {
-          "pos": 15,
-          "driver": "Dawson Sutton",
-          "car": "#26",
-          "manufacturer": "Chevrolet",
-          "laps": 199,
-          "status": "Running",
-          "points": 22
-        },
-        {
-          "pos": 16,
-          "driver": "Tanner Gray",
-          "car": "#15",
-          "manufacturer": "Toyota",
-          "laps": 198,
-          "status": "Running",
-          "points": 32
-        },
-        {
-          "pos": 17,
-          "driver": "Giovanni Ruggiero",
-          "car": "#17",
-          "manufacturer": "Toyota",
-          "laps": 198,
-          "status": "Running",
-          "points": 22
-        },
-        {
-          "pos": 18,
-          "driver": "Ben Rhodes",
-          "car": "#99",
-          "manufacturer": "Ford",
-          "laps": 198,
-          "status": "Running",
-          "points": 19
-        },
-        {
-          "pos": 19,
-          "driver": "Kris Wright",
-          "car": "#81",
-          "manufacturer": "Chevrolet",
-          "laps": 198,
-          "status": "Running",
-          "points": 18
-        },
-        {
-          "pos": 20,
-          "driver": "Connor Hall",
-          "car": "#4",
-          "manufacturer": "Chevrolet",
-          "laps": 198,
-          "status": "Running",
-          "points": 17
-        },
-        {
-          "pos": 21,
-          "driver": "Luke Baldwin",
-          "car": "#2",
-          "manufacturer": "Ford",
-          "laps": 198,
-          "status": "Running",
-          "points": 16
-        },
-        {
-          "pos": 22,
-          "driver": "Ty Dillon",
-          "car": "#25",
-          "manufacturer": "RAM",
-          "laps": 197,
-          "status": "Running",
-          "points": 0
-        },
-        {
-          "pos": 23,
-          "driver": "Michael Christopher Jr.",
-          "car": "#62",
-          "manufacturer": "Toyota",
-          "laps": 197,
-          "status": "Running",
-          "points": 14
-        },
-        {
-          "pos": 24,
-          "driver": "Daniel Hemric",
-          "car": "#19",
-          "manufacturer": "Chevrolet",
-          "laps": 197,
-          "status": "Running",
-          "points": 16
-        },
-        {
-          "pos": 25,
-          "driver": "Mini Tyrrell",
-          "car": "#14",
-          "manufacturer": "RAM",
-          "laps": 197,
-          "status": "Running",
-          "points": 12
-        },
-        {
-          "pos": 26,
-          "driver": "Parker Eatmon",
-          "car": "#42",
-          "manufacturer": "Chevrolet",
-          "laps": 197,
-          "status": "Running",
-          "points": 14
-        },
-        {
-          "pos": 27,
-          "driver": "Brenden Queen",
-          "car": "#12",
-          "manufacturer": "RAM",
-          "laps": 196,
-          "status": "Running",
-          "points": 10
-        },
-        {
-          "pos": 28,
-          "driver": "Spencer Boyd",
-          "car": "#76",
-          "manufacturer": "Chevrolet",
-          "laps": 195,
-          "status": "Running",
-          "points": 9
-        },
-        {
-          "pos": 29,
-          "driver": "Clayton Green",
-          "car": "#22",
-          "manufacturer": "Ford",
-          "laps": 195,
-          "status": "Running",
-          "points": 8
-        },
-        {
-          "pos": 30,
-          "driver": "Timmy Hill",
-          "car": "#56",
-          "manufacturer": "Toyota",
-          "laps": 194,
-          "status": "Running",
-          "points": 7
-        },
-        {
-          "pos": 31,
-          "driver": "Frankie Muniz",
-          "car": "#33",
-          "manufacturer": "Ford",
-          "laps": 192,
-          "status": "Running",
-          "points": 6
-        },
-        {
-          "pos": 32,
-          "driver": "Andres Perez de Lara",
-          "car": "#44",
-          "manufacturer": "Chevrolet",
-          "laps": 187,
-          "status": "Running",
-          "points": 5
-        },
-        {
-          "pos": 33,
-          "driver": "Caleb Costner",
-          "car": "#93",
-          "manufacturer": "Chevrolet",
-          "laps": 187,
-          "status": "Running",
-          "points": 4
-        },
-        {
-          "pos": 34,
-          "driver": "Carson Hocevar",
-          "car": "#77",
-          "manufacturer": "Chevrolet",
-          "laps": 116,
-          "status": "Running",
-          "points": 0
-        },
-        {
-          "pos": 35,
-          "driver": "Adam Andretti",
-          "car": "#5",
-          "manufacturer": "Toyota",
-          "laps": 58,
-          "status": "Running",
-          "points": 2
-        },
-        {
-          "pos": 36,
-          "driver": "Chandler Smith",
-          "car": "#38",
-          "manufacturer": "Ford",
-          "laps": 200,
-          "status": "Running",
-          "points": 1
-        }
-      ]
-    },
-    "_updated": "2026-04-08"
-  },
-  "nascar-trucks-season": {
-    "data": {
-      "standings": [
-        {
-          "pos": 1,
-          "driver": "C. Heim",
-          "car": "",
-          "manufacturer": "Toyota",
-          "points": 190,
-          "wins": 2,
-          "races": 0
-        },
-        {
-          "pos": 2,
-          "driver": "K. Honeycutt",
-          "car": "",
-          "manufacturer": "Toyota",
-          "points": 190,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 3,
-          "driver": "L. Riggs",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 179,
-          "wins": 1,
-          "races": 0
-        },
-        {
-          "pos": 4,
-          "driver": "C. Smith",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 173,
-          "wins": 1,
-          "races": 0
-        },
-        {
-          "pos": 5,
-          "driver": "T. Majeski",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 168,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 6,
-          "driver": "G. Ruggiero",
-          "car": "",
-          "manufacturer": "Toyota",
-          "points": 149,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 7,
-          "driver": "C. Eckes",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 143,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 8,
-          "driver": "B. Rhodes",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 138,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 9,
-          "driver": "S. Friesen",
-          "car": "",
-          "manufacturer": "Toyota",
-          "points": 119,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 10,
-          "driver": "J. Haley",
-          "car": "",
-          "manufacturer": "RAM NASCAR Trucks team",
-          "points": 114,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 11,
-          "driver": "T. Ankrum",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 113,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 12,
-          "driver": "G. Enfinger",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 109,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 13,
-          "driver": "J. Garcia",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 107,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 14,
-          "driver": "T. Gray",
-          "car": "",
-          "manufacturer": "Toyota",
-          "points": 106,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 15,
-          "driver": "A. Pérez de Lara",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 95,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 16,
-          "driver": "C. Butcher",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 95,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 17,
-          "driver": "B. Queen",
-          "car": "",
-          "manufacturer": "RAM NASCAR Trucks team",
-          "points": 93,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 18,
-          "driver": "D. Hemric",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 91,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 19,
-          "driver": "L. Lewis",
-          "car": "",
-          "manufacturer": "",
-          "points": 71,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 20,
-          "driver": "K. Wright",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 71,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 21,
-          "driver": "C. Mosack",
-          "car": "",
-          "manufacturer": "",
-          "points": 65,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 22,
-          "driver": "F. Muniz",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 65,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 23,
-          "driver": "D. Dye",
-          "car": "",
-          "manufacturer": "",
-          "points": 64,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 24,
-          "driver": "M. Tyrrell",
-          "car": "",
-          "manufacturer": "RAM NASCAR Trucks team",
-          "points": 60,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 25,
-          "driver": "D. Sutton",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 59,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 26,
-          "driver": "S. Boyd",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 43,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 27,
-          "driver": "A. Andretti",
-          "car": "",
-          "manufacturer": "",
-          "points": 41,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 28,
-          "driver": "T. Reif",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 41,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 29,
-          "driver": "T. Hill",
-          "car": "",
-          "manufacturer": "Toyota",
-          "points": 35,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 30,
-          "driver": "J. Reaume",
-          "car": "",
-          "manufacturer": "",
-          "points": 32,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 31,
-          "driver": "N. Leitz",
-          "car": "",
-          "manufacturer": "",
-          "points": 31,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 32,
-          "driver": "C. LaJoie",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 30,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 33,
-          "driver": "C. Green",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 30,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 34,
-          "driver": "C. Braun",
-          "car": "",
-          "manufacturer": "",
-          "points": 28,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 35,
-          "driver": "J. Hinchcliffe",
-          "car": "",
-          "manufacturer": "",
-          "points": 27,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 36,
-          "driver": "B. Maier",
-          "car": "",
-          "manufacturer": "",
-          "points": 26,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 37,
-          "driver": "T. Pastrana",
-          "car": "",
-          "manufacturer": "",
-          "points": 22,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 38,
-          "driver": "C. Jones",
-          "car": "",
-          "manufacturer": "",
-          "points": 21,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 39,
-          "driver": "C. Greenfield",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 19,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 40,
-          "driver": "C. Costner",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 18,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 41,
-          "driver": "D. Franchitti",
-          "car": "",
-          "manufacturer": "",
-          "points": 18,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 42,
-          "driver": "C. Hall",
-          "car": "",
-          "manufacturer": "",
-          "points": 17,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 43,
-          "driver": "L. Baldwin",
-          "car": "",
-          "manufacturer": "Ford",
-          "points": 16,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 44,
-          "driver": "C. Fartuch",
-          "car": "",
-          "manufacturer": "",
-          "points": 16,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 45,
-          "driver": "M. Christopher",
-          "car": "",
-          "manufacturer": "",
-          "points": 14,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 46,
-          "driver": "P. Eatmon",
-          "car": "",
-          "manufacturer": "",
-          "points": 14,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 47,
-          "driver": "J. Carroll",
-          "car": "",
-          "manufacturer": "Toyota",
-          "points": 13,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 48,
-          "driver": "J. Lee",
-          "car": "",
-          "manufacturer": "",
-          "points": 8,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 49,
-          "driver": "T. Tomassi",
-          "car": "",
-          "manufacturer": "",
-          "points": 8,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 50,
-          "driver": "J. Kitzmiller",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 7,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 51,
-          "driver": "J. White",
-          "car": "",
-          "manufacturer": "",
-          "points": 4,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 52,
-          "driver": "N. Nicholson",
-          "car": "",
-          "manufacturer": "",
-          "points": 3,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 53,
-          "driver": "D. White",
-          "car": "",
-          "manufacturer": "",
-          "points": 2,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 54,
-          "driver": "T. Stewart",
-          "car": "",
-          "manufacturer": "",
-          "points": 1,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 55,
-          "driver": "W. Slimp",
-          "car": "",
-          "manufacturer": "",
-          "points": 1,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 56,
-          "driver": "C. Mitchell",
-          "car": "",
-          "manufacturer": "",
-          "points": 1,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 57,
-          "driver": "K. Busch",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 0,
-          "wins": 1,
-          "races": 0
-        },
-        {
-          "pos": 58,
-          "driver": "C. Hocevar",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 59,
-          "driver": "R. Chastain",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 60,
-          "driver": "J. Nemechek",
-          "car": "",
-          "manufacturer": "",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 61,
-          "driver": "R. Stenhouse Jr.",
-          "car": "",
-          "manufacturer": "Chevrolet",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 62,
-          "driver": "C. Bell",
-          "car": "",
-          "manufacturer": "Toyota",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 63,
-          "driver": "W. Sawalich",
-          "car": "",
-          "manufacturer": "",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 64,
-          "driver": "T. Dillon",
-          "car": "",
-          "manufacturer": "",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 65,
-          "driver": "AJ Allmendinger",
-          "car": "",
-          "manufacturer": "",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 66,
-          "driver": "S. Smith",
-          "car": "",
-          "manufacturer": "",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 67,
-          "driver": "M. McDowell",
-          "car": "",
-          "manufacturer": "",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        },
-        {
-          "pos": 68,
-          "driver": "T. Gray",
-          "car": "",
-          "manufacturer": "",
-          "points": 0,
-          "wins": 0,
-          "races": 0
-        }
-      ],
-      "series_name": "NASCAR Craftsman Truck Series",
       "updated": "2026-04-08"
     },
     "_updated": "2026-04-08"
