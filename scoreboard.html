@@ -4246,7 +4246,7 @@ function buildMotorsportEditorPanel(draft){
   const nasMaxRaces=mc.nascar_max_races||3,f1MaxRaces=mc.f1_max_races||3,pgaMaxEventsUI=mc.pga_max_events||3;
   const tenLive=mc.tennis_live!==false,tenUpcoming=mc.tennis_upcoming!==false,tenCompleted=mc.tennis_completed!==false;
   const tenMaxCompleted=mc.tennis_max_completed||5,tenMaxUpcoming=mc.tennis_max_upcoming||10;
-  const tenRankings=mc.tennis_rankings!==false,tenRankingsCount=mc.tennis_rankings_count||20;
+  const tenRankings=mc.tennis_rankings!==false,tenRankingsCount=mc.tennis_rankings_count||50;
   // Bake the numeric ID at render time — no runtime variable lookup in onclick/onchange
   const _mcSbId=parseInt((draft&&draft.id)||0)||parseInt(_activeSbId)||0;
   const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked,${_mcSbId})" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
@@ -4464,7 +4464,7 @@ async function fetchTennisData(sport, sbConfig){
 
     // World rankings cards
     const showRankings=mc.tennis_rankings!==false;
-    const rankingsCount=mc.tennis_rankings_count||20;
+    const rankingsCount=mc.tennis_rankings_count||50;
     const rankingCards=[];
     if(showRankings){
       try{
@@ -4521,27 +4521,17 @@ function buildTennisCard(g){
   // ── World Rankings section header card ───────────────────────────────────────
   if(g.isTennisRankingsHeader){
     const leagueLabel=g.rankingLeague.toUpperCase();
-    const top3Html=(g.top3||[]).map((p,i)=>{
-      const medal=['🥇','🥈','🥉'][i];
-      const hsEl=p.headshot?`<img src="${p.headshot}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--border);background:var(--bg-secondary);flex-shrink:0;" onerror="this.style.display='none'">`:
-        `<div style="width:32px;height:32px;border-radius:50%;background:var(--bg-secondary);border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;">${medal}</div>`;
-      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:16px;flex-shrink:0;">${medal}</span>
-        ${hsEl}
-        <div style="min-width:0;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:900;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
-          ${p.country?`<div style="font-size:9px;color:var(--motor-label-color,var(--text-dim));font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;">${p.country}</div>`:''}
-        </div>
-      </div>`;
-    }).join('');
     card.innerHTML=`
       <div class="card-header">
         <div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>
         <span style="font-size:var(--card-name-size,11px);font-family:'Share Tech Mono',monospace;color:var(--motor-label-color,var(--text-dim));">WORLD RANKINGS</span>
       </div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,18px);font-weight:900;letter-spacing:1px;color:var(--text-primary);margin:6px 0 4px;">${leagueLabel} WORLD RANKINGS</div>
-      <div style="font-size:10px;color:var(--motor-label-color,var(--text-dim));font-family:'Share Tech Mono',monospace;margin-bottom:8px;">Top ${g.totalPlayers} players · ${g.totalPages} pages${g.updated?' · Updated '+g.updated:''}</div>
-      <div style="display:flex;flex-direction:column;">${top3Html}</div>`;
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 0;gap:8px;">
+        <div style="font-size:36px;">🎾</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,22px);font-weight:900;letter-spacing:2px;color:var(--text-primary);text-align:center;">${leagueLabel}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,16px);font-weight:700;letter-spacing:1px;color:var(--motor-secondary-color,var(--text-secondary));text-align:center;">WORLD RANKINGS</div>
+        <div style="font-size:10px;color:var(--motor-label-color,var(--text-dim));font-family:'Share Tech Mono',monospace;margin-top:4px;">Top ${g.totalPlayers} players · ${g.totalPages} pages${g.updated?' · '+g.updated:''}</div>
+      </div>`;
     return card;
   }
 
@@ -4549,9 +4539,12 @@ function buildTennisCard(g){
   if(g.isTennisRankings){
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-name-size,11px);font-family:'Share Tech Mono',monospace;color:var(--motor-label-color,var(--text-dim));">WORLD RANKINGS</span></div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
+    const medals=['🥇','🥈','🥉'];
     const rows=(g.drivers||[]).map(p=>{
       const changeStr=p.change>0?`▲${p.change}`:p.change<0?`▼${Math.abs(p.change)}`:'–';
       const changeColor=p.change>0?'var(--accent-green)':p.change<0?'#f87171':'var(--motor-label-color,var(--text-dim))';
+      const posEl=p.pos<=3?`<span style="font-size:16px;width:22px;text-align:center;flex-shrink:0;">${medals[p.pos-1]}</span>`
+        :`<span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--motor-label-color,var(--text-dim));width:22px;text-align:right;flex-shrink:0;">${p.pos}</span>`;
       let leftEl='';
       if(p.headshot){
         leftEl=`<img src="${p.headshot}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`;
@@ -4559,7 +4552,7 @@ function buildTennisCard(g){
         leftEl=`<img src="${p.flag}" style="width:24px;height:15px;object-fit:cover;border-radius:2px;border:1px solid var(--border);flex-shrink:0;" onerror="this.style.display='none'">`;
       }
       return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
-        <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--motor-label-color,var(--text-dim));width:22px;text-align:right;flex-shrink:0;">${p.pos}</span>
+        ${posEl}
         ${leftEl}
         <div style="flex:1;min-width:0;">
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
