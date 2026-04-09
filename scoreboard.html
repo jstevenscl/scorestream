@@ -1559,10 +1559,10 @@ function renderEditorStep(sbOverride){
     const tzOptions=['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','Pacific/Honolulu','Europe/London','Europe/Paris','Europe/Berlin','Asia/Tokyo','Asia/Shanghai','Australia/Sydney'];
     const currentTz=_editorDraft.display_config.timezone||'America/New_York';
     // Detect motor-only scoreboard to hide sport-specific sliders that don't apply
-    const _motorSbIds=['f1','nascar','nascar-xfinity','nascar-trucks','pga','atp','wta'];
+    const _motorSbIds=['f1','nascar','nascar-noaps','nascar-trucks','pga','atp','wta'];
     const _enabledIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
     const _isMotorSb=_enabledIds.length>0&&_enabledIds.every(id=>_motorSbIds.includes(id));
-    const _hasMotorSb=_enabledIds.some(id=>['f1','nascar','nascar-xfinity','nascar-trucks','pga'].includes(id));
+    const _hasMotorSb=_enabledIds.some(id=>['f1','nascar','nascar-noaps','nascar-trucks','pga'].includes(id));
     const _isTennisSb=_enabledIds.length>0&&_enabledIds.every(id=>id==='atp'||id==='wta');
     body=`
       <div class="wiz-field">
@@ -1748,7 +1748,7 @@ function renderEditorStep(sbOverride){
           </div>
         </div>
 
-        ${(_isTennisSb||_enabledIds.some(id=>['pga','nascar','nascar-xfinity','nascar-trucks','f1'].includes(id)))?`<div style="margin-top:12px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        ${(_isTennisSb||_enabledIds.some(id=>['pga','nascar','nascar-noaps','nascar-trucks','f1'].includes(id)))?`<div style="margin-top:12px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🖼️ Driver / Player Headshots</div>
             <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">Show driver/player headshot photos on cards — loaded from ESPN CDN when available</div>
@@ -1816,7 +1816,7 @@ function renderEditorStep(sbOverride){
   }
   else if(_editorStep===2){
     const _enabledSportIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
-    const _motorSports=['f1','nascar','nascar-xfinity','nascar-trucks','pga','atp','wta'];
+    const _motorSports=['f1','nascar','nascar-noaps','nascar-trucks','pga','atp','wta'];
     const _isMotorOnly=_enabledSportIds.length>0&&_enabledSportIds.every(id=>_motorSports.includes(id));
     if(_isMotorOnly){ window._motorPanelSbId=_editorDraft.id||_activeSbId||null; body=buildMotorsportEditorPanel(_editorDraft); } else {
     const groups=[
@@ -2182,10 +2182,10 @@ function buildEditorPreview(){
   var sc=_editorDraft.sport_config||{};
   var ids=Object.keys(sc).filter(function(id){return sc[id];});
   var isF1=ids.indexOf('f1')>=0;
-  var isNascar=ids.some(function(id){return id==='nascar'||id==='nascar-xfinity'||id==='nascar-trucks';});
+  var isNascar=ids.some(function(id){return id==='nascar'||id==='nascar-noaps'||id==='nascar-trucks';});
   var isPGA=ids.length===1&&ids[0]==='pga';
   var isTennisOnly=ids.length>0&&ids.every(function(id){return id==='atp'||id==='wta';});
-  var isMotorOnly=ids.length>0&&ids.every(function(id){return id==='f1'||id==='nascar'||id==='nascar-xfinity'||id==='nascar-trucks';});
+  var isMotorOnly=ids.length>0&&ids.every(function(id){return id==='f1'||id==='nascar'||id==='nascar-noaps'||id==='nascar-trucks';});
 
   if(isTennisOnly){
     var tSport=ids[0]==='atp'?{name:'ATP Tour',emoji:'🎾',color:'#0066cc'}:{name:'WTA Tour',emoji:'🎾',color:'#cc0066'};
@@ -3455,7 +3455,7 @@ const ALL_SPORTS=[
   // Motorsport (custom APIs — Jolpica for F1, cf.nascar.com for NASCAR)
   {id:'f1',         name:'Formula 1',              group:'motor', color:'#e10600',emoji:'🏎️',fetchFn:'fetchF1Data'},
   {id:'nascar',         name:'NASCAR Cup Series',                   group:'motor', color:'#ffd700',emoji:'🏁',fetchFn:'fetchNascarData'},
-  {id:'nascar-xfinity', name:"NASCAR O'Reilly Auto Parts Series",   group:'motor', color:'#ff6b35',emoji:'🏁',fetchFn:'fetchNascarData'},
+  {id:'nascar-noaps', name:"NASCAR O'Reilly Auto Parts Series",   group:'motor', color:'#ff6b35',emoji:'🏁',fetchFn:'fetchNascarData'},
   {id:'nascar-trucks',  name:'NASCAR Craftsman Truck Series',        group:'motor', color:'#00b4d8',emoji:'🏁',fetchFn:'fetchNascarData'},
   // Tennis
   {id:'atp',        name:'ATP Tour',                group:'tennis',color:'#0066cc',emoji:'🎾',url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',fetchFn:'fetchTennisData'},
@@ -3580,7 +3580,7 @@ const state={
   games:{},
   favTeams:loadFavs(),
   showEnded:false,
-  daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7,wnba:2,cfl:7,xfl:7,ufl:7,mls:3,nwsl:3,pga:4,epl:3,ucl:4,laliga:3,bundesliga:3,seriea:3,ligue1:3,ncaavb:2,ncaalax:2,f1:7,nascar:7,'nascar-xfinity':7,'nascar-trucks':7},
+  daysPerSport:{nfl:7,nhl:2,nba:2,mlb:1,ncaamb:2,ncaawb:2,ncaabase:1,ncaasb:1,ncaafb:7,wnba:2,cfl:7,xfl:7,ufl:7,mls:3,nwsl:3,pga:4,epl:3,ucl:4,laliga:3,bundesliga:3,seriea:3,ligue1:3,ncaavb:2,ncaalax:2,f1:7,nascar:7,'nascar-noaps':7,'nascar-trucks':7},
   endedLeagues:new Set(ALL_SPORTS.map(s=>s.id)),
   endedFilter:Object.fromEntries(ALL_SPORTS.map(s=>[s.id,'all'])),
   seasonMeta:{},
@@ -4242,12 +4242,12 @@ function renderScoreboard(){
 
 function buildMotorsportEditorPanel(draft){
   const sc=draft.sport_config||{},mc=draft.motor_config||{};
-  const hasF1=!!sc['f1'],hasNascar=!!sc['nascar'],hasXfinity=!!sc['nascar-xfinity'],hasTrucks=!!sc['nascar-trucks'],hasATP=!!sc['atp'],hasWTA=!!sc['wta'];
+  const hasF1=!!sc['f1'],hasNascar=!!sc['nascar'],hasNoaps=!!sc['nascar-noaps'],hasTrucks=!!sc['nascar-trucks'],hasATP=!!sc['atp'],hasWTA=!!sc['wta'];
   const f1Next=mc.f1_next_race!==false,f1Last=mc.f1_last_race!==false,f1Stand=mc.f1_standings!==false;
   const nasLive=mc.nascar_live!==false,nasLast=mc.nascar_last!==false,nasStand=mc.nascar_standings!==false;
-  const xfinLive=mc.xfinity_live!==false,xfinLast=mc.xfinity_last!==false,xfinStand=mc.xfinity_standings!==false;
+  const noapsLive=mc.noaps_live!==false,noapsLast=mc.noaps_last!==false,noapsStand=mc.noaps_standings!==false;
   const truckLive=mc.trucks_live!==false,truckLast=mc.trucks_last!==false,truckStand=mc.trucks_standings!==false;
-  const nasMaxRaces=mc.nascar_max_races||3,xfinMaxRaces=mc.xfinity_max_races||3,truckMaxRaces=mc.trucks_max_races||3,f1MaxRaces=mc.f1_max_races||3,pgaMaxEventsUI=mc.pga_max_events||3;
+  const nasMaxRaces=mc.nascar_max_races||3,noapsMaxRaces=mc.noaps_max_races||3,truckMaxRaces=mc.trucks_max_races||3,f1MaxRaces=mc.f1_max_races||3,pgaMaxEventsUI=mc.pga_max_events||3;
   const tenLive=mc.tennis_live!==false,tenUpcoming=mc.tennis_upcoming!==false,tenCompleted=mc.tennis_completed!==false;
   const tenMaxCompleted=mc.tennis_max_completed||5,tenMaxUpcoming=mc.tennis_max_upcoming||10;
   const tenRankings=mc.tennis_rankings!==false,tenRankingsCount=mc.tennis_rankings_count||50;
@@ -4257,13 +4257,13 @@ function buildMotorsportEditorPanel(draft){
   const countSel=(val,key,color,label)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div></div><div style="display:flex;gap:4px;">${[1,2,3,5,10].map(n=>`<button onclick="setMotorConfig('${key}',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===val?color:'var(--border)'};background:${n===val?color:'var(--bg-card)'};color:${n===val?'#000':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>`;
   const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Results','Full finishing order pages')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Championship standings')}${countSel(f1MaxRaces,'f1_max_races','#e10600','📋 Past Races to Show')}</div>`:'';
   const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}</div>`:'';
-  const xfinSec=hasXfinity?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ff6b35;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ff6b35;">NOAPS · O'REILLY AUTO PARTS SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(xfinLive,'xfinity_live','#ff6b35','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(xfinLast,'xfinity_last','#ff6b35','🏁 Last Race Result','Final finishing order from last race')}${row(xfinStand,'xfinity_standings','#ff6b35','📊 Driver Standings','Season points standings')}${countSel(xfinMaxRaces,'xfinity_max_races','#ff6b35','📋 Past Races to Show')}</div>`:'';
+  const xfinSec=hasNoaps?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ff6b35;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ff6b35;">NOAPS · O'REILLY AUTO PARTS SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(noapsLive,'noaps_live','#ff6b35','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(noapsLast,'noaps_last','#ff6b35','🏁 Last Race Result','Final finishing order from last race')}${row(noapsStand,'noaps_standings','#ff6b35','📊 Driver Standings','Season points standings')}${countSel(noapsMaxRaces,'noaps_max_races','#ff6b35','📋 Past Races to Show')}</div>`:'';
   const truckSec=hasTrucks?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00b4d8;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00b4d8;">NASCAR CRAFTSMAN TRUCK SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(truckLive,'trucks_live','#00b4d8','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(truckLast,'trucks_last','#00b4d8','🏁 Last Race Result','Final finishing order from last race')}${row(truckStand,'trucks_standings','#00b4d8','📊 Driver Standings','Season points standings')}${countSel(truckMaxRaces,'trucks_max_races','#00b4d8','📋 Past Races to Show')}</div>`:'';
   const hasPGA=(_editorDraft.sport_config||{})['pga'];
   const pgaHistory=mc.pga_history!==false,pgaLive=mc.pga_live!==false,pgaShowCut=mc.pga_show_cut!==false;
   const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${row(pgaShowCut,'pga_show_cut','#00594f','✂️ Show Cut Players','Include players who missed the cut (CUT/MC/WD/DQ) in results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}</div>`:'';
   const tenSec=(hasATP||hasWTA)?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #0066cc;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🎾</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#0066cc;">TENNIS${hasATP&&hasWTA?' (ATP + WTA)':hasATP?' (ATP)':' (WTA)'}</span></div>${row(tenLive,'tennis_live','#0066cc','🟢 Live Matches','Show active matches with set-by-set scores')}${row(tenUpcoming,'tennis_upcoming','#0066cc','📅 Upcoming Matches','Show scheduled matches not yet started')}${row(tenCompleted,'tennis_completed','#0066cc','🏆 Completed Matches','Show recently finished match results')}${row(tenRankings,'tennis_rankings','#0066cc','📊 World Rankings','Show ATP/WTA world ranking standings card')}<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📋 Completed Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_completed',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxCompleted?'#0066cc':'var(--border)'};background:${n===tenMaxCompleted?'#0066cc':'var(--bg-card)'};color:${n===tenMaxCompleted?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📅 Upcoming Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_upcoming',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxUpcoming?'#0066cc':'var(--border)'};background:${n===tenMaxUpcoming?'#0066cc':'var(--bg-card)'};color:${n===tenMaxUpcoming?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🏅 Rankings Players to Show</div></div><div style="display:flex;gap:4px;">${[10,20,30,50].map(n=>`<button onclick="setMotorConfig('tennis_rankings_count',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenRankingsCount?'#0066cc':'var(--border)'};background:${n===tenRankingsCount?'#0066cc':'var(--bg-card)'};color:${n===tenRankingsCount?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div></div>`:'' ;
-  const none=!hasF1&&!hasNascar&&!hasXfinity&&!hasTrucks&&!hasPGA&&!hasATP&&!hasWTA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Sport Configured</div><div style="font-size:11px;margin-top:4px;">Go to Step 2 → Sports to enable Formula 1, NASCAR, PGA, or Tennis</div></div>`:'';
+  const none=!hasF1&&!hasNascar&&!hasNoaps&&!hasTrucks&&!hasPGA&&!hasATP&&!hasWTA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Sport Configured</div><div style="font-size:11px;margin-top:4px;">Go to Step 2 → Sports to enable Formula 1, NASCAR, PGA, or Tennis</div></div>`:'';
   return `<div id="motorPanel" style=""><div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this scoreboard displays:</div>${f1Sec}${nasSec}${xfinSec}${truckSec}${pgaSec}${tenSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go back to Step 2 → Sports</div>`;
 }
 function sbToggleDefault(group, toggleEl){
@@ -4286,7 +4286,7 @@ function setMotorConfig(key,val,explicitSbId){
     _editorDraft.motor_config=Object.assign({},currentMc);
   }
   // Update only the count selector buttons for this key — surgical, no DOM restructuring
-  const colors={'nascar_max_races':'#ffd700','xfinity_max_races':'#ff6b35','trucks_max_races':'#00b4d8','f1_max_races':'#e10600','pga_max_events':'#00594f','tennis_max_completed':'#0066cc','tennis_max_upcoming':'#0066cc'};
+  const colors={'nascar_max_races':'#ffd700','noaps_max_races':'#ff6b35','trucks_max_races':'#00b4d8','f1_max_races':'#e10600','pga_max_events':'#00594f','tennis_max_completed':'#0066cc','tennis_max_upcoming':'#0066cc'};
   const col=colors[key]||'#ffd700';
   document.querySelectorAll('button[onclick*="setMotorConfig"]').forEach(btn=>{
     const oc=btn.getAttribute('onclick')||'';
@@ -4815,7 +4815,7 @@ async function fetchNascarData(sport, sbConfig){
 
   // Determine which series this sport represents
   let seriesId=1, mcPrefix='nascar', standKey='nascar-2026-season', histKey='nascar-history', lastKey='nascar-last';
-  if(sport.id==='nascar-xfinity'){ seriesId=2; mcPrefix='xfinity'; standKey='nascar-xfinity-season'; histKey='nascar-xfinity-history'; lastKey='nascar-xfinity-last'; }
+  if(sport.id==='nascar-noaps'){ seriesId=2; mcPrefix='noaps'; standKey='nascar-noaps-season'; histKey='nascar-noaps-history'; lastKey='nascar-noaps-last'; }
   else if(sport.id==='nascar-trucks'){  seriesId=3; mcPrefix='trucks';  standKey='nascar-trucks-season';  histKey='nascar-trucks-history';  lastKey='nascar-trucks-last';  }
 
   const showLive=mc[`${mcPrefix}_live`]!==false;

@@ -54,13 +54,13 @@ jobs:
           nascar_off = not in_season('nascar')
           pga_off = not in_season('pga')
           if nascar_off:
-              for ns_prefix in ['nascar', 'nascar-xfinity', 'nascar-trucks']:
+              for ns_prefix in ['nascar', 'nascar-noaps', 'nascar-trucks']:
                   hist_k = f'{ns_prefix}-history'
                   if hist_k in cache:
                       cache[hist_k]['data'] = {'races': [], 'updated': today_str, 'off_season': True}
               print("NASCAR off-season: race history purged for all series, keeping standings")
               if month == 2 and today.day <= 7:
-                  for ns_prefix in ['nascar', 'nascar-xfinity', 'nascar-trucks']:
+                  for ns_prefix in ['nascar', 'nascar-noaps', 'nascar-trucks']:
                       cache.pop(f'{ns_prefix}-season', None)
                       cache.pop(f'{ns_prefix}-history', None)
                       cache.pop(f'{ns_prefix}-last', None)
@@ -76,7 +76,7 @@ jobs:
               # Save last/history for whichever series is currently active in the live feed
               if live and live.get('run_name'):
                   sid = live.get('series_id')
-                  prefix_map = {1:'nascar', 2:'nascar-xfinity', 3:'nascar-trucks'}
+                  prefix_map = {1:'nascar', 2:'nascar-noaps', 3:'nascar-trucks'}
                   prefix = prefix_map.get(sid)
                   if prefix:
                       vehicles = sorted(live.get('vehicles',[]), key=lambda x: x.get('running_position',99))
@@ -103,7 +103,7 @@ jobs:
               # Standings for all three series
               series_map = [
                   (1,'nascar','nascar-2026-season','NASCAR Cup Series'),
-                  (2,'nascar-xfinity','nascar-xfinity-season',"NASCAR O'Reilly Auto Parts Series"),
+                  (2,'nascar-noaps','nascar-noaps-season',"NASCAR O'Reilly Auto Parts Series"),
                   (3,'nascar-trucks','nascar-trucks-season','NASCAR Craftsman Truck Series'),
               ]
               for sid, prefix, stand_key, series_name in series_map:
@@ -275,7 +275,7 @@ jobs:
                       else: print(f"  {league.upper()}: no ranks found in response")
                   else: print(f"  {league.upper()}: rankings fetch failed")
               except Exception as e: print(f"  {league.upper()} rankings error: {e}")
-          for racing_sport in [('nascar','nascar-cup','nascar-drivers'),('nascar-xfinity','nascar-xfinity','nascar-drivers'),('nascar-trucks','nascar-truck','nascar-drivers'),('f1','f1','f1-drivers')]:
+          for racing_sport in [('nascar','nascar-cup','nascar-drivers'),('nascar-noaps','nascar-xfinity','nascar-drivers'),('nascar-trucks','nascar-truck','nascar-drivers'),('f1','f1','f1-drivers')]:
               espn_slug, espn_path, cache_key = racing_sport
               print(f"\n--- {espn_slug.upper()} Drivers ---")
               try:
