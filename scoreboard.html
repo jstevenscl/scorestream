@@ -641,6 +641,9 @@ body.stream-mode .card-header{padding:4px 10px;}
       <button class="snav-btn" data-section="dispatcharr" onclick="switchSection('dispatcharr')">
         <span class="snav-icon">📡</span><span>Integrations</span>
       </button>
+      <button class="snav-btn" data-section="ticker" onclick="switchSection('ticker')">
+        <span class="snav-icon">📰</span><span>Ticker Overlay</span>
+      </button>
       <button class="snav-btn" data-section="sports" onclick="switchSection('sports')">
         <span class="snav-icon">🏆</span><span>Sports Library</span>
       </button>
@@ -1207,6 +1210,108 @@ body.stream-mode .card-header{padding:4px 10px;}
       </div>
     </div>
     </div><!-- /section-dispatcharr -->
+
+    <!-- ── TICKER OVERLAY ────────────────────────────────────────── -->
+    <div id="section-ticker" class="settings-section">
+      <div class="settings-section-header">
+        <h2>Ticker Overlay</h2>
+        <p>Overlay a live score ticker onto any Dispatcharr channel. Requires an active Dispatcharr connection and a shared volume between ScoreStream and Dispatcharr.</p>
+      </div>
+
+      <!-- Scoreboard selector + status -->
+      <div class="modal-section">
+        <div class="modal-section-title">Scoreboard</div>
+        <div class="modal-row" style="margin-bottom:8px;">
+          <span class="modal-label">Apply ticker to</span>
+          <select class="modal-input" id="tickerSbSelect" style="flex:1;min-width:0;" onchange="onTickerSbChange()">
+            <option value="">— select a scoreboard —</option>
+          </select>
+        </div>
+        <div id="tickerStatusRow" style="display:none;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;gap:10px;">
+          <div id="tickerStatusDot" style="width:10px;height:10px;border-radius:50%;background:var(--text-dim);flex-shrink:0;"></div>
+          <span id="tickerStatusText" style="font-size:12px;color:var(--text-secondary);">Not active</span>
+          <span id="tickerProfileBadge" style="display:none;margin-left:auto;font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--accent);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:4px;padding:2px 7px;"></span>
+        </div>
+      </div>
+
+      <!-- Channel assignment -->
+      <div class="modal-section">
+        <div class="modal-section-title">Dispatcharr Channel</div>
+        <div class="modal-sublabel" style="margin-bottom:8px;">Select the channel whose stream profile will be modified when the ticker is enabled.</div>
+        <div class="modal-row">
+          <span class="modal-label">Channel</span>
+          <div style="display:flex;gap:6px;flex:1;min-width:0;">
+            <select class="modal-input" id="tickerChannelSelect" style="flex:1;min-width:0;" onchange="onTickerChannelChange()">
+              <option value="">— load channels —</option>
+            </select>
+            <button class="modal-btn" onclick="loadTickerChannels()" title="Refresh channels" style="padding:4px 10px;font-size:16px;">↻</button>
+          </div>
+        </div>
+        <div id="tickerChannelProfileInfo" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:6px;font-size:11px;color:var(--text-secondary);font-family:'Share Tech Mono',monospace;"></div>
+      </div>
+
+      <!-- Ticker sources -->
+      <div class="modal-section">
+        <div class="modal-section-title">Ticker Sources</div>
+        <div class="modal-sublabel" style="margin-bottom:10px;">Choose which sports appear in the ticker. Enable "Favs only" to show only games involving your favorite teams.</div>
+        <div id="tickerSportsGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+      </div>
+
+      <!-- Appearance -->
+      <div class="modal-section">
+        <div class="modal-section-title">Appearance</div>
+        <div class="modal-row" style="margin-bottom:8px;">
+          <span class="modal-label">Position</span>
+          <div style="display:flex;gap:6px;">
+            <button class="modal-btn active" id="tickerPosBottom" onclick="setTickerPos('bottom')" style="flex:1;">Bottom</button>
+            <button class="modal-btn" id="tickerPosTop" onclick="setTickerPos('top')" style="flex:1;">Top</button>
+          </div>
+        </div>
+        <div class="modal-row" style="margin-bottom:8px;">
+          <span class="modal-label">Font size</span>
+          <div style="display:flex;gap:8px;align-items:center;flex:1;">
+            <input type="range" id="tickerFontSize" min="16" max="48" value="28" step="2" style="flex:1;" oninput="document.getElementById('tickerFontSizeVal').textContent=this.value+'px'">
+            <span id="tickerFontSizeVal" style="font-size:12px;color:var(--accent);min-width:36px;text-align:right;font-family:'Share Tech Mono',monospace;">28px</span>
+          </div>
+        </div>
+        <div class="modal-row" style="margin-bottom:8px;">
+          <span class="modal-label">Scroll speed</span>
+          <div style="display:flex;gap:8px;align-items:center;flex:1;">
+            <input type="range" id="tickerScrollSpeed" min="0" max="400" value="150" step="10" style="flex:1;" oninput="updateScrollLabel()">
+            <span id="tickerScrollVal" style="font-size:12px;color:var(--accent);min-width:60px;text-align:right;font-family:'Share Tech Mono',monospace;">150 px/s</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);padding-left:130px;margin-top:-4px;margin-bottom:8px;">Set to 0 for static (no scroll). Recommended: 100–200 px/s.</div>
+        <div class="modal-row">
+          <span class="modal-label">Background</span>
+          <div style="display:flex;gap:8px;align-items:center;flex:1;">
+            <input type="range" id="tickerBgOpacity" min="0" max="1" value="0.75" step="0.05" style="flex:1;" oninput="document.getElementById('tickerBgVal').textContent=Math.round(this.value*100)+'%'">
+            <span id="tickerBgVal" style="font-size:12px;color:var(--accent);min-width:36px;text-align:right;font-family:'Share Tech Mono',monospace;">75%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-section">
+        <div class="modal-section-title">Actions</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <button class="modal-btn" onclick="enableTickerOverlay()" style="flex:1;background:linear-gradient(135deg,rgba(0,255,136,0.15),rgba(0,180,100,0.1));border-color:var(--accent-green);color:var(--accent-green);">Enable Ticker</button>
+          <button class="modal-btn" onclick="disableTickerOverlay()" style="flex:1;background:linear-gradient(135deg,rgba(255,59,92,0.15),rgba(200,0,50,0.1));border-color:var(--accent-red);color:var(--accent-red);">Disable Ticker</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">Enabling creates a <em>"Profile (Ticker)"</em> copy in Dispatcharr and assigns it to the channel. Disabling restores the original and removes the copy.</div>
+        <div id="tickerActionResult" style="display:none;padding:8px 12px;border-radius:6px;font-size:12px;font-family:'Share Tech Mono',monospace;"></div>
+      </div>
+
+      <!-- Note about shared volume -->
+      <div class="modal-section" style="background:rgba(255,107,0,0.05);border:1px solid rgba(255,107,0,0.2);border-radius:8px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:#ff6b00;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;">Shared Volume Required</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          The ticker text file is written to <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;">/ticker/scores.txt</code> by the ScoreStream stream container.
+          Both ScoreStream and Dispatcharr must mount the <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;">scorestream_ticker</code> Docker volume at <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;">/ticker</code>.
+          See the README for docker-compose setup instructions.
+        </div>
+      </div>
+    </div><!-- /section-ticker -->
 
     <!-- ── NCAA Teams Management ─────────────────────────────────── -->
     <!-- SECTION: BACKUP & RESTORE -->
@@ -3870,6 +3975,7 @@ function switchSection(section){
   if(section==='dispatcharr') initDsTab();
   if(section==='ncaa') initNcaaSection();
   if(section==='display') initDisplayControls();
+  if(section==='ticker') onSectionTicker();
 }
 
 // Legacy compat — old tab references
@@ -6239,6 +6345,239 @@ function updateDsStatus(connected,st=''){
   else if(st==='error'){dot.className='ds-dot error';label.className='ds-label error';label.textContent='Dispatcharr: Connection Error';}
   else if(st==='configured'){dot.className='ds-dot configured';label.className='ds-label';label.textContent='Dispatcharr: Configured';}
   else{dot.className='ds-dot';label.className='ds-label';label.textContent='Dispatcharr: Not Configured';}
+}
+
+// =====================
+//  TICKER OVERLAY
+// =====================
+const TICKER_SPORTS=[
+  {id:'nfl',   name:'NFL',           emoji:'🏈'},
+  {id:'nba',   name:'NBA',           emoji:'🏀'},
+  {id:'mlb',   name:'MLB',           emoji:'⚾'},
+  {id:'nhl',   name:'NHL',           emoji:'🏒'},
+  {id:'mls',   name:'MLS',           emoji:'⚽'},
+  {id:'ncaaf', name:'NCAAF',         emoji:'🏈'},
+  {id:'ncaab', name:'NCAAB',         emoji:'🏀'},
+  {id:'f1',    name:'F1',            emoji:'🏎'},
+  {id:'nascar',name:'NASCAR Cup',    emoji:'🏁'},
+  {id:'nascar-noaps', name:'NOAPS',  emoji:'🏁'},
+  {id:'nascar-trucks',name:'Trucks', emoji:'🏁'},
+  {id:'pga',   name:'PGA Golf',      emoji:'⛳'},
+  {id:'atp',   name:'ATP Tennis',    emoji:'🎾'},
+  {id:'wta',   name:'WTA Tennis',    emoji:'🎾'},
+];
+let _tickerChannels=[];
+let _tickerPos='bottom';
+
+async function onSectionTicker(){
+  await loadTickerScoreboards();
+  await loadTickerChannels();
+  buildTickerSportsGrid();
+}
+
+async function loadTickerScoreboards(){
+  const sel=document.getElementById('tickerSbSelect');
+  if(!sel)return;
+  try{
+    const r=await fetch(`${API_BASE}/scoreboards`,{signal:AbortSignal.timeout(5000)});
+    const d=await r.json();
+    const boards=d.scoreboards||[];
+    sel.innerHTML='<option value="">— select a scoreboard —</option>'+
+      boards.map(sb=>`<option value="${sb.id}">${sb.name}</option>`).join('');
+    if(boards.length===1){sel.value=boards[0].id;onTickerSbChange();}
+  }catch(e){sel.innerHTML='<option value="">— error loading scoreboards —</option>';}
+}
+
+async function loadTickerChannels(){
+  const sel=document.getElementById('tickerChannelSelect');
+  if(!sel)return;
+  sel.innerHTML='<option value="">Loading...</option>';
+  try{
+    const r=await fetch(`${API_BASE}/dispatcharr/channels`,{signal:AbortSignal.timeout(20000)});
+    const d=await r.json();
+    if(d.error){sel.innerHTML='<option value="">— connect Dispatcharr first —</option>';return;}
+    _tickerChannels=d.channels||[];
+    sel.innerHTML='<option value="">— select a channel —</option>'+
+      _tickerChannels.map(ch=>`<option value="${ch.id}">${ch.name}${ch.channel_number?' ('+Math.floor(ch.channel_number)+')':''}</option>`).join('');
+    // Restore saved selection
+    const sbId=document.getElementById('tickerSbSelect')?.value;
+    if(sbId) restoreTickerChannel(sbId);
+  }catch(e){sel.innerHTML='<option value="">— Dispatcharr not connected —</option>';}
+}
+
+async function onTickerSbChange(){
+  const sbId=document.getElementById('tickerSbSelect')?.value;
+  const statusRow=document.getElementById('tickerStatusRow');
+  if(!sbId){if(statusRow)statusRow.style.display='none';return;}
+  if(statusRow)statusRow.style.display='flex';
+  try{
+    const r=await fetch(`${API_BASE}/ticker/config/${sbId}`,{signal:AbortSignal.timeout(5000)});
+    const cfg=await r.json();
+    updateTickerStatusUI(cfg);
+    // Restore appearance settings
+    if(cfg.font_size) document.getElementById('tickerFontSize').value=cfg.font_size;
+    if(cfg.scroll_speed!==undefined) document.getElementById('tickerScrollSpeed').value=cfg.scroll_speed;
+    if(cfg.bg_opacity!==undefined) document.getElementById('tickerBgOpacity').value=cfg.bg_opacity;
+    if(cfg.position) setTickerPos(cfg.position);
+    document.getElementById('tickerFontSizeVal').textContent=(cfg.font_size||28)+'px';
+    updateScrollLabel();
+    document.getElementById('tickerBgVal').textContent=Math.round((cfg.bg_opacity||0.75)*100)+'%';
+    // Restore sports
+    (TICKER_SPORTS).forEach(sp=>{
+      const cb=document.getElementById('tsp-'+sp.id);
+      const fav=document.getElementById('tspfav-'+sp.id);
+      if(cb) cb.checked=(cfg.sports||[]).includes(sp.id);
+      if(fav) fav.checked=!!(cfg.favorites_only||{})[sp.id];
+    });
+    restoreTickerChannel(sbId,cfg.channel_id);
+  }catch(e){}
+}
+
+function restoreTickerChannel(sbId,channelId){
+  const sel=document.getElementById('tickerChannelSelect');
+  if(!sel||!channelId)return;
+  sel.value=channelId;
+  onTickerChannelChange();
+}
+
+function updateTickerStatusUI(cfg){
+  const dot=document.getElementById('tickerStatusDot');
+  const txt=document.getElementById('tickerStatusText');
+  const badge=document.getElementById('tickerProfileBadge');
+  if(!dot||!txt)return;
+  if(cfg.ticker_active){
+    dot.style.background='var(--accent-green)';
+    dot.style.boxShadow='0 0 6px var(--accent-green)';
+    txt.textContent='Ticker ACTIVE';txt.style.color='var(--accent-green)';
+    if(badge){badge.style.display='inline';badge.textContent='Profile ID: '+cfg.active_ticker_profile_id;}
+  }else{
+    dot.style.background='var(--text-dim)';dot.style.boxShadow='none';
+    txt.textContent='Not active';txt.style.color='var(--text-secondary)';
+    if(badge)badge.style.display='none';
+  }
+}
+
+async function onTickerChannelChange(){
+  const sel=document.getElementById('tickerChannelSelect');
+  const infoEl=document.getElementById('tickerChannelProfileInfo');
+  if(!sel||!infoEl)return;
+  const chId=parseInt(sel.value);
+  if(!chId){infoEl.style.display='none';return;}
+  const ch=_tickerChannels.find(c=>c.id===chId);
+  if(!ch){infoEl.style.display='none';return;}
+  if(ch.stream_profile_id){
+    infoEl.style.display='block';
+    infoEl.textContent='Current stream profile ID: '+ch.stream_profile_id+' — loading name...';
+    try{
+      const r=await fetch(`${API_BASE}/dispatcharr/streamprofiles/${ch.stream_profile_id}`,{signal:AbortSignal.timeout(8000)});
+      const p=await r.json();
+      infoEl.textContent='Current profile: "'+p.name+'"'+(p.locked?' [locked — cannot use as ticker base]':' — ready');
+      infoEl.style.color=p.locked?'var(--accent-red)':'var(--text-secondary)';
+    }catch(e){infoEl.textContent='Profile ID: '+ch.stream_profile_id;}
+  }else{
+    infoEl.style.display='block';
+    infoEl.style.color='var(--accent-red)';
+    infoEl.textContent='No stream profile assigned — assign one in Dispatcharr first.';
+  }
+}
+
+function buildTickerSportsGrid(){
+  const grid=document.getElementById('tickerSportsGrid');
+  if(!grid)return;
+  grid.innerHTML=TICKER_SPORTS.map(sp=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;">
+      <input type="checkbox" id="tsp-${sp.id}" style="cursor:pointer;">
+      <label for="tsp-${sp.id}" style="font-size:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;cursor:pointer;flex:1;">${sp.emoji} ${sp.name}</label>
+      <label style="font-size:10px;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:3px;">
+        <input type="checkbox" id="tspfav-${sp.id}" style="cursor:pointer;">Favs
+      </label>
+    </div>`).join('');
+}
+
+function setTickerPos(pos){
+  _tickerPos=pos;
+  document.getElementById('tickerPosBottom')?.classList.toggle('active',pos==='bottom');
+  document.getElementById('tickerPosTop')?.classList.toggle('active',pos==='top');
+}
+
+function updateScrollLabel(){
+  const v=document.getElementById('tickerScrollSpeed')?.value||150;
+  const el=document.getElementById('tickerScrollVal');
+  if(el) el.textContent=v==0?'static':v+' px/s';
+}
+
+function getTickerConfig(){
+  const sports=TICKER_SPORTS.filter(sp=>document.getElementById('tsp-'+sp.id)?.checked).map(sp=>sp.id);
+  const favs={};
+  TICKER_SPORTS.forEach(sp=>{if(document.getElementById('tspfav-'+sp.id)?.checked)favs[sp.id]=true;});
+  return{
+    channel_id:parseInt(document.getElementById('tickerChannelSelect')?.value)||null,
+    font_size:parseInt(document.getElementById('tickerFontSize')?.value)||28,
+    position:_tickerPos,
+    scroll_speed:parseInt(document.getElementById('tickerScrollSpeed')?.value)||0,
+    bg_opacity:parseFloat(document.getElementById('tickerBgOpacity')?.value)||0.75,
+    sports,
+    favorites_only:favs,
+  };
+}
+
+function showTickerResult(msg,ok){
+  const el=document.getElementById('tickerActionResult');
+  if(!el)return;
+  el.style.display='block';
+  el.style.color=ok?'var(--accent-green)':'var(--accent-red)';
+  el.style.background=ok?'rgba(0,255,136,0.06)':'rgba(255,59,92,0.06)';
+  el.style.border='1px solid '+(ok?'rgba(0,255,136,0.2)':'rgba(255,59,92,0.2)');
+  el.textContent=msg;
+}
+
+async function enableTickerOverlay(){
+  const sbId=document.getElementById('tickerSbSelect')?.value;
+  if(!sbId){showTickerResult('Select a scoreboard first.',false);return;}
+  const cfg=getTickerConfig();
+  if(!cfg.channel_id){showTickerResult('Select a Dispatcharr channel first.',false);return;}
+  if(!cfg.sports.length){showTickerResult('Select at least one sport source.',false);return;}
+  showTickerResult('Enabling...', true);
+  try{
+    // Save config first
+    await fetch(`${API_BASE}/ticker/config/${sbId}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(cfg),signal:AbortSignal.timeout(8000)
+    });
+    // Enable ticker
+    const r=await fetch(`${API_BASE}/ticker/enable`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({scoreboard_id:parseInt(sbId),...cfg}),
+      signal:AbortSignal.timeout(20000)
+    });
+    const d=await r.json();
+    if(r.ok&&d.ok){
+      showTickerResult('Ticker enabled — profile "'+d.ticker_profile_name+'" created and assigned.',true);
+      onTickerSbChange();
+    }else{
+      showTickerResult('Error: '+(d.error||JSON.stringify(d)),false);
+    }
+  }catch(e){showTickerResult('Error: '+e.message,false);}
+}
+
+async function disableTickerOverlay(){
+  const sbId=document.getElementById('tickerSbSelect')?.value;
+  if(!sbId){showTickerResult('Select a scoreboard first.',false);return;}
+  showTickerResult('Disabling...',true);
+  try{
+    const r=await fetch(`${API_BASE}/ticker/disable`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({scoreboard_id:parseInt(sbId)}),
+      signal:AbortSignal.timeout(20000)
+    });
+    const d=await r.json();
+    if(r.ok&&d.ok){
+      showTickerResult('Ticker disabled — original stream profile restored.'+(d.warnings?.length?' Warnings: '+d.warnings.join(', '):''),true);
+      onTickerSbChange();
+    }else{
+      showTickerResult('Error: '+(d.error||JSON.stringify(d)),false);
+    }
+  }catch(e){showTickerResult('Error: '+e.message,false);}
 }
 
 // =====================
