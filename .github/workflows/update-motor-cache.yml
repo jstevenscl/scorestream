@@ -222,17 +222,33 @@ jobs:
                       entries=[]
                       player_cache=cache.get(f'{league}-players',{}).get('data',{})
                       if isinstance(player_cache,str): player_cache=json.loads(player_cache)
+                      # Country cache: keyed by core-API ID, persisted across runs
+                      rank_country_cache={}
+                      existing_rankings=cache.get(f'{league}-rankings',{}).get('data',{})
+                      if isinstance(existing_rankings,dict):
+                          for p in (existing_rankings.get('players') or []):
+                              if p.get('id') and p.get('country'): rank_country_cache[p['id']]=p['country']
                       for r in (ranks if isinstance(ranks,list) else [])[:50]:
                           if not isinstance(r,dict): continue
                           ath=r.get('athlete') or r.get('team') or {}
                           if not isinstance(ath,dict): ath={}
                           aid=str(ath.get('id',''))
-                          cached_p=player_cache.get(aid,{}) if isinstance(player_cache,dict) else {}
-                          name=ath.get('displayName','') or cached_p.get('name','')
+                          name=ath.get('displayName','') or ''
                           flag_obj=ath.get('flag') or {}
-                          country=(flag_obj.get('alt') if isinstance(flag_obj,dict) else '') or cached_p.get('country','')
+                          country=(flag_obj.get('alt') if isinstance(flag_obj,dict) else '') or rank_country_cache.get(aid,'')
+                          # Enrich country + headshot from ESPN core API (runs once per player, cached)
+                          headshot=rank_country_cache.get(aid+'_hs','')
+                          if (not country or not headshot) and aid:
+                              core=fetch(f'https://sports.core.api.espn.com/v2/sports/tennis/leagues/{league}/athletes/{aid}',ESPN_HDR)
+                              if core and isinstance(core,dict):
+                                  cf=core.get('flag') or {}
+                                  country=(cf.get('alt') if isinstance(cf,dict) else '') or core.get('citizenship','') or country
+                                  headshot=(core.get('headshot') or {}).get('href') or ''
+                                  if not name: name=core.get('displayName','')
+                              if country: rank_country_cache[aid]=country
+                              if headshot: rank_country_cache[aid+'_hs']=headshot
                           entries.append({'rank':r.get('current') or r.get('rank') or len(entries)+1,
-                              'id':aid,'name':name,'country':country,
+                              'id':aid,'name':name,'country':country,'headshot':headshot,
                               'points':r.get('points') or 0,'change':r.get('change') or r.get('rankChange') or 0})
                       if entries:
                           cache[f'{league}-rankings']={'data':{'players':entries,'updated':today_str},'_updated':today_str}
