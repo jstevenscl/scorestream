@@ -1006,7 +1006,7 @@ body.stream-mode .card-header{padding:4px 10px;}
           </div>
           <div class="modal-slider-row">
             <span class="modal-slider-label">Team Logo Size</span>
-            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';document.documentElement.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);const _pi=document.getElementById('ddPreviewInner');if(_pi)_pi.style.setProperty('--team-logo-size',this.value+'px');">
+            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';const _m=document.getElementById('main');if(_m)_m.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);const _pi=document.getElementById('ddPreviewInner');if(_pi)_pi.style.setProperty('--team-logo-size',this.value+'px');">
             <span class="modal-slider-val" id="ddLogoSizeVal">34px</span>
           </div>
           <div style="margin-bottom:12px;">
@@ -1923,7 +1923,7 @@ function renderEditorStep(sbOverride){
           <div class="wiz-label">Team Logo Size</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <input type="range" min="20" max="64" value="${Math.round(state.display.logoSize||34)}" id="sbEditLogoSize"
-              oninput="document.getElementById('sbEditLogoSizeVal').textContent=this.value+'px';document.documentElement.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);">
+              oninput="document.getElementById('sbEditLogoSizeVal').textContent=this.value+'px';var _m=document.getElementById('main');if(_m)_m.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);">
             <span style="font-size:12px;color:var(--text-dim);" id="sbEditLogoSizeVal">${Math.round(state.display.logoSize||34)}px</span>
           </div>
           <div class="wiz-sublabel">Logo size on stream cards</div>
@@ -2626,11 +2626,14 @@ function ddPreviewLayout(layout){
 
 function ddPreview(){
   const vals = ddGetValues();
-  const root = document.documentElement;
-  root.style.setProperty('--card-abbr-size', vals.card_abbr_size+'px');
-  root.style.setProperty('--card-score-size', vals.card_score_size+'px');
-  root.style.setProperty('--card-name-size', vals.card_name_size+'px');
-  root.style.setProperty('--card-name-color', vals.card_name_color);
+  // Scope to #main so settings UI is not affected
+  const displayRoot=document.getElementById('main');
+  if(displayRoot){
+    displayRoot.style.setProperty('--card-abbr-size', vals.card_abbr_size+'px');
+    displayRoot.style.setProperty('--card-score-size', vals.card_score_size+'px');
+    displayRoot.style.setProperty('--card-name-size', vals.card_name_size+'px');
+    displayRoot.style.setProperty('--card-name-color', vals.card_name_color);
+  }
   // Push into dd preview inner if visible
   const inner=document.getElementById('ddPreviewInner');
   if(inner){
@@ -3958,13 +3961,24 @@ function applyDisplay(){
   if(nameEl){state.display.nameSize=parseInt(nameEl.value);document.getElementById('val-name').textContent=nameEl.value+'px';}
   if(colorEl){state.display.nameColor=colorEl.value;document.getElementById('nameColorVal').textContent=colorEl.value;document.getElementById('nameColorSwatch').style.background=colorEl.value;}
   if(logoEl){state.display.logoSize=parseInt(logoEl.value);const lv=document.getElementById('val-logo');if(lv)lv.textContent=logoEl.value+'px';}
-  const root=document.documentElement;
-  root.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
-  root.style.setProperty('--card-score-size',state.display.scoreSize+'px');
-  root.style.setProperty('--card-name-size',state.display.nameSize+'px');
-  root.style.setProperty('--card-name-color',state.display.nameColor);
-  root.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
-  root.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
+  const displayRoot=document.getElementById('main');
+  if(displayRoot){
+    displayRoot.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
+    displayRoot.style.setProperty('--card-score-size',state.display.scoreSize+'px');
+    displayRoot.style.setProperty('--card-name-size',state.display.nameSize+'px');
+    displayRoot.style.setProperty('--card-name-color',state.display.nameColor);
+    displayRoot.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
+    displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
+  }
+  // Also push into settings preview card so it reflects current values
+  const preview=document.getElementById('displayPreviewCard');
+  if(preview){
+    preview.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
+    preview.style.setProperty('--card-score-size',state.display.scoreSize+'px');
+    preview.style.setProperty('--card-name-size',state.display.nameSize+'px');
+    preview.style.setProperty('--card-name-color',state.display.nameColor);
+    preview.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
+  }
   settingsSave(saveDisplay);
 }
 
@@ -3982,22 +3996,26 @@ function initDisplayControls(){
     if(dc.card_score_size != null) state.display.scoreSize = dc.card_score_size;
     if(dc.card_name_size  != null) state.display.nameSize  = dc.card_name_size;
     if(dc.card_name_color != null) state.display.nameColor = dc.card_name_color;
-    if(dc.motor_label_color != null) document.documentElement.style.setProperty('--motor-label-color', dc.motor_label_color);
-    if(dc.motor_secondary_color != null) document.documentElement.style.setProperty('--motor-secondary-color', dc.motor_secondary_color);
+    const mainEl=document.getElementById('main');
+    if(dc.motor_label_color != null && mainEl) mainEl.style.setProperty('--motor-label-color', dc.motor_label_color);
+    if(dc.motor_secondary_color != null && mainEl) mainEl.style.setProperty('--motor-secondary-color', dc.motor_secondary_color);
   }
-  const root=document.documentElement;
-  root.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
-  root.style.setProperty('--card-score-size',state.display.scoreSize+'px');
-  root.style.setProperty('--card-name-size',state.display.nameSize+'px');
-  root.style.setProperty('--card-name-color',state.display.nameColor);
+  const displayRoot=document.getElementById('main');
+  if(displayRoot){
+    displayRoot.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
+    displayRoot.style.setProperty('--card-score-size',state.display.scoreSize+'px');
+    displayRoot.style.setProperty('--card-name-size',state.display.nameSize+'px');
+    displayRoot.style.setProperty('--card-name-color',state.display.nameColor);
+    displayRoot.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
+    displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
+  }
   const abbrEl=document.getElementById('sl-abbr');if(abbrEl){abbrEl.value=state.display.abbrSize;document.getElementById('val-abbr').textContent=state.display.abbrSize+'px';}
   const scoreEl=document.getElementById('sl-score');if(scoreEl){scoreEl.value=state.display.scoreSize;document.getElementById('val-score').textContent=state.display.scoreSize+'px';}
   const nameEl=document.getElementById('sl-name');if(nameEl){nameEl.value=state.display.nameSize;document.getElementById('val-name').textContent=state.display.nameSize+'px';}
   const colorEl=document.getElementById('nameColorPicker');if(colorEl){colorEl.value=state.display.nameColor;document.getElementById('nameColorSwatch').style.background=state.display.nameColor;document.getElementById('nameColorVal').textContent=state.display.nameColor;}
   const logoEl2=document.getElementById('sl-logo');if(logoEl2){logoEl2.value=state.display.logoSize||34;const lv=document.getElementById('val-logo');if(lv)lv.textContent=(state.display.logoSize||34)+'px';}
-  document.documentElement.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
+  if(displayRoot) displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
   const chanEl=document.getElementById('sl-channel');if(chanEl){chanEl.value=state.display.channelSize||11;const cv=document.getElementById('val-channel');if(cv)cv.textContent=(state.display.channelSize||11)+'px';}
-  document.documentElement.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
 }
 
 // =====================
@@ -7247,12 +7265,14 @@ renderFavSummary();
       // Apply scoreboard display_config to CSS vars immediately
       if(sb.display_config){
         const dc=sb.display_config;
-        const root=document.documentElement;
-        if(dc.card_abbr_size) root.style.setProperty('--card-abbr-size',dc.card_abbr_size+'px');
-        if(dc.card_score_size) root.style.setProperty('--card-score-size',dc.card_score_size+'px');
-        if(dc.card_name_size) root.style.setProperty('--card-name-size',dc.card_name_size+'px');
-        if(dc.card_name_color) root.style.setProperty('--card-name-color',dc.card_name_color);
-        if(dc.logo_size) root.style.setProperty('--team-logo-size',dc.logo_size+'px');
+        const displayRoot=document.getElementById('main');
+        if(displayRoot){
+          if(dc.card_abbr_size) displayRoot.style.setProperty('--card-abbr-size',dc.card_abbr_size+'px');
+          if(dc.card_score_size) displayRoot.style.setProperty('--card-score-size',dc.card_score_size+'px');
+          if(dc.card_name_size) displayRoot.style.setProperty('--card-name-size',dc.card_name_size+'px');
+          if(dc.card_name_color) displayRoot.style.setProperty('--card-name-color',dc.card_name_color);
+          if(dc.logo_size) displayRoot.style.setProperty('--team-logo-size',dc.logo_size+'px');
+        }
         state.display.abbrSize=dc.card_abbr_size||state.display.abbrSize;
         state.display.scoreSize=dc.card_score_size||state.display.scoreSize;
         state.display.nameSize=dc.card_name_size||state.display.nameSize;
