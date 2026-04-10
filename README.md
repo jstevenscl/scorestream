@@ -523,7 +523,10 @@ Navigate to **Ticker Overlay** in the ScoreStream settings sidebar.
 
 **1. Select a Dispatcharr channel**
 
-Choose the channel from the dropdown. ScoreStream fetches the channel's current stream profile from Dispatcharr and shows its name. If the profile is marked as locked in Dispatcharr, it cannot be used as the ticker base — duplicate it in Dispatcharr first.
+Choose the channel from the dropdown. ScoreStream fetches the channel's current stream profile from Dispatcharr and validates it:
+- **"✓ FFmpeg ready"** — profile is compatible with the ticker overlay
+- **"⚠ not an FFmpeg profile"** — ticker requires an FFmpeg stream profile; change the channel's profile in Dispatcharr
+- **"[locked]"** — profile cannot be modified; duplicate it in Dispatcharr first
 
 **2. Choose ticker sources**
 
@@ -549,6 +552,7 @@ Sports are organized into groups: Pro Leagues, Motorsport, Tennis, International
 - **DISABLE TICKER** — restores the channel's original stream profile and deletes the ticker copy.
 - **KILL (per-ticker)** — in the status panel, instantly disables a single active ticker and restores its original profile.
 - **KILL ALL** — disables every active ticker across all channels in one click.
+- **RESET TO DEFAULTS** — restores appearance settings (28px font, 150 px/s scroll, 75% opacity, bottom position) and clears all sport selections.
 
 > After enabling, **restart the channel in Dispatcharr** to pick up the new stream profile. Existing ffmpeg processes use the old profile until restarted.
 
@@ -610,6 +614,37 @@ The ticker overlay supports all sports in the table above. Data sources:
 | NASCAR Cup | NASCAR live feed API (live positions + lap count); falls back to motor cache if race was today |
 | Formula 1 | Motor cache (race results — shown only on race day) |
 | PGA Tour | Motor cache (leaderboard — shown only when a tournament is actively in progress with scores) |
+
+---
+
+## Player Headshots
+
+ScoreStream displays player headshots on individual-sport cards (PGA, F1, NASCAR, ATP, WTA) when the **Player Headshots** toggle is enabled in the scoreboard editor's display settings.
+
+### How headshots are sourced
+
+A GitHub Actions workflow (`update-motor-cache.yml`) runs on a schedule and populates the headshot cache on the `data` branch. The API container seeds from this cache on startup.
+
+| Sport | Source | Coverage |
+|---|---|---|
+| PGA Tour | ESPN CDN (`a.espncdn.com/i/headshots/golf/players/full/{id}.png`) | ~300 players via scoreboard IDs + ESPN name search backfill |
+| ATP Tour | ESPN CDN (`a.espncdn.com/i/headshots/tennis/players/full/{id}.png`) | 150 ranked players (~80% have images) |
+| WTA Tour | ESPN CDN (same pattern as ATP) | 150 ranked players (~75% have images) |
+| NASCAR | Fox Sports CDN (scraped from Cup/Xfinity/Truck standings pages) | ~100 active drivers |
+| Formula 1 | formula1.com (official driver images with Cloudinary face crop) | All 22 current drivers |
+
+### Lookup behavior
+
+- **PGA:** Looks up by ESPN athlete ID first, then falls back to **player name** matching (needed because historical tournament data often lacks athlete IDs)
+- **NASCAR / F1:** Looks up by **full name**, then **last name** only (handles abbreviated names like "C. Elliott" → "Elliott" → matches "Chase Elliott")
+- **ATP / WTA:** Looks up by ESPN athlete ID from the live scoreboard data
+- All headshot `<img>` tags include `onerror="this.style.display='none'"` so missing images are hidden silently
+
+### Refreshing the cache
+
+The workflow runs automatically on schedule. To manually refresh:
+1. Go to GitHub → Actions → **Update Motor Cache Data** → Run workflow
+2. After completion, restart the `scorestream-api` container to pick up the new data
 
 ---
 
