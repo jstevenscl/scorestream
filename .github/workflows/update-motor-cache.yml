@@ -2,12 +2,22 @@ name: Update Motor Cache Data
 
 on:
   schedule:
-    # Run every 6 hours every day — catches tennis players within 6h of first appearance,
-    # keeps PGA/NASCAR fresh, and stays well within GitHub Actions free-tier limits
-    - cron: '0 1 * * *'
-    - cron: '0 7 * * *'
-    - cron: '0 13 * * *'
-    - cron: '0 19 * * *'
+    # Mon-Thu: every 6 hours (PGA, tennis, off-peak NASCAR)
+    - cron: '0 1 * * 1-4'
+    - cron: '0 7 * * 1-4'
+    - cron: '0 13 * * 1-4'
+    - cron: '0 19 * * 1-4'
+    # Fri-Sun: every 2 hours during NASCAR race window (3 PM – 2 AM ET = 19:00–06:00 UTC)
+    - cron: '0 19 * * 5,6,0'
+    - cron: '0 21 * * 5,6,0'
+    - cron: '0 23 * * 5,6,0'
+    - cron: '0 1 * * 5,6,0'
+    - cron: '0 3 * * 5,6,0'
+    - cron: '0 5 * * 5,6,0'
+    # Fri-Sun: midday run to catch early afternoon races
+    - cron: '0 13 * * 5,6,0'
+    - cron: '0 15 * * 5,6,0'
+    - cron: '0 17 * * 5,6,0'
   workflow_dispatch:
 
 jobs:
@@ -164,7 +174,7 @@ jobs:
                   completed = [t for t in tournaments if t.get('is_complete')][-10:]
                   upcoming = [t for t in tournaments if not t.get('is_complete')]
                   cache['pga-2026-tournaments'] = {'data':{'tournaments':upcoming+completed,'updated':today_str},'_updated':today_str}
-                  # Cache PGA player headshots — collect IDs from all tournaments
+                  # Cache PGA player headshots — collect IDs from tournaments + scoreboard
                   print("\n--- PGA Players ---")
                   pga_players = cache.get('pga-players',{}).get('data',{})
                   if isinstance(pga_players,str): pga_players=json.loads(pga_players)
@@ -173,19 +183,35 @@ jobs:
                       for p in t.get('players',[]):
                           aid=str(p.get('athlete_id',''))
                           if aid and aid!='None': all_ids[aid]=p.get('name','')
-                  print(f"  Known athlete IDs across all tournaments: {len(all_ids)}")
+                  # Also pull IDs from live scoreboard
+                  pga_sb=fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',ESPN_HDR)
+                  if pga_sb:
+                      for ev in pga_sb.get('events',[]):
+                          for comp in ev.get('competitions',[]):
+                              for c in comp.get('competitors',[]):
+                                  aid=str(c.get('id') or c.get('athlete',{}).get('id') or '')
+                                  if aid: all_ids[aid]=c.get('athlete',{}).get('displayName','')
+                  print(f"  Known athlete IDs: {len(all_ids)}")
                   new_count=0
                   for aid,name in all_ids.items():
                       if aid in pga_players and pga_players[aid].get('headshot'): continue
-                      details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/golf/pga/athletes/{aid}',ESPN_HDR)
-                      if not details: continue
-                      ath=details.get('athlete') or details
-                      pga_players[aid]={
-                          'id':aid,'name':ath.get('displayName',name),
-                          'headshot':(ath.get('headshot') or {}).get('href') or '',
-                          'flag':(ath.get('flag') or {}).get('href') or '',
-                          'country':(ath.get('flag') or {}).get('alt') or '',
-                      }
+                      # Use ESPN core API (site API is deprecated)
+                      details=fetch(f'https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/athletes/{aid}',ESPN_HDR)
+                      if details and isinstance(details,dict):
+                          hs=(details.get('headshot') or {}).get('href') or ''
+                          pga_players[aid]={
+                              'id':aid,'name':details.get('displayName',name),
+                              'headshot':hs or f'https://a.espncdn.com/i/headshots/golf/players/full/{aid}.png',
+                              'flag':(details.get('flag') or {}).get('href') or '',
+                              'country':(details.get('flag') or {}).get('alt') or '',
+                          }
+                      else:
+                          # Fallback: use ESPN CDN pattern directly
+                          pga_players[aid]={
+                              'id':aid,'name':name,
+                              'headshot':f'https://a.espncdn.com/i/headshots/golf/players/full/{aid}.png',
+                              'flag':'','country':'',
+                          }
                       new_count+=1
                       print(f"  + {pga_players[aid]['name']} ({aid}) hs={'yes' if pga_players[aid]['headshot'] else 'no'}")
                   print(f"  PGA: {new_count} new, {len(pga_players)} total in cache")
@@ -194,37 +220,52 @@ jobs:
               print(f"\n--- {league.upper()} Players ---")
               existing = cache.get(f'{league}-players',{}).get('data',{})
               if isinstance(existing,str): existing=json.loads(existing)
-              # Purge any legacy low-ID entries (retired players from old ESPN core API)
-              purged=[k for k in list(existing.keys()) if k.isdigit() and int(k)<100000]
-              for k in purged: del existing[k]
-              if purged: print(f"  Purged {len(purged)} legacy entries")
               new_count=0
-              # Scoreboard: covers all competitions (live, scheduled, recent finals)
+              all_ids=set()
+              # Rankings: best source of player IDs (works year-round, 150 players)
+              rankings=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/rankings',ESPN_HDR)
+              if rankings:
+                  for rlist in (rankings.get('rankings') or []):
+                      if not isinstance(rlist,dict): continue
+                      for r in (rlist.get('ranks') or rlist.get('entries') or []):
+                          if not isinstance(r,dict): continue
+                          aid=str((r.get('athlete') or {}).get('id',''))
+                          if aid: all_ids.add(aid)
+              # Scoreboard: covers active competitions
               scoreboard=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/scoreboard',ESPN_HDR)
               if scoreboard:
-                  sb_ids=set()
                   for event in scoreboard.get('events',[]):
                       for grp in event.get('groupings',[]):
                           gname=(grp.get('abbreviation') or grp.get('name') or '').lower()
                           if 'double' in gname or 'dbl' in gname: continue
                           for comp in grp.get('competitions',[]):
                               for c in comp.get('competitors',[]):
-                                  aid=c.get('athlete',{}).get('id')
-                                  if aid: sb_ids.add(str(aid))
-                  print(f"  Scoreboard: {len(sb_ids)} active player IDs")
-                  for aid in sb_ids:
-                      # Skip only if already cached WITH a headshot; re-check headshot-less entries
-                      if str(aid) in existing and existing[str(aid)].get('headshot'): continue
-                      details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/tennis/{league}/athletes/{aid}',ESPN_HDR)
-                      if not details: continue
-                      ath=details.get('athlete') or details
-                      existing[str(aid)]={'id':str(aid),'name':ath.get('displayName',''),
-                          'shortName':ath.get('shortName',''),
-                          'headshot':(ath.get('headshot') or {}).get('href') or '',
-                          'flag':(ath.get('flag') or {}).get('href') or '',
-                          'country':(ath.get('flag') or {}).get('alt') or (ath.get('citizenship') or '')}
-                      new_count+=1; p=existing[str(aid)]
-                      print(f"  + {p['name']} ({aid}) hs={'yes' if p['headshot'] else 'no'}")
+                                  aid=str(c.get('athlete',{}).get('id',''))
+                                  if aid: all_ids.add(aid)
+              print(f"  IDs found: {len(all_ids)} (rankings + scoreboard)")
+              for aid in all_ids:
+                  if aid in existing and existing[aid].get('headshot'): continue
+                  # Use ESPN core API for name/flag, ESPN CDN for headshot
+                  core=fetch(f'https://sports.core.api.espn.com/v2/sports/tennis/leagues/{league}/athletes/{aid}',ESPN_HDR)
+                  name=''; shortName=''; flag=''; country=''
+                  if core and isinstance(core,dict):
+                      name=core.get('displayName','')
+                      shortName=core.get('shortName','')
+                      flag=(core.get('flag') or {}).get('href') or ''
+                      country=(core.get('flag') or {}).get('alt') or core.get('citizenship','')
+                  # ESPN CDN hosts tennis headshots even though API doesn't return the URL
+                  hs_url=f'https://a.espncdn.com/i/headshots/tennis/players/full/{aid}.png'
+                  # Verify headshot exists (HEAD request)
+                  try:
+                      hreq=urllib.request.Request(hs_url,method='HEAD',headers=ESPN_HDR)
+                      hresp=urllib.request.urlopen(hreq,timeout=5)
+                      hs_valid=hresp.status==200
+                  except Exception: hs_valid=False
+                  existing[aid]={'id':aid,'name':name,'shortName':shortName,
+                      'headshot':hs_url if hs_valid else '',
+                      'flag':flag,'country':country}
+                  new_count+=1
+                  print(f"  + {name} ({aid}) hs={'yes' if hs_valid else 'no'}")
               print(f"  {league.upper()}: {new_count} new, {len(existing)} total in cache")
               cache[f'{league}-players']={'data':existing,'_updated':today_str}
           for league in ['atp','wta']:
@@ -255,17 +296,23 @@ jobs:
                           name=ath.get('displayName','') or ''
                           flag_obj=ath.get('flag') or {}
                           country=(flag_obj.get('alt') if isinstance(flag_obj,dict) else '') or rank_country_cache.get(aid,'')
-                          # Enrich country + headshot from ESPN core API (runs once per player, cached)
-                          headshot=rank_country_cache.get(aid+'_hs','')
-                          if (not country or not headshot) and aid:
+                          # Enrich country + headshot from player cache or ESPN CDN
+                          cached_player=player_cache.get(aid,{})
+                          headshot=cached_player.get('headshot','') or rank_country_cache.get(aid+'_hs','')
+                          if not country: country=cached_player.get('country','') or rank_country_cache.get(aid,'')
+                          if not name: name=cached_player.get('name','')
+                          # If still missing country, try core API
+                          if not country and aid:
                               core=fetch(f'https://sports.core.api.espn.com/v2/sports/tennis/leagues/{league}/athletes/{aid}',ESPN_HDR)
                               if core and isinstance(core,dict):
                                   cf=core.get('flag') or {}
                                   country=(cf.get('alt') if isinstance(cf,dict) else '') or core.get('citizenship','') or country
-                                  headshot=(core.get('headshot') or {}).get('href') or ''
                                   if not name: name=core.get('displayName','')
-                              if country: rank_country_cache[aid]=country
-                              if headshot: rank_country_cache[aid+'_hs']=headshot
+                          # Use ESPN CDN if no headshot from cache
+                          if not headshot and aid:
+                              headshot=f'https://a.espncdn.com/i/headshots/tennis/players/full/{aid}.png'
+                          if country: rank_country_cache[aid]=country
+                          if headshot: rank_country_cache[aid+'_hs']=headshot
                           entries.append({'rank':r.get('current') or r.get('rank') or len(entries)+1,
                               'id':aid,'name':name,'country':country,'headshot':headshot,
                               'points':r.get('points') or 0,'change':r.get('change') or r.get('rankChange') or 0})
@@ -275,84 +322,142 @@ jobs:
                       else: print(f"  {league.upper()}: no ranks found in response")
                   else: print(f"  {league.upper()}: rankings fetch failed")
               except Exception as e: print(f"  {league.upper()} rankings error: {e}")
-          for racing_sport in [('nascar','nascar-cup','nascar-drivers'),('nascar-noaps','nascar-xfinity','nascar-drivers'),('nascar-trucks','nascar-truck','nascar-drivers'),('f1','f1','f1-drivers')]:
-              espn_slug, espn_path, cache_key = racing_sport
-              print(f"\n--- {espn_slug.upper()} Drivers ---")
-              try:
-                  existing_drivers = cache.get(cache_key,{}).get('data',{})
-                  if isinstance(existing_drivers,str): existing_drivers=json.loads(existing_drivers)
-                  racing_ids=set()
-                  sb=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/scoreboard',ESPN_HDR)
-                  if sb and isinstance(sb,dict):
-                      for event in (sb.get('events') or []):
-                          for comp in (event.get('competitions') or []):
-                              for c in comp.get('competitors',[]):
-                                  aid=(c.get('athlete') or {}).get('id')
-                                  if aid: racing_ids.add(str(aid))
-                  stand=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/standings',ESPN_HDR)
-                  if stand and isinstance(stand,dict):
-                      raw_s=stand.get('standings')
-                      stand_entries=[]
-                      if isinstance(raw_s,list):
-                          for s in raw_s:
-                              if isinstance(s,dict): stand_entries.extend(s.get('entries') or [])
-                      elif isinstance(raw_s,dict): stand_entries=raw_s.get('entries') or []
-                      else: stand_entries=stand.get('entries') or []
-                      for entry in stand_entries:
-                          if not isinstance(entry,dict): continue
-                          aid=(entry.get('athlete') or {}).get('id') or (entry.get('team') or {}).get('id')
-                          if aid: racing_ids.add(str(aid))
-                  # Fallback: direct athletes list (works year-round, no active event needed)
-                  ath_list=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/athletes?limit=100',ESPN_HDR)
-                  if ath_list and isinstance(ath_list,dict):
-                      for item in (ath_list.get('items') or ath_list.get('athletes') or []):
-                          if not isinstance(item,dict): continue
-                          aid=str(item.get('id') or (item.get('athlete') or {}).get('id') or '')
-                          if aid: racing_ids.add(aid)
-                  print(f"  IDs found: {len(racing_ids)}")
-                  new_count=0
-                  for aid in racing_ids:
-                      if aid in existing_drivers and existing_drivers[aid].get('headshot'): continue
-                      details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/racing/{espn_path}/athletes/{aid}',ESPN_HDR)
-                      if not details: continue
-                      ath=details.get('athlete') or details
-                      if not isinstance(ath,dict): continue
-                      existing_drivers[aid]={
-                          'id':aid,'name':ath.get('displayName',''),
-                          'headshot':(ath.get('headshot') or {}).get('href') or '',
-                          'flag':(ath.get('flag') or {}).get('href') or '',
-                          'country':(ath.get('flag') or {}).get('alt') or '',
+          # --- NASCAR Drivers (Fox Sports headshots) ---
+          print("\n--- NASCAR Drivers (Fox Sports) ---")
+          try:
+              import re as _re
+              nascar_drivers = cache.get('nascar-drivers',{}).get('data',{})
+              if isinstance(nascar_drivers,str): nascar_drivers=json.loads(nascar_drivers)
+              fox_nascar=fetch('https://api.foxsports.com/bifrost/v1/nascar/cup/standings?season=2026',
+                  {'User-Agent':'Mozilla/5.0','Accept':'application/json'})
+              fox_count=0
+              if fox_nascar and isinstance(fox_nascar,dict):
+                  for section in (fox_nascar.get('standings') or fox_nascar.get('sections') or [fox_nascar]):
+                      for row in (section.get('rows') or section.get('entries') or section.get('standings') or []):
+                          if not isinstance(row,dict): continue
+                          athlete=row.get('athlete') or row.get('driver') or row
+                          name=athlete.get('name') or athlete.get('displayName') or ''
+                          img=athlete.get('imageUrl') or athlete.get('headshot') or ''
+                          if name and img:
+                              key=name.lower().replace(' ','_')
+                              nascar_drivers[key]={'name':name,'headshot':img}
+                              fox_count+=1
+              # Fallback: scrape Fox Sports HTML standings page
+              if fox_count==0:
+                  print("  Fox API empty, trying HTML scrape...")
+                  try:
+                      req=urllib.request.Request('https://www.foxsports.com/nascar/cup-series/standings',
+                          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'})
+                      with urllib.request.urlopen(req,timeout=15) as r: html=r.read().decode('utf-8','ignore')
+                      # Extract headshot URLs and driver names from standings rows
+                      img_pattern=_re.compile(r'<img[^>]*src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"')
+                      name_pattern=_re.compile(r'<span[^>]*class="[^"]*entity-name[^"]*"[^>]*>([^<]+)</span>')
+                      imgs=img_pattern.findall(html)
+                      names=name_pattern.findall(html)
+                      # If regex doesn't match class names, try a broader approach
+                      if not names:
+                          # Find all text near headshot images
+                          blocks=_re.findall(r'<a[^>]*standings[^>]*>.*?</a>',html,_re.DOTALL)
+                          for block in blocks:
+                              img_m=_re.search(r'src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"',block)
+                              name_m=_re.findall(r'>([A-Z][a-z]+ [A-Z][a-zA-Z\' .-]+)<',block)
+                              if img_m and name_m:
+                                  imgs.append(img_m.group(1))
+                                  names.append(name_m[0])
+                      paired=min(len(imgs),len(names))
+                      for i in range(paired):
+                          name=names[i].strip()
+                          img=imgs[i].replace('.72.72.','.140.140.')  # get larger version
+                          key=name.lower().replace(' ','_')
+                          nascar_drivers[key]={'name':name,'headshot':img}
+                          fox_count+=1
+                  except Exception as e: print(f"  HTML scrape error: {e}")
+              print(f"  NASCAR drivers from Fox Sports: {fox_count}, total: {len(nascar_drivers)}")
+              cache['nascar-drivers']={'data':nascar_drivers,'_updated':today_str}
+          except Exception as e: print(f"  NASCAR drivers error: {e}")
+          # --- F1 Drivers (ESPN core API + CDN) ---
+          print("\n--- F1 Drivers ---")
+          try:
+              f1_drivers = cache.get('f1-drivers',{}).get('data',{})
+              if isinstance(f1_drivers,str): f1_drivers=json.loads(f1_drivers)
+              f1_ids=set()
+              # F1 scoreboard for active race IDs
+              f1_sb=fetch('https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard',ESPN_HDR)
+              if f1_sb and isinstance(f1_sb,dict):
+                  for ev in (f1_sb.get('events') or []):
+                      for comp in (ev.get('competitions') or []):
+                          for c in comp.get('competitors',[]):
+                              aid=str((c.get('athlete') or {}).get('id',''))
+                              if aid: f1_ids.add(aid)
+              # F1 standings
+              f1_stand=fetch('https://site.api.espn.com/apis/site/v2/sports/racing/f1/standings',ESPN_HDR)
+              if f1_stand and isinstance(f1_stand,dict):
+                  raw_s=f1_stand.get('standings')
+                  stand_entries=[]
+                  if isinstance(raw_s,list):
+                      for s in raw_s:
+                          if isinstance(s,dict): stand_entries.extend(s.get('entries') or [])
+                  elif isinstance(raw_s,dict): stand_entries=raw_s.get('entries') or []
+                  for entry in stand_entries:
+                      if not isinstance(entry,dict): continue
+                      aid=str((entry.get('athlete') or {}).get('id') or (entry.get('team') or {}).get('id') or '')
+                      if aid: f1_ids.add(aid)
+              # Core API athletes list as fallback
+              f1_core=fetch('https://sports.core.api.espn.com/v2/sports/racing/leagues/f1/athletes?limit=50&active=true',ESPN_HDR)
+              if f1_core and isinstance(f1_core,dict):
+                  for item in (f1_core.get('items') or []):
+                      if isinstance(item,dict):
+                          ref=item.get('$ref','')
+                          aid_m=_re.search(r'/athletes/(\d+)',ref) if ref else None
+                          if aid_m: f1_ids.add(aid_m.group(1))
+              print(f"  F1 IDs found: {len(f1_ids)}")
+              new_count=0
+              for aid in f1_ids:
+                  if aid in f1_drivers and f1_drivers[aid].get('headshot'): continue
+                  details=fetch(f'https://sports.core.api.espn.com/v2/sports/racing/leagues/f1/athletes/{aid}',ESPN_HDR)
+                  if details and isinstance(details,dict):
+                      hs=(details.get('headshot') or {}).get('href') or f'https://a.espncdn.com/i/headshots/f1/players/full/{aid}.png'
+                      f1_drivers[aid]={
+                          'id':aid,'name':details.get('displayName',''),
+                          'headshot':hs,
+                          'flag':(details.get('flag') or {}).get('href') or '',
+                          'country':(details.get('flag') or {}).get('alt') or '',
                       }
                       new_count+=1
-                      print(f"  + {existing_drivers[aid]['name']} ({aid}) hs={'yes' if existing_drivers[aid]['headshot'] else 'no'}")
-                  print(f"  {espn_slug.upper()}: {new_count} new, {len(existing_drivers)} total in cache")
-                  cache[cache_key]={'data':existing_drivers,'_updated':today_str}
-              except Exception as e: print(f"  {espn_slug.upper()} drivers error: {e}")
-          print("\n--- PGA Players (pre-populate) ---")
+                      print(f"  + {f1_drivers[aid]['name']} ({aid}) hs=yes")
+              print(f"  F1: {new_count} new, {len(f1_drivers)} total in cache")
+              cache['f1-drivers']={'data':f1_drivers,'_updated':today_str}
+          except Exception as e: print(f"  F1 drivers error: {e}")
+          print("\n--- PGA Players (pre-populate via core API) ---")
           try:
               pga_players=cache.get('pga-players',{}).get('data',{})
               if isinstance(pga_players,str): pga_players=json.loads(pga_players)
               pga_ids=set()
-              # Direct athletes list — works year-round
-              pga_ath=fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/athletes?limit=300',ESPN_HDR)
-              if pga_ath and isinstance(pga_ath,dict):
-                  for item in (pga_ath.get('items') or pga_ath.get('athletes') or []):
-                      if not isinstance(item,dict): continue
-                      aid=str(item.get('id') or (item.get('athlete') or {}).get('id') or '')
-                      if aid: pga_ids.add(aid)
-              print(f"  PGA athlete IDs found: {len(pga_ids)}")
+              # Core API athletes list (paginated, $ref links)
+              page=1
+              while page<=3:  # max 3 pages = ~60 athletes
+                  pga_core=fetch(f'https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/athletes?limit=20&page={page}&active=true',ESPN_HDR)
+                  if not pga_core or not isinstance(pga_core,dict): break
+                  items=pga_core.get('items') or []
+                  if not items: break
+                  for item in items:
+                      if isinstance(item,dict):
+                          ref=item.get('$ref','')
+                          import re as _re2
+                          m=_re2.search(r'/athletes/(\d+)',ref)
+                          if m: pga_ids.add(m.group(1))
+                  page+=1
+              print(f"  PGA core API IDs: {len(pga_ids)}")
               new_count=0
               for aid in pga_ids:
                   if aid in pga_players and pga_players[aid].get('headshot'): continue
-                  details=fetch(f'https://site.api.espn.com/apis/site/v2/sports/golf/pga/athletes/{aid}',ESPN_HDR)
-                  if not details: continue
-                  ath=details.get('athlete') or details
-                  if not isinstance(ath,dict): continue
+                  details=fetch(f'https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/athletes/{aid}',ESPN_HDR)
+                  if not details or not isinstance(details,dict): continue
+                  hs=(details.get('headshot') or {}).get('href') or f'https://a.espncdn.com/i/headshots/golf/players/full/{aid}.png'
                   pga_players[aid]={
-                      'id':aid,'name':ath.get('displayName',''),
-                      'headshot':(ath.get('headshot') or {}).get('href') or '',
-                      'flag':(ath.get('flag') or {}).get('href') or '',
-                      'country':(ath.get('flag') or {}).get('alt') or '',
+                      'id':aid,'name':details.get('displayName',''),
+                      'headshot':hs,'flag':(details.get('flag') or {}).get('href') or '',
+                      'country':(details.get('flag') or {}).get('alt') or '',
                   }
                   new_count+=1
               print(f"  PGA: {new_count} new, {len(pga_players)} total in cache")
