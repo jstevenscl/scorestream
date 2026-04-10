@@ -630,10 +630,10 @@ body.stream-mode .card-header{padding:4px 10px;}
         <span class="snav-icon">📺</span><span>My Scoreboards</span>
       </button>
       <button class="snav-btn" data-section="display" onclick="switchSection('display')">
-        <span class="snav-icon">🎨</span><span>Display &amp; Data</span>
+        <span class="snav-icon">🎨</span><span>Stream Card Style</span>
       </button>
       <button class="snav-btn" data-section="displaydefaults" onclick="switchSection('displaydefaults')">
-        <span class="snav-icon">🎛️</span><span>Display Defaults</span>
+        <span class="snav-icon">🎛️</span><span>Stream Defaults</span>
       </button>
       <button class="snav-btn" data-section="audiolibrary" onclick="switchSection('audiolibrary')">
         <span class="snav-icon">🎵</span><span>Audio Library</span>
@@ -649,6 +649,9 @@ body.stream-mode .card-header{padding:4px 10px;}
       </button>
       <button class="snav-btn" data-section="backup" onclick="switchSection('backup')">
         <span class="snav-icon">💾</span><span>Backup &amp; Restore</span>
+      </button>
+      <button class="snav-btn" data-section="systemtheme" onclick="switchSection('systemtheme')">
+        <span class="snav-icon">🖌️</span><span>System Theme</span>
       </button>
 
     </nav>
@@ -770,8 +773,8 @@ body.stream-mode .card-header{padding:4px 10px;}
     <!-- SECTION 4: DISPLAY & DATA -->
     <div id="section-display" class="settings-section">
       <div class="settings-section-header">
-        <h2>Display &amp; Data</h2>
-        <p>Controls the <strong>main scoreboard sidebar</strong> — auto-save, refresh rate, and the card appearance shown in the sidebar view. For stream output settings that apply across your named scoreboards, see <strong>Display Defaults</strong>.</p>
+        <h2>Stream Card Style</h2>
+        <p>Controls the typography and appearance of game cards in the <strong>sidebar preview</strong> and <strong>stream output</strong>. Adjust font sizes, team name color, logo size, and data refresh rate. For global defaults shared across all scoreboards, see <strong>Stream Defaults</strong>.</p>
       </div>
 
       <div class="modal-section">
@@ -912,8 +915,8 @@ body.stream-mode .card-header{padding:4px 10px;}
     ═══════════════════════════════════════════════ -->
     <div id="section-displaydefaults" class="settings-section">
       <div class="settings-section-header">
-        <h2>Display Defaults</h2>
-        <p>Set global stream output defaults for your named scoreboards. These apply to <strong>Font Sizes</strong>, <strong>Colors</strong>, and <strong>Card Size/Layout</strong> — each independently. Every scoreboard inherits all defaults unless you turn off a group in its editor.</p>
+        <h2>Stream Defaults</h2>
+        <p>Set global stream output defaults shared across all scoreboards. Controls <strong>Theme</strong>, <strong>Font Sizes</strong>, <strong>Colors</strong>, and <strong>Card Size/Layout</strong>. Every scoreboard inherits these unless overridden in its own editor.</p>
       </div>
 
       <div id="ddLoadingMsg" style="color:var(--text-dim);font-size:13px;padding:20px 0;">Loading defaults...</div>
@@ -1425,6 +1428,42 @@ body.stream-mode .card-header{padding:4px 10px;}
     <!-- ═══════════════════════════════════════════════════════════
          SECTION: SPORTS LIBRARY
     ═══════════════════════════════════════════════════════════ -->
+    <div id="section-systemtheme" class="settings-section">
+      <div class="settings-section-header">
+        <h2>System Theme</h2>
+        <p>Customize the ScoreStream <strong>app UI</strong> itself — the settings pages, sidebar, navigation, and controls. These colors and fonts affect only the interface you see here, <strong>not</strong> the stream output or game cards.</p>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">UI Colors</div>
+        <div class="modal-sublabel" style="margin-bottom:14px;">Adjust the background, text, accent, and border colors used throughout the settings interface and sidebar.</div>
+        <div id="sysThemeColors" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+      </div>
+
+      <div class="modal-section" style="margin-top:20px;">
+        <div class="modal-section-title">UI Font Size</div>
+        <div class="modal-sublabel" style="margin-bottom:14px;">Scale all text in the settings UI and sidebar. Does not affect stream card typography.</div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label">Base Font Size</span>
+          <input type="range" min="12" max="20" value="15" step="1" id="sysThemeFontSize" style="width:100%;"
+            oninput="document.getElementById('sysThemeFontSizeVal').textContent=this.value+'px';applySystemTheme()">
+          <span class="modal-slider-val" id="sysThemeFontSizeVal">15px</span>
+        </div>
+      </div>
+
+      <div class="modal-section" style="margin-top:20px;">
+        <div class="modal-section-title">Presets</div>
+        <div class="modal-sublabel" style="margin-bottom:14px;">Quick-apply a preset and customize from there.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="sysThemePresets"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="modal-btn primary" onclick="saveSystemTheme()" style="flex:2;">Save System Theme</button>
+        <button class="modal-btn" onclick="resetSystemTheme()" style="flex:1;border-color:var(--border);color:var(--text-dim);">Reset</button>
+      </div>
+      <div id="sysThemeResult" style="display:none;margin-top:10px;font-size:12px;padding:9px 12px;border-radius:7px;font-family:'Share Tech Mono',monospace;"></div>
+    </div>
+
     <div id="section-sports" class="settings-section">
       <div class="settings-section-header">
         <h2>Sports Library</h2>
@@ -4109,6 +4148,7 @@ function switchSection(section){
   if(section==='ncaa') initNcaaSection();
   if(section==='display') initDisplayControls();
   if(section==='ticker') onSectionTicker();
+  if(section==='systemtheme') initSystemTheme();
 }
 
 // Legacy compat — old tab references
@@ -6914,6 +6954,142 @@ function restoreSettingsScale(){
     if(s) setSettingsScale(s);
   }catch(e){}
 }
+
+// =====================
+//  SYSTEM THEME
+// =====================
+const SYS_THEME_VARS=[
+  {key:'--bg-primary',label:'Background Primary',default:'#080b10'},
+  {key:'--bg-secondary',label:'Background Secondary',default:'#0d1117'},
+  {key:'--bg-card',label:'Card Background',default:'#111722'},
+  {key:'--border',label:'Border',default:'#1e2d42'},
+  {key:'--border-bright',label:'Border Highlight',default:'#2a4060'},
+  {key:'--accent',label:'Accent',default:'#00d4ff'},
+  {key:'--accent2',label:'Accent Secondary',default:'#ff6b00'},
+  {key:'--accent-green',label:'Accent Green',default:'#00ff88'},
+  {key:'--accent-red',label:'Accent Red',default:'#ff3b5c'},
+  {key:'--text-primary',label:'Text Primary',default:'#e8f0fe'},
+  {key:'--text-secondary',label:'Text Secondary',default:'#7a9ab8'},
+  {key:'--text-dim',label:'Text Dim',default:'#3d5a78'},
+];
+const SYS_THEME_PRESETS=[
+  {name:'Dark Blue (Default)',colors:{'--bg-primary':'#080b10','--bg-secondary':'#0d1117','--bg-card':'#111722','--border':'#1e2d42','--border-bright':'#2a4060','--accent':'#00d4ff','--accent2':'#ff6b00','--accent-green':'#00ff88','--accent-red':'#ff3b5c','--text-primary':'#e8f0fe','--text-secondary':'#7a9ab8','--text-dim':'#3d5a78'}},
+  {name:'Carbon',colors:{'--bg-primary':'#0a0a0a','--bg-secondary':'#111111','--bg-card':'#1a1a1a','--border':'#2a2a2a','--border-bright':'#3a3a3a','--accent':'#ffffff','--accent2':'#ff6b00','--accent-green':'#00ff88','--accent-red':'#ff3b5c','--text-primary':'#f0f0f0','--text-secondary':'#999999','--text-dim':'#555555'}},
+  {name:'Dark Green',colors:{'--bg-primary':'#060d08','--bg-secondary':'#0a1510','--bg-card':'#0f1c15','--border':'#1a3024','--border-bright':'#254a36','--accent':'#00ff88','--accent2':'#ff9500','--accent-green':'#00ff88','--accent-red':'#ff3b5c','--text-primary':'#e0f5e8','--text-secondary':'#6faa80','--text-dim':'#3a6b4a'}},
+  {name:'Dark Red',colors:{'--bg-primary':'#0d0608','--bg-secondary':'#150a0c','--bg-card':'#1c0f12','--border':'#301a1e','--border-bright':'#4a2530','--accent':'#ff3b5c','--accent2':'#ff6b00','--accent-green':'#00ff88','--accent-red':'#ff3b5c','--text-primary':'#f5e0e4','--text-secondary':'#aa6f7a','--text-dim':'#6b3a44'}},
+  {name:'Light',colors:{'--bg-primary':'#f0f2f5','--bg-secondary':'#e4e7ec','--bg-card':'#ffffff','--border':'#d0d5dd','--border-bright':'#b0b8c4','--accent':'#0066cc','--accent2':'#e65100','--accent-green':'#00875a','--accent-red':'#de350b','--text-primary':'#172b4d','--text-secondary':'#5e6c84','--text-dim':'#97a0af'}},
+];
+let _sysTheme={};
+
+function initSystemTheme(){
+  // Load saved theme
+  try{
+    const saved=JSON.parse(localStorage.getItem('ssSystemTheme')||'{}');
+    _sysTheme=saved;
+  }catch(e){_sysTheme={};}
+  // Render color pickers
+  const cont=document.getElementById('sysThemeColors');
+  if(cont) cont.innerHTML=SYS_THEME_VARS.map(v=>{
+    const val=_sysTheme[v.key]||v.default;
+    const safeId='sysTC_'+v.key.replace(/--/,'').replace(/-/g,'_');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-card);border-radius:7px;border:1px solid var(--border);">
+      <div style="position:relative;width:32px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+        <div id="${safeId}_swatch" style="position:absolute;inset:0;background:${val};"></div>
+        <input type="color" id="${safeId}" value="${val}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+          oninput="document.getElementById('${safeId}_swatch').style.background=this.value;applySystemTheme()">
+      </div>
+      <span style="font-size:11px;color:var(--text-primary);flex:1;">${v.label}</span>
+    </div>`;
+  }).join('');
+  // Render presets
+  const presetCont=document.getElementById('sysThemePresets');
+  if(presetCont) presetCont.innerHTML=SYS_THEME_PRESETS.map((p,i)=>{
+    const bg=p.colors['--bg-primary'];
+    const accent=p.colors['--accent'];
+    return `<button onclick="applySysThemePreset(${i})" style="padding:8px 14px;background:${bg};border:2px solid ${accent};border-radius:8px;color:${p.colors['--text-primary']};font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;">${p.name}</button>`;
+  }).join('');
+  // Restore font size
+  const fontSize=_sysTheme._fontSize||15;
+  const fsEl=document.getElementById('sysThemeFontSize');
+  if(fsEl){fsEl.value=fontSize;document.getElementById('sysThemeFontSizeVal').textContent=fontSize+'px';}
+}
+
+function applySystemTheme(){
+  const root=document.documentElement;
+  SYS_THEME_VARS.forEach(v=>{
+    const safeId='sysTC_'+v.key.replace(/--/,'').replace(/-/g,'_');
+    const el=document.getElementById(safeId);
+    if(el){
+      root.style.setProperty(v.key, el.value);
+      _sysTheme[v.key]=el.value;
+    }
+  });
+  const fsEl=document.getElementById('sysThemeFontSize');
+  if(fsEl){
+    const px=parseInt(fsEl.value)||15;
+    _sysTheme._fontSize=px;
+    root.style.fontSize=px+'px';
+  }
+}
+
+function applySysThemePreset(idx){
+  const preset=SYS_THEME_PRESETS[idx];
+  if(!preset) return;
+  SYS_THEME_VARS.forEach(v=>{
+    const val=preset.colors[v.key]||v.default;
+    const safeId='sysTC_'+v.key.replace(/--/,'').replace(/-/g,'_');
+    const el=document.getElementById(safeId);
+    if(el) el.value=val;
+    const sw=document.getElementById(safeId+'_swatch');
+    if(sw) sw.style.background=val;
+  });
+  applySystemTheme();
+}
+
+function saveSystemTheme(){
+  applySystemTheme();
+  try{localStorage.setItem('ssSystemTheme',JSON.stringify(_sysTheme));}catch(e){}
+  // Also persist to server
+  fetch(`${API_BASE}/global-settings`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({system_theme:_sysTheme})}).catch(()=>{});
+  const el=document.getElementById('sysThemeResult');
+  if(el){el.style.display='block';el.style.color='var(--accent-green)';el.style.background='rgba(0,255,136,0.06)';
+    el.style.border='1px solid rgba(0,255,136,0.2)';el.textContent='System theme saved.';setTimeout(()=>el.style.display='none',3000);}
+}
+
+function resetSystemTheme(){
+  const defaults=SYS_THEME_PRESETS[0].colors;
+  const root=document.documentElement;
+  SYS_THEME_VARS.forEach(v=>{
+    root.style.setProperty(v.key, v.default);
+    const safeId='sysTC_'+v.key.replace(/--/,'').replace(/-/g,'_');
+    const el=document.getElementById(safeId);if(el)el.value=v.default;
+    const sw=document.getElementById(safeId+'_swatch');if(sw)sw.style.background=v.default;
+  });
+  root.style.fontSize='';
+  const fsEl=document.getElementById('sysThemeFontSize');if(fsEl){fsEl.value=15;document.getElementById('sysThemeFontSizeVal').textContent='15px';}
+  _sysTheme={};
+  try{localStorage.removeItem('ssSystemTheme');}catch(e){}
+  fetch(`${API_BASE}/global-settings`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({system_theme:{}})}).catch(()=>{});
+  const el=document.getElementById('sysThemeResult');
+  if(el){el.style.display='block';el.style.color='var(--accent-green)';el.style.background='rgba(0,255,136,0.06)';
+    el.style.border='1px solid rgba(0,255,136,0.2)';el.textContent='Reset to defaults.';setTimeout(()=>el.style.display='none',3000);}
+}
+
+// Restore system theme on page load
+(function(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('ssSystemTheme')||'{}');
+    if(saved && Object.keys(saved).length){
+      const root=document.documentElement;
+      SYS_THEME_VARS.forEach(v=>{
+        if(saved[v.key]) root.style.setProperty(v.key, saved[v.key]);
+      });
+      if(saved._fontSize) root.style.fontSize=saved._fontSize+'px';
+    }
+  }catch(e){}
+})();
 
 // ── Ticker Team Selection Modal ───────────────────────────────────────────────
 let _tickerTeamModal={sportId:null,selected:{}};

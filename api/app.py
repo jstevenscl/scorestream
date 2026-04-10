@@ -2320,6 +2320,35 @@ def display_defaults_set():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ── System Theme (global-settings generic key/value) ─────────────────────────
+@app.route('/global-settings', methods=['POST'])
+def global_settings_post():
+    try:
+        b = request.get_json(force=True) or {}
+        with get_db() as conn:
+            for key, value in b.items():
+                value_str = _json.dumps(value) if not isinstance(value, str) else value
+                conn.execute('''INSERT INTO global_settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP)
+                    ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP''', (key, value_str))
+            conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/global-settings/<key>', methods=['GET'])
+def global_settings_get(key):
+    try:
+        with get_db() as conn:
+            row = conn.execute("SELECT value FROM global_settings WHERE key=?", (key,)).fetchone()
+            if row:
+                try:
+                    return jsonify({'value': _json.loads(row['value'])})
+                except Exception:
+                    return jsonify({'value': row['value']})
+            return jsonify({'value': None})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ── Motor Cache (NASCAR/F1 result storage) ──────────────────────────────────
 @app.route('/motor/reseed', methods=['POST'])
 def motor_reseed():
