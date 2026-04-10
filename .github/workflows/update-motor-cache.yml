@@ -342,90 +342,64 @@ jobs:
                               key=name.lower().replace(' ','_')
                               nascar_drivers[key]={'name':name,'headshot':img}
                               fox_count+=1
-              # Fallback: scrape Fox Sports HTML standings page
+              # Fallback: scrape Fox Sports HTML standings page (all 3 series)
               if fox_count==0:
                   print("  Fox API empty, trying HTML scrape...")
-                  try:
-                      req=urllib.request.Request('https://www.foxsports.com/nascar/cup-series/standings',
-                          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'})
-                      with urllib.request.urlopen(req,timeout=15) as r: html=r.read().decode('utf-8','ignore')
-                      # Extract headshot URLs and driver names from standings rows
-                      img_pattern=_re.compile(r'<img[^>]*src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"')
-                      name_pattern=_re.compile(r'<span[^>]*class="[^"]*entity-name[^"]*"[^>]*>([^<]+)</span>')
-                      imgs=img_pattern.findall(html)
-                      names=name_pattern.findall(html)
-                      # If regex doesn't match class names, try a broader approach
-                      if not names:
-                          # Find all text near headshot images
-                          blocks=_re.findall(r'<a[^>]*standings[^>]*>.*?</a>',html,_re.DOTALL)
-                          for block in blocks:
-                              img_m=_re.search(r'src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"',block)
-                              name_m=_re.findall(r'>([A-Z][a-z]+ [A-Z][a-zA-Z\' .-]+)<',block)
-                              if img_m and name_m:
-                                  imgs.append(img_m.group(1))
-                                  names.append(name_m[0])
-                      paired=min(len(imgs),len(names))
-                      for i in range(paired):
-                          name=names[i].strip()
-                          img=imgs[i].replace('.72.72.','.140.140.')  # get larger version
-                          key=name.lower().replace(' ','_')
-                          nascar_drivers[key]={'name':name,'headshot':img}
-                          fox_count+=1
-                  except Exception as e: print(f"  HTML scrape error: {e}")
+                  fox_pages=[
+                      'https://www.foxsports.com/nascar/cup-series/standings',
+                      'https://www.foxsports.com/nascar/xfinity-series/standings',
+                      'https://www.foxsports.com/nascar/truck-series/standings',
+                  ]
+                  for fox_url in fox_pages:
+                      try:
+                          req=urllib.request.Request(fox_url,
+                              headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'})
+                          with urllib.request.urlopen(req,timeout=15) as r: html=r.read().decode('utf-8','ignore')
+                          # Extract from: <img src="...headshots/XXXX..." alt="Driver Name">
+                          matches=_re.findall(r'<img[^>]*src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"[^>]*alt="([^"]+)"',html)
+                          if not matches:
+                              matches=_re.findall(r'alt="([^"]+)"[^>]*src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"',html)
+                              matches=[(url,name) for name,url in matches]
+                          for img,name in matches:
+                              name=name.strip()
+                              if not name or name.lower()=='headshot': continue
+                              img=img.replace('.72.72.','.140.140.')
+                              key=name.lower().replace(' ','_')
+                              if key not in nascar_drivers:
+                                  nascar_drivers[key]={'name':name,'headshot':img}
+                                  fox_count+=1
+                          print(f"  {fox_url.split('/')[-2]}: {len(matches)} drivers")
+                      except Exception as e: print(f"  Scrape error {fox_url}: {e}")
               print(f"  NASCAR drivers from Fox Sports: {fox_count}, total: {len(nascar_drivers)}")
               cache['nascar-drivers']={'data':nascar_drivers,'_updated':today_str}
           except Exception as e: print(f"  NASCAR drivers error: {e}")
-          # --- F1 Drivers (ESPN core API + CDN) ---
+          # --- F1 Drivers (formula1.com headshots) ---
           print("\n--- F1 Drivers ---")
           try:
               f1_drivers = cache.get('f1-drivers',{}).get('data',{})
               if isinstance(f1_drivers,str): f1_drivers=json.loads(f1_drivers)
-              f1_ids=set()
-              # F1 scoreboard for active race IDs
-              f1_sb=fetch('https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard',ESPN_HDR)
-              if f1_sb and isinstance(f1_sb,dict):
-                  for ev in (f1_sb.get('events') or []):
-                      for comp in (ev.get('competitions') or []):
-                          for c in comp.get('competitors',[]):
-                              aid=str((c.get('athlete') or {}).get('id',''))
-                              if aid: f1_ids.add(aid)
-              # F1 standings
-              f1_stand=fetch('https://site.api.espn.com/apis/site/v2/sports/racing/f1/standings',ESPN_HDR)
-              if f1_stand and isinstance(f1_stand,dict):
-                  raw_s=f1_stand.get('standings')
-                  stand_entries=[]
-                  if isinstance(raw_s,list):
-                      for s in raw_s:
-                          if isinstance(s,dict): stand_entries.extend(s.get('entries') or [])
-                  elif isinstance(raw_s,dict): stand_entries=raw_s.get('entries') or []
-                  for entry in stand_entries:
-                      if not isinstance(entry,dict): continue
-                      aid=str((entry.get('athlete') or {}).get('id') or (entry.get('team') or {}).get('id') or '')
-                      if aid: f1_ids.add(aid)
-              # Core API athletes list as fallback
-              f1_core=fetch('https://sports.core.api.espn.com/v2/sports/racing/leagues/f1/athletes?limit=50&active=true',ESPN_HDR)
-              if f1_core and isinstance(f1_core,dict):
-                  for item in (f1_core.get('items') or []):
-                      if isinstance(item,dict):
-                          ref=item.get('$ref','')
-                          aid_m=_re.search(r'/athletes/(\d+)',ref) if ref else None
-                          if aid_m: f1_ids.add(aid_m.group(1))
-              print(f"  F1 IDs found: {len(f1_ids)}")
-              new_count=0
-              for aid in f1_ids:
-                  if aid in f1_drivers and f1_drivers[aid].get('headshot'): continue
-                  details=fetch(f'https://sports.core.api.espn.com/v2/sports/racing/leagues/f1/athletes/{aid}',ESPN_HDR)
-                  if details and isinstance(details,dict):
-                      hs=(details.get('headshot') or {}).get('href') or f'https://a.espncdn.com/i/headshots/f1/players/full/{aid}.png'
-                      f1_drivers[aid]={
-                          'id':aid,'name':details.get('displayName',''),
-                          'headshot':hs,
-                          'flag':(details.get('flag') or {}).get('href') or '',
-                          'country':(details.get('flag') or {}).get('alt') or '',
-                      }
-                      new_count+=1
-                      print(f"  + {f1_drivers[aid]['name']} ({aid}) hs=yes")
-              print(f"  F1: {new_count} new, {len(f1_drivers)} total in cache")
+              f1_count=0
+              # Scrape official F1 drivers page
+              try:
+                  req=urllib.request.Request('https://www.formula1.com/en/drivers',
+                      headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'})
+                  with urllib.request.urlopen(req,timeout=15) as r: html=r.read().decode('utf-8','ignore')
+                  # Extract: <img alt="Driver Name" ... src="https://media.formula1.com/...right.webp">
+                  matches=_re.findall(r'<img[^>]*alt="([^"]+)"[^>]*src="(https://media\.formula1\.com/image/upload/[^"]*right\.webp)"',html)
+                  if not matches:
+                      matches=_re.findall(r'src="(https://media\.formula1\.com/image/upload/[^"]*right\.webp)"[^>]*alt="([^"]+)"',html)
+                      matches=[(name,url) for url,name in matches]
+                  for name,img in matches:
+                      name=name.strip()
+                      if not name: continue
+                      key=name.lower().replace(' ','_')
+                      if key not in f1_drivers:
+                          f1_drivers[key]={'name':name,'headshot':img}
+                          f1_count+=1
+                          print(f"  + {name}")
+                  print(f"  F1 from formula1.com: {f1_count} drivers")
+              except Exception as e: print(f"  F1 scrape error: {e}")
+              print(f"  F1: {f1_count} new, {len(f1_drivers)} total in cache")
               cache['f1-drivers']={'data':f1_drivers,'_updated':today_str}
           except Exception as e: print(f"  F1 drivers error: {e}")
           print("\n--- PGA Players (pre-populate via core API) ---")
