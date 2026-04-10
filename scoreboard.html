@@ -1227,6 +1227,17 @@ body.stream-mode .card-header{padding:4px 10px;}
         <p>Overlay a live score ticker onto a Dispatcharr channel. Pick your sports, choose a channel, and enable — ScoreStream handles the rest.</p>
       </div>
 
+      <!-- Transcoding warning -->
+      <div style="background:rgba(255,107,0,0.06);border:1px solid rgba(255,107,0,0.25);border-radius:8px;padding:14px;margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:700;color:#ff6b00;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;">⚠ Performance &amp; Compatibility</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          The ticker overlay requires <strong>FFmpeg stream profiles</strong> — channels using other profile types are not supported.
+          Enabling the ticker forces real-time video transcoding. This works with CPU-only encoding (<code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;">libx264 ultrafast</code>),
+          but for optimal performance <strong style="color:var(--accent);">GPU hardware encoding</strong> (NVENC, VAAPI, QSV) is recommended.
+          Without a GPU you may experience intermittent stuttering or frame drops.
+        </div>
+      </div>
+
       <!-- Status panel -->
       <div id="tickerStatusPanel" style="margin-bottom:20px;">
         <div id="tickerStatusBar" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px 10px 0 0;">
@@ -1351,6 +1362,10 @@ body.stream-mode .card-header{padding:4px 10px;}
             DISABLE TICKER
           </button>
         </div>
+        <button onclick="resetTickerDefaults()"
+          style="width:100%;padding:9px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;margin-bottom:10px;">
+          RESET TO DEFAULTS
+        </button>
         <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">Enabling creates a <em>"Profile (Ticker)"</em> copy in Dispatcharr and assigns it to the selected channel. Disabling restores the original profile and removes the copy.</div>
         <div id="tickerActionResult" style="display:none;padding:9px 12px;border-radius:7px;font-size:12px;font-family:'Share Tech Mono',monospace;margin-top:10px;"></div>
       </div>
@@ -6707,9 +6722,11 @@ async function disableAllTickers(){
   loadTickerConfig();
 }
 
+let _tickerSelectedProfileCommand=''; // track whether selected channel uses ffmpeg
 async function onTickerChannelChange(){
   const sel=document.getElementById('tickerChannelSelect');
   const infoEl=document.getElementById('tickerChannelProfileInfo');
+  _tickerSelectedProfileCommand='';
   if(!sel||!infoEl)return;
   const chId=parseInt(sel.value);
   if(!chId){infoEl.style.display='none';return;}
@@ -6721,8 +6738,18 @@ async function onTickerChannelChange(){
     try{
       const r=await fetch(`${API_BASE}/dispatcharr/streamprofiles/${ch.stream_profile_id}`,{signal:AbortSignal.timeout(8000)});
       const p=await r.json();
-      infoEl.textContent='Current profile: "'+p.name+'"'+(p.locked?' [locked — cannot modify]':' ✓ ready');
-      infoEl.style.color=p.locked?'var(--accent-red)':'var(--text-secondary)';
+      _tickerSelectedProfileCommand=(p.command||'').toLowerCase();
+      const isFFmpeg=_tickerSelectedProfileCommand.includes('ffmpeg');
+      if(p.locked){
+        infoEl.innerHTML='Current profile: "'+p.name+'" <span style="color:var(--accent-red);">[locked — cannot modify]</span>';
+        infoEl.style.color='var(--text-secondary)';
+      }else if(!isFFmpeg){
+        infoEl.innerHTML='Current profile: "'+p.name+'" <span style="color:var(--accent-red);">[⚠ not an FFmpeg profile — ticker requires FFmpeg]</span>';
+        infoEl.style.color='var(--text-secondary)';
+      }else{
+        infoEl.textContent='Current profile: "'+p.name+'" ✓ FFmpeg ready';
+        infoEl.style.color='var(--text-secondary)';
+      }
     }catch(e){infoEl.textContent='Stream profile ID: '+ch.stream_profile_id;}
   }else{
     infoEl.style.display='block';
@@ -6932,10 +6959,38 @@ function showTickerResult(msg,ok){
   el.textContent=msg;
 }
 
+function resetTickerDefaults(){
+  // Appearance defaults
+  document.getElementById('tickerFontSize').value=28;
+  document.getElementById('tickerFontSizeVal').textContent='28px';
+  document.getElementById('tickerScrollSpeed').value=150;
+  updateScrollLabel();
+  document.getElementById('tickerBgOpacity').value=0.75;
+  document.getElementById('tickerBgVal').textContent='75%';
+  setTickerPos('bottom');
+  // Uncheck all sports
+  TICKER_SPORTS.forEach(sp=>{
+    const cb=document.getElementById('tsp-'+sp.id);if(cb)cb.checked=false;
+    const favBtn=document.getElementById('tspfav-'+sp.id);if(favBtn)favBtn.classList.remove('active');
+    onTickerSportToggle(sp.id);
+  });
+  // Clear team selections
+  _tickerTeamSelections={};
+  // Save cleared config
+  fetch(`${API_BASE}/ticker/config`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({font_size:28,position:'bottom',scroll_speed:150,bg_opacity:0.75,sports:[],favorites_only:{},sport_teams:{},channel_id:_tickerSelectedChannelId||null})
+  });
+  showTickerResult('Settings reset to defaults.',true);
+}
+
 async function enableTickerOverlay(){
   const cfg=getTickerConfig();
   if(!cfg.channel_id){showTickerResult('Select a Dispatcharr channel first.',false);return;}
   if(!cfg.sports.length){showTickerResult('Select at least one sport source.',false);return;}
+  if(_tickerSelectedProfileCommand&&!_tickerSelectedProfileCommand.includes('ffmpeg')){
+    showTickerResult('Selected channel does not use an FFmpeg stream profile. Ticker overlay requires FFmpeg.',false);return;
+  }
   showTickerResult('Enabling...',true);
   try{
     await fetch(`${API_BASE}/ticker/config`,{
