@@ -1327,7 +1327,7 @@ body.stream-mode .card-header{padding:4px 10px;}
             <span id="tickerFontSizeVal" style="font-size:12px;color:var(--accent);font-family:'Share Tech Mono',monospace;">28px</span>
           </div>
           <input type="range" id="tickerFontSize" min="16" max="48" value="28" step="2" style="width:100%;"
-            oninput="document.getElementById('tickerFontSizeVal').textContent=this.value+'px'">
+            oninput="document.getElementById('tickerFontSizeVal').textContent=this.value+'px';updateTickerPreview()">
         </div>
 
         <div style="margin-bottom:12px;">
@@ -1345,7 +1345,23 @@ body.stream-mode .card-header{padding:4px 10px;}
             <span id="tickerBgVal" style="font-size:12px;color:var(--accent);font-family:'Share Tech Mono',monospace;">75%</span>
           </div>
           <input type="range" id="tickerBgOpacity" min="0" max="1" value="0.75" step="0.05" style="width:100%;"
-            oninput="document.getElementById('tickerBgVal').textContent=Math.round(this.value*100)+'%'">
+            oninput="document.getElementById('tickerBgVal').textContent=Math.round(this.value*100)+'%';updateTickerPreview()">
+        </div>
+      </div>
+
+      <!-- Live Preview -->
+      <div style="margin-bottom:20px;">
+        <div class="section-label" style="margin-bottom:10px;">👁 Live Preview</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">Updates as you adjust settings above.</div>
+        <div id="tickerPreviewWrap" style="position:relative;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;height:120px;">
+          <!-- Simulated video area -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,0.15);letter-spacing:2px;">VIDEO STREAM</span>
+          </div>
+          <!-- Ticker bar -->
+          <div id="tickerPreviewBar" style="position:absolute;left:0;right:0;bottom:0;overflow:hidden;white-space:nowrap;">
+            <span id="tickerPreviewText" style="display:inline-block;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:#ffffff;"></span>
+          </div>
         </div>
       </div>
 
@@ -6532,6 +6548,7 @@ async function onSectionTicker(){
   buildTickerSportsGrid();
   await Promise.all([loadTickerChannels(), loadTickerImportScoreboards()]);
   await loadTickerConfig();
+  updateTickerPreview();
 }
 
 async function loadTickerImportScoreboards(){
@@ -6826,12 +6843,57 @@ function setTickerPos(pos){
   _tickerPos=pos;
   document.getElementById('tickerPosBottom')?.classList.toggle('active',pos==='bottom');
   document.getElementById('tickerPosTop')?.classList.toggle('active',pos==='top');
+  updateTickerPreview();
 }
 
 function updateScrollLabel(){
   const v=document.getElementById('tickerScrollSpeed')?.value||150;
   const el=document.getElementById('tickerScrollVal');
   if(el) el.textContent=v==0?'static':v+' px/s';
+  updateTickerPreview();
+}
+
+// ---- Ticker Preview ----
+let _tickerPreviewAnim=null;
+const _tickerSampleText='NBA: LAL 108 @ BOS 112 (Q4 2:15)    \u00b7    NHL: NYR 3 @ TOR 4 (3rd 8:42)    \u00b7    MLB: NYY 5 @ LAD 3 (7th)    \u00b7    PGA (Masters): S. Scheffler -12  R. McIlroy -9  J. Spieth -7';
+function updateTickerPreview(){
+  const bar=document.getElementById('tickerPreviewBar');
+  const txt=document.getElementById('tickerPreviewText');
+  const wrap=document.getElementById('tickerPreviewWrap');
+  if(!bar||!txt||!wrap) return;
+  const fontSize=parseInt(document.getElementById('tickerFontSize')?.value)||28;
+  const speed=parseInt(document.getElementById('tickerScrollSpeed')?.value)||0;
+  const opacity=parseFloat(document.getElementById('tickerBgOpacity')?.value)||0.75;
+  const pos=_tickerPos||'bottom';
+  // Scale font to fit preview (preview is ~120px tall, real stream is 720-1080px)
+  const previewScale=0.5;
+  const scaledFont=Math.max(10,Math.round(fontSize*previewScale));
+  bar.style.top=pos==='top'?'0':'';
+  bar.style.bottom=pos==='bottom'?'0':'';
+  if(pos==='top'){bar.style.removeProperty('bottom');}else{bar.style.removeProperty('top');}
+  bar.style.background='rgba(0,0,0,'+opacity+')';
+  bar.style.padding=Math.round(scaledFont*0.35)+'px '+Math.round(scaledFont*0.5)+'px';
+  txt.style.fontSize=scaledFont+'px';
+  txt.textContent=_tickerSampleText;
+  // Animate scroll
+  if(_tickerPreviewAnim){cancelAnimationFrame(_tickerPreviewAnim);_tickerPreviewAnim=null;}
+  if(speed===0){
+    txt.style.transform='translateX(0)';
+    return;
+  }
+  const scaledSpeed=speed*previewScale;
+  let start=null;
+  function step(ts){
+    if(!start)start=ts;
+    const elapsed=(ts-start)/1000;
+    const wrapW=wrap.offsetWidth;
+    const txtW=txt.offsetWidth;
+    const totalDist=wrapW+txtW;
+    const offset=((elapsed*scaledSpeed)%totalDist);
+    txt.style.transform='translateX('+(wrapW-offset)+'px)';
+    _tickerPreviewAnim=requestAnimationFrame(step);
+  }
+  _tickerPreviewAnim=requestAnimationFrame(step);
 }
 
 function setSettingsScale(px){
