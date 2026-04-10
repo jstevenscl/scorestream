@@ -255,7 +255,7 @@ jobs:
                                   }
                                   name_keyed_existing.add(pname.lower())
                                   namefill+=1
-                      if namefill>=50: break  # cap API calls
+                      if namefill>=150: break  # cap API calls
                   if namefill: print(f"  PGA name-search backfill: {namefill} players")
                   print(f"  PGA: {new_count} new + {namefill} backfill, {len(pga_players)} total in cache")
                   cache['pga-players']={'data':pga_players,'_updated':today_str}
@@ -422,6 +422,8 @@ jobs:
               f1_drivers = cache.get('f1-drivers',{}).get('data',{})
               if isinstance(f1_drivers,str): f1_drivers=json.loads(f1_drivers)
               f1_count=0
+              # Clear existing to force re-fetch with updated image transforms
+              f1_drivers={}
               # Scrape official F1 drivers page
               try:
                   req=urllib.request.Request('https://www.formula1.com/en/drivers',
