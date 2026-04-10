@@ -4961,7 +4961,8 @@ async function fetchPGAData(sport, sbConfig){
               // Thru: hole number (1-18), "F" for finished, blank if not started
               const thru=c.status?.thru!=null?String(c.status.thru):(c.status?.type?.shortDetail||'');
               const aid=String(c.athlete?.id||'');
-              const cached=pgaPlayerCache[aid]||{};
+              const pname=(c.athlete?.displayName||c.team?.displayName||'').toLowerCase();
+              const cached=pgaPlayerCache[aid]||pgaNameToCache[pname]||{};
               return{
                 name: c.athlete?.displayName||c.team?.displayName||'?',
                 score,
