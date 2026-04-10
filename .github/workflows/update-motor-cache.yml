@@ -394,6 +394,8 @@ jobs:
                       if not name: continue
                       key=name.lower().replace(' ','_')
                       if key not in f1_drivers:
+                          # Convert full-body image to face crop via Cloudinary transforms
+                          img=img.replace('c_lfill,w_440','c_fill,g_face,w_140,h_140')
                           f1_drivers[key]={'name':name,'headshot':img}
                           f1_count+=1
                           print(f"  + {name}")

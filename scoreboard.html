@@ -4849,9 +4849,12 @@ async function fetchPGAData(sport, sbConfig){
 
   // Load PGA player cache (headshots, flags) — built by GHA workflow
   let pgaPlayerCache={};
+  const pgaNameToCache={};
   try{
     const pcRes=await fetch(`${API_BASE}/motor/cache/pga-players`,{signal:AbortSignal.timeout(3000)});
     if(pcRes.ok){ const pd=await pcRes.json(); pgaPlayerCache=pd.data||{}; }
+    // Build name-based lookup as fallback (tournament data often lacks athlete_id)
+    Object.values(pgaPlayerCache).forEach(p=>{if(p.name)pgaNameToCache[p.name.toLowerCase()]=p;});
     console.log(`[pga] player cache: ${Object.keys(pgaPlayerCache).length} entries`);
   }catch(e){ console.warn('[pga] player cache unavailable',e); }
 
@@ -4915,7 +4918,7 @@ async function fetchPGAData(sport, sbConfig){
               winner: t.winner, winnerScore: t.winner_score,
               teams: chunk.map(p=>{
                 const aid=String(p.athlete_id||'');
-                const cached=pgaPlayerCache[aid]||{};
+                const cached=pgaPlayerCache[aid]||pgaNameToCache[(p.name||'').toLowerCase()]||{};
                 return{
                   name:p.name, score:p.score,
                   position:p.pos, thru: p.r4?'F':(p.r3?'R3 done':p.r2?'R2 done':''),
@@ -5034,10 +5037,14 @@ async function fetchNascarData(sport, sbConfig){
   const nameToNascarHs={};
   try{
     const pcRes=await fetch(`${API_BASE}/motor/cache/nascar-drivers`,{signal:AbortSignal.timeout(3000)});
-    if(pcRes.ok){ const pd=await pcRes.json(); const cache=pd.data||{}; Object.values(cache).forEach(d=>{if(d.name&&d.headshot)nameToNascarHs[d.name.toLowerCase()]=d.headshot;}); }
+    if(pcRes.ok){ const pd=await pcRes.json(); const cache=pd.data||{}; Object.values(cache).forEach(d=>{if(d.name&&d.headshot){nameToNascarHs[d.name.toLowerCase()]=d.headshot;
+      // Also index by last name for abbreviated name lookups ("C. Elliott" → "Chase Elliott")
+      const parts=d.name.split(' '); if(parts.length>=2) nameToNascarHs[parts[parts.length-1].toLowerCase()]=d.headshot;
+    }}); }
     console.log(`[${sport.id}] driver cache: ${Object.keys(nameToNascarHs).length} entries`);
   }catch(e){ console.warn(`[${sport.id}] driver cache unavailable`,e); }
-  const _nasHs=name=>showHeadshots?(nameToNascarHs[(name||'').toLowerCase()]||null):null;
+  const _nasHs=name=>{if(!showHeadshots||!name)return null;const n=name.toLowerCase();
+    return nameToNascarHs[n]||nameToNascarHs[n.split(' ').pop()]||nameToNascarHs[n.replace(/^[a-z]\.\s*/,'')]||null;};
   try{
     const r=await fetch('https://cf.nascar.com/live/feeds/live-feed.json',{signal:AbortSignal.timeout(6000)});
     if(!r.ok) return [];
@@ -5223,10 +5230,13 @@ async function fetchF1Data(sport, sbConfig){
   const nameToF1Hs={};
   try{
     const pcRes=await fetch(`${API_BASE}/motor/cache/f1-drivers`,{signal:AbortSignal.timeout(3000)});
-    if(pcRes.ok){ const pd=await pcRes.json(); const cache=pd.data||{}; Object.values(cache).forEach(d=>{if(d.name&&d.headshot)nameToF1Hs[d.name.toLowerCase()]=d.headshot;}); }
+    if(pcRes.ok){ const pd=await pcRes.json(); const cache=pd.data||{}; Object.values(cache).forEach(d=>{if(d.name&&d.headshot){nameToF1Hs[d.name.toLowerCase()]=d.headshot;
+      const parts=d.name.split(' '); if(parts.length>=2) nameToF1Hs[parts[parts.length-1].toLowerCase()]=d.headshot;
+    }}); }
     console.log(`[f1] driver cache: ${Object.keys(nameToF1Hs).length} entries`);
   }catch(e){ console.warn('[f1] driver cache unavailable',e); }
-  const _f1Hs=name=>showHeadshots?(nameToF1Hs[(name||'').toLowerCase()]||null):null;
+  const _f1Hs=name=>{if(!showHeadshots||!name)return null;const n=name.toLowerCase();
+    return nameToF1Hs[n]||nameToF1Hs[n.split(' ').pop()]||nameToF1Hs[n.replace(/^[a-z]\.\s*/,'')]||null;};
   try{
     const [nextR, lastR, standR] = await Promise.all([
       fetch('https://api.jolpi.ca/ergast/f1/current/next.json',{signal:AbortSignal.timeout(6000)}).then(r=>r.json()),
