@@ -179,18 +179,34 @@ jobs:
                   pga_players = cache.get('pga-players',{}).get('data',{})
                   if isinstance(pga_players,str): pga_players=json.loads(pga_players)
                   all_ids={}
+                  # Build name→id map from existing cache
+                  name_to_id={v['name'].lower():k for k,v in pga_players.items() if v.get('name')}
                   for t in upcoming+completed:
                       for p in t.get('players',[]):
                           aid=str(p.get('athlete_id',''))
-                          if aid and aid!='None': all_ids[aid]=p.get('name','')
-                  # Also pull IDs from live scoreboard
+                          if aid and aid!='None' and aid!='':
+                              all_ids[aid]=p.get('name','')
+                          elif p.get('name') and p['name'].lower() in name_to_id:
+                              # Backfill athlete_id from cache name lookup
+                              all_ids[name_to_id[p['name'].lower()]]=p['name']
+                  # Pull IDs from live scoreboard + build name→id mapping
                   pga_sb=fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',ESPN_HDR)
                   if pga_sb:
                       for ev in pga_sb.get('events',[]):
                           for comp in ev.get('competitions',[]):
                               for c in comp.get('competitors',[]):
                                   aid=str(c.get('id') or c.get('athlete',{}).get('id') or '')
-                                  if aid: all_ids[aid]=c.get('athlete',{}).get('displayName','')
+                                  name=c.get('athlete',{}).get('displayName','')
+                                  if aid:
+                                      all_ids[aid]=name
+                                      if name: name_to_id[name.lower()]=aid
+                  # Second pass: match remaining tournament names via scoreboard name→id map
+                  for t in upcoming+completed:
+                      for p in t.get('players',[]):
+                          aid=str(p.get('athlete_id',''))
+                          if (not aid or aid=='None' or aid=='') and p.get('name'):
+                              mapped_id=name_to_id.get(p['name'].lower())
+                              if mapped_id: all_ids[mapped_id]=p['name']
                   print(f"  Known athlete IDs: {len(all_ids)}")
                   new_count=0
                   for aid,name in all_ids.items():
@@ -214,7 +230,34 @@ jobs:
                           }
                       new_count+=1
                       print(f"  + {pga_players[aid]['name']} ({aid}) hs={'yes' if pga_players[aid]['headshot'] else 'no'}")
-                  print(f"  PGA: {new_count} new, {len(pga_players)} total in cache")
+                  # Also add name-keyed entries for tournament players without IDs
+                  # so the frontend name-based fallback can find them
+                  all_tournament_names=set()
+                  for t in upcoming+completed:
+                      for p in t.get('players',[]):
+                          if p.get('name'): all_tournament_names.add(p['name'])
+                  name_keyed_existing={v['name'].lower() for v in pga_players.values() if v.get('name')}
+                  namefill=0
+                  for pname in all_tournament_names:
+                      if pname.lower() in name_keyed_existing: continue
+                      # Try ESPN search to find athlete ID
+                      search_url=f'https://site.web.api.espn.com/apis/common/v3/search?query={urllib.request.quote(pname)}&limit=1&type=player&sport=golf'
+                      sr=fetch(search_url,ESPN_HDR)
+                      if sr and isinstance(sr,dict):
+                          items=sr.get('items') or sr.get('results') or []
+                          if items and isinstance(items[0],dict):
+                              aid_found=str(items[0].get('id') or items[0].get('uid','').split(':')[-1] or '')
+                              if aid_found and aid_found not in pga_players:
+                                  pga_players[aid_found]={
+                                      'id':aid_found,'name':pname,
+                                      'headshot':f'https://a.espncdn.com/i/headshots/golf/players/full/{aid_found}.png',
+                                      'flag':'','country':'',
+                                  }
+                                  name_keyed_existing.add(pname.lower())
+                                  namefill+=1
+                      if namefill>=50: break  # cap API calls
+                  if namefill: print(f"  PGA name-search backfill: {namefill} players")
+                  print(f"  PGA: {new_count} new + {namefill} backfill, {len(pga_players)} total in cache")
                   cache['pga-players']={'data':pga_players,'_updated':today_str}
           for league in ['atp','wta']:
               print(f"\n--- {league.upper()} Players ---")
