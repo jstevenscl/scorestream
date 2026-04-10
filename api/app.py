@@ -1459,7 +1459,15 @@ def _ticker_text_for_sports(sports):
         except Exception as e:
             log.warning(f'[ticker/text] sport={sport_id} error: {e}')
     all_parts=live_parts+final_parts
-    return jsonify({'text':'    ·    '.join(all_parts) if all_parts else ''})
+    if not all_parts:
+        return jsonify({'text':''})
+    raw = '    ·    '.join(all_parts)
+    # Pad with trailing spaces so the ticker scrolls fully off-screen before
+    # repeating. This keeps text width (tw) large and stable between updates,
+    # preventing the visible scroll-position jump when scores refresh.
+    PAD_WIDTH = 300  # characters — wide enough for ~1920px at font 28
+    padded = raw + ' ' * max(PAD_WIDTH - len(raw) % PAD_WIDTH, PAD_WIDTH)
+    return jsonify({'text': padded})
 
 @app.route('/ticker/text/<int:sb_id>', methods=['GET'])
 def ticker_text(sb_id):

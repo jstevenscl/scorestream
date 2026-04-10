@@ -554,6 +554,10 @@ Sports are organized into groups: Pro Leagues, Motorsport, Tennis, International
 
 > Score text updates every 30 seconds automatically. No stream restart is needed when scores change — ffmpeg re-reads the file on each frame.
 
+**⚠ Performance Note — GPU Encoding Recommended**
+
+The ticker overlay requires FFmpeg to decode and re-encode the video stream in real time. This works with CPU-only transcoding (`libx264 ultrafast`), but results may not be optimal — especially on lower-powered hardware or with high-resolution source streams. For the best experience, a system with GPU hardware encoding (NVENC, VAAPI, or QSV) is recommended. Without a GPU, you may experience intermittent stuttering or frame drops during playback.
+
 ---
 
 ## Supported Sports
