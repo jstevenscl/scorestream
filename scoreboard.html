@@ -1549,7 +1549,7 @@ body.stream-mode .card-header{padding:4px 10px;}
       <div class="modal-section" style="margin-top:20px;">
         <div class="modal-section-title">UI Font Sizes</div>
         <div class="modal-sublabel" style="margin-bottom:14px;">
-          Scale text in the app interface. Sliders apply when you release the mouse (avoids the page jumping while you drag).
+          Scale text in the app interface. Sliders apply when you release the mouse (avoids the page jumping while you drag) and <strong>save automatically</strong> to your browser. The <em>Save System Theme</em> button only pushes the configuration to the server database (for survival across browser cache clears).
         </div>
         <div class="modal-slider-row">
           <span class="modal-slider-label" data-tip="Scales all text in the settings UI, topbar, and sidebar uniformly via CSS zoom on #app and #settingsPage. Use the Sidebar / Topbar sliders below for finer control.">Base Font Size (everything)</span>
@@ -6158,7 +6158,7 @@ function buildNascarCard(g){
   // Resolve which NASCAR series this card belongs to so favorites are scoped per-series
   const _nasSid=resolveSportId(g)||'nascar';
   if(g.isNascarStandings){
-    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-name-size,11px);font-family:'Share Tech Mono',monospace;color:var(--text-dim);">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-header-size,11px);font-family:'Share Tech Mono',monospace;color:var(--card-final-color,var(--text-dim));letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
     const rows=(g.drivers||[]).map(d=>{const star=favPlayerStar(_nasSid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-secondary);width:20px;text-align:right;flex-shrink:0;">${d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||'').replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`}).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
@@ -6185,7 +6185,7 @@ function buildF1Card(g){
     ? '<span class="status-final">RESULT</span>'
     : g.isScheduled
       ? `<div style="display:flex;align-items:center;gap:4px;">${tvBadgeF1}<span class="status-upcoming">UPCOMING</span></div>`
-      : '<span style="font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);">STANDINGS</span>';
+      : '<span style="font-size:var(--card-header-size,11px);font-family:Share Tech Mono,monospace;color:var(--card-final-color,var(--text-dim));letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">STANDINGS</span>';
   const header = `<div class="card-header">
     <div style="display:flex;align-items:center;gap:6px;">
       <div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div>
@@ -7637,12 +7637,22 @@ const SYS_THEME_PRESETS=[
 ];
 let _sysTheme={};
 
+// Persist current _sysTheme to localStorage. Called on every applySystemTheme()
+// so slider drags are saved immediately — no more "navigate away, lose values"
+// gotcha. The Save button still exists for pushing to the server database.
+function _persistSysThemeLocal(){
+  try{ localStorage.setItem('ssSystemTheme',JSON.stringify(_sysTheme)); }catch(e){}
+}
+
 function initSystemTheme(){
-  // Load saved theme
+  // Load saved theme — merge with any in-memory changes so navigating between
+  // settings sections doesn't clobber unsaved slider drags.
   try{
     const saved=JSON.parse(localStorage.getItem('ssSystemTheme')||'{}');
-    _sysTheme=saved;
-  }catch(e){_sysTheme={};}
+    // localStorage is the source of truth (auto-persisted on every change).
+    // If for some reason in-memory has values not yet in storage, keep them.
+    _sysTheme=Object.assign({},saved,_sysTheme||{});
+  }catch(e){if(!_sysTheme)_sysTheme={};}
   // Render color pickers grouped with descriptions
   const cont=document.getElementById('sysThemeColors');
   if(cont){
@@ -7730,6 +7740,8 @@ function applySystemTheme(){
     _sysTheme._topbarMetaSize=px;
     document.documentElement.style.setProperty('--topbar-meta-size',px+'px');
   }
+  // Auto-persist to localStorage so slider drags survive navigation/refresh
+  _persistSysThemeLocal();
 }
 
 function applySysThemePreset(idx){
@@ -8210,6 +8222,33 @@ renderFavSummary();
   const sidebar=document.getElementById('sidebar');
   if(sidebar)sidebar.style.display='none';
   document.body.classList.add('stream-mode');
+
+  // Fetch System Theme from server BEFORE scoreboard config — this gives the
+  // Puppeteer browser instance access to the user's system theme settings
+  // (colors, topbar meta size, etc.) which it can't read from localStorage
+  // since it's a separate browser session from the user's main browser.
+  // Only the topbar meta size and color vars apply in stream mode (sidebar
+  // scale and base font size don't apply because the sidebar is hidden and
+  // zooming #app would distort the 1080p stream layout).
+  try{
+    const stRes=await fetch(`${API_BASE}/global-settings/system_theme`,{signal:AbortSignal.timeout(3000)});
+    if(stRes.ok){
+      const stJson=await stRes.json();
+      const st=stJson.value||{};
+      const root=document.documentElement;
+      // Apply color vars (system theme colors propagate to stream cards too)
+      if(typeof SYS_THEME_VARS!=='undefined'){
+        SYS_THEME_VARS.forEach(v=>{
+          if(st[v.key]) root.style.setProperty(v.key,st[v.key]);
+        });
+      }
+      // Apply topbar meta size (the only font setting that applies in stream)
+      if(st._topbarMetaSize){
+        root.style.setProperty('--topbar-meta-size',st._topbarMetaSize+'px');
+      }
+      console.log('[stream] system theme loaded from server');
+    }
+  }catch(e){ /* non-fatal — stream falls back to defaults */ }
 
   // Fetch scoreboard config FIRST so filters are set before any score fetching
   const slug=params.get('slug');
