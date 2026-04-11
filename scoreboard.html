@@ -2537,17 +2537,47 @@ function buildEditorPreview(){
     g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
     inner.appendChild(g1); inner.appendChild(g2);
   } else if(isMotorOnly&&isF1){
+    var _f1ShowHs=_editorDraft&&_editorDraft.display_config&&_editorDraft.display_config.player_headshots!==false;
+    // Real F1 driver headshots from formula1.com Cloudinary CDN with face crop
+    var _f1Hs={
+      verstappen:_f1ShowHs?'https://media.formula1.com/image/upload/c_fill,g_face,w_140,h_140/q_auto/v1740000000/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png':null,
+      hamilton:_f1ShowHs?'https://media.formula1.com/image/upload/c_fill,g_face,w_140,h_140/q_auto/v1740000000/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png':null,
+      leclerc:_f1ShowHs?'https://media.formula1.com/image/upload/c_fill,g_face,w_140,h_140/q_auto/v1740000000/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/2col-retina/image.png':null,
+    };
     var g1=buildF1Card({id:'f1-next',name:'Next: Japanese Grand Prix',sportName:'Formula 1',sportEmoji:'\uD83C\uDFCE\uFE0F',sportColor:'#e10600',isLive:false,isFinal:false,isScheduled:true,isF1Next:true,circuit:'Suzuka Circuit',country:'Japan',date:'2026-04-06',countdown:'in 11d',round:'3'});
-    var g2=buildF1Card({id:'f1-last',name:'Chinese Grand Prix Result',sportName:'Formula 1',sportEmoji:'\uD83C\uDFCE\uFE0F',sportColor:'#e10600',isLive:false,isFinal:true,isScheduled:false,isF1Last:true,podium:[{pos:'1',driver:'Max Verstappen',team:'Red Bull Racing',time:'1:24:34',points:'25'},{pos:'2',driver:'Lewis Hamilton',team:'Mercedes',time:'+8.4s',points:'18'},{pos:'3',driver:'Charles Leclerc',team:'Ferrari',time:'+12.9s',points:'15'}]});
+    var g2=buildF1Card({id:'f1-last',name:'Chinese Grand Prix Result',sportName:'Formula 1',sportEmoji:'\uD83C\uDFCE\uFE0F',sportColor:'#e10600',isLive:false,isFinal:true,isScheduled:false,isF1Last:true,podium:[{pos:1,driver:'Max Verstappen',team:'Red Bull Racing',time:'1:24:34',points:'25',headshot:_f1Hs.verstappen},{pos:2,driver:'Lewis Hamilton',team:'Mercedes',time:'+8.4s',points:'18',headshot:_f1Hs.hamilton},{pos:3,driver:'Charles Leclerc',team:'Ferrari',time:'+12.9s',points:'15',headshot:_f1Hs.leclerc}]});
     g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
     inner.appendChild(g1); inner.appendChild(g2);
   } else if(isMotorOnly&&isNascar){
-    var g1=buildNascarCard({id:'nascar-live',name:'Daytona 500',sportName:'NASCAR Cup Series',sportEmoji:'\uD83C\uDFC1',sportColor:'#ffd700',isLive:true,isFinal:false,isNascarLive:true,flagEmoji:'\uD83D\uDFE2',trackName:'Daytona International Speedway',lapNumber:142,lapsInRace:200,lapsToGo:58,drivers:[{pos:1,driver:'Denny Hamlin',car:'#11',manufacturer:'Toyota',delta:null},{pos:2,driver:'Kyle Larson',car:'#5',manufacturer:'Chevrolet',delta:0.8},{pos:3,driver:'Chase Elliott',car:'#9',manufacturer:'Chevrolet',delta:1.2},{pos:4,driver:'Ryan Blaney',car:'#12',manufacturer:'Ford',delta:2.3},{pos:5,driver:'Martin Truex Jr',car:'#19',manufacturer:'Toyota',delta:3.1}]});
+    var _nasShowHs=_editorDraft&&_editorDraft.display_config&&_editorDraft.display_config.player_headshots!==false;
+    // Real NASCAR driver headshots from Fox Sports CDN
+    var _nasHs={
+      hamlin:_nasShowHs?'https://b.fssta.com/uploads/application/nascar/headshots/8631.vresize.140.140.medium.0.png':null,
+      larson:_nasShowHs?'https://b.fssta.com/uploads/application/nascar/headshots/9410.vresize.140.140.medium.0.png':null,
+      elliott:_nasShowHs?'https://b.fssta.com/uploads/application/nascar/headshots/9128.vresize.140.140.medium.0.png':null,
+      blaney:_nasShowHs?'https://b.fssta.com/uploads/application/nascar/headshots/9275.vresize.140.140.medium.0.png':null,
+      truex:_nasShowHs?'https://b.fssta.com/uploads/application/nascar/headshots/8517.vresize.140.140.medium.0.png':null,
+    };
+    var g1=buildNascarCard({id:'nascar-live',name:'Daytona 500',sportName:'NASCAR Cup Series',sportEmoji:'\uD83C\uDFC1',sportColor:'#ffd700',isLive:true,isFinal:false,isNascarLive:true,flagEmoji:'\uD83D\uDFE2',trackName:'Daytona International Speedway',lapNumber:142,lapsInRace:200,lapsToGo:58,drivers:[{pos:1,driver:'Denny Hamlin',car:'#11',manufacturer:'Toyota',delta:null,headshot:_nasHs.hamlin,status:'Running'},{pos:2,driver:'Kyle Larson',car:'#5',manufacturer:'Chevrolet',delta:0.8,headshot:_nasHs.larson,status:'Running'},{pos:3,driver:'Chase Elliott',car:'#9',manufacturer:'Chevrolet',delta:1.2,headshot:_nasHs.elliott,status:'Running'},{pos:4,driver:'Ryan Blaney',car:'#12',manufacturer:'Ford',delta:2.3,headshot:_nasHs.blaney,status:'Running'},{pos:5,driver:'Martin Truex Jr',car:'#19',manufacturer:'Toyota',delta:3.1,headshot:_nasHs.truex,status:'Running'}]});
     g1.style.pointerEvents='none';
     inner.appendChild(g1);
   } else if(isPGA){
-    var g1=buildLeaderboardCard({id:'pga-p1',name:'The Masters Round 2',sportName:'PGA Tour',sportEmoji:'\u26F3',sportColor:'#00594f',isLive:true,isFinal:false,isIndividual:true,periodDesc:'Round 2',date:new Date().toISOString(),teams:[{position:'1',name:'Scottie Scheffler',score:'-12',thru:'18'},{position:'2',name:'Rory McIlroy',score:'-9',thru:'14'},{position:'3',name:'Collin Morikawa',score:'-7',thru:'16'},{position:'T4',name:'Jon Rahm',score:'-6',thru:'18'},{position:'T4',name:'Viktor Hovland',score:'-6',thru:'18'}]});
-    var g2=buildLeaderboardCard({id:'pga-p2',name:'The Masters Round 2',sportName:'PGA Tour',sportEmoji:'\u26F3',sportColor:'#00594f',isLive:false,isFinal:true,isIndividual:true,periodDesc:'',date:new Date().toISOString(),teams:[{position:'6',name:'Brooks Koepka',score:'-5',thru:'F'},{position:'7',name:'H. Matsuyama',score:'-4',thru:'F'},{position:'T8',name:'Tiger Woods',score:'-3',thru:'F'},{position:'T8',name:'D. Johnson',score:'-3',thru:'F'},{position:'10',name:'P. Cantlay',score:'-2',thru:'F'}]});
+    var _pgaShowHs=_editorDraft&&_editorDraft.display_config&&_editorDraft.display_config.player_headshots!==false;
+    // Real PGA player headshots from ESPN CDN (athlete IDs)
+    var _pgaHs={
+      scheffler:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/9478.png':null,
+      mcilroy:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/3470.png':null,
+      morikawa:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/10592.png':null,
+      rahm:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/9780.png':null,
+      hovland:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/11119.png':null,
+      koepka:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/6798.png':null,
+      matsuyama:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/5860.png':null,
+      tiger:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/462.png':null,
+      djohnson:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/4848.png':null,
+      cantlay:_pgaShowHs?'https://a.espncdn.com/i/headshots/golf/players/full/9131.png':null,
+    };
+    var g1=buildLeaderboardCard({id:'pga-p1',name:'The Masters Round 2',sportName:'PGA Tour',sportEmoji:'\u26F3',sportColor:'#00594f',isLive:true,isFinal:false,isIndividual:true,isPGALive:true,periodDesc:'Round 2',date:new Date().toISOString(),teams:[{position:'1',name:'Scottie Scheffler',score:'-12',thru:'18',headshot:_pgaHs.scheffler},{position:'2',name:'Rory McIlroy',score:'-9',thru:'14',headshot:_pgaHs.mcilroy},{position:'3',name:'Collin Morikawa',score:'-7',thru:'16',headshot:_pgaHs.morikawa},{position:'T4',name:'Jon Rahm',score:'-6',thru:'18',headshot:_pgaHs.rahm},{position:'T4',name:'Viktor Hovland',score:'-6',thru:'18',headshot:_pgaHs.hovland}]});
+    var g2=buildLeaderboardCard({id:'pga-p2',name:'The Masters Round 2',sportName:'PGA Tour',sportEmoji:'\u26F3',sportColor:'#00594f',isLive:false,isFinal:true,isIndividual:true,isPGALive:true,periodDesc:'',date:new Date().toISOString(),teams:[{position:'6',name:'Brooks Koepka',score:'-5',thru:'F',headshot:_pgaHs.koepka},{position:'7',name:'H. Matsuyama',score:'-4',thru:'F',headshot:_pgaHs.matsuyama},{position:'T8',name:'Tiger Woods',score:'-3',thru:'F',headshot:_pgaHs.tiger},{position:'T8',name:'D. Johnson',score:'-3',thru:'F',headshot:_pgaHs.djohnson},{position:'10',name:'P. Cantlay',score:'-2',thru:'F',headshot:_pgaHs.cantlay}]});
     g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
     inner.appendChild(g1); inner.appendChild(g2);
   } else {
