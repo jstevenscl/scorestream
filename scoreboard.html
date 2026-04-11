@@ -363,6 +363,8 @@ body.stream-mode .card-header{padding:4px 10px;}
 .settings-logo{font-size:28px;margin-bottom:4px;}
 .settings-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;letter-spacing:3px;text-transform:uppercase;color:var(--text-primary);}
 .settings-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;}
+.snav-group-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-dim);padding:14px 14px 6px;opacity:0.6;border-top:1px solid var(--border);margin-top:8px;}
+.snav-group-label:first-child{border-top:none;margin-top:0;padding-top:6px;}
 .snav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;background:none;border:none;border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;text-align:left;width:100%;}
 .snav-btn:hover{background:var(--bg-card);color:var(--text-secondary);}
 .snav-btn.active{background:rgba(0,212,255,0.1);color:var(--accent);border:1px solid rgba(0,212,255,0.2);}
@@ -629,29 +631,35 @@ body.stream-mode .card-header{padding:4px 10px;}
       <button class="snav-btn active" data-section="scoreboards" onclick="switchSection('scoreboards')">
         <span class="snav-icon">📺</span><span>My Scoreboards</span>
       </button>
+
+      <div class="snav-group-label">Appearance</div>
       <button class="snav-btn" data-section="display" onclick="switchSection('display')">
         <span class="snav-icon">🎨</span><span>Stream Card Style</span>
       </button>
       <button class="snav-btn" data-section="displaydefaults" onclick="switchSection('displaydefaults')">
-        <span class="snav-icon">🎛️</span><span>Stream Defaults</span>
+        <span class="snav-icon">🎛️</span><span>Default Stream Settings</span>
+      </button>
+      <button class="snav-btn" data-section="systemtheme" onclick="switchSection('systemtheme')">
+        <span class="snav-icon">🖌️</span><span>System Theme</span>
+      </button>
+
+      <div class="snav-group-label">Data &amp; Media</div>
+      <button class="snav-btn" data-section="sports" onclick="switchSection('sports')">
+        <span class="snav-icon">🏆</span><span>Sports Library</span>
       </button>
       <button class="snav-btn" data-section="audiolibrary" onclick="switchSection('audiolibrary')">
         <span class="snav-icon">🎵</span><span>Audio Library</span>
       </button>
-      <button class="snav-btn" data-section="dispatcharr" onclick="switchSection('dispatcharr')">
-        <span class="snav-icon">📡</span><span>Integrations</span>
-      </button>
       <button class="snav-btn" data-section="ticker" onclick="switchSection('ticker')">
         <span class="snav-icon">📰</span><span>Ticker Overlay</span>
       </button>
-      <button class="snav-btn" data-section="sports" onclick="switchSection('sports')">
-        <span class="snav-icon">🏆</span><span>Sports Library</span>
+
+      <div class="snav-group-label">System</div>
+      <button class="snav-btn" data-section="dispatcharr" onclick="switchSection('dispatcharr')">
+        <span class="snav-icon">📡</span><span>Integrations</span>
       </button>
       <button class="snav-btn" data-section="backup" onclick="switchSection('backup')">
         <span class="snav-icon">💾</span><span>Backup &amp; Restore</span>
-      </button>
-      <button class="snav-btn" data-section="systemtheme" onclick="switchSection('systemtheme')">
-        <span class="snav-icon">🖌️</span><span>System Theme</span>
       </button>
 
     </nav>
@@ -774,7 +782,7 @@ body.stream-mode .card-header{padding:4px 10px;}
     <div id="section-display" class="settings-section">
       <div class="settings-section-header">
         <h2>Stream Card Style</h2>
-        <p>Controls the typography and appearance of game cards in the <strong>sidebar preview</strong> and <strong>stream output</strong>. Adjust font sizes, team name color, logo size, and data refresh rate. For global defaults shared across all scoreboards, see <strong>Stream Defaults</strong>.</p>
+        <p>Controls the typography and appearance of game cards in the <strong>sidebar preview</strong> and <strong>stream output</strong>. Adjust font sizes, team name color, logo size, and data refresh rate. For global defaults shared across all scoreboards, see <strong>Default Stream Settings</strong>.</p>
       </div>
 
       <div class="modal-section">
@@ -972,8 +980,8 @@ body.stream-mode .card-header{padding:4px 10px;}
     ═══════════════════════════════════════════════ -->
     <div id="section-displaydefaults" class="settings-section">
       <div class="settings-section-header">
-        <h2>Stream Defaults</h2>
-        <p>Set global stream output defaults shared across all scoreboards. Controls <strong>Theme</strong>, <strong>Font Sizes</strong>, <strong>Colors</strong>, and <strong>Card Size/Layout</strong>. Every scoreboard inherits these unless overridden in its own editor.</p>
+        <h2>Default Stream Settings</h2>
+        <p>Global defaults that <strong>every scoreboard inherits</strong> for its stream output. Controls <strong>Theme</strong>, <strong>Font Sizes</strong>, <strong>Colors</strong>, and <strong>Card Size/Layout</strong>. Any scoreboard can override these individually in the scoreboard editor's Step 3 (Display &amp; Layout).</p>
       </div>
 
       <div id="ddLoadingMsg" style="color:var(--text-dim);font-size:13px;padding:20px 0;">Loading defaults...</div>
@@ -1930,27 +1938,27 @@ function renderEditorStep(sbOverride){
           <div class="wiz-sublabel">Stored for reference. To change output resolution, update <code style="font-family:monospace;font-size:10px;color:var(--accent);">STREAM_WIDTH</code> / <code style="font-family:monospace;font-size:10px;color:var(--accent);">STREAM_HEIGHT</code> in your Docker stack env vars and restart the stream container.</div>
         </div>
         <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-          <div class="modal-section-title" style="margin-bottom:4px;">🎛️ Display Defaults</div>
-          <div class="wiz-sublabel" style="margin-bottom:12px;">Choose which global defaults this scoreboard inherits.</div>
+          <div class="modal-section-title" style="margin-bottom:4px;">🎛️ Inherit From Default Stream Settings</div>
+          <div class="wiz-sublabel" style="margin-bottom:12px;">Choose which global defaults this scoreboard inherits. Toggle off any group you want to set independently for this scoreboard only.</div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;padding:12px 14px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);">
             <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
               <div>
                 <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📝 Default Fonts</div>
-                <div style="font-size:10px;color:var(--text-dim);">Abbr, score and name sizes from Display Defaults</div>
+                <div style="font-size:10px;color:var(--text-dim);">Abbr, score and name sizes from Default Stream Settings</div>
               </div>
               <div class="small-toggle${_editorDraft.use_default_fonts!==false?' on':''}" id="dd-toggle-fonts" onclick="sbToggleDefault('fonts',this)"></div>
             </label>
             <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
               <div>
                 <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🎨 Default Colors</div>
-                <div style="font-size:10px;color:var(--text-dim);">Name/subtitle color from Display Defaults</div>
+                <div style="font-size:10px;color:var(--text-dim);">Name/subtitle color from Default Stream Settings</div>
               </div>
               <div class="small-toggle${_editorDraft.use_default_colors!==false?' on':''}" id="dd-toggle-colors" onclick="sbToggleDefault('colors',this)"></div>
             </label>
             <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
               <div>
                 <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📐 Default Card Size</div>
-                <div style="font-size:10px;color:var(--text-dim);">Scale, layout and rotation from Display Defaults</div>
+                <div style="font-size:10px;color:var(--text-dim);">Scale, layout and rotation from Default Stream Settings</div>
               </div>
               <div class="small-toggle${_editorDraft.use_default_card_size!==false?' on':''}" id="dd-toggle-card-size" onclick="sbToggleDefault('card_size',this)"></div>
             </label>

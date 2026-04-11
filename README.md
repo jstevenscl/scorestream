@@ -21,7 +21,7 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
   - [Settings Pages Overview](#settings-pages-overview)
   - [Display Settings Per Scoreboard](#display-settings-per-scoreboard)
   - [Previewing Your Scoreboard](#previewing-your-scoreboard)
-  - [Stream Defaults](#stream-defaults)
+  - [Default Stream Settings](#default-stream-settings)
   - [Themes](#themes)
   - [System Theme (App UI)](#system-theme-app-ui)
   - [Per-Sport Display Settings (Headshots)](#per-sport-display-settings-headshots)
@@ -213,21 +213,34 @@ Open `http://YOUR_SERVER_IP:7777` in your browser. The ScoreStream interface loa
 
 ### Settings Pages Overview
 
-Click the gear icon in the sidebar to open Settings. The left navigation lists all settings pages:
+Click the gear icon in the sidebar to open Settings. The navigation is grouped:
 
-| Settings Page | What It Controls | Affects |
+**📺 My Scoreboards** — Create, edit, delete, and push scoreboards. Each scoreboard is one HLS stream channel with its own sports, teams, and display overrides.
+
+**Appearance** *(group — controls how things look)*
+
+| Page | What It Controls | Affects |
 |---|---|---|
-| **My Scoreboards** | Create, edit, delete, and push scoreboards. Each scoreboard is one HLS stream channel with its own sports, teams, and display overrides. | Stream output |
-| **Stream Card Style** | Card typography for the sidebar preview and stream output — font sizes for abbreviations, scores, team names, channel names, header/status bar, period/time text, and headshots; team name color; header status colors (LIVE/FINAL/period); logo size; refresh rate. | Sidebar preview + stream cards |
-| **Stream Defaults** | Global defaults that all scoreboards inherit: theme, font sizes, colors, card scale, rotation timer, layout. Scoreboards use these unless they override individually. | Stream output (all scoreboards) |
-| **Audio Library** | Upload audio files, create playlists, set a global default playlist for stream background music. | Stream audio |
-| **Integrations** | Connect to Dispatcharr — URL, API token, channel group name, starting channel number. | Dispatcharr push |
-| **Ticker Overlay** | Overlay a live scrolling score ticker onto a Dispatcharr channel. Select sports, channel, and appearance (font size, scroll speed, opacity, position). Includes a live preview. | Dispatcharr channel video |
-| **Sports Library** | Enable or disable sports globally. Disabled sports are hidden from the sidebar and all scoreboard editors. | Entire app |
-| **Backup & Restore** | Export all settings to a JSON file or restore from a previous backup. | Configuration |
+| **Stream Card Style** | Card typography for the sidebar preview and stream output — font sizes for abbreviations, scores, team names, channel names, header/status bar, period/time text; team name color; header status colors (LIVE/FINAL/period); logo size; refresh rate. | Sidebar preview + stream cards |
+| **Default Stream Settings** | Global defaults that all scoreboards inherit: theme, font sizes, colors, card scale, rotation timer, layout. Scoreboards use these unless they override individually. | Stream output (all scoreboards) |
 | **System Theme** | Customize the **app UI itself** — background colors, text colors, accent colors, borders, and base font size. Does **not** affect stream output or game cards. | Settings UI + sidebar appearance |
 
-> **Key distinction:** *Stream Card Style* and *Stream Defaults* control how game cards look in the **stream output** (the video). *System Theme* controls how the **ScoreStream app interface** looks in your browser.
+**Data & Media** *(group — content sources and overlays)*
+
+| Page | What It Controls | Affects |
+|---|---|---|
+| **Sports Library** | Enable or disable sports globally. Disabled sports are hidden from the sidebar and all scoreboard editors. Individual sports (PGA, F1, NASCAR, ATP, WTA) can be expanded ▸ to set per-sport headshot size for the main browsing view. | Entire app |
+| **Audio Library** | Upload audio files, create playlists, set a global default playlist for stream background music. | Stream audio |
+| **Ticker Overlay** | Overlay a live scrolling score ticker onto a Dispatcharr channel. Select sports, channel, and appearance (font size, scroll speed, opacity, position). Includes a live preview. | Dispatcharr channel video |
+
+**System** *(group — connection and config)*
+
+| Page | What It Controls | Affects |
+|---|---|---|
+| **Integrations** | Connect to Dispatcharr — URL, API token, channel group name, starting channel number. | Dispatcharr push |
+| **Backup & Restore** | Export all settings to a JSON file or restore from a previous backup. | Configuration |
+
+> **Key distinction:** *Stream Card Style* and *Default Stream Settings* control how game cards look in the **stream output** (the video). *System Theme* controls how the **ScoreStream app interface** looks in your browser.
 
 ---
 
@@ -323,7 +336,7 @@ In editor Step 3 (Display & Layout), each scoreboard has independent control ove
 | **Theme Override** | Use a different color theme just for this scoreboard |
 | **Stream Audio** | None, built-in playlist music, or a custom audio stream URL |
 
-Each setting can also inherit from **Stream Defaults** (the global defaults) by leaving the "Use Default" toggles on.
+Each setting can also inherit from **Default Stream Settings** (the global defaults) by leaving the "Use Default" toggles on.
 
 ---
 
@@ -338,9 +351,9 @@ To preview the full scoreboard stream output:
 
 ---
 
-### Stream Defaults
+### Default Stream Settings
 
-**Stream Defaults** (found in the sidebar under Settings) let you set values that apply to all scoreboards unless individually overridden. These control **stream output only** — the video that viewers see.
+**Default Stream Settings** (found in the sidebar under Settings) let you set values that apply to all scoreboards unless individually overridden. These control **stream output only** — the video that viewers see.
 
 Sections:
 - **Theme** — color scheme applied to stream cards (Dark Blue, Carbon, Dark Red, Dark Green, Light, or custom)
@@ -352,7 +365,7 @@ As you adjust sliders and pickers, two live preview cards update in real time at
 
 Click **Save Defaults** to apply. Any scoreboard using defaults will pick up the new values immediately.
 
-> **Note:** Stream Defaults control the *stream output* appearance. To change the *app UI* appearance (the settings pages, sidebar, and navigation), use **System Theme** instead.
+> **Note:** Default Stream Settings control the *stream output* appearance. To change the *app UI* appearance (the settings pages, sidebar, and navigation), use **System Theme** instead.
 
 ---
 
@@ -369,7 +382,7 @@ ScoreStream includes five built-in themes:
 | **Light** | Light grey with blue accent |
 
 **Applying a theme globally:**
-1. Go to **Stream Defaults** → Theme section
+1. Go to **Default Stream Settings** → Theme section
 2. Click any swatch to apply it instantly
 3. Save Defaults
 
@@ -407,7 +420,7 @@ Custom themes are stored in your display defaults and are available across all s
 
 **Resetting:** Click **Reset** to return to the default Dark Blue theme.
 
-> **Key distinction:** System Theme affects only what you see in your browser. Stream viewers never see these colors — they see the stream theme set in *Stream Defaults* or per-scoreboard overrides.
+> **Key distinction:** System Theme affects only what you see in your browser. Stream viewers never see these colors — they see the stream theme set in *Default Stream Settings* or per-scoreboard overrides.
 
 ---
 
