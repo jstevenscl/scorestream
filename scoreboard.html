@@ -385,16 +385,31 @@ body.stream-mode .card-header{padding:4px 10px;}
 .settings-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .settings-section{display:none;max-width:760px;}
 /* The scoreboard editor uses a wider layout because Step 3 needs room for the
-   two-column "sliders + sticky preview" view */
+   two-column "sliders + sticky preview" view. The full editor expands to fill
+   available width since the .sb-editor-step3 layout will collapse to single
+   column on narrow viewports anyway via the media query below. */
 #section-scoreboards.settings-section{max-width:none;}
-.sb-editor-step3{display:flex;gap:24px;align-items:flex-start;}
-.sb-editor-step3-left{flex:1;min-width:0;}
-.sb-editor-step3-right{width:380px;flex-shrink:0;position:sticky;top:0;align-self:flex-start;max-height:calc(100vh - 120px);overflow-y:auto;padding-right:4px;}
+.sb-editor{max-width:none;}
+.sb-editor-step3{display:flex !important;gap:18px;align-items:flex-start;width:100%;}
+.sb-editor-step3-left{flex:1 1 auto;min-width:0;}
+.sb-editor-step3-right{
+  width:340px;
+  min-width:280px;
+  flex:0 0 340px;
+  position:sticky;
+  top:0;
+  align-self:flex-start;
+  max-height:calc(100vh - 120px);
+  overflow-y:auto;
+  padding-right:4px;
+}
 .sb-editor-step3-right::-webkit-scrollbar{width:4px;}
 .sb-editor-step3-right::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-@media (max-width:1100px){
+/* Collapse to single column only on genuinely narrow viewports (tablets / small laptops).
+   Desktop and most laptops will get the 2-column layout. */
+@media (max-width:850px){
   .sb-editor-step3{flex-direction:column;}
-  .sb-editor-step3-right{width:100%;position:static;max-height:none;}
+  .sb-editor-step3-right{width:100%;flex:0 0 auto;position:static;max-height:none;}
 }
 .settings-section.active{display:block;}
 .settings-section-header{margin-bottom:28px;}
@@ -2116,8 +2131,8 @@ function renderEditorStep(sbOverride){
     if(_hasAnyMotorOrTennis) window._motorPanelSbId=_editorDraft.id||_activeSbId||null;
     const motorPanelHtml=_hasAnyMotorOrTennis?buildMotorsportEditorPanel(_editorDraft):'';
     body=`
-    <div class="sb-editor-step3">
-      <div class="sb-editor-step3-left">
+    <div class="sb-editor-step3" style="display:flex;gap:18px;align-items:flex-start;width:100%;">
+      <div class="sb-editor-step3-left" style="flex:1 1 auto;min-width:0;">
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
         <input class="wiz-input" id="sbEditName" value="${_editorDraft.name}" placeholder="e.g. Weekend Sports, NBA Only, My NFL Board">
@@ -2432,7 +2447,7 @@ function renderEditorStep(sbOverride){
 
       </div><!-- end Stream Output wrapper -->
       </div><!-- end .sb-editor-step3-left -->
-      <div class="sb-editor-step3-right">
+      <div class="sb-editor-step3-right" style="width:340px;min-width:280px;flex:0 0 340px;position:sticky;top:0;align-self:flex-start;max-height:calc(100vh - 120px);overflow-y:auto;padding-right:4px;">
         <div class="wiz-label" style="margin-bottom:8px;">Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust settings)</span></div>
         <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;">
           <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
@@ -2451,6 +2466,38 @@ function renderEditorStep(sbOverride){
       </div><!-- end .sb-editor-step3-right -->
     </div><!-- end .sb-editor-step3 -->
       `;
+  // Step 3 responsive layout: collapse to single column on narrow viewports.
+  // Inline styles override the media query, so we manage it here based on
+  // .settings-content's actual width.
+  setTimeout(()=>{
+    function _stepLayout(){
+      const wrap=document.querySelector('.sb-editor-step3');
+      if(!wrap) return;
+      const left=wrap.querySelector('.sb-editor-step3-left');
+      const right=wrap.querySelector('.sb-editor-step3-right');
+      if(!left||!right) return;
+      const sc=document.querySelector('.settings-content');
+      const cw=sc?sc.clientWidth:window.innerWidth;
+      if(cw<850){
+        wrap.style.flexDirection='column';
+        right.style.width='100%';
+        right.style.flex='0 0 auto';
+        right.style.position='static';
+        right.style.maxHeight='none';
+      } else {
+        wrap.style.flexDirection='';
+        right.style.width='340px';
+        right.style.flex='0 0 340px';
+        right.style.position='sticky';
+        right.style.maxHeight='calc(100vh - 120px)';
+      }
+    }
+    _stepLayout();
+    if(!window._sbStep3LayoutBound){
+      window.addEventListener('resize',_stepLayout);
+      window._sbStep3LayoutBound=true;
+    }
+  },0);
   // Init preview to current scale after render
   setTimeout(()=>{
     _sbEditThemeId=_editorDraft.display_config?.theme_id||null;
