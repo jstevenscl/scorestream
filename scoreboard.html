@@ -1820,7 +1820,7 @@ async function deleteScoreboard(id){
 
 // ── Scoreboard Editor ──────────────────────────────────────────────────────────
 // ── Scoreboard Editor (guided multi-step flow) ────────────────────────────────
-let _editorStep = 1; // 1=Identity, 2=Sports, 3=Teams
+let _editorStep = 1; // 1=Sports & Leagues, 2=Teams, 3=Display & Layout
 let _editorDraft = {}; // accumulated changes before saving
 
 function openSbEditor(id){
@@ -1871,13 +1871,13 @@ function renderEditorStep(sbOverride){
   const el=document.getElementById('sbEditorPanel');
   if(!el)return;
 
-  const steps=['Identity','Sports & Leagues','Teams'];
+  const steps=['Sports & Leagues','Teams','Display & Layout'];
   const stepNav=steps.map((s,i)=>`
     <div class="sb-editor-step${_editorStep===i+1?' active':_editorStep>i+1?' done':''}"
          onclick="jumpEditorStep(${i+1})">${i+1}. ${s}</div>`).join('');
 
   let body='';
-  if(_editorStep===1){
+  if(_editorStep===3){
     const tzOptions=['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','Pacific/Honolulu','Europe/London','Europe/Paris','Europe/Berlin','Asia/Tokyo','Asia/Shanghai','Australia/Sydney'];
     const currentTz=_editorDraft.display_config.timezone||'America/New_York';
     // Detect motor-only scoreboard to hide sport-specific sliders that don't apply
@@ -1886,6 +1886,19 @@ function renderEditorStep(sbOverride){
     const _isMotorSb=_enabledIds.length>0&&_enabledIds.every(id=>_motorSbIds.includes(id));
     const _hasMotorSb=_enabledIds.some(id=>['f1','nascar','nascar-noaps','nascar-trucks','pga'].includes(id));
     const _isTennisSb=_enabledIds.length>0&&_enabledIds.every(id=>id==='atp'||id==='wta');
+    const _hasAnyMotorOrTennis=_enabledIds.some(id=>_motorSbIds.includes(id));
+    // Guard: no sports enabled → prompt user to go back to Step 1
+    if(!_enabledIds.length){
+      body=`<div style="color:var(--text-dim);font-size:13px;padding:20px 16px;background:var(--bg-secondary);border:1px dashed var(--border);border-radius:10px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">🎛️</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">Pick sports first</div>
+        Display settings are tailored to the sports you've enabled. Go back to <strong>Step 1 · Sports &amp; Leagues</strong> and pick at least one sport.
+      </div>`;
+    } else {
+    // Render motor config panel as its own section within Display step when any
+    // individual/motor/tennis sport is enabled. Sets the context for setMotorConfig.
+    if(_hasAnyMotorOrTennis) window._motorPanelSbId=_editorDraft.id||_activeSbId||null;
+    const motorPanelHtml=_hasAnyMotorOrTennis?buildMotorsportEditorPanel(_editorDraft):'';
     body=`
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
@@ -2078,6 +2091,12 @@ function renderEditorStep(sbOverride){
           <div class="small-toggle${_editorDraft.display_config.player_headshots!==false?' on':''}" id="sb-headshots-toggle" onclick="(function(el){const on=el.classList.toggle('on');_editorDraft.display_config.player_headshots=on;setTimeout(buildEditorPreview,50);})(this)"></div>
         </div>`:''}
 
+        ${motorPanelHtml?`<div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+          <div class="modal-section-title" style="margin-bottom:4px;">🏁 Per-Sport Display &amp; Data</div>
+          <div class="wiz-sublabel" style="margin-bottom:14px;">Each enabled motor / tennis / golf sport has its own options here. Headshot sizes apply to this scoreboard's stream output only — to change the main scoreboard.html browsing view, use <strong>Settings → Sports Library</strong>.</div>
+          ${motorPanelHtml}
+        </div>`:''}
+
         <div style="margin-top:16px;">
           <div class="wiz-label" style="margin-bottom:8px;">Card Scale Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(live)</span></div>
           <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px 14px 10px;overflow:hidden;">
@@ -2135,12 +2154,12 @@ function renderEditorStep(sbOverride){
     setTimeout(buildEditorPreview, 50);
     const _psel=document.getElementById('sbPlaylistSelect');if(_psel&&_audioPlaylists&&_audioPlaylists.length){while(_psel.options.length>1)_psel.remove(1);_audioPlaylists.forEach(function(p){const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_global?' (Global)':'');if(_editorDraft.audio_playlist_id===p.id)o.selected=true;_psel.appendChild(o);});}
   },0);
-  }
-  else if(_editorStep===2){
-    const _enabledSportIds=Object.keys(_editorDraft.sport_config||{}).filter(id=>_editorDraft.sport_config[id]);
-    const _motorSports=['f1','nascar','nascar-noaps','nascar-trucks','pga','atp','wta'];
-    const _isMotorOnly=_enabledSportIds.length>0&&_enabledSportIds.every(id=>_motorSports.includes(id));
-    if(_isMotorOnly){ window._motorPanelSbId=_editorDraft.id||_activeSbId||null; body=buildMotorsportEditorPanel(_editorDraft); } else {
+  } // end _enabledIds else (Step 3 body render)
+  } // end if(_editorStep===3)
+  else if(_editorStep===1){
+    // Step 1 — Sports & Leagues: always show the sport grid. Motor sport
+    // detailed options (headshot size, which races/tournaments to show, etc.)
+    // are now in Step 3 (Display) since those are display concerns.
     const groups=[
       {key:'pro',    label:'Pro Leagues',         sports: ALL_SPORTS.filter(s=>s.group==='pro')},
       {key:'motor',  label:'Motorsport',           sports: ALL_SPORTS.filter(s=>s.group==='motor')},
@@ -2214,8 +2233,8 @@ function renderEditorStep(sbOverride){
       });
       body += `</div></div>`;
     }
-  } } // end motor else + step2
-  else if(_editorStep===3){
+  } // end sports step
+  else if(_editorStep===2){
     const enabledSportIds=Object.entries(_editorDraft.sport_config).filter(([,v])=>v).map(([k])=>k);
     if(!enabledSportIds.length){
       body=`<div style="color:var(--text-dim);font-size:13px;padding:20px 0;">
@@ -2293,8 +2312,8 @@ function renderEditorStep(sbOverride){
       <div id="sbEditResult" style="margin-top:10px;font-size:12px;min-height:20px;"></div>
     </div>`;
 
-  // Auto-load team browser when on step 3
-  if(_editorStep===3){
+  // Auto-load team browser when on Teams step (now step 2)
+  if(_editorStep===2){
     const enabledSportIds=Object.entries(_editorDraft.sport_config).filter(([,v])=>v).map(([k])=>k);
     if(enabledSportIds.length){
       _sbTeamActiveSport = enabledSportIds[0];
@@ -2317,7 +2336,7 @@ function editorNav(dir){
 }
 
 function collectEditorStepData(){
-  if(_editorStep===1){
+  if(_editorStep===3){
     const nameEl=document.getElementById('sbEditName');
     if(nameEl) _editorDraft.name=nameEl.value.trim()||_editorDraft.name;
     const tzEl=document.getElementById('sbEditTz');
@@ -2352,7 +2371,7 @@ function collectEditorStepData(){
     _editorDraft.display_config.theme_id = _sbEditThemeId || null;
     // Audio settings are updated live via sbAudioModeChange/sbAudioUrlChange, no collection needed here
   }
-  if(_editorStep===2){
+  if(_editorStep===1){
     document.querySelectorAll('#sbEditorBody input[data-sport]').forEach(cb=>{
       _editorDraft.sport_config[cb.dataset.sport]=cb.checked;
     });
@@ -2369,7 +2388,7 @@ function collectEditorStepData(){
       _editorDraft.display_config.finals[sid].days = parseInt(sel.value);
     });
   }
-  // Step 3 team_config is updated live via sbEditorToggleTeam, no collection needed
+  // Step 2 (Teams) team_config is updated live via sbEditorToggleTeam, no collection needed
 }
 
 // ── Finals editor helpers ─────────────────────────────────────────────────────
@@ -4690,8 +4709,8 @@ function buildMotorsportEditorPanel(draft){
   const pgaHistory=mc.pga_history!==false,pgaLive=mc.pga_live!==false,pgaShowCut=mc.pga_show_cut!==false;
   const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${row(pgaShowCut,'pga_show_cut','#00594f','✂️ Show Cut Players','Include players who missed the cut (CUT/MC/WD/DQ) in results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}${hsSlider(pgaHsSize,'pga','#00594f','🖼️ Headshot Size','Player photo circle size on PGA leaderboard cards')}</div>`:'';
   const tenSec=(hasATP||hasWTA)?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #0066cc;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🎾</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#0066cc;">TENNIS${hasATP&&hasWTA?' (ATP + WTA)':hasATP?' (ATP)':' (WTA)'}</span></div>${row(tenLive,'tennis_live','#0066cc','🟢 Live Matches','Show active matches with set-by-set scores')}${row(tenUpcoming,'tennis_upcoming','#0066cc','📅 Upcoming Matches','Show scheduled matches not yet started')}${row(tenCompleted,'tennis_completed','#0066cc','🏆 Completed Matches','Show recently finished match results')}${row(tenRankings,'tennis_rankings','#0066cc','📊 World Rankings','Show ATP/WTA world ranking standings card')}<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📋 Completed Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_completed',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxCompleted?'#0066cc':'var(--border)'};background:${n===tenMaxCompleted?'#0066cc':'var(--bg-card)'};color:${n===tenMaxCompleted?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📅 Upcoming Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_upcoming',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxUpcoming?'#0066cc':'var(--border)'};background:${n===tenMaxUpcoming?'#0066cc':'var(--bg-card)'};color:${n===tenMaxUpcoming?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🏅 Rankings Players to Show</div></div><div style="display:flex;gap:4px;">${[10,20,30,50].map(n=>`<button onclick="setMotorConfig('tennis_rankings_count',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenRankingsCount?'#0066cc':'var(--border)'};background:${n===tenRankingsCount?'#0066cc':'var(--bg-card)'};color:${n===tenRankingsCount?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>${hsSlider(tenHsSize,'tennis','#0066cc','🖼️ Headshot Size','Player photo circle size (applies to both ATP and WTA)')}</div>`:'' ;
-  const none=!hasF1&&!hasNascar&&!hasNoaps&&!hasTrucks&&!hasPGA&&!hasATP&&!hasWTA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Sport Configured</div><div style="font-size:11px;margin-top:4px;">Go to Step 2 → Sports to enable Formula 1, NASCAR, PGA, or Tennis</div></div>`:'';
-  return `<div id="motorPanel" style=""><div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this scoreboard displays:</div>${f1Sec}${nasSec}${xfinSec}${truckSec}${pgaSec}${tenSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go back to Step 2 → Sports</div>`;
+  const none=!hasF1&&!hasNascar&&!hasNoaps&&!hasTrucks&&!hasPGA&&!hasATP&&!hasWTA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Sport Configured</div><div style="font-size:11px;margin-top:4px;">Go to Step 1 → Sports to enable Formula 1, NASCAR, PGA, or Tennis</div></div>`:'';
+  return `<div id="motorPanel" style=""><div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Per-sport data options and headshot sizes for this scoreboard:</div>${f1Sec}${nasSec}${xfinSec}${truckSec}${pgaSec}${tenSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go back to Step 1 → Sports</div>`;
 }
 function sbToggleDefault(group, toggleEl){
   const key = group==='fonts' ? 'use_default_fonts' : group==='colors' ? 'use_default_colors' : 'use_default_card_size';
