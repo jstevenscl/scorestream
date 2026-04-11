@@ -334,7 +334,11 @@ A **Scoreboard** is a named configuration that defines which sports, teams, and 
 - Set the timezone for game times
 - Adjust card scale, rotation speed, layout, and typography
 - Choose a theme or leave it on the global default
+- **Card Header & Status** controls — header/status text size, period/time text size, LIVE color, FINAL color, period/time color
+- **Section Headers** controls — size, stripe width, and color of the headers above each card group (e.g. "🏎️ FORMULA 1 — UPCOMING")
 - For motor sports / golf / tennis, a **Per-Sport Display & Data** section appears with content options (which races, standings, etc.) and per-sport headshot size sliders
+
+> **All Step 3 settings are per-scoreboard.** Each scoreboard has its own copy in the database, so changing settings on one scoreboard never affects another. Headshot sizes are additionally per-sport within a scoreboard.
 
 4. Click **Save & Close** — ScoreStream immediately begins generating an HLS stream for this scoreboard
 
@@ -375,7 +379,7 @@ To select teams:
 
 ### Display Settings Per Scoreboard
 
-In editor Step 3 (Display & Layout), each scoreboard has independent control over:
+In editor Step 3 (Display & Layout), each scoreboard has independent **per-scoreboard** control over (these settings only affect that scoreboard's stream output, not other scoreboards):
 
 | Setting | Description |
 |---|---|
@@ -482,7 +486,7 @@ Custom themes are stored in your display defaults and are available across all s
 
 **Presets:** Five built-in presets (Dark Blue, Carbon, Dark Green, Dark Red, Light) let you quick-apply a full color scheme and customize from there.
 
-**Saving:** Click **Save System Theme** to persist your changes. The theme is saved to both local storage (instant) and the server database (survives browser cache clears). The theme is restored automatically on page load.
+**Saving:** Slider drags **auto-save** to local storage on release AND push to the server database (debounced ~600ms). The active stream's puppeteer browser also re-fetches the system theme on every config refresh (every 30s), so changes propagate to live streams without restarting any container. The **Save System Theme** button is now optional — it just forces an immediate server push.
 
 **Resetting:** Click **Reset** to return to the default Dark Blue theme.
 

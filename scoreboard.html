@@ -2238,6 +2238,94 @@ function renderEditorStep(sbOverride){
               <span class="modal-slider-val" id="sbEditMotorSecColorVal">${_editorDraft.display_config.motor_secondary_color || '#7a9ab8'}</span>
             </div>
           </div>`:''}
+
+          <div class="modal-section-title" style="font-size:11px;margin:18px 0 10px;letter-spacing:2px;">CARD HEADER &amp; STATUS</div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Font size of the status text at the top of cards (LIVE, FINAL, UPCOMING, STANDINGS, POINT STANDINGS, etc.)">Header / Status Size</span>
+            <input type="range" min="9" max="24" step="1"
+              value="${_editorDraft.display_config.card_header_size || 11}"
+              id="sbEditCardHeaderSize"
+              oninput="document.getElementById('sbEditCardHeaderSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-header-size',this.value+'px')">
+            <span class="modal-slider-val" id="sbEditCardHeaderSizeVal">${_editorDraft.display_config.card_header_size || 11}px</span>
+          </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Font size of the period/game-time text (Q4 2:15, 7th, sport emoji label) on cards">Period / Time Size</span>
+            <input type="range" min="9" max="24" step="1"
+              value="${_editorDraft.display_config.card_period_size || 11}"
+              id="sbEditCardPeriodSize"
+              oninput="document.getElementById('sbEditCardPeriodSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-period-size',this.value+'px')">
+            <span class="modal-slider-val" id="sbEditCardPeriodSizeVal">${_editorDraft.display_config.card_period_size || 11}px</span>
+          </div>
+          <div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="Color of the LIVE pulsing indicator on in-progress games">LIVE Status Color</span>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
+              <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+                <div id="sbEditLiveColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.card_live_color || '#00ff88'};"></div>
+                <input type="color" id="sbEditLiveColor"
+                  value="${_editorDraft.display_config.card_live_color || '#00ff88'}"
+                  style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                  oninput="document.getElementById('sbEditLiveColorSwatch').style.background=this.value;document.getElementById('sbEditLiveColorVal').textContent=this.value;document.getElementById('sbCardScaleInner')?.style.setProperty('--card-live-color',this.value)">
+              </div>
+              <span class="modal-slider-val" id="sbEditLiveColorVal">${_editorDraft.display_config.card_live_color || '#00ff88'}</span>
+            </div>
+          </div>
+          <div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="Color of FINAL/STANDINGS labels on completed and standings cards">FINAL / Status Color</span>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
+              <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+                <div id="sbEditFinalColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.card_final_color || '#3d5a78'};"></div>
+                <input type="color" id="sbEditFinalColor"
+                  value="${_editorDraft.display_config.card_final_color || '#3d5a78'}"
+                  style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                  oninput="document.getElementById('sbEditFinalColorSwatch').style.background=this.value;document.getElementById('sbEditFinalColorVal').textContent=this.value;document.getElementById('sbCardScaleInner')?.style.setProperty('--card-final-color',this.value)">
+              </div>
+              <span class="modal-slider-val" id="sbEditFinalColorVal">${_editorDraft.display_config.card_final_color || '#3d5a78'}</span>
+            </div>
+          </div>
+          <div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="Color of the period/game-time text (Q4 2:15, 7th inning, etc.)">Period / Time Color</span>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
+              <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+                <div id="sbEditPeriodColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.card_period_color || '#7a9ab8'};"></div>
+                <input type="color" id="sbEditPeriodColor"
+                  value="${_editorDraft.display_config.card_period_color || '#7a9ab8'}"
+                  style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                  oninput="document.getElementById('sbEditPeriodColorSwatch').style.background=this.value;document.getElementById('sbEditPeriodColorVal').textContent=this.value;document.getElementById('sbCardScaleInner')?.style.setProperty('--card-period-color',this.value)">
+              </div>
+              <span class="modal-slider-val" id="sbEditPeriodColorVal">${_editorDraft.display_config.card_period_color || '#7a9ab8'}</span>
+            </div>
+          </div>
+
+          <div class="modal-section-title" style="font-size:11px;margin:18px 0 10px;letter-spacing:2px;">SECTION HEADERS (above each card group)</div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Font size of the section headers above each card group (e.g. 'FORMULA 1 — UPCOMING')">Section Header Size</span>
+            <input type="range" min="11" max="32" step="1"
+              value="${_editorDraft.display_config.section_header_size || 15}"
+              id="sbEditSectionHeaderSize"
+              oninput="document.getElementById('sbEditSectionHeaderSizeVal').textContent=this.value+'px';document.querySelectorAll('#sbCardScaleInner').forEach(el=>el.style.setProperty('--section-header-size',this.value+'px'))">
+            <span class="modal-slider-val" id="sbEditSectionHeaderSizeVal">${_editorDraft.display_config.section_header_size || 15}px</span>
+          </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Width of the colored stripe before each section header (0 = hidden)">Section Stripe Width</span>
+            <input type="range" min="0" max="14" step="1"
+              value="${_editorDraft.display_config.section_stripe_width ?? 6}"
+              id="sbEditSectionStripeWidth"
+              oninput="document.getElementById('sbEditSectionStripeWidthVal').textContent=this.value+'px';document.querySelectorAll('#sbCardScaleInner').forEach(el=>el.style.setProperty('--section-stripe-width',this.value+'px'))">
+            <span class="modal-slider-val" id="sbEditSectionStripeWidthVal">${_editorDraft.display_config.section_stripe_width ?? 6}px</span>
+          </div>
+          <div class="modal-slider-row" style="align-items:center;">
+            <span class="modal-slider-label" data-tip="Color of the section header text">Section Header Color</span>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
+              <div style="position:relative;width:38px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
+                <div id="sbEditSectionHeaderColorSwatch" style="position:absolute;inset:0;background:${_editorDraft.display_config.section_header_color || '#e8f0fe'};"></div>
+                <input type="color" id="sbEditSectionHeaderColor"
+                  value="${_editorDraft.display_config.section_header_color || '#e8f0fe'}"
+                  style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+                  oninput="document.getElementById('sbEditSectionHeaderColorSwatch').style.background=this.value;document.getElementById('sbEditSectionHeaderColorVal').textContent=this.value;document.querySelectorAll('#sbCardScaleInner').forEach(el=>el.style.setProperty('--section-header-color',this.value))">
+              </div>
+              <span class="modal-slider-val" id="sbEditSectionHeaderColorVal">${_editorDraft.display_config.section_header_color || '#e8f0fe'}</span>
+            </div>
+          </div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -2354,6 +2442,15 @@ function renderEditorStep(sbOverride){
       const colorEl=document.getElementById('sbEditNameColor'); if(colorEl) inner.style.setProperty('--card-name-color',colorEl.value);
       const motorLblEl=document.getElementById('sbEditMotorLabelColor'); if(motorLblEl) inner.style.setProperty('--motor-label-color',motorLblEl.value);
       const motorSecEl=document.getElementById('sbEditMotorSecColor'); if(motorSecEl) inner.style.setProperty('--motor-secondary-color',motorSecEl.value);
+      // Card header / period / status colors + section header settings
+      const cardHdrSzEl=document.getElementById('sbEditCardHeaderSize'); if(cardHdrSzEl) inner.style.setProperty('--card-header-size',cardHdrSzEl.value+'px');
+      const cardPdSzEl=document.getElementById('sbEditCardPeriodSize'); if(cardPdSzEl) inner.style.setProperty('--card-period-size',cardPdSzEl.value+'px');
+      const liveColEl2=document.getElementById('sbEditLiveColor'); if(liveColEl2) inner.style.setProperty('--card-live-color',liveColEl2.value);
+      const finalColEl2=document.getElementById('sbEditFinalColor'); if(finalColEl2) inner.style.setProperty('--card-final-color',finalColEl2.value);
+      const periodColEl2=document.getElementById('sbEditPeriodColor'); if(periodColEl2) inner.style.setProperty('--card-period-color',periodColEl2.value);
+      const sectHdrSzEl2=document.getElementById('sbEditSectionHeaderSize'); if(sectHdrSzEl2) inner.style.setProperty('--section-header-size',sectHdrSzEl2.value+'px');
+      const sectStripeEl2=document.getElementById('sbEditSectionStripeWidth'); if(sectStripeEl2) inner.style.setProperty('--section-stripe-width',sectStripeEl2.value+'px');
+      const sectHdrColEl2=document.getElementById('sbEditSectionHeaderColor'); if(sectHdrColEl2) inner.style.setProperty('--section-header-color',sectHdrColEl2.value);
     }
     setTimeout(buildEditorPreview, 50);
     const _psel=document.getElementById('sbPlaylistSelect');if(_psel&&_audioPlaylists&&_audioPlaylists.length){while(_psel.options.length>1)_psel.remove(1);_audioPlaylists.forEach(function(p){const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_global?' (Global)':'');if(_editorDraft.audio_playlist_id===p.id)o.selected=true;_psel.appendChild(o);});}
@@ -2572,6 +2669,24 @@ function collectEditorStepData(){
     if(logoSzEl) _editorDraft.display_config.logo_size=parseInt(logoSzEl.value);
     const rotEl=document.getElementById('sbEditRotation');
     if(rotEl) _editorDraft.display_config.stream_rotation_secs=parseInt(rotEl.value);
+    // Card header / status / period sliders + colors
+    const cardHeaderSzEl=document.getElementById('sbEditCardHeaderSize');
+    if(cardHeaderSzEl) _editorDraft.display_config.card_header_size=parseInt(cardHeaderSzEl.value);
+    const cardPeriodSzEl=document.getElementById('sbEditCardPeriodSize');
+    if(cardPeriodSzEl) _editorDraft.display_config.card_period_size=parseInt(cardPeriodSzEl.value);
+    const liveColEl=document.getElementById('sbEditLiveColor');
+    if(liveColEl) _editorDraft.display_config.card_live_color=liveColEl.value;
+    const finalColEl=document.getElementById('sbEditFinalColor');
+    if(finalColEl) _editorDraft.display_config.card_final_color=finalColEl.value;
+    const periodColEl=document.getElementById('sbEditPeriodColor');
+    if(periodColEl) _editorDraft.display_config.card_period_color=periodColEl.value;
+    // Section headers (above each card group)
+    const sectHdrSzEl=document.getElementById('sbEditSectionHeaderSize');
+    if(sectHdrSzEl) _editorDraft.display_config.section_header_size=parseInt(sectHdrSzEl.value);
+    const sectStripeEl=document.getElementById('sbEditSectionStripeWidth');
+    if(sectStripeEl) _editorDraft.display_config.section_stripe_width=parseInt(sectStripeEl.value);
+    const sectHdrColEl=document.getElementById('sbEditSectionHeaderColor');
+    if(sectHdrColEl) _editorDraft.display_config.section_header_color=sectHdrColEl.value;
     // Theme override — null means use global
     _editorDraft.display_config.theme_id = _sbEditThemeId || null;
     // Audio settings are updated live via sbAudioModeChange/sbAudioUrlChange, no collection needed here
@@ -6165,7 +6280,7 @@ function buildNascarCard(g){
   }
   if(g.isNascarLast||g.isNascarLive){
     const medals=['🥇','🥈','🥉'];
-    const statusBadge=g.isFinal?'<span class="status-final">RESULT</span>':`<span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'Share Tech Mono',monospace;color:#4ade80;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span>LIVE</span>`;
+    const statusBadge=g.isFinal?'<span class="status-final">RESULT</span>':`<span style="display:flex;align-items:center;gap:4px;font-size:var(--card-header-size,11px);font-family:'Share Tech Mono',monospace;color:var(--card-live-color,#4ade80);font-weight:700;letter-spacing:1.5px;"><span style="width:calc(var(--card-header-size,11px) * 0.55);height:calc(var(--card-header-size,11px) * 0.55);border-radius:50%;background:var(--card-live-color,#4ade80);display:inline-block;"></span>LIVE</span>`;
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${statusBadge}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${g.name}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.trackName||''} ${g.raceDate?' · '+g.raceDate:''}</div>`;
     const rows=(g.drivers||[]).map(d=>{const star=favPlayerStar(_nasSid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;flex-shrink:0;">${d.pos<=3?medals[d.pos-1]:d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||d.number||'').toString().replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`}).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
@@ -7639,9 +7754,21 @@ let _sysTheme={};
 
 // Persist current _sysTheme to localStorage. Called on every applySystemTheme()
 // so slider drags are saved immediately — no more "navigate away, lose values"
-// gotcha. The Save button still exists for pushing to the server database.
+// gotcha. Also debounced-pushes to the server so the puppeteer browser
+// rendering active streams can pick up the change on its next refresh
+// (otherwise topbar meta size etc. would never propagate to the stream).
+let _sysThemeServerTimer=null;
 function _persistSysThemeLocal(){
   try{ localStorage.setItem('ssSystemTheme',JSON.stringify(_sysTheme)); }catch(e){}
+  // Debounced server push — so a rapid drag doesn't fire 50 requests
+  if(_sysThemeServerTimer) clearTimeout(_sysThemeServerTimer);
+  _sysThemeServerTimer=setTimeout(()=>{
+    fetch(`${API_BASE}/global-settings`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system_theme:_sysTheme})
+    }).catch(()=>{});
+  },600);
 }
 
 function initSystemTheme(){
@@ -8276,6 +8403,9 @@ renderFavSummary();
           if(dc.card_live_color) displayRoot.style.setProperty('--card-live-color',dc.card_live_color);
           if(dc.card_final_color) displayRoot.style.setProperty('--card-final-color',dc.card_final_color);
           if(dc.card_period_color) displayRoot.style.setProperty('--card-period-color',dc.card_period_color);
+          if(dc.section_header_size) displayRoot.style.setProperty('--section-header-size',dc.section_header_size+'px');
+          if(dc.section_stripe_width!=null) displayRoot.style.setProperty('--section-stripe-width',dc.section_stripe_width+'px');
+          if(dc.section_header_color) displayRoot.style.setProperty('--section-header-color',dc.section_header_color);
         }
         state.display.abbrSize=dc.card_abbr_size||state.display.abbrSize;
         state.display.scoreSize=dc.card_score_size||state.display.scoreSize;
@@ -8369,6 +8499,21 @@ async function refreshStreamConfig() {
   const url = _activeStreamSlug === '__active__'
     ? `${API_BASE}/scoreboards/active`
     : `${API_BASE}/scoreboards/by-slug/${_activeStreamSlug}`;
+  // Re-fetch the system theme too — this is what makes the topbar meta size
+  // (and color theme) propagate to the puppeteer browser without restarting
+  // the stream container. Runs in parallel with the scoreboard fetch.
+  try{
+    const stRes=await fetch(`${API_BASE}/global-settings/system_theme`,{signal:AbortSignal.timeout(3000)});
+    if(stRes.ok){
+      const stJson=await stRes.json();
+      const st=stJson.value||{};
+      const root=document.documentElement;
+      if(typeof SYS_THEME_VARS!=='undefined'){
+        SYS_THEME_VARS.forEach(v=>{ if(st[v.key]) root.style.setProperty(v.key,st[v.key]); });
+      }
+      if(st._topbarMetaSize) root.style.setProperty('--topbar-meta-size',st._topbarMetaSize+'px');
+    }
+  }catch(e){ /* non-fatal */ }
   try {
     const r = await fetch(url, {signal: AbortSignal.timeout(4000)});
     if(!r.ok) return;
@@ -8394,6 +8539,16 @@ async function refreshStreamConfig() {
     if(dc.card_score_size != null) root.style.setProperty('--card-score-size', dc.card_score_size + 'px');
     if(dc.card_name_size  != null) root.style.setProperty('--card-name-size',  dc.card_name_size  + 'px');
     if(dc.card_name_color != null) root.style.setProperty('--card-name-color', dc.card_name_color);
+    // Re-apply card header / period / status colors
+    if(dc.card_header_size != null) root.style.setProperty('--card-header-size', dc.card_header_size + 'px');
+    if(dc.card_period_size != null) root.style.setProperty('--card-period-size', dc.card_period_size + 'px');
+    if(dc.card_live_color)  root.style.setProperty('--card-live-color',  dc.card_live_color);
+    if(dc.card_final_color) root.style.setProperty('--card-final-color', dc.card_final_color);
+    if(dc.card_period_color)root.style.setProperty('--card-period-color',dc.card_period_color);
+    // Re-apply section header settings
+    if(dc.section_header_size != null) root.style.setProperty('--section-header-size', dc.section_header_size + 'px');
+    if(dc.section_stripe_width != null) root.style.setProperty('--section-stripe-width', dc.section_stripe_width + 'px');
+    if(dc.section_header_color) root.style.setProperty('--section-header-color', dc.section_header_color);
 
     // If card scale changed, re-render canvas with new scale
     const newScale = dc.stream_card_scale;
