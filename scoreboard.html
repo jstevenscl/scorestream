@@ -384,33 +384,13 @@ body.stream-mode .card-header{padding:4px 10px;}
 .settings-content::-webkit-scrollbar{width:4px;}
 .settings-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .settings-section{display:none;max-width:760px;}
-/* The scoreboard editor uses a wider layout because Step 3 needs room for the
-   two-column "sliders + sticky preview" view. The full editor expands to fill
-   available width since the .sb-editor-step3 layout will collapse to single
-   column on narrow viewports anyway via the media query below. */
+/* Scoreboard editor uses the full width — it has its own internal layout
+   (Step 3 uses a position:fixed floating preview panel anchored to the
+   viewport's top-right corner regardless of the editor body width). */
 #section-scoreboards.settings-section{max-width:none;}
 .sb-editor{max-width:none;}
-.sb-editor-step3{display:flex !important;gap:18px;align-items:flex-start;width:100%;}
-.sb-editor-step3-left{flex:1 1 auto;min-width:0;}
-.sb-editor-step3-right{
-  width:340px;
-  min-width:280px;
-  flex:0 0 340px;
-  position:sticky;
-  top:0;
-  align-self:flex-start;
-  max-height:calc(100vh - 120px);
-  overflow-y:auto;
-  padding-right:4px;
-}
-.sb-editor-step3-right::-webkit-scrollbar{width:4px;}
-.sb-editor-step3-right::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-/* Collapse to single column only on genuinely narrow viewports (tablets / small laptops).
-   Desktop and most laptops will get the 2-column layout. */
-@media (max-width:850px){
-  .sb-editor-step3{flex-direction:column;}
-  .sb-editor-step3-right{width:100%;flex:0 0 auto;position:static;max-height:none;}
-}
+#sbStep3FloatPreview::-webkit-scrollbar{width:4px;}
+#sbStep3FloatPreview::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .settings-section.active{display:block;}
 .settings-section-header{margin-bottom:28px;}
 .settings-section-header h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;letter-spacing:3px;text-transform:uppercase;color:var(--text-primary);margin:0 0 6px;}
@@ -2131,8 +2111,7 @@ function renderEditorStep(sbOverride){
     if(_hasAnyMotorOrTennis) window._motorPanelSbId=_editorDraft.id||_activeSbId||null;
     const motorPanelHtml=_hasAnyMotorOrTennis?buildMotorsportEditorPanel(_editorDraft):'';
     body=`
-    <div class="sb-editor-step3" style="display:flex;gap:18px;align-items:flex-start;width:100%;">
-      <div class="sb-editor-step3-left" style="flex:1 1 auto;min-width:0;">
+    <div class="sb-editor-step3-body" style="padding-right:380px;">
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
         <input class="wiz-input" id="sbEditName" value="${_editorDraft.name}" placeholder="e.g. Weekend Sports, NBA Only, My NFL Board">
@@ -2446,56 +2425,56 @@ function renderEditorStep(sbOverride){
         </div>
 
       </div><!-- end Stream Output wrapper -->
-      </div><!-- end .sb-editor-step3-left -->
-      <div class="sb-editor-step3-right" style="width:340px;min-width:280px;flex:0 0 340px;position:sticky;top:0;align-self:flex-start;max-height:calc(100vh - 120px);overflow-y:auto;padding-right:4px;">
-        <div class="wiz-label" style="margin-bottom:8px;">Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust settings)</span></div>
-        <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
-          <!-- Sample section header so the section header sliders have something to preview -->
-          <div id="sbPreviewSectionHeader" class="league-section" style="margin-bottom:10px;">
-            <div class="league-header" style="margin-bottom:6px;padding-bottom:6px;">
-              <div class="league-stripe" style="background:#e10600;"></div>
-              <div class="league-name">SAMPLE SECTION HEADER</div>
-            </div>
-          </div>
-          <div id="sbCardScaleWrap" style="overflow:hidden;">
-            <!-- Single-column card stack for the narrower right preview pane -->
-            <div id="sbCardScaleInner" style="display:flex;flex-direction:column;gap:9px;transform-origin:top left;transition:transform 0.2s ease;"></div>
-          </div>
+    </div><!-- end .sb-editor-step3-body -->
+    <!-- FLOATING PREVIEW PANEL — position:fixed so it's anchored to the
+         viewport regardless of any parent layout/specificity issues. -->
+    <div id="sbStep3FloatPreview" style="position:fixed;top:90px;right:20px;width:360px;max-height:calc(100vh - 130px);overflow-y:auto;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+      <div class="wiz-label" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <span>Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust)</span></span>
+        <button onclick="document.getElementById('sbStep3FloatPreview').style.display='none'" title="Hide preview" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;">✕</button>
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
+      <!-- Sample section header so the section header sliders have something to preview -->
+      <div id="sbPreviewSectionHeader" class="league-section" style="margin-bottom:10px;">
+        <div class="league-header" style="margin-bottom:6px;padding-bottom:6px;">
+          <div class="league-stripe" style="background:#e10600;"></div>
+          <div class="league-name">SAMPLE SECTION HEADER</div>
         </div>
-      </div><!-- end .sb-editor-step3-right -->
-    </div><!-- end .sb-editor-step3 -->
+      </div>
+      <div id="sbCardScaleWrap" style="overflow:hidden;">
+        <!-- Single-column card stack for the narrower right preview pane -->
+        <div id="sbCardScaleInner" style="display:flex;flex-direction:column;gap:9px;transform-origin:top left;transition:transform 0.2s ease;"></div>
+      </div>
+    </div>
       `;
-  // Step 3 responsive layout: collapse to single column on narrow viewports.
-  // Inline styles override the media query, so we manage it here based on
-  // .settings-content's actual width.
+  // Float preview responsive: collapse if viewport gets too narrow,
+  // restore on wider viewports
   setTimeout(()=>{
-    function _stepLayout(){
-      const wrap=document.querySelector('.sb-editor-step3');
-      if(!wrap) return;
-      const left=wrap.querySelector('.sb-editor-step3-left');
-      const right=wrap.querySelector('.sb-editor-step3-right');
-      if(!left||!right) return;
-      const sc=document.querySelector('.settings-content');
-      const cw=sc?sc.clientWidth:window.innerWidth;
-      if(cw<850){
-        wrap.style.flexDirection='column';
-        right.style.width='100%';
-        right.style.flex='0 0 auto';
-        right.style.position='static';
-        right.style.maxHeight='none';
+    function _floatPreviewLayout(){
+      const fp=document.getElementById('sbStep3FloatPreview');
+      const body=document.querySelector('.sb-editor-step3-body');
+      if(!fp||!body) return;
+      if(window.innerWidth<900){
+        // Too narrow — disable floating, push preview back into the body flow
+        fp.style.position='static';
+        fp.style.width='100%';
+        fp.style.maxHeight='none';
+        fp.style.marginTop='16px';
+        body.style.paddingRight='';
       } else {
-        wrap.style.flexDirection='';
-        right.style.width='340px';
-        right.style.flex='0 0 340px';
-        right.style.position='sticky';
-        right.style.maxHeight='calc(100vh - 120px)';
+        fp.style.position='fixed';
+        fp.style.top='90px';
+        fp.style.right='20px';
+        fp.style.width='360px';
+        fp.style.maxHeight='calc(100vh - 130px)';
+        fp.style.marginTop='';
+        body.style.paddingRight='400px';
       }
     }
-    _stepLayout();
-    if(!window._sbStep3LayoutBound){
-      window.addEventListener('resize',_stepLayout);
-      window._sbStep3LayoutBound=true;
+    _floatPreviewLayout();
+    if(!window._sbStep3FloatBound){
+      window.addEventListener('resize',_floatPreviewLayout);
+      window._sbStep3FloatBound=true;
     }
   },0);
   // Init preview to current scale after render
@@ -3529,6 +3508,7 @@ async function loadTbSportData(sid){
 
 function closeSbEditor(){
   document.getElementById('sbEditorPanel')?.remove();
+  document.getElementById('sbStep3FloatPreview')?.remove();
   // Re-enable sidebar nav
   document.querySelectorAll('.snav-btn').forEach(b=>{
     b.style.opacity='';b.style.pointerEvents='';
