@@ -15,7 +15,14 @@
   --motor-label-color:#3d5a78; --motor-secondary-color:#7a9ab8;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg-primary);color:var(--text-primary);font-family:'Barlow',sans-serif;min-height:100vh;overflow-x:hidden;}
+html,body{
+  background:var(--bg-primary);color:var(--text-primary);font-family:'Barlow',sans-serif;min-height:100vh;overflow-x:hidden;
+  /* Crisper text rendering — improves clarity in HLS stream output where Chromium captures the page as JPEG frames */
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  font-feature-settings:"kern" 1,"liga" 1;
+}
 
 #app{position:relative;z-index:1;display:flex;height:100vh;}
 

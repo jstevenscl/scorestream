@@ -29,11 +29,40 @@ const MANAGER_PORT = parseInt(process.env.MANAGER_PORT  || '3001');
 const WIDTH        = parseInt(process.env.STREAM_WIDTH  || '1920');
 const HEIGHT       = parseInt(process.env.STREAM_HEIGHT || '1080');
 const FPS          = Math.max(1, parseInt(process.env.STREAM_FPS || '1'));
-const JPEG_QUALITY = parseInt(process.env.JPEG_QUALITY  || '85');
 const SEG_DURATION = parseInt(process.env.HLS_SEGMENT_DURATION || '2');
 const PLAYLIST_SIZE= parseInt(process.env.HLS_PLAYLIST_SIZE    || '4');
 const IDLE_TIMEOUT = parseInt(process.env.STREAM_IDLE_TIMEOUT  || '60');
 const SCREENSHOT_MS= Math.round(1000 / FPS);
+
+// ── Stream quality (text crispness vs resource usage) ────────────────────────
+// STREAM_QUALITY=low|balanced|high — sets bitrate/preset/JPEG tier as a unit.
+// Individual STREAM_BITRATE / STREAM_MAXRATE / STREAM_BUFSIZE / STREAM_PRESET /
+// JPEG_QUALITY env vars override the tier if set.
+//
+// CPU note: higher bitrate is actually NEUTRAL or slightly cheaper for x264
+// (more bits = less compression searching). The CPU cost driver is FPS and
+// preset. At 1 FPS (the default), even "high" tier is trivial CPU.
+const QUALITY_PRESETS = {
+  // Original behavior — minimal text quality, lowest bandwidth
+  low:      { bitrate: '800k',  maxrate: '1200k', bufsize: '2000k', preset: 'veryfast', jpegQ: 85 },
+  // Default — noticeably crisper text, ~3x bandwidth, SAME CPU as low
+  balanced: { bitrate: '1500k', maxrate: '2500k', bufsize: '4000k', preset: 'veryfast', jpegQ: 92 },
+  // Best text — higher bandwidth, ~3-4x more CPU per frame than low
+  // (still trivial at 1 FPS, more demanding at 30 FPS)
+  high:     { bitrate: '3000k', maxrate: '4500k', bufsize: '6000k', preset: 'medium',   jpegQ: 95 },
+};
+const _QUALITY     = (process.env.STREAM_QUALITY || 'balanced').toLowerCase();
+const _Q           = QUALITY_PRESETS[_QUALITY] || QUALITY_PRESETS.balanced;
+const VIDEO_BITRATE = process.env.STREAM_BITRATE || _Q.bitrate;
+const VIDEO_MAXRATE = process.env.STREAM_MAXRATE || _Q.maxrate;
+const VIDEO_BUFSIZE = process.env.STREAM_BUFSIZE || _Q.bufsize;
+const VIDEO_PRESET  = process.env.STREAM_PRESET  || _Q.preset;
+const JPEG_QUALITY  = parseInt(process.env.JPEG_QUALITY || String(_Q.jpegQ));
+// deviceScaleFactor — render at NxN supersampling for crisper text edges.
+// 1 = native 1080p (default), 2 = render at 4K then downsample (4x browser memory).
+const STREAM_DPR    = Math.max(1, Math.min(3, parseInt(process.env.STREAM_DPR || '1')));
+
+console.log(`[manager] Stream quality=${_QUALITY} bitrate=${VIDEO_BITRATE} maxrate=${VIDEO_MAXRATE} preset=${VIDEO_PRESET} jpegQ=${JPEG_QUALITY} dpr=${STREAM_DPR}`);
 
 // Pre-roll: how many loading-screen segments to encode at startup.
 // At 1fps, SEG_DURATION=2: each segment = 2s. 6 segments = 12s of buffer.
@@ -121,10 +150,15 @@ function prebakeHLS(slug) {
   for (let i = 0; i < PREROLL_SEGMENTS; i++) {
     const seg = path.join(HLS_DIR, `${slug}_${String(i).padStart(5, '0')}.ts`);
     try {
+      // Pre-roll uses 'ultrafast' regardless of quality tier — these segments
+      // are encoded at startup once and replaced by live ffmpeg within seconds.
+      // Use the configured bitrate so the loading screen doesn't visually pop
+      // when live frames take over.
       execSync(
         `ffmpeg -y -loglevel error -loop 1 -framerate ${FPS} -i "${frame}" ` +
         `-vf format=yuv420p -c:v libx264 -preset ultrafast -tune stillimage ` +
-        `-b:v 800k -maxrate 1200k -bufsize 2000k -pix_fmt yuv420p ` +
+        `-b:v ${VIDEO_BITRATE} -maxrate ${VIDEO_MAXRATE} -bufsize ${VIDEO_BUFSIZE} -pix_fmt yuv420p ` +
+        `-profile:v high -level 4.1 ` +
         `-g ${FPS * SEG_DURATION} -sc_threshold 0 ` +
         `-t ${SEG_DURATION} -f mpegts "${seg}"`,
         { stdio: 'pipe' }
@@ -274,9 +308,12 @@ function startFfmpeg(slug) {
 
   args.push(
     '-vf', 'format=yuv420p',
-    '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'stillimage',
-    '-b:v', '800k', '-maxrate', '1200k', '-bufsize', '2000k',
+    '-c:v', 'libx264', '-preset', VIDEO_PRESET, '-tune', 'stillimage',
+    '-b:v', VIDEO_BITRATE, '-maxrate', VIDEO_MAXRATE, '-bufsize', VIDEO_BUFSIZE,
     '-pix_fmt', 'yuv420p',
+    // Adaptive quantization preserves detail in flat areas (dark backgrounds with text on top)
+    '-x264-params', 'aq-mode=2:aq-strength=1.0',
+    '-profile:v', 'high', '-level', '4.1',
     '-g', String(FPS * SEG_DURATION), '-sc_threshold', '0',
   );
 
@@ -344,7 +381,10 @@ async function startRenderer(slug) {
     if (msg.type() === 'error') console.error(`[page][${slug}] ${msg.text()}`);
   });
   page.on('pageerror', err => console.error(`[page][${slug}] pageerror: ${err.message}`));
-  await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: 1 });
+  // STREAM_DPR controls supersampling for crisper text edges:
+  //   1 (default) = render at native WIDTHxHEIGHT (1080p)
+  //   2 = render at 2x then downsample (4x browser memory, sharper text)
+  await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: STREAM_DPR });
   // Use 'domcontentloaded' instead of 'networkidle2' — the scoreboard makes
   // continuous XHR calls for score updates, so networkidle2 always times out.
   try {

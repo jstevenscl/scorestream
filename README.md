@@ -11,6 +11,7 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
 - [Requirements](#requirements)
 - [Quick Start](#quick-start)
 - [Environment Variables](#environment-variables)
+- [Stream Quality Tiers](#stream-quality-tiers)
 - [Finding Your STREAM\_BASE\_URL](#finding-your-stream_base_url)
 - [Volumes](#volumes)
 - [Using ScoreStream](#using-scorestream)
@@ -103,8 +104,67 @@ Navigate to `http://YOUR_SERVER_IP:7777` in your browser.
 | `STREAM_WIDTH` | `1920` | HLS stream width in pixels |
 | `STREAM_HEIGHT` | `1080` | HLS stream height in pixels |
 | `STREAM_FPS` | `1` | Stream framerate (1 fps is sufficient for score updates) |
+| `STREAM_QUALITY` | `balanced` | Stream quality tier — `low`, `balanced`, or `high`. See [Stream Quality Tiers](#stream-quality-tiers) below. |
+| `STREAM_BITRATE` | *(tier default)* | Override video bitrate (e.g. `1500k`). Leave unset to use the tier default. |
+| `STREAM_MAXRATE` | *(tier default)* | Override max bitrate (e.g. `2500k`) |
+| `STREAM_BUFSIZE` | *(tier default)* | Override VBV buffer size (e.g. `4000k`) |
+| `STREAM_PRESET` | *(tier default)* | Override x264 preset (e.g. `veryfast`, `medium`, `slow`) |
+| `JPEG_QUALITY` | *(tier default)* | Override frame screenshot quality (1–100) |
+| `STREAM_DPR` | `1` | Browser supersampling — `1` = native 1080p, `2` = render at 4K then downscale (sharper text, ~4x browser RAM) |
 | `HLS_SEGMENT_DURATION` | `2` | HLS segment length in seconds |
 | `HLS_PLAYLIST_SIZE` | `4` | Number of HLS segments to keep in the live playlist |
+
+---
+
+## Stream Quality Tiers
+
+ScoreStream encodes the rendered scoreboard to HLS via Chromium screenshots + x264. Three quality tiers are available via `STREAM_QUALITY`:
+
+| Tier | Bitrate | Max Rate | Buffer | Preset | JPEG Q | Best for |
+|---|---|---|---|---|---|---|
+| `low` | 800k | 1200k | 2000k | veryfast | 85 | Many concurrent streams or constrained server |
+| **`balanced`** *(default)* | **1500k** | **2500k** | **4000k** | **veryfast** | **92** | Most users — noticeably crisper text, **same CPU as `low`** |
+| `high` | 3000k | 4500k | 6000k | medium | 95 | Single stream, low FPS, want maximum text clarity |
+
+**The counter-intuitive part:** higher bitrate is actually NEUTRAL or slightly cheaper for CPU. The encoder is given more bits to work with, so it has to do less compression searching. The CPU cost driver is **FPS** and **preset**, not bitrate.
+
+### What changes between tiers
+
+- **Text clarity in the stream output** improves as bitrate goes up (less JPEG/H.264 compression artifacts on text edges)
+- **Per-viewer bandwidth** scales with bitrate (≈800 kbps → 1500 kbps → 3000 kbps)
+- **Server CPU** stays the same between `low` and `balanced` (only the preset and JPEG quality change CPU). `high` adds ~3-4x more CPU per encoded frame because of the slower preset.
+
+### When to upgrade or downgrade
+
+- **Default `balanced`** — recommended for everyone, including multi-stream setups. Same CPU as the old `low` defaults but ~2x text clarity.
+- **Upgrade to `high`** when:
+  - You have one or two streams running at most
+  - Your server has CPU headroom (Oracle A1 4 vCPU is fine for 1-2 streams at 1 FPS)
+  - You want the cleanest possible text on TV displays
+- **Downgrade to `low`** when:
+  - You're running 5+ concurrent streams
+  - Your viewers have limited downstream bandwidth (<3 Mbps IPTV connections)
+  - You're seeing stream stuttering or buffering
+
+### Fine-tuning individual settings
+
+If a tier is close to what you want but you'd like to adjust one specific setting, use the individual override env vars (`STREAM_BITRATE`, `STREAM_PRESET`, etc.). Any individual override beats the tier setting. Example:
+
+```yaml
+- STREAM_QUALITY=balanced     # Tier baseline
+- STREAM_BITRATE=2000k        # Override just the bitrate
+- JPEG_QUALITY=95             # Override just the screenshot quality
+```
+
+### Browser supersampling (`STREAM_DPR`)
+
+The biggest single improvement for text crispness is supersampling — render the scoreboard at 2x resolution (3840×2160) then downsample to 1080p. The downsampling step naturally smooths text edges.
+
+```yaml
+- STREAM_DPR=2
+```
+
+**Cost:** ~4x browser RAM (Chromium uses ~150 MB at 1x, ~600 MB at 2x). At 4K rendering on a 4 vCPU server you can comfortably run 1-2 concurrent streams. For 3+ streams, leave `STREAM_DPR=1`.
 
 ---
 
@@ -804,6 +864,17 @@ The workflow runs automatically on schedule. To manually refresh:
 **Changes not appearing on stream:**
 - The stream refreshes every 30 seconds. Wait up to 30 seconds after saving.
 - For display setting changes (fonts, colors, scale), the stream container picks these up on next page render
+
+**Text in stream looks pixelated, grainy, or fuzzy (especially when enlarged):**
+- Set `STREAM_QUALITY=balanced` or `STREAM_QUALITY=high` in your stream container env. Default `balanced` already gives noticeably crisper text than the old `low` setting at the same CPU cost.
+- For maximum text clarity, also set `STREAM_DPR=2` (renders at 4K then downsamples). Uses ~4x browser RAM, recommended only for 1-2 concurrent streams.
+- See [Stream Quality Tiers](#stream-quality-tiers) for details.
+- Restart the `scorestream-stream` container after changing quality env vars: `docker restart scorestream-stream`
+
+**Stream stuttering, buffering, or high CPU with multiple streams:**
+- Set `STREAM_QUALITY=low` to drop back to original behavior (~800 kbps, lowest CPU).
+- Confirm `STREAM_FPS=1` (the default). Higher FPS values multiply CPU cost — 30 FPS uses ~30x more CPU than 1 FPS.
+- If using `STREAM_DPR=2`, drop back to `STREAM_DPR=1` to save browser memory.
 
 **Ticker overlay not appearing after enabling:**
 - Restart the channel in Dispatcharr — existing ffmpeg processes use the old stream profile until restarted
