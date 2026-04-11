@@ -388,6 +388,9 @@ In editor Step 3 (Display & Layout), each scoreboard has independent control ove
 | **Channel Name Size** | Font size of the channel/event name at the top of cards |
 | **Header / Status Size** | Font size of the status text (LIVE, FINAL, upcoming time) |
 | **Period / Time Size** | Font size of the period/game-time text (Q4 2:15, 7th, etc.) |
+| **Section Header Size** | Font size of the section headers above each card group (e.g. "🏎️ FORMULA 1 — UPCOMING") |
+| **Section Stripe Width** | Width of the colored vertical stripe before each section header (0 to hide) |
+| **Section Header Color** | Color of the section header text |
 | **Headshot Size** | Size of player headshot circles on individual-sport cards |
 | **Team Name Color** | Color of the team name subtitle text |
 | **LIVE Status Color** | Color of the pulsing LIVE indicator on in-progress games |
@@ -473,7 +476,9 @@ Custom themes are stored in your display defaults and are available across all s
 | **Accent Secondary** | Secondary accent (warnings, secondary highlights) |
 | **Accent Green / Red** | Status colors (success/live indicators, error/danger) |
 | **Text Primary / Secondary / Dim** | Text brightness levels throughout the UI |
-| **Base Font Size** | Scales all UI text (12–20px) |
+| **Base Font Size** | Scales all UI text in the settings, sidebar, and topbar uniformly (12–20px) |
+| **Sidebar Font Scale** | Scales the left sidebar of the main scoreboard.html view independently (0.8×–1.6×, stacks with Base Font Size) |
+| **Topbar Meta Size** | Font size of "Live: # / Total: # / clock" in the top bar (9–22px) |
 
 **Presets:** Five built-in presets (Dark Blue, Carbon, Dark Green, Dark Red, Light) let you quick-apply a full color scheme and customize from there.
 

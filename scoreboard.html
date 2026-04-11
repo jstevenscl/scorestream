@@ -168,8 +168,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 /* Stream mode — topbar elements scaled up for readability at 1920x1080 */
 body.stream-mode .topbar{padding:14px 28px;}
 body.stream-mode .topbar-title{font-size:26px;}
-body.stream-mode .topbar-meta{font-size:15px;gap:20px;}
-body.stream-mode .topbar-meta .val{font-size:15px;}
+body.stream-mode .topbar-meta{font-size:var(--topbar-meta-size,15px);gap:20px;}
+body.stream-mode .topbar-meta .val{font-size:var(--topbar-meta-size,15px);}
 body.stream-mode #clockDisplay{font-size:15px;}
 
 /* ── Stream Canvas Layout ─────────────────────────────────────── */
@@ -211,7 +211,7 @@ body.stream-mode .card-header{padding:4px 10px;}
 /* Score update flash — subtle highlight when value changes */
 .score-updated{animation:scoreFlash 0.6s ease forwards;}
 @keyframes scoreFlash{0%{color:var(--accent-green);}100%{color:inherit;}}
-.meta-item{font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;display:flex;align-items:center;gap:5px;}
+.meta-item{font-size:var(--topbar-meta-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;display:flex;align-items:center;gap:5px;}
 .meta-item .val{color:var(--accent);}
 #scoreboard{flex:1;overflow-y:auto;padding:18px 22px;}
 #scoreboard::-webkit-scrollbar{width:4px;}
@@ -220,9 +220,10 @@ body.stream-mode .card-header{padding:4px 10px;}
 /* LEAGUE / GAME CARDS */
 .league-section{margin-bottom:26px;}
 .league-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.league-stripe{width:4px;height:22px;border-radius:2px;}
-.league-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:3px;text-transform:uppercase;color:var(--text-primary);}
+.league-stripe{width:var(--section-stripe-width,6px);height:calc(var(--section-header-size,15px) * 1.5);border-radius:2px;flex-shrink:0;}
+.league-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:var(--section-header-size,15px);letter-spacing:3px;text-transform:uppercase;color:var(--section-header-color,var(--text-primary));}
 .league-game-count{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);padding:2px 7px;background:var(--bg-card);border-radius:4px;border:1px solid var(--border);}
+.league-game-count:empty{display:none;}
 .league-season-badge{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid;white-space:nowrap;}
 .league-season-badge.pre{color:#ff9500;border-color:rgba(255,149,0,0.45);background:rgba(255,149,0,0.08);}
 .league-season-badge.post{color:#ff6b00;border-color:rgba(255,107,0,0.45);background:rgba(255,107,0,0.1);animation:postGlow 2.5s ease-in-out infinite;}
@@ -908,6 +909,34 @@ body.stream-mode .card-header{padding:4px 10px;}
       </div>
 
       <div class="modal-section">
+        <div class="modal-section-title">Stream Section Headers</div>
+        <div class="modal-sublabel" style="margin-bottom:14px;">Headers that appear above each group of cards on the stream output (e.g. "🏎️ FORMULA 1 — UPCOMING", "⛳ PGA TOUR — THE MASTERS"). Includes the colored stripe on the left.</div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Font size of the section header text on stream pages">Header Text Size</span>
+          <input type="range" min="11" max="32" step="1" value="15" id="sl-section-header" oninput="document.getElementById('val-section-header').textContent=this.value+'px'" onchange="applyDisplay()">
+          <span class="modal-slider-val" id="val-section-header">15px</span>
+        </div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Width of the colored stripe before each section header (set to 0 to hide)">Stripe Width</span>
+          <input type="range" min="0" max="14" step="1" value="6" id="sl-section-stripe" oninput="document.getElementById('val-section-stripe').textContent=this.value+'px'" onchange="applyDisplay()">
+          <span class="modal-slider-val" id="val-section-stripe">6px</span>
+        </div>
+        <div class="modal-row" style="margin-top:8px;">
+          <div>
+            <div class="modal-label">Header Text Color</div>
+            <div class="modal-sublabel">Color of the section header text</div>
+          </div>
+          <div class="color-row" style="margin:0;">
+            <div class="color-swatch-wrap">
+              <div class="color-swatch" id="sectionHeaderColorSwatch" style="background:#e8f0fe;"></div>
+              <input type="color" id="sectionHeaderColorPicker" value="#e8f0fe" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
+            </div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="sectionHeaderColorVal">#e8f0fe</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section">
         <div class="modal-section-title">Team Name Color</div>
         <div class="modal-row">
           <div>
@@ -1518,13 +1547,30 @@ body.stream-mode .card-header{padding:4px 10px;}
       </div>
 
       <div class="modal-section" style="margin-top:20px;">
-        <div class="modal-section-title">UI Font Size</div>
-        <div class="modal-sublabel" style="margin-bottom:14px;">Scale all text in the settings UI and sidebar. Does not affect stream card typography.</div>
+        <div class="modal-section-title">UI Font Sizes</div>
+        <div class="modal-sublabel" style="margin-bottom:14px;">
+          Scale text in the app interface. Sliders apply when you release the mouse (avoids the page jumping while you drag).
+        </div>
         <div class="modal-slider-row">
-          <span class="modal-slider-label">Base Font Size</span>
+          <span class="modal-slider-label" data-tip="Scales all text in the settings UI, topbar, and sidebar uniformly via CSS zoom on #app and #settingsPage. Use the Sidebar / Topbar sliders below for finer control.">Base Font Size (everything)</span>
           <input type="range" min="12" max="20" value="15" step="1" id="sysThemeFontSize" style="width:100%;"
-            oninput="document.getElementById('sysThemeFontSizeVal').textContent=this.value+'px';applySystemTheme()">
+            oninput="document.getElementById('sysThemeFontSizeVal').textContent=this.value+'px'"
+            onchange="applySystemTheme()">
           <span class="modal-slider-val" id="sysThemeFontSizeVal">15px</span>
+        </div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Scales the left sidebar of the main scoreboard.html view (sport toggles, section labels, refresh button). Stacks with Base Font Size.">Sidebar Font Scale</span>
+          <input type="range" min="0.8" max="1.6" value="1.0" step="0.05" id="sysThemeSidebarScale" style="width:100%;"
+            oninput="document.getElementById('sysThemeSidebarScaleVal').textContent=parseFloat(this.value).toFixed(2)+'×'"
+            onchange="applySystemTheme()">
+          <span class="modal-slider-val" id="sysThemeSidebarScaleVal">1.00×</span>
+        </div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Font size of the topbar meta text — Live: # / Total: # / clock. Default 11px in browsing mode.">Topbar Meta Size</span>
+          <input type="range" min="9" max="22" value="11" step="1" id="sysThemeTopbarMetaSize" style="width:100%;"
+            oninput="document.getElementById('sysThemeTopbarMetaSizeVal').textContent=this.value+'px'"
+            onchange="applySystemTheme()">
+          <span class="modal-slider-val" id="sysThemeTopbarMetaSizeVal">11px</span>
         </div>
       </div>
 
@@ -4245,7 +4291,7 @@ const state={
   seasonMeta:{},
   usingMock:false,
   refreshRate:60,
-  display:{abbrSize:18,scoreSize:34,nameSize:11,nameColor:'#3d5a78',tickerSize:14,logoSize:34,channelSize:11},
+  display:{abbrSize:18,scoreSize:34,nameSize:11,nameColor:'#3d5a78',tickerSize:14,logoSize:34,channelSize:11,sectionHeaderSize:15,sectionHeaderColor:'#e8f0fe',sectionStripeWidth:6},
 };
 
 // getSPORTS: returns sports enabled in Settings AND active in sidebar (for scoreboard render)
@@ -4411,6 +4457,7 @@ function applyDisplay(){
   const abbrEl=document.getElementById('sl-abbr'),scoreEl=document.getElementById('sl-score'),nameEl=document.getElementById('sl-name'),colorEl=document.getElementById('nameColorPicker'),tickerEl=document.getElementById('sl-ticker'),logoEl=document.getElementById('sl-logo');
   const headerEl=document.getElementById('sl-header'),periodEl=document.getElementById('sl-period');
   const liveColorEl=document.getElementById('liveColorPicker'),finalColorEl=document.getElementById('finalColorPicker'),periodColorEl=document.getElementById('periodColorPicker');
+  const sectionHeaderEl=document.getElementById('sl-section-header'),sectionStripeEl=document.getElementById('sl-section-stripe'),sectionHeaderColorEl=document.getElementById('sectionHeaderColorPicker');
   if(abbrEl){state.display.abbrSize=parseInt(abbrEl.value);document.getElementById('val-abbr').textContent=abbrEl.value+'px';}
   if(scoreEl){state.display.scoreSize=parseInt(scoreEl.value);document.getElementById('val-score').textContent=scoreEl.value+'px';}
   if(nameEl){state.display.nameSize=parseInt(nameEl.value);document.getElementById('val-name').textContent=nameEl.value+'px';}
@@ -4421,6 +4468,9 @@ function applyDisplay(){
   if(liveColorEl){state.display.liveColor=liveColorEl.value;document.getElementById('liveColorVal').textContent=liveColorEl.value;document.getElementById('liveColorSwatch').style.background=liveColorEl.value;}
   if(finalColorEl){state.display.finalColor=finalColorEl.value;document.getElementById('finalColorVal').textContent=finalColorEl.value;document.getElementById('finalColorSwatch').style.background=finalColorEl.value;}
   if(periodColorEl){state.display.periodColor=periodColorEl.value;document.getElementById('periodColorVal').textContent=periodColorEl.value;document.getElementById('periodColorSwatch').style.background=periodColorEl.value;}
+  if(sectionHeaderEl){state.display.sectionHeaderSize=parseInt(sectionHeaderEl.value)||15;}
+  if(sectionStripeEl){state.display.sectionStripeWidth=parseInt(sectionStripeEl.value);if(isNaN(state.display.sectionStripeWidth))state.display.sectionStripeWidth=6;}
+  if(sectionHeaderColorEl){state.display.sectionHeaderColor=sectionHeaderColorEl.value;document.getElementById('sectionHeaderColorVal').textContent=sectionHeaderColorEl.value;document.getElementById('sectionHeaderColorSwatch').style.background=sectionHeaderColorEl.value;}
   const displayRoot=document.getElementById('main');
   if(displayRoot){
     displayRoot.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
@@ -4434,6 +4484,9 @@ function applyDisplay(){
     if(state.display.liveColor) displayRoot.style.setProperty('--card-live-color',state.display.liveColor);
     if(state.display.finalColor) displayRoot.style.setProperty('--card-final-color',state.display.finalColor);
     if(state.display.periodColor) displayRoot.style.setProperty('--card-period-color',state.display.periodColor);
+    displayRoot.style.setProperty('--section-header-size',(state.display.sectionHeaderSize||15)+'px');
+    displayRoot.style.setProperty('--section-stripe-width',(state.display.sectionStripeWidth??6)+'px');
+    if(state.display.sectionHeaderColor) displayRoot.style.setProperty('--section-header-color',state.display.sectionHeaderColor);
   }
   // Also push into settings preview card so it reflects current values
   const preview=document.getElementById('displayPreviewCard');
@@ -4501,6 +4554,9 @@ function initDisplayControls(){
   const liveColorEl2=document.getElementById('liveColorPicker');if(liveColorEl2){const v=state.display.liveColor||'#00ff88';liveColorEl2.value=v;document.getElementById('liveColorSwatch').style.background=v;document.getElementById('liveColorVal').textContent=v;}
   const finalColorEl2=document.getElementById('finalColorPicker');if(finalColorEl2){const v=state.display.finalColor||'#3d5a78';finalColorEl2.value=v;document.getElementById('finalColorSwatch').style.background=v;document.getElementById('finalColorVal').textContent=v;}
   const periodColorEl2=document.getElementById('periodColorPicker');if(periodColorEl2){const v=state.display.periodColor||'#7a9ab8';periodColorEl2.value=v;document.getElementById('periodColorSwatch').style.background=v;document.getElementById('periodColorVal').textContent=v;}
+  const sectionHeaderEl2=document.getElementById('sl-section-header');if(sectionHeaderEl2){const v=state.display.sectionHeaderSize||15;sectionHeaderEl2.value=v;document.getElementById('val-section-header').textContent=v+'px';}
+  const sectionStripeEl2=document.getElementById('sl-section-stripe');if(sectionStripeEl2){const v=state.display.sectionStripeWidth??6;sectionStripeEl2.value=v;document.getElementById('val-section-stripe').textContent=v+'px';}
+  const sectionHeaderColorEl2=document.getElementById('sectionHeaderColorPicker');if(sectionHeaderColorEl2){const v=state.display.sectionHeaderColor||'#e8f0fe';sectionHeaderColorEl2.value=v;document.getElementById('sectionHeaderColorSwatch').style.background=v;document.getElementById('sectionHeaderColorVal').textContent=v;}
 }
 
 // =====================
@@ -7621,10 +7677,16 @@ function initSystemTheme(){
     const accent=p.colors['--accent'];
     return `<button onclick="applySysThemePreset(${i})" style="padding:8px 14px;background:${bg};border:2px solid ${accent};border-radius:8px;color:${p.colors['--text-primary']};font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;">${p.name}</button>`;
   }).join('');
-  // Restore font size
+  // Restore font size sliders from saved theme
   const fontSize=_sysTheme._fontSize||15;
   const fsEl=document.getElementById('sysThemeFontSize');
   if(fsEl){fsEl.value=fontSize;document.getElementById('sysThemeFontSizeVal').textContent=fontSize+'px';}
+  const sidebarScale=_sysTheme._sidebarScale||1.0;
+  const sbEl=document.getElementById('sysThemeSidebarScale');
+  if(sbEl){sbEl.value=sidebarScale;document.getElementById('sysThemeSidebarScaleVal').textContent=parseFloat(sidebarScale).toFixed(2)+'×';}
+  const topbarMetaSize=_sysTheme._topbarMetaSize||11;
+  const tmEl=document.getElementById('sysThemeTopbarMetaSize');
+  if(tmEl){tmEl.value=topbarMetaSize;document.getElementById('sysThemeTopbarMetaSizeVal').textContent=topbarMetaSize+'px';}
 }
 
 function applySystemTheme(){
@@ -7652,6 +7714,21 @@ function applySystemTheme(){
     const settings=document.getElementById('settingsPage');
     if(app) app.style.zoom=zoom+'';
     if(settings) settings.style.zoom=zoom+'';
+  }
+  // Sidebar font scale — applies an extra zoom on #sidebar only (stacks with base font size)
+  const sbEl=document.getElementById('sysThemeSidebarScale');
+  if(sbEl){
+    const sc=parseFloat(sbEl.value)||1.0;
+    _sysTheme._sidebarScale=sc;
+    const sidebar=document.getElementById('sidebar');
+    if(sidebar) sidebar.style.zoom=sc+'';
+  }
+  // Topbar meta size — sets a CSS var read by .meta-item
+  const tmEl=document.getElementById('sysThemeTopbarMetaSize');
+  if(tmEl){
+    const px=parseInt(tmEl.value)||11;
+    _sysTheme._topbarMetaSize=px;
+    document.documentElement.style.setProperty('--topbar-meta-size',px+'px');
   }
 }
 
@@ -7689,10 +7766,14 @@ function resetSystemTheme(){
     const sw=document.getElementById(safeId+'_swatch');if(sw)sw.style.background=v.default;
   });
   // Reset zoom
-  const app=document.getElementById('app');const settings=document.getElementById('settingsPage');
+  const app=document.getElementById('app');const settings=document.getElementById('settingsPage');const sidebar=document.getElementById('sidebar');
   if(app) app.style.zoom='';
   if(settings) settings.style.zoom='';
+  if(sidebar) sidebar.style.zoom='';
+  document.documentElement.style.removeProperty('--topbar-meta-size');
   const fsEl=document.getElementById('sysThemeFontSize');if(fsEl){fsEl.value=15;document.getElementById('sysThemeFontSizeVal').textContent='15px';}
+  const sbEl=document.getElementById('sysThemeSidebarScale');if(sbEl){sbEl.value='1.0';document.getElementById('sysThemeSidebarScaleVal').textContent='1.00×';}
+  const tmEl=document.getElementById('sysThemeTopbarMetaSize');if(tmEl){tmEl.value=11;document.getElementById('sysThemeTopbarMetaSizeVal').textContent='11px';}
   _sysTheme={};
   try{localStorage.removeItem('ssSystemTheme');}catch(e){}
   fetch(`${API_BASE}/global-settings`,{method:'POST',headers:{'Content-Type':'application/json'},
@@ -7717,6 +7798,13 @@ function _restoreSystemTheme(){
         const settings=document.getElementById('settingsPage');
         if(app) app.style.zoom=zoom+'';
         if(settings) settings.style.zoom=zoom+'';
+      }
+      if(saved._sidebarScale){
+        const sidebar=document.getElementById('sidebar');
+        if(sidebar) sidebar.style.zoom=saved._sidebarScale+'';
+      }
+      if(saved._topbarMetaSize){
+        root.style.setProperty('--topbar-meta-size',saved._topbarMetaSize+'px');
       }
     }
   }catch(e){}
@@ -8625,7 +8713,15 @@ function renderStreamCanvas() {
         ? `${games.length} games (more →)`
         : `${games.length} game${games.length !== 1 ? 's' : ''}`;
       const stripeColor = isFavSection ? '#ffd700' : isFinalSection ? '#ffb400' : sport.color;
-      sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${stripeColor}"></div><div class="league-name">${sectionLabel}</div>${sbadge}<div class="league-game-count">${countLabel}</div></div>`;
+      // Only render the count badge when we actually have a label — avoids the
+      // "empty bordered rectangle" that motor sport headers were showing.
+      const countHtml = countLabel ? `<div class="league-game-count">${countLabel}</div>` : '';
+      sec.innerHTML = `<div class="league-header"><div class="league-stripe" style="background:${stripeColor}"></div><div class="league-name">${sectionLabel}</div>${sbadge}${countHtml}</div>`;
+      // Section header CSS vars live on .league-section so .league-name and .league-stripe
+      // (which are descendants here) inherit them. Card scale also applies to header size.
+      sec.style.setProperty('--section-header-size', Math.round((state.display.sectionHeaderSize||15) * scale) + 'px');
+      sec.style.setProperty('--section-stripe-width', Math.round((state.display.sectionStripeWidth??6) * scale) + 'px');
+      if (state.display.sectionHeaderColor) sec.style.setProperty('--section-header-color', state.display.sectionHeaderColor);
 
       const grid = document.createElement('div');
       grid.className = 'games-grid grid-mode';
