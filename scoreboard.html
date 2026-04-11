@@ -2427,8 +2427,11 @@ function renderEditorStep(sbOverride){
       </div><!-- end Stream Output wrapper -->
     </div><!-- end .sb-editor-step3-body -->
     <!-- FLOATING PREVIEW PANEL — position:fixed so it's anchored to the
-         viewport regardless of any parent layout/specificity issues. -->
-    <div id="sbStep3FloatPreview" style="position:fixed;top:90px;right:20px;width:360px;max-height:calc(100vh - 130px);overflow-y:auto;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+         viewport regardless of any parent layout/specificity issues.
+         top:160px clears the editor header (Cancel/Title/Save row) and the
+         step navigation pills below it; right:30px keeps it inside the
+         settings content area without covering the Save button. -->
+    <div id="sbStep3FloatPreview" style="position:fixed;top:160px;right:30px;width:360px;max-height:calc(100vh - 200px);overflow-y:auto;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
       <div class="wiz-label" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
         <span>Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust)</span></span>
         <button onclick="document.getElementById('sbStep3FloatPreview').style.display='none'" title="Hide preview" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;">✕</button>
@@ -2463,10 +2466,10 @@ function renderEditorStep(sbOverride){
         body.style.paddingRight='';
       } else {
         fp.style.position='fixed';
-        fp.style.top='90px';
-        fp.style.right='20px';
+        fp.style.top='160px';
+        fp.style.right='30px';
         fp.style.width='360px';
-        fp.style.maxHeight='calc(100vh - 130px)';
+        fp.style.maxHeight='calc(100vh - 200px)';
         fp.style.marginTop='';
         body.style.paddingRight='400px';
       }
@@ -3099,6 +3102,29 @@ function buildEditorPreview(){
   }
   var sel=document.getElementById('sbEditCardScale');
   if(sel) sbPreviewCardScale(parseFloat(sel.value)/100);
+}
+
+// Live-update headshot size in the editor preview without rebuilding the cards.
+// Walks every img inside the preview that's a circle (border-radius:50%) and
+// resizes it. Also sets the --card-headshot-size CSS var on each card so future
+// re-renders pick up the new value. Called from the per-sport headshot sliders'
+// oninput handler in buildMotorsportEditorPanel.
+function _previewHeadshotSize(px){
+  const inner=document.getElementById('sbCardScaleInner');
+  if(!inner) return;
+  const sizePx=parseInt(px)||28;
+  // Update --card-headshot-size on every card element so future scans pick it up
+  inner.querySelectorAll('.game-card').forEach(card=>{
+    card.style.setProperty('--card-headshot-size',sizePx+'px');
+  });
+  // Also update the inline width/height on every circular headshot img
+  // (the inline style on these uses var(--card-headshot-size,28px), so updating
+  // the var on the parent card propagates automatically — but we set it
+  // explicitly too as a belt-and-suspenders fix in case the cascade is broken)
+  inner.querySelectorAll('img[style*="border-radius:50%"]').forEach(img=>{
+    img.style.width=sizePx+'px';
+    img.style.height=sizePx+'px';
+  });
 }
 
 // ── Audio Library ────────────────────────────────────────────────────────────
@@ -5256,8 +5282,12 @@ function buildMotorsportEditorPanel(draft){
   const _mcSbId=parseInt((draft&&draft.id)||0)||parseInt(_activeSbId)||0;
   const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked,${_mcSbId})" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
   const countSel=(val,key,color,label)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div></div><div style="display:flex;gap:4px;">${[1,2,3,5,10].map(n=>`<button onclick="setMotorConfig('${key}',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===val?color:'var(--border)'};background:${n===val?color:'var(--bg-card)'};color:${n===val?'#000':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>`;
-  // Headshot size slider — live preview on oninput, save on onchange (debounced by slider release)
-  const hsSlider=(val,prefix,color,label,desc)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div><div style="font-size:11px;color:var(--text-dim);">${desc}</div></div><input type="range" min="20" max="64" value="${val}" id="hs-slider-${prefix}" style="width:120px;flex-shrink:0;" oninput="document.getElementById('hs-val-${prefix}').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-headshot-size',this.value+'px');" onchange="setMotorConfig('${prefix}_headshot_size',parseInt(this.value),${_mcSbId})"><span id="hs-val-${prefix}" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:${color};min-width:42px;text-align:right;flex-shrink:0;">${val}px</span></div>`;
+  // Headshot size slider — live preview on oninput, save on onchange (debounced by slider release).
+  // The oninput calls _previewHeadshotSize() which walks every img tag inside the preview cards
+  // and updates its width/height directly. We can't just set --card-headshot-size on
+  // sbCardScaleInner because each card sets its own card-level value via applyCardHeadshotSize
+  // which wins over the parent. Direct DOM manipulation is the simplest reliable approach.
+  const hsSlider=(val,prefix,color,label,desc)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div><div style="font-size:11px;color:var(--text-dim);">${desc}</div></div><input type="range" min="20" max="64" value="${val}" id="hs-slider-${prefix}" style="width:120px;flex-shrink:0;" oninput="document.getElementById('hs-val-${prefix}').textContent=this.value+'px';_previewHeadshotSize(this.value);" onchange="setMotorConfig('${prefix}_headshot_size',parseInt(this.value),${_mcSbId})"><span id="hs-val-${prefix}" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:${color};min-width:42px;text-align:right;flex-shrink:0;">${val}px</span></div>`;
   const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Results','Full finishing order pages')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Championship standings')}${countSel(f1MaxRaces,'f1_max_races','#e10600','📋 Past Races to Show')}${hsSlider(f1HsSize,'f1','#e10600','🖼️ Headshot Size','Driver photo circle size on F1 cards')}</div>`:'';
   const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}${hsSlider(nasHsSize,'nascar','#ffd700','🖼️ Headshot Size','Driver photo circle size on Cup Series cards')}</div>`:'';
   const xfinSec=hasNoaps?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ff6b35;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ff6b35;">NOAPS · O'REILLY AUTO PARTS SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(noapsLive,'noaps_live','#ff6b35','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(noapsLast,'noaps_last','#ff6b35','🏁 Last Race Result','Final finishing order from last race')}${row(noapsStand,'noaps_standings','#ff6b35','📊 Driver Standings','Season points standings')}${countSel(noapsMaxRaces,'noaps_max_races','#ff6b35','📋 Past Races to Show')}${hsSlider(noapsHsSize,'noaps','#ff6b35','🖼️ Headshot Size','Driver photo circle size on NOAPS cards')}</div>`:'';
