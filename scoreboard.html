@@ -4538,11 +4538,21 @@ async function fetchAllScores(){
     await refreshStreamConfig();
   }
   await Promise.all(getAllEnabledSports().map(s=>fetchSport(s)));
-  // Split large PGA leaderboards into paged cards (8 players per card)
+  // Split large individual-sport leaderboards into paged cards (8 players per card).
+  // Sport-specific fetchers (fetchPGAData, fetchTennisData, etc.) already paginate
+  // their cards — skip those to avoid double-chunking that creates duplicate page
+  // numbers in card names.
   getAllEnabledSports().filter(s=>s.isIndividualSport).forEach(sport=>{
     const games = state.games[sport.id]||[];
     const expanded = [];
     games.forEach(g=>{
+      // Skip cards already paginated by sport-specific fetchers
+      if(g.isPGAHistory || g.isPGALive ||
+         g.isTennisRankings || g.isTennisRankingsHeader ||
+         g.isF1Last || g.isF1Standings || g.isF1History ||
+         g.isNascarStandings || g.isNascarLast || g.isNascarLive){
+        expanded.push(g); return;
+      }
       if(!g.isIndividual || g.teams.length<=8){ expanded.push(g); return; }
       const chunkSize=8, total=g.teams.length;
       const totalPages=Math.ceil(total/chunkSize);
@@ -5321,7 +5331,8 @@ async function fetchPGAData(sport, sbConfig){
             });
             return;
           }
-          const chunkSize=15, total=competitors.length, totalPages=Math.ceil(total/chunkSize);
+          // Match historical chunkSize=8 to avoid double-pagination by fetchAllScores chunker
+          const chunkSize=8, total=competitors.length, totalPages=Math.ceil(total/chunkSize);
           for(let i=0;i<total;i+=chunkSize){
             const chunk=competitors.slice(i,i+chunkSize);
             const pageNum=Math.floor(i/chunkSize)+1;
