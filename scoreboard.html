@@ -3407,11 +3407,14 @@ function sbPreviewCardScale(val){
   const naturalH = inner.offsetHeight;
   inner.style.transform = `scale(${scale})`;
   inner.style.transformOrigin = 'top left';
-  // Resize wrapper to match scaled dimensions, capped to prevent overflow
-  const MAX_WRAP_H = 260;
+  // Resize wrapper to match scaled dimensions. The previous version capped
+  // the wrapper at 260px tall with overflow:hidden, which clipped the second
+  // and third sample cards. Now we let the wrapper grow to the full scaled
+  // height — the parent container (#sbStep3FloatPreview when in editor Step 3)
+  // has its own overflow:auto and handles scrolling for any overflow.
   wrap.style.width  = Math.round(naturalW * scale) + 'px';
-  wrap.style.height = Math.min(Math.round(naturalH * scale), MAX_WRAP_H) + 'px';
-  wrap.style.overflow = 'hidden';
+  wrap.style.height = Math.round(naturalH * scale) + 'px';
+  wrap.style.overflow = 'visible';
 }
 
 function sbEditorFilterTeams(query){
