@@ -384,6 +384,18 @@ body.stream-mode .card-header{padding:4px 10px;}
 .settings-content::-webkit-scrollbar{width:4px;}
 .settings-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .settings-section{display:none;max-width:760px;}
+/* The scoreboard editor uses a wider layout because Step 3 needs room for the
+   two-column "sliders + sticky preview" view */
+#section-scoreboards.settings-section{max-width:none;}
+.sb-editor-step3{display:flex;gap:24px;align-items:flex-start;}
+.sb-editor-step3-left{flex:1;min-width:0;}
+.sb-editor-step3-right{width:380px;flex-shrink:0;position:sticky;top:0;align-self:flex-start;max-height:calc(100vh - 120px);overflow-y:auto;padding-right:4px;}
+.sb-editor-step3-right::-webkit-scrollbar{width:4px;}
+.sb-editor-step3-right::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+@media (max-width:1100px){
+  .sb-editor-step3{flex-direction:column;}
+  .sb-editor-step3-right{width:100%;position:static;max-height:none;}
+}
 .settings-section.active{display:block;}
 .settings-section-header{margin-bottom:28px;}
 .settings-section-header h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;letter-spacing:3px;text-transform:uppercase;color:var(--text-primary);margin:0 0 6px;}
@@ -2104,6 +2116,8 @@ function renderEditorStep(sbOverride){
     if(_hasAnyMotorOrTennis) window._motorPanelSbId=_editorDraft.id||_activeSbId||null;
     const motorPanelHtml=_hasAnyMotorOrTennis?buildMotorsportEditorPanel(_editorDraft):'';
     body=`
+    <div class="sb-editor-step3">
+      <div class="sb-editor-step3-left">
       <div class="wiz-field">
         <div class="wiz-label">Scoreboard Name</div>
         <input class="wiz-input" id="sbEditName" value="${_editorDraft.name}" placeholder="e.g. Weekend Sports, NBA Only, My NFL Board">
@@ -2302,7 +2316,7 @@ function renderEditorStep(sbOverride){
             <input type="range" min="11" max="32" step="1"
               value="${_editorDraft.display_config.section_header_size || 15}"
               id="sbEditSectionHeaderSize"
-              oninput="document.getElementById('sbEditSectionHeaderSizeVal').textContent=this.value+'px';document.querySelectorAll('#sbCardScaleInner').forEach(el=>el.style.setProperty('--section-header-size',this.value+'px'))">
+              oninput="document.getElementById('sbEditSectionHeaderSizeVal').textContent=this.value+'px';var _p=document.getElementById('sbPreviewSectionHeader');if(_p)_p.style.setProperty('--section-header-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditSectionHeaderSizeVal">${_editorDraft.display_config.section_header_size || 15}px</span>
           </div>
           <div class="modal-slider-row">
@@ -2310,7 +2324,7 @@ function renderEditorStep(sbOverride){
             <input type="range" min="0" max="14" step="1"
               value="${_editorDraft.display_config.section_stripe_width ?? 6}"
               id="sbEditSectionStripeWidth"
-              oninput="document.getElementById('sbEditSectionStripeWidthVal').textContent=this.value+'px';document.querySelectorAll('#sbCardScaleInner').forEach(el=>el.style.setProperty('--section-stripe-width',this.value+'px'))">
+              oninput="document.getElementById('sbEditSectionStripeWidthVal').textContent=this.value+'px';var _p=document.getElementById('sbPreviewSectionHeader');if(_p)_p.style.setProperty('--section-stripe-width',this.value+'px')">
             <span class="modal-slider-val" id="sbEditSectionStripeWidthVal">${_editorDraft.display_config.section_stripe_width ?? 6}px</span>
           </div>
           <div class="modal-slider-row" style="align-items:center;">
@@ -2321,7 +2335,7 @@ function renderEditorStep(sbOverride){
                 <input type="color" id="sbEditSectionHeaderColor"
                   value="${_editorDraft.display_config.section_header_color || '#e8f0fe'}"
                   style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
-                  oninput="document.getElementById('sbEditSectionHeaderColorSwatch').style.background=this.value;document.getElementById('sbEditSectionHeaderColorVal').textContent=this.value;document.querySelectorAll('#sbCardScaleInner').forEach(el=>el.style.setProperty('--section-header-color',this.value))">
+                  oninput="document.getElementById('sbEditSectionHeaderColorSwatch').style.background=this.value;document.getElementById('sbEditSectionHeaderColorVal').textContent=this.value;var _p=document.getElementById('sbPreviewSectionHeader');if(_p)_p.style.setProperty('--section-header-color',this.value)">
               </div>
               <span class="modal-slider-val" id="sbEditSectionHeaderColorVal">${_editorDraft.display_config.section_header_color || '#e8f0fe'}</span>
             </div>
@@ -2389,16 +2403,6 @@ function renderEditorStep(sbOverride){
           ${motorPanelHtml}
         </div>`:''}
 
-        <div style="margin-top:16px;">
-          <div class="wiz-label" style="margin-bottom:8px;">Card Scale Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(live)</span></div>
-          <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px 14px 10px;overflow:hidden;">
-            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
-            <div id="sbCardScaleWrap" style="overflow:hidden;max-height:260px;">
-              <div id="sbCardScaleInner" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;transform-origin:top left;transition:transform 0.2s ease;"></div>
-            </div>
-          </div>
-        </div>
-
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
           <div class="modal-section-title" style="margin-bottom:4px;">🎵 Stream Audio</div>
           <div class="wiz-sublabel" style="margin-bottom:14px;">Optional background audio mixed into the HLS stream output.</div>
@@ -2426,7 +2430,27 @@ function renderEditorStep(sbOverride){
           </div>
         </div>
 
-      </div>`;
+      </div><!-- end Stream Output wrapper -->
+      </div><!-- end .sb-editor-step3-left -->
+      <div class="sb-editor-step3-right">
+        <div class="wiz-label" style="margin-bottom:8px;">Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust settings)</span></div>
+        <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
+          <!-- Sample section header so the section header sliders have something to preview -->
+          <div id="sbPreviewSectionHeader" class="league-section" style="margin-bottom:10px;">
+            <div class="league-header" style="margin-bottom:6px;padding-bottom:6px;">
+              <div class="league-stripe" style="background:#e10600;"></div>
+              <div class="league-name">SAMPLE SECTION HEADER</div>
+            </div>
+          </div>
+          <div id="sbCardScaleWrap" style="overflow:hidden;">
+            <!-- Single-column card stack for the narrower right preview pane -->
+            <div id="sbCardScaleInner" style="display:flex;flex-direction:column;gap:9px;transform-origin:top left;transition:transform 0.2s ease;"></div>
+          </div>
+        </div>
+      </div><!-- end .sb-editor-step3-right -->
+    </div><!-- end .sb-editor-step3 -->
+      `;
   // Init preview to current scale after render
   setTimeout(()=>{
     _sbEditThemeId=_editorDraft.display_config?.theme_id||null;
@@ -2448,9 +2472,11 @@ function renderEditorStep(sbOverride){
       const liveColEl2=document.getElementById('sbEditLiveColor'); if(liveColEl2) inner.style.setProperty('--card-live-color',liveColEl2.value);
       const finalColEl2=document.getElementById('sbEditFinalColor'); if(finalColEl2) inner.style.setProperty('--card-final-color',finalColEl2.value);
       const periodColEl2=document.getElementById('sbEditPeriodColor'); if(periodColEl2) inner.style.setProperty('--card-period-color',periodColEl2.value);
-      const sectHdrSzEl2=document.getElementById('sbEditSectionHeaderSize'); if(sectHdrSzEl2) inner.style.setProperty('--section-header-size',sectHdrSzEl2.value+'px');
-      const sectStripeEl2=document.getElementById('sbEditSectionStripeWidth'); if(sectStripeEl2) inner.style.setProperty('--section-stripe-width',sectStripeEl2.value+'px');
-      const sectHdrColEl2=document.getElementById('sbEditSectionHeaderColor'); if(sectHdrColEl2) inner.style.setProperty('--section-header-color',sectHdrColEl2.value);
+      // Section header CSS vars need to be on the section preview wrapper, not on inner
+      const sectPreview=document.getElementById('sbPreviewSectionHeader');
+      const sectHdrSzEl2=document.getElementById('sbEditSectionHeaderSize'); if(sectHdrSzEl2 && sectPreview) sectPreview.style.setProperty('--section-header-size',sectHdrSzEl2.value+'px');
+      const sectStripeEl2=document.getElementById('sbEditSectionStripeWidth'); if(sectStripeEl2 && sectPreview) sectPreview.style.setProperty('--section-stripe-width',sectStripeEl2.value+'px');
+      const sectHdrColEl2=document.getElementById('sbEditSectionHeaderColor'); if(sectHdrColEl2 && sectPreview) sectPreview.style.setProperty('--section-header-color',sectHdrColEl2.value);
     }
     setTimeout(buildEditorPreview, 50);
     const _psel=document.getElementById('sbPlaylistSelect');if(_psel&&_audioPlaylists&&_audioPlaylists.length){while(_psel.options.length>1)_psel.remove(1);_audioPlaylists.forEach(function(p){const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_global?' (Global)':'');if(_editorDraft.audio_playlist_id===p.id)o.selected=true;_psel.appendChild(o);});}
@@ -2973,20 +2999,25 @@ function buildEditorPreview(){
     // Use real ESPN CDN headshot IDs (Sinner=4573232, Alcaraz=4534976, Djokovic=3483, Rune=4897469)
     var g1=buildTennisCard({id:'ten-prev1',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:'Monte-Carlo Masters · QF',date:new Date().toISOString(),isLive:true,isFinal:false,isScheduled:false,periodDesc:'3rd Set',isTennis:true,teams:[{abbr:'Sinner J.',name:'Jannik Sinner',score:'2',headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4573232.png':null,flag:null,country:'ITA',homeAway:'away',winner:false,setGames:[6,3,4]},{abbr:'Alcaraz C.',name:'Carlos Alcaraz',score:'1',headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4534976.png':null,flag:null,country:'ESP',homeAway:'home',winner:false,setGames:[4,6,3]}]});
     var g2=buildTennisCard({id:'ten-prev2',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:'Monte-Carlo Masters · R32',date:new Date().toISOString(),isLive:false,isFinal:true,isScheduled:false,periodDesc:'',isTennis:true,teams:[{abbr:'Djokovic N.',name:'Novak Djokovic',score:'2',headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/3483.png':null,flag:null,country:'SRB',homeAway:'away',winner:true,setGames:[6,7]},{abbr:'Rune H.',name:'Holger Rune',score:'0',headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4897469.png':null,flag:null,country:'DEN',homeAway:'home',winner:false,setGames:[3,5]}]});
-    g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
-    inner.appendChild(g1); inner.appendChild(g2);
+    var g3=buildTennisCard({id:'ten-prev3',sportName:tSport.name,sportEmoji:tSport.emoji,sportColor:tSport.color,name:tSport.name+' World Rankings',date:new Date().toISOString(),isLive:false,isFinal:false,isScheduled:false,isTennisRankings:true,rankingLeague:ids[0],drivers:[{pos:1,name:'Jannik Sinner',country:'ITA',points:11830,change:0,headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4573232.png':null},{pos:2,name:'Carlos Alcaraz',country:'ESP',points:8645,change:0,headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4534976.png':null},{pos:3,name:'Alexander Zverev',country:'GER',points:7915,change:1,headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/3539.png':null},{pos:4,name:'Daniil Medvedev',country:'RUS',points:6230,change:-1,headshot:_showHs?'https://a.espncdn.com/i/headshots/tennis/players/full/4080.png':null}]});
+    g1.style.pointerEvents='none'; g2.style.pointerEvents='none'; g3.style.pointerEvents='none';
+    inner.appendChild(g1); inner.appendChild(g2); inner.appendChild(g3);
   } else if(isMotorOnly&&isF1){
     var _f1ShowHs=_editorDraft&&_editorDraft.display_config&&_editorDraft.display_config.player_headshots!==false;
-    // Real F1 driver headshots from formula1.com Cloudinary CDN with face crop
+    // F1 driver headshots — using ESPN CDN format which the actual stream
+    // also tries; falls back to nothing on error via onerror handler
     var _f1Hs={
-      verstappen:_f1ShowHs?'https://media.formula1.com/image/upload/c_fill,g_face,w_140,h_140/q_auto/v1740000000/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png':null,
-      hamilton:_f1ShowHs?'https://media.formula1.com/image/upload/c_fill,g_face,w_140,h_140/q_auto/v1740000000/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png':null,
-      leclerc:_f1ShowHs?'https://media.formula1.com/image/upload/c_fill,g_face,w_140,h_140/q_auto/v1740000000/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/2col-retina/image.png':null,
+      verstappen:_f1ShowHs?'https://a.espncdn.com/i/headshots/rpm/players/full/4308.png':null,
+      hamilton:_f1ShowHs?'https://a.espncdn.com/i/headshots/rpm/players/full/2222.png':null,
+      leclerc:_f1ShowHs?'https://a.espncdn.com/i/headshots/rpm/players/full/4309.png':null,
+      norris:_f1ShowHs?'https://a.espncdn.com/i/headshots/rpm/players/full/4310.png':null,
+      sainz:_f1ShowHs?'https://a.espncdn.com/i/headshots/rpm/players/full/4311.png':null,
     };
     var g1=buildF1Card({id:'f1-next',name:'Next: Japanese Grand Prix',sportName:'Formula 1',sportEmoji:'\uD83C\uDFCE\uFE0F',sportColor:'#e10600',isLive:false,isFinal:false,isScheduled:true,isF1Next:true,circuit:'Suzuka Circuit',country:'Japan',date:'2026-04-06',countdown:'in 11d',round:'3'});
     var g2=buildF1Card({id:'f1-last',name:'Chinese Grand Prix Result',sportName:'Formula 1',sportEmoji:'\uD83C\uDFCE\uFE0F',sportColor:'#e10600',isLive:false,isFinal:true,isScheduled:false,isF1Last:true,podium:[{pos:1,driver:'Max Verstappen',team:'Red Bull Racing',time:'1:24:34',points:'25',headshot:_f1Hs.verstappen},{pos:2,driver:'Lewis Hamilton',team:'Mercedes',time:'+8.4s',points:'18',headshot:_f1Hs.hamilton},{pos:3,driver:'Charles Leclerc',team:'Ferrari',time:'+12.9s',points:'15',headshot:_f1Hs.leclerc}]});
-    g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
-    inner.appendChild(g1); inner.appendChild(g2);
+    var g3=buildF1Card({id:'f1-stand',name:'Driver Standings',sportName:'Formula 1',sportEmoji:'\uD83C\uDFCE\uFE0F',sportColor:'#e10600',isLive:false,isFinal:false,isScheduled:false,isF1Standings:true,drivers:[{pos:1,driver:'Max Verstappen',points:'77',wins:2,headshot:_f1Hs.verstappen},{pos:2,driver:'Lando Norris',points:'63',wins:1,headshot:_f1Hs.norris},{pos:3,driver:'Charles Leclerc',points:'59',wins:1,headshot:_f1Hs.leclerc},{pos:4,driver:'Carlos Sainz',points:'55',wins:0,headshot:_f1Hs.sainz},{pos:5,driver:'Lewis Hamilton',points:'42',wins:0,headshot:_f1Hs.hamilton}]});
+    g1.style.pointerEvents='none'; g2.style.pointerEvents='none'; g3.style.pointerEvents='none';
+    inner.appendChild(g1); inner.appendChild(g2); inner.appendChild(g3);
   } else if(isMotorOnly&&isNascar){
     var _nasShowHs=_editorDraft&&_editorDraft.display_config&&_editorDraft.display_config.player_headshots!==false;
     // Real NASCAR driver headshots from Fox Sports CDN
@@ -2998,8 +3029,9 @@ function buildEditorPreview(){
       truex:_nasShowHs?'https://b.fssta.com/uploads/application/nascar/headshots/8517.vresize.140.140.medium.0.png':null,
     };
     var g1=buildNascarCard({id:'nascar-live',name:'Daytona 500',sportName:'NASCAR Cup Series',sportEmoji:'\uD83C\uDFC1',sportColor:'#ffd700',isLive:true,isFinal:false,isNascarLive:true,flagEmoji:'\uD83D\uDFE2',trackName:'Daytona International Speedway',lapNumber:142,lapsInRace:200,lapsToGo:58,drivers:[{pos:1,driver:'Denny Hamlin',car:'#11',manufacturer:'Toyota',delta:null,headshot:_nasHs.hamlin,status:'Running'},{pos:2,driver:'Kyle Larson',car:'#5',manufacturer:'Chevrolet',delta:0.8,headshot:_nasHs.larson,status:'Running'},{pos:3,driver:'Chase Elliott',car:'#9',manufacturer:'Chevrolet',delta:1.2,headshot:_nasHs.elliott,status:'Running'},{pos:4,driver:'Ryan Blaney',car:'#12',manufacturer:'Ford',delta:2.3,headshot:_nasHs.blaney,status:'Running'},{pos:5,driver:'Martin Truex Jr',car:'#19',manufacturer:'Toyota',delta:3.1,headshot:_nasHs.truex,status:'Running'}]});
-    g1.style.pointerEvents='none';
-    inner.appendChild(g1);
+    var g2=buildNascarCard({id:'nascar-stand',name:'Cup Series Standings',sportName:'NASCAR Cup Series',sportEmoji:'\uD83C\uDFC1',sportColor:'#ffd700',isLive:false,isFinal:false,isNascarStandings:true,drivers:[{pos:1,driver:'Denny Hamlin',car:'#11',manufacturer:'Toyota',points:240,wins:2,headshot:_nasHs.hamlin},{pos:2,driver:'Kyle Larson',car:'#5',manufacturer:'Chevrolet',points:228,wins:1,headshot:_nasHs.larson},{pos:3,driver:'Chase Elliott',car:'#9',manufacturer:'Chevrolet',points:215,wins:0,headshot:_nasHs.elliott},{pos:4,driver:'Ryan Blaney',car:'#12',manufacturer:'Ford',points:202,wins:1,headshot:_nasHs.blaney},{pos:5,driver:'Martin Truex Jr',car:'#19',manufacturer:'Toyota',points:189,wins:0,headshot:_nasHs.truex}]});
+    g1.style.pointerEvents='none'; g2.style.pointerEvents='none';
+    inner.appendChild(g1); inner.appendChild(g2);
   } else if(isPGA){
     var _pgaShowHs=_editorDraft&&_editorDraft.display_config&&_editorDraft.display_config.player_headshots!==false;
     // Real PGA player headshots from ESPN CDN (athlete IDs)
