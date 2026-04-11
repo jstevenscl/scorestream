@@ -217,7 +217,7 @@ Click the gear icon in the sidebar to open Settings. The left navigation lists a
 | Settings Page | What It Controls | Affects |
 |---|---|---|
 | **My Scoreboards** | Create, edit, delete, and push scoreboards. Each scoreboard is one HLS stream channel with its own sports, teams, and display overrides. | Stream output |
-| **Stream Card Style** | Card typography for the sidebar preview — font sizes for abbreviations, scores, team names, channel names; team name color; logo size; refresh rate. | Sidebar preview + stream cards |
+| **Stream Card Style** | Card typography for the sidebar preview and stream output — font sizes for abbreviations, scores, team names, channel names, header/status bar, period/time text, and headshots; team name color; header status colors (LIVE/FINAL/period); logo size; refresh rate. | Sidebar preview + stream cards |
 | **Stream Defaults** | Global defaults that all scoreboards inherit: theme, font sizes, colors, card scale, rotation timer, layout. Scoreboards use these unless they override individually. | Stream output (all scoreboards) |
 | **Audio Library** | Upload audio files, create playlists, set a global default playlist for stream background music. | Stream audio |
 | **Integrations** | Connect to Dispatcharr — URL, API token, channel group name, starting channel number. | Dispatcharr push |
@@ -298,10 +298,17 @@ In editor Step 1, each scoreboard has independent control over:
 | **Card Scale** | Scales all game cards larger or smaller (50–300%) |
 | **Rotation Timer** | How long each page shows before advancing (0 = no rotation) |
 | **Team Logo Size** | Size of team logos on cards |
-| **Abbreviation Size** | Font size of team abbreviations |
+| **Abbreviation Size** | Font size of team abbreviations (e.g., LAL, BOS) |
 | **Score Size** | Font size of the score numbers |
 | **Team Name Size** | Font size of the full team name subtitle |
+| **Channel Name Size** | Font size of the channel/event name at the top of cards |
+| **Header / Status Size** | Font size of the status text (LIVE, FINAL, upcoming time) |
+| **Period / Time Size** | Font size of the period/game-time text (Q4 2:15, 7th, etc.) |
+| **Headshot Size** | Size of player headshot circles on individual-sport cards |
 | **Team Name Color** | Color of the team name subtitle text |
+| **LIVE Status Color** | Color of the pulsing LIVE indicator on in-progress games |
+| **FINAL Status Color** | Color of the FINAL label on completed games |
+| **Period / Time Color** | Color of the game time/period text |
 | **Stream Layout** | Grid (multi-column), Fullscreen (one wide column), or Ticker (compact rows) |
 | **Theme Override** | Use a different color theme just for this scoreboard |
 | **Stream Audio** | None, built-in playlist music, or a custom audio stream URL |

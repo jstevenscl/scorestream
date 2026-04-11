@@ -252,13 +252,13 @@ body.stream-mode .card-header{padding:4px 10px;}
 .game-card.live{border-color:rgba(0,255,136,0.3);}
 .game-card.favorited{border-color:rgba(255,215,0,0.35);background:linear-gradient(180deg,rgba(255,215,0,0.04) 0%,var(--bg-card) 60%);}
 .game-card.is-final{opacity:0.82;}.game-card.is-final:hover{opacity:1;}
-.card-status{padding:5px 13px;display:flex;align-items:center;justify-content:space-between;gap:6px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2);}
-.status-live{display:flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--accent-green);}
-.status-live-dot{width:6px;height:6px;background:var(--accent-green);border-radius:50%;animation:pulse-green 1.5s infinite;}
+.card-status{padding:calc(var(--card-header-size,11px) * 0.5) 13px;display:flex;align-items:center;justify-content:space-between;gap:6px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2);}
+.status-live{display:flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-size:var(--card-header-size,11px);font-weight:700;letter-spacing:2px;color:var(--card-live-color,var(--accent-green));}
+.status-live-dot{width:calc(var(--card-header-size,11px) * 0.55);height:calc(var(--card-header-size,11px) * 0.55);background:var(--card-live-color,var(--accent-green));border-radius:50%;animation:pulse-green 1.5s infinite;}
 @keyframes pulse-green{0%,100%{opacity:1;}50%{opacity:0.4;}}
-.status-final{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-dim);}
-.status-upcoming{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--accent);}
-.game-period{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);}
+.status-final{font-family:'Barlow Condensed',sans-serif;font-size:var(--card-header-size,11px);font-weight:700;letter-spacing:2px;color:var(--card-final-color,var(--text-dim));}
+.status-upcoming{font-family:'Barlow Condensed',sans-serif;font-size:var(--card-header-size,11px);font-weight:700;letter-spacing:2px;color:var(--card-upcoming-color,var(--accent));}
+.game-period{font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--card-period-color,var(--text-secondary));}
 .card-body{padding:12px 14px;}
 .teams-container{display:flex;flex-direction:column;gap:9px;}
 .team-row{display:flex;align-items:center;gap:10px;}
@@ -827,6 +827,65 @@ body.stream-mode .card-header{padding:4px 10px;}
           <span class="modal-slider-label" data-tip="Size of team logo and score badge on each card.">Logo Size</span>
           <input type="range" min="20" max="64" value="34" id="sl-logo" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-logo">34px</span>
+        </div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Size of the status text at the top of each card: LIVE, FINAL, upcoming time.">Header / Status Size</span>
+          <input type="range" min="9" max="22" value="11" id="sl-header" oninput="applyDisplay()">
+          <span class="modal-slider-val" id="val-header">11px</span>
+        </div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Size of the period/game-time text (e.g. Q4 2:15, 7th inning, sport emoji label) shown at the top of each card.">Period / Time Size</span>
+          <input type="range" min="9" max="22" value="11" id="sl-period" oninput="applyDisplay()">
+          <span class="modal-slider-val" id="val-period">11px</span>
+        </div>
+        <div class="modal-slider-row">
+          <span class="modal-slider-label" data-tip="Size of player headshot circles shown on individual-sport cards (PGA, F1, NASCAR, Tennis).">Headshot Size</span>
+          <input type="range" min="20" max="56" value="28" id="sl-headshot" oninput="applyDisplay()">
+          <span class="modal-slider-val" id="val-headshot">28px</span>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Header &amp; Period Colors</div>
+        <div class="modal-sublabel" style="margin-bottom:10px;">Colors for the status bar at the top of each game card.</div>
+        <div class="modal-row">
+          <div>
+            <div class="modal-label">LIVE Status Color</div>
+            <div class="modal-sublabel">Pulsing indicator shown on in-progress games</div>
+          </div>
+          <div class="color-row" style="margin:0;">
+            <div class="color-swatch-wrap">
+              <div class="color-swatch" id="liveColorSwatch" style="background:#00ff88;"></div>
+              <input type="color" id="liveColorPicker" value="#00ff88" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
+            </div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="liveColorVal">#00ff88</span>
+          </div>
+        </div>
+        <div class="modal-row" style="margin-top:8px;">
+          <div>
+            <div class="modal-label">FINAL Status Color</div>
+            <div class="modal-sublabel">Shown on completed games</div>
+          </div>
+          <div class="color-row" style="margin:0;">
+            <div class="color-swatch-wrap">
+              <div class="color-swatch" id="finalColorSwatch" style="background:#3d5a78;"></div>
+              <input type="color" id="finalColorPicker" value="#3d5a78" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
+            </div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="finalColorVal">#3d5a78</span>
+          </div>
+        </div>
+        <div class="modal-row" style="margin-top:8px;">
+          <div>
+            <div class="modal-label">Period / Time Color</div>
+            <div class="modal-sublabel">Color of game time/period text (Q4 2:15, 7th, etc.)</div>
+          </div>
+          <div class="color-row" style="margin:0;">
+            <div class="color-swatch-wrap">
+              <div class="color-swatch" id="periodColorSwatch" style="background:#7a9ab8;"></div>
+              <input type="color" id="periodColorPicker" value="#7a9ab8" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
+            </div>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="periodColorVal">#7a9ab8</span>
+          </div>
         </div>
       </div>
 
@@ -1436,8 +1495,8 @@ body.stream-mode .card-header{padding:4px 10px;}
 
       <div class="modal-section">
         <div class="modal-section-title">UI Colors</div>
-        <div class="modal-sublabel" style="margin-bottom:14px;">Adjust the background, text, accent, and border colors used throughout the settings interface and sidebar.</div>
-        <div id="sysThemeColors" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+        <div class="modal-sublabel" style="margin-bottom:14px;">Each color is labeled with what it actually controls in the interface. Click any swatch to change it — changes apply instantly so you can see the effect.</div>
+        <div id="sysThemeColors"></div>
       </div>
 
       <div class="modal-section" style="margin-top:20px;">
@@ -4011,11 +4070,19 @@ function refreshSportToggles(){buildSportToggles();}
 // =====================
 function applyDisplay(){
   const abbrEl=document.getElementById('sl-abbr'),scoreEl=document.getElementById('sl-score'),nameEl=document.getElementById('sl-name'),colorEl=document.getElementById('nameColorPicker'),tickerEl=document.getElementById('sl-ticker'),logoEl=document.getElementById('sl-logo');
+  const headerEl=document.getElementById('sl-header'),periodEl=document.getElementById('sl-period'),headshotEl=document.getElementById('sl-headshot');
+  const liveColorEl=document.getElementById('liveColorPicker'),finalColorEl=document.getElementById('finalColorPicker'),periodColorEl=document.getElementById('periodColorPicker');
   if(abbrEl){state.display.abbrSize=parseInt(abbrEl.value);document.getElementById('val-abbr').textContent=abbrEl.value+'px';}
   if(scoreEl){state.display.scoreSize=parseInt(scoreEl.value);document.getElementById('val-score').textContent=scoreEl.value+'px';}
   if(nameEl){state.display.nameSize=parseInt(nameEl.value);document.getElementById('val-name').textContent=nameEl.value+'px';}
   if(colorEl){state.display.nameColor=colorEl.value;document.getElementById('nameColorVal').textContent=colorEl.value;document.getElementById('nameColorSwatch').style.background=colorEl.value;}
   if(logoEl){state.display.logoSize=parseInt(logoEl.value);const lv=document.getElementById('val-logo');if(lv)lv.textContent=logoEl.value+'px';}
+  if(headerEl){state.display.headerSize=parseInt(headerEl.value);document.getElementById('val-header').textContent=headerEl.value+'px';}
+  if(periodEl){state.display.periodSize=parseInt(periodEl.value);document.getElementById('val-period').textContent=periodEl.value+'px';}
+  if(headshotEl){state.display.headshotSize=parseInt(headshotEl.value);document.getElementById('val-headshot').textContent=headshotEl.value+'px';}
+  if(liveColorEl){state.display.liveColor=liveColorEl.value;document.getElementById('liveColorVal').textContent=liveColorEl.value;document.getElementById('liveColorSwatch').style.background=liveColorEl.value;}
+  if(finalColorEl){state.display.finalColor=finalColorEl.value;document.getElementById('finalColorVal').textContent=finalColorEl.value;document.getElementById('finalColorSwatch').style.background=finalColorEl.value;}
+  if(periodColorEl){state.display.periodColor=periodColorEl.value;document.getElementById('periodColorVal').textContent=periodColorEl.value;document.getElementById('periodColorSwatch').style.background=periodColorEl.value;}
   const displayRoot=document.getElementById('main');
   if(displayRoot){
     displayRoot.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
@@ -4024,6 +4091,12 @@ function applyDisplay(){
     displayRoot.style.setProperty('--card-name-color',state.display.nameColor);
     displayRoot.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
     displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
+    displayRoot.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
+    displayRoot.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
+    displayRoot.style.setProperty('--card-headshot-size',(state.display.headshotSize||28)+'px');
+    if(state.display.liveColor) displayRoot.style.setProperty('--card-live-color',state.display.liveColor);
+    if(state.display.finalColor) displayRoot.style.setProperty('--card-final-color',state.display.finalColor);
+    if(state.display.periodColor) displayRoot.style.setProperty('--card-period-color',state.display.periodColor);
   }
   // Also push into settings preview card so it reflects current values
   const preview=document.getElementById('displayPreviewCard');
@@ -4033,6 +4106,12 @@ function applyDisplay(){
     preview.style.setProperty('--card-name-size',state.display.nameSize+'px');
     preview.style.setProperty('--card-name-color',state.display.nameColor);
     preview.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
+    preview.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
+    preview.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
+    preview.style.setProperty('--card-headshot-size',(state.display.headshotSize||28)+'px');
+    if(state.display.liveColor) preview.style.setProperty('--card-live-color',state.display.liveColor);
+    if(state.display.finalColor) preview.style.setProperty('--card-final-color',state.display.finalColor);
+    if(state.display.periodColor) preview.style.setProperty('--card-period-color',state.display.periodColor);
   }
   settingsSave(saveDisplay);
 }
@@ -4051,6 +4130,12 @@ function initDisplayControls(){
     if(dc.card_score_size != null) state.display.scoreSize = dc.card_score_size;
     if(dc.card_name_size  != null) state.display.nameSize  = dc.card_name_size;
     if(dc.card_name_color != null) state.display.nameColor = dc.card_name_color;
+    if(dc.card_header_size != null) state.display.headerSize = dc.card_header_size;
+    if(dc.card_period_size != null) state.display.periodSize = dc.card_period_size;
+    if(dc.card_headshot_size != null) state.display.headshotSize = dc.card_headshot_size;
+    if(dc.card_live_color != null) state.display.liveColor = dc.card_live_color;
+    if(dc.card_final_color != null) state.display.finalColor = dc.card_final_color;
+    if(dc.card_period_color != null) state.display.periodColor = dc.card_period_color;
     const mainEl=document.getElementById('main');
     if(dc.motor_label_color != null && mainEl) mainEl.style.setProperty('--motor-label-color', dc.motor_label_color);
     if(dc.motor_secondary_color != null && mainEl) mainEl.style.setProperty('--motor-secondary-color', dc.motor_secondary_color);
@@ -4063,6 +4148,12 @@ function initDisplayControls(){
     displayRoot.style.setProperty('--card-name-color',state.display.nameColor);
     displayRoot.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
     displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
+    displayRoot.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
+    displayRoot.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
+    displayRoot.style.setProperty('--card-headshot-size',(state.display.headshotSize||28)+'px');
+    if(state.display.liveColor) displayRoot.style.setProperty('--card-live-color',state.display.liveColor);
+    if(state.display.finalColor) displayRoot.style.setProperty('--card-final-color',state.display.finalColor);
+    if(state.display.periodColor) displayRoot.style.setProperty('--card-period-color',state.display.periodColor);
   }
   const abbrEl=document.getElementById('sl-abbr');if(abbrEl){abbrEl.value=state.display.abbrSize;document.getElementById('val-abbr').textContent=state.display.abbrSize+'px';}
   const scoreEl=document.getElementById('sl-score');if(scoreEl){scoreEl.value=state.display.scoreSize;document.getElementById('val-score').textContent=state.display.scoreSize+'px';}
@@ -4071,6 +4162,12 @@ function initDisplayControls(){
   const logoEl2=document.getElementById('sl-logo');if(logoEl2){logoEl2.value=state.display.logoSize||34;const lv=document.getElementById('val-logo');if(lv)lv.textContent=(state.display.logoSize||34)+'px';}
   if(displayRoot) displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
   const chanEl=document.getElementById('sl-channel');if(chanEl){chanEl.value=state.display.channelSize||11;const cv=document.getElementById('val-channel');if(cv)cv.textContent=(state.display.channelSize||11)+'px';}
+  const headerEl2=document.getElementById('sl-header');if(headerEl2){const v=state.display.headerSize||11;headerEl2.value=v;document.getElementById('val-header').textContent=v+'px';}
+  const periodEl2=document.getElementById('sl-period');if(periodEl2){const v=state.display.periodSize||11;periodEl2.value=v;document.getElementById('val-period').textContent=v+'px';}
+  const headshotEl2=document.getElementById('sl-headshot');if(headshotEl2){const v=state.display.headshotSize||28;headshotEl2.value=v;document.getElementById('val-headshot').textContent=v+'px';}
+  const liveColorEl2=document.getElementById('liveColorPicker');if(liveColorEl2){const v=state.display.liveColor||'#00ff88';liveColorEl2.value=v;document.getElementById('liveColorSwatch').style.background=v;document.getElementById('liveColorVal').textContent=v;}
+  const finalColorEl2=document.getElementById('finalColorPicker');if(finalColorEl2){const v=state.display.finalColor||'#3d5a78';finalColorEl2.value=v;document.getElementById('finalColorSwatch').style.background=v;document.getElementById('finalColorVal').textContent=v;}
+  const periodColorEl2=document.getElementById('periodColorPicker');if(periodColorEl2){const v=state.display.periodColor||'#7a9ab8';periodColorEl2.value=v;document.getElementById('periodColorSwatch').style.background=v;document.getElementById('periodColorVal').textContent=v;}
 }
 
 // =====================
@@ -4639,7 +4736,7 @@ function buildLeaderboardCard(g){
     const thruStr=String(p.thru||'');
     const thruColor=thruStr==='F'?'var(--accent-green)':'var(--text-dim)';
     const hsHtml=p.headshot
-      ?`<img src="${p.headshot}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`
+      ?`<img src="${p.headshot}" style="width:var(--card-headshot-size,28px);height:var(--card-headshot-size,28px);border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`
       :'';
     return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:26px;text-align:right;flex-shrink:0;">${pos}</span>
@@ -4832,7 +4929,7 @@ function buildTennisCard(g){
         :`<span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--motor-label-color,var(--text-dim));width:22px;text-align:right;flex-shrink:0;">${p.pos}</span>`;
       let leftEl='';
       if(p.headshot){
-        leftEl=`<img src="${p.headshot}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`;
+        leftEl=`<img src="${p.headshot}" style="width:var(--card-headshot-size,28px);height:var(--card-headshot-size,28px);border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`;
       } else if(p.flag){
         leftEl=`<img src="${p.flag}" style="width:24px;height:15px;object-fit:cover;border-radius:2px;border:1px solid var(--border);flex-shrink:0;" onerror="this.style.display='none'">`;
       }
@@ -5511,7 +5608,7 @@ function buildNascarCard(g){
     card.innerHTML=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span class="status-upcoming">NO RACE</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.runName||'NASCAR Cup Series'}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;">${g.message||'No race data available.'}</div>`;
     return card;
   }
-  const _nasHsImg=hs=>hs?`<img src="${hs}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`:'';
+  const _nasHsImg=hs=>hs?`<img src="${hs}" style="width:var(--card-headshot-size,28px);height:var(--card-headshot-size,28px);border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`:'';
   if(g.isNascarStandings){
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-name-size,11px);font-family:'Share Tech Mono',monospace;color:var(--text-dim);">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
     const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-secondary);width:20px;text-align:right;flex-shrink:0;">${d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||'').replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`).join('');
@@ -5550,7 +5647,7 @@ function buildF1Card(g){
   <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${g.name}</div>`;
 
   let body = '';
-  const _f1HsImg=hs=>hs?`<img src="${hs}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`:'';
+  const _f1HsImg=hs=>hs?`<img src="${hs}" style="width:var(--card-headshot-size,28px);height:var(--card-headshot-size,28px);border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`:'';
   if(g.isF1Next){
     body = `<div style="display:flex;flex-direction:column;gap:4px;font-size:var(--card-name-size,11px);font-family:'Barlow Condensed',sans-serif;">
       <div style="display:flex;gap:6px;align-items:center;">
@@ -6958,20 +7055,29 @@ function restoreSettingsScale(){
 // =====================
 //  SYSTEM THEME
 // =====================
-const SYS_THEME_VARS=[
-  {key:'--bg-primary',label:'Background Primary',default:'#080b10'},
-  {key:'--bg-secondary',label:'Background Secondary',default:'#0d1117'},
-  {key:'--bg-card',label:'Card Background',default:'#111722'},
-  {key:'--border',label:'Border',default:'#1e2d42'},
-  {key:'--border-bright',label:'Border Highlight',default:'#2a4060'},
-  {key:'--accent',label:'Accent',default:'#00d4ff'},
-  {key:'--accent2',label:'Accent Secondary',default:'#ff6b00'},
-  {key:'--accent-green',label:'Accent Green',default:'#00ff88'},
-  {key:'--accent-red',label:'Accent Red',default:'#ff3b5c'},
-  {key:'--text-primary',label:'Text Primary',default:'#e8f0fe'},
-  {key:'--text-secondary',label:'Text Secondary',default:'#7a9ab8'},
-  {key:'--text-dim',label:'Text Dim',default:'#3d5a78'},
+const SYS_THEME_GROUPS=[
+  {name:'Backgrounds',icon:'🖼',vars:[
+    {key:'--bg-primary',label:'Main Page Background',desc:'The darkest background — behind the entire app and main content area',default:'#080b10'},
+    {key:'--bg-secondary',label:'Sidebar / Panel Background',desc:'Left navigation sidebar and secondary panels',default:'#0d1117'},
+    {key:'--bg-card',label:'Card / Input Background',desc:'Setting rows, input boxes, toggle backgrounds, and card containers',default:'#111722'},
+  ]},
+  {name:'Borders',icon:'▢',vars:[
+    {key:'--border',label:'Standard Border',desc:'Default borders around cards, inputs, and dividers',default:'#1e2d42'},
+    {key:'--border-bright',label:'Hover / Focus Border',desc:'Brighter border shown on hover or when element is active',default:'#2a4060'},
+  ]},
+  {name:'Text',icon:'A',vars:[
+    {key:'--text-primary',label:'Primary Text',desc:'Main readable text — titles, values, main labels',default:'#e8f0fe'},
+    {key:'--text-secondary',label:'Secondary Text',desc:'Subtle text — descriptions, inactive labels, subtitles',default:'#7a9ab8'},
+    {key:'--text-dim',label:'Dim / Muted Text',desc:'Dimmed text — section headers, hints, placeholder text',default:'#3d5a78'},
+  ]},
+  {name:'Accents',icon:'✦',vars:[
+    {key:'--accent',label:'Primary Accent',desc:'Active tabs, selected buttons, focus rings, primary highlights (cyan by default)',default:'#00d4ff'},
+    {key:'--accent2',label:'Secondary Accent',desc:'Warnings, secondary highlights (orange by default)',default:'#ff6b00'},
+    {key:'--accent-green',label:'Success / Live',desc:'LIVE indicators, success messages, enabled toggles',default:'#00ff88'},
+    {key:'--accent-red',label:'Error / Danger',desc:'Error messages, delete buttons, danger states',default:'#ff3b5c'},
+  ]},
 ];
+const SYS_THEME_VARS=SYS_THEME_GROUPS.flatMap(g=>g.vars);
 const SYS_THEME_PRESETS=[
   {name:'Dark Blue (Default)',colors:{'--bg-primary':'#080b10','--bg-secondary':'#0d1117','--bg-card':'#111722','--border':'#1e2d42','--border-bright':'#2a4060','--accent':'#00d4ff','--accent2':'#ff6b00','--accent-green':'#00ff88','--accent-red':'#ff3b5c','--text-primary':'#e8f0fe','--text-secondary':'#7a9ab8','--text-dim':'#3d5a78'}},
   {name:'Carbon',colors:{'--bg-primary':'#0a0a0a','--bg-secondary':'#111111','--bg-card':'#1a1a1a','--border':'#2a2a2a','--border-bright':'#3a3a3a','--accent':'#ffffff','--accent2':'#ff6b00','--accent-green':'#00ff88','--accent-red':'#ff3b5c','--text-primary':'#f0f0f0','--text-secondary':'#999999','--text-dim':'#555555'}},
@@ -6987,20 +7093,33 @@ function initSystemTheme(){
     const saved=JSON.parse(localStorage.getItem('ssSystemTheme')||'{}');
     _sysTheme=saved;
   }catch(e){_sysTheme={};}
-  // Render color pickers
+  // Render color pickers grouped with descriptions
   const cont=document.getElementById('sysThemeColors');
-  if(cont) cont.innerHTML=SYS_THEME_VARS.map(v=>{
-    const val=_sysTheme[v.key]||v.default;
-    const safeId='sysTC_'+v.key.replace(/--/,'').replace(/-/g,'_');
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-card);border-radius:7px;border:1px solid var(--border);">
-      <div style="position:relative;width:32px;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;">
-        <div id="${safeId}_swatch" style="position:absolute;inset:0;background:${val};"></div>
-        <input type="color" id="${safeId}" value="${val}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
-          oninput="document.getElementById('${safeId}_swatch').style.background=this.value;applySystemTheme()">
-      </div>
-      <span style="font-size:11px;color:var(--text-primary);flex:1;">${v.label}</span>
-    </div>`;
-  }).join('');
+  if(cont){
+    cont.style.display='block';
+    cont.innerHTML=SYS_THEME_GROUPS.map(g=>{
+      const rows=g.vars.map(v=>{
+        const val=_sysTheme[v.key]||v.default;
+        const safeId='sysTC_'+v.key.replace(/--/,'').replace(/-/g,'_');
+        return `<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:var(--bg-card);border-radius:7px;border:1px solid var(--border);margin-bottom:6px;">
+          <div style="position:relative;width:40px;height:32px;border-radius:6px;overflow:hidden;border:1px solid var(--border-bright);flex-shrink:0;margin-top:2px;">
+            <div id="${safeId}_swatch" style="position:absolute;inset:0;background:${val};"></div>
+            <input type="color" id="${safeId}" value="${val}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+              oninput="document.getElementById('${safeId}_swatch').style.background=this.value;applySystemTheme()">
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary);line-height:1.3;">${v.label}</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;line-height:1.4;">${v.desc}</div>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:4px;flex-shrink:0;">${val}</div>
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:16px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">${g.icon} ${g.name}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+  }
   // Render presets
   const presetCont=document.getElementById('sysThemePresets');
   if(presetCont) presetCont.innerHTML=SYS_THEME_PRESETS.map((p,i)=>{
@@ -7022,13 +7141,23 @@ function applySystemTheme(){
     if(el){
       root.style.setProperty(v.key, el.value);
       _sysTheme[v.key]=el.value;
+      // Update the hex readout next to the label
+      const row=el.closest('div').parentElement;
+      const hexEl=row?row.querySelector('div[style*="Share Tech Mono"]'):null;
+      if(hexEl) hexEl.textContent=el.value;
     }
   });
   const fsEl=document.getElementById('sysThemeFontSize');
   if(fsEl){
     const px=parseInt(fsEl.value)||15;
     _sysTheme._fontSize=px;
-    root.style.fontSize=px+'px';
+    // Use zoom (since all CSS uses explicit px, root.style.fontSize won't work)
+    // Baseline is 15px = 1.0x zoom
+    const zoom=px/15;
+    const app=document.getElementById('app');
+    const settings=document.getElementById('settingsPage');
+    if(app) app.style.zoom=zoom+'';
+    if(settings) settings.style.zoom=zoom+'';
   }
 }
 
@@ -7058,7 +7187,6 @@ function saveSystemTheme(){
 }
 
 function resetSystemTheme(){
-  const defaults=SYS_THEME_PRESETS[0].colors;
   const root=document.documentElement;
   SYS_THEME_VARS.forEach(v=>{
     root.style.setProperty(v.key, v.default);
@@ -7066,7 +7194,10 @@ function resetSystemTheme(){
     const el=document.getElementById(safeId);if(el)el.value=v.default;
     const sw=document.getElementById(safeId+'_swatch');if(sw)sw.style.background=v.default;
   });
-  root.style.fontSize='';
+  // Reset zoom
+  const app=document.getElementById('app');const settings=document.getElementById('settingsPage');
+  if(app) app.style.zoom='';
+  if(settings) settings.style.zoom='';
   const fsEl=document.getElementById('sysThemeFontSize');if(fsEl){fsEl.value=15;document.getElementById('sysThemeFontSizeVal').textContent='15px';}
   _sysTheme={};
   try{localStorage.removeItem('ssSystemTheme');}catch(e){}
@@ -7078,7 +7209,7 @@ function resetSystemTheme(){
 }
 
 // Restore system theme on page load
-(function(){
+function _restoreSystemTheme(){
   try{
     const saved=JSON.parse(localStorage.getItem('ssSystemTheme')||'{}');
     if(saved && Object.keys(saved).length){
@@ -7086,10 +7217,19 @@ function resetSystemTheme(){
       SYS_THEME_VARS.forEach(v=>{
         if(saved[v.key]) root.style.setProperty(v.key, saved[v.key]);
       });
-      if(saved._fontSize) root.style.fontSize=saved._fontSize+'px';
+      if(saved._fontSize){
+        const zoom=saved._fontSize/15;
+        const app=document.getElementById('app');
+        const settings=document.getElementById('settingsPage');
+        if(app) app.style.zoom=zoom+'';
+        if(settings) settings.style.zoom=zoom+'';
+      }
     }
   }catch(e){}
-})();
+}
+// Run immediately and again on DOMContentLoaded (to catch #app which loads after script)
+_restoreSystemTheme();
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',_restoreSystemTheme);
 
 // ── Ticker Team Selection Modal ───────────────────────────────────────────────
 let _tickerTeamModal={sportId:null,selected:{}};
@@ -7510,12 +7650,24 @@ renderFavSummary();
           if(dc.card_name_size) displayRoot.style.setProperty('--card-name-size',dc.card_name_size+'px');
           if(dc.card_name_color) displayRoot.style.setProperty('--card-name-color',dc.card_name_color);
           if(dc.logo_size) displayRoot.style.setProperty('--team-logo-size',dc.logo_size+'px');
+          if(dc.card_header_size) displayRoot.style.setProperty('--card-header-size',dc.card_header_size+'px');
+          if(dc.card_period_size) displayRoot.style.setProperty('--card-period-size',dc.card_period_size+'px');
+          if(dc.card_headshot_size) displayRoot.style.setProperty('--card-headshot-size',dc.card_headshot_size+'px');
+          if(dc.card_live_color) displayRoot.style.setProperty('--card-live-color',dc.card_live_color);
+          if(dc.card_final_color) displayRoot.style.setProperty('--card-final-color',dc.card_final_color);
+          if(dc.card_period_color) displayRoot.style.setProperty('--card-period-color',dc.card_period_color);
         }
         state.display.abbrSize=dc.card_abbr_size||state.display.abbrSize;
         state.display.scoreSize=dc.card_score_size||state.display.scoreSize;
         state.display.nameSize=dc.card_name_size||state.display.nameSize;
         state.display.nameColor=dc.card_name_color||state.display.nameColor;
         state.display.logoSize=dc.logo_size||state.display.logoSize;
+        if(dc.card_header_size) state.display.headerSize=dc.card_header_size;
+        if(dc.card_period_size) state.display.periodSize=dc.card_period_size;
+        if(dc.card_headshot_size) state.display.headshotSize=dc.card_headshot_size;
+        if(dc.card_live_color) state.display.liveColor=dc.card_live_color;
+        if(dc.card_final_color) state.display.finalColor=dc.card_final_color;
+        if(dc.card_period_color) state.display.periodColor=dc.card_period_color;
       }
       // Update topbar title
       const titleEl=document.getElementById('topbarTitle');
@@ -7866,14 +8018,24 @@ function renderStreamCanvas() {
   const hasMotorSports = getAllEnabledSports().some(s=>s.fetchFn);
   const _eff_abbrPx = (state.display.abbrSize || 18) * scale;
   const _eff_namePx = (state.display.nameSize || 11) * scale;
+  const _eff_scorePx = (state.display.scoreSize || 34) * scale;
+  const _eff_logoPx = (state.display.logoSize || 34) * scale;
+  const _eff_headerPx = (state.display.headerSize || 11) * scale;
   // Each motor card row: driver name (abbrPx) + secondary line (namePx) + 10px padding
   const _motorRowH = _eff_abbrPx * 1.2 + _eff_namePx * 1.2 + 10;
   // card-header(30) + race title(30) + 6 rows + bottom pad(20)
   // Using 6-row estimate (not 8) so 2 rows fit at larger font sizes; shrink-to-fit handles actual overflow
   const _motorCardH = Math.round(60 + 6 * _motorRowH + 20);
+  // Team sport card height estimate (accurate accounting for all parts):
+  //   header: padding (headerPx * 1.0) + text + 1px border = ~headerPx*2 + 12
+  //   body: 12px top pad + 2 rows of max(logoPx, scorePx, abbrPx+namePx+4) + 9px gap + 1px vs-line + 14px bot pad
+  //   stats bar (if enabled): +9px margin + 9px padding + 1px border + 15px stat-val + 9px stat-lbl = ~43px
+  const _teamRowH = Math.max(_eff_logoPx, _eff_scorePx, _eff_abbrPx * 1.2 + _eff_namePx * 1.2 + 4);
+  const _statsH = (state.statsDepth && state.statsDepth !== 'basic') ? 43 : 0;
+  const _teamCardH = Math.round((_eff_headerPx * 2 + 12) + 12 + (_teamRowH * 2) + 9 + 1 + 14 + _statsH);
   const cardH = hasMotorSports ? Math.max(_motorCardH, Math.round(220 * scale))
     : hasIndividualSports ? Math.round(260 * scale)
-    : Math.round(130 * scale);
+    : Math.max(_teamCardH, Math.round(130 * scale));
   const sectionHeaderH = 36; // league-header height
   const gridGap = 9;
   const pagePad = 28; // padding inside page
@@ -7982,6 +8144,13 @@ function renderStreamCanvas() {
       grid.style.setProperty('--card-abbr-size',  Math.round(state.display.abbrSize  * scale) + 'px');
       grid.style.setProperty('--card-name-size',  Math.round(state.display.nameSize  * scale) + 'px');
       grid.style.setProperty('--card-name-color', state.display.nameColor);
+      grid.style.setProperty('--team-logo-size',  Math.round((state.display.logoSize||34) * scale) + 'px');
+      grid.style.setProperty('--card-header-size', Math.round((state.display.headerSize||11) * scale) + 'px');
+      grid.style.setProperty('--card-period-size', Math.round((state.display.periodSize||11) * scale) + 'px');
+      grid.style.setProperty('--card-headshot-size', Math.round((state.display.headshotSize||28) * scale) + 'px');
+      if (state.display.liveColor) grid.style.setProperty('--card-live-color', state.display.liveColor);
+      if (state.display.finalColor) grid.style.setProperty('--card-final-color', state.display.finalColor);
+      if (state.display.periodColor) grid.style.setProperty('--card-period-color', state.display.periodColor);
       const _dc = _activeStreamDisplayConfig || {};
       if (_dc.card_title_size) grid.style.setProperty('--card-title-size', Math.round(_dc.card_title_size * scale) + 'px');
       if (_dc.motor_label_color) grid.style.setProperty('--motor-label-color', _dc.motor_label_color);
