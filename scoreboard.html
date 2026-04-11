@@ -838,10 +838,8 @@ body.stream-mode .card-header{padding:4px 10px;}
           <input type="range" min="9" max="22" value="11" id="sl-period" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-period">11px</span>
         </div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of player headshot circles shown on individual-sport cards (PGA, F1, NASCAR, Tennis).">Headshot Size</span>
-          <input type="range" min="20" max="56" value="28" id="sl-headshot" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-headshot">28px</span>
+        <div style="margin-top:6px;padding:8px 12px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:7px;font-size:11px;color:var(--text-dim);">
+          💡 <strong>Headshot size</strong> is now per-sport. Adjust it in <strong>Sports Library</strong> (expand a motor/tennis sport row) for the main view, or in the scoreboard editor's Display step for per-scoreboard stream output.
         </div>
       </div>
 
@@ -1529,14 +1527,21 @@ body.stream-mode .card-header{padding:4px 10px;}
         <p>Enable or disable sports globally. Enabled sports appear in the sidebar and can be toggled per scoreboard.</p>
       </div>
 
+      <div class="modal-sublabel" style="margin-bottom:16px;">Enable or disable sports globally. <strong>Individual sports</strong> (PGA, F1, NASCAR, ATP, WTA) can be expanded ▸ to adjust their per-sport display settings (e.g. headshot size) for the main scoreboard view.</div>
+
       <div style="margin-bottom:18px;">
-        <div class="section-label" style="margin-bottom:8px;">🏆 Pro &amp; Individual Sports</div>
+        <div class="section-label" style="margin-bottom:8px;">🏆 Pro Leagues</div>
         <div id="sg-pro" style="display:flex;flex-direction:column;gap:5px;"></div>
       </div>
 
       <div style="margin-bottom:18px;">
         <div class="section-label" style="margin-bottom:8px;">🏎️ Motorsport</div>
         <div id="sg-motor" style="display:flex;flex-direction:column;gap:5px;"></div>
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <div class="section-label" style="margin-bottom:8px;">🎾 Tennis</div>
+        <div id="sg-tennis" style="display:flex;flex-direction:column;gap:5px;"></div>
       </div>
 
       <div style="margin-bottom:18px;">
@@ -2957,6 +2962,7 @@ function closeSbEditor(){
   });
   document.getElementById('sbListView').style.display='block';
   _activeSbId=null;
+  _editorDraft={}; // clear draft so browsing view uses state.display, not stale editor values
 }
 
 // ── Audio editor helpers ───────────────────────────────────────────────────────
@@ -4070,7 +4076,7 @@ function refreshSportToggles(){buildSportToggles();}
 // =====================
 function applyDisplay(){
   const abbrEl=document.getElementById('sl-abbr'),scoreEl=document.getElementById('sl-score'),nameEl=document.getElementById('sl-name'),colorEl=document.getElementById('nameColorPicker'),tickerEl=document.getElementById('sl-ticker'),logoEl=document.getElementById('sl-logo');
-  const headerEl=document.getElementById('sl-header'),periodEl=document.getElementById('sl-period'),headshotEl=document.getElementById('sl-headshot');
+  const headerEl=document.getElementById('sl-header'),periodEl=document.getElementById('sl-period');
   const liveColorEl=document.getElementById('liveColorPicker'),finalColorEl=document.getElementById('finalColorPicker'),periodColorEl=document.getElementById('periodColorPicker');
   if(abbrEl){state.display.abbrSize=parseInt(abbrEl.value);document.getElementById('val-abbr').textContent=abbrEl.value+'px';}
   if(scoreEl){state.display.scoreSize=parseInt(scoreEl.value);document.getElementById('val-score').textContent=scoreEl.value+'px';}
@@ -4079,7 +4085,6 @@ function applyDisplay(){
   if(logoEl){state.display.logoSize=parseInt(logoEl.value);const lv=document.getElementById('val-logo');if(lv)lv.textContent=logoEl.value+'px';}
   if(headerEl){state.display.headerSize=parseInt(headerEl.value);document.getElementById('val-header').textContent=headerEl.value+'px';}
   if(periodEl){state.display.periodSize=parseInt(periodEl.value);document.getElementById('val-period').textContent=periodEl.value+'px';}
-  if(headshotEl){state.display.headshotSize=parseInt(headshotEl.value);document.getElementById('val-headshot').textContent=headshotEl.value+'px';}
   if(liveColorEl){state.display.liveColor=liveColorEl.value;document.getElementById('liveColorVal').textContent=liveColorEl.value;document.getElementById('liveColorSwatch').style.background=liveColorEl.value;}
   if(finalColorEl){state.display.finalColor=finalColorEl.value;document.getElementById('finalColorVal').textContent=finalColorEl.value;document.getElementById('finalColorSwatch').style.background=finalColorEl.value;}
   if(periodColorEl){state.display.periodColor=periodColorEl.value;document.getElementById('periodColorVal').textContent=periodColorEl.value;document.getElementById('periodColorSwatch').style.background=periodColorEl.value;}
@@ -4093,7 +4098,6 @@ function applyDisplay(){
     displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
     displayRoot.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
     displayRoot.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    displayRoot.style.setProperty('--card-headshot-size',(state.display.headshotSize||28)+'px');
     if(state.display.liveColor) displayRoot.style.setProperty('--card-live-color',state.display.liveColor);
     if(state.display.finalColor) displayRoot.style.setProperty('--card-final-color',state.display.finalColor);
     if(state.display.periodColor) displayRoot.style.setProperty('--card-period-color',state.display.periodColor);
@@ -4108,7 +4112,6 @@ function applyDisplay(){
     preview.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
     preview.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
     preview.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    preview.style.setProperty('--card-headshot-size',(state.display.headshotSize||28)+'px');
     if(state.display.liveColor) preview.style.setProperty('--card-live-color',state.display.liveColor);
     if(state.display.finalColor) preview.style.setProperty('--card-final-color',state.display.finalColor);
     if(state.display.periodColor) preview.style.setProperty('--card-period-color',state.display.periodColor);
@@ -4132,7 +4135,6 @@ function initDisplayControls(){
     if(dc.card_name_color != null) state.display.nameColor = dc.card_name_color;
     if(dc.card_header_size != null) state.display.headerSize = dc.card_header_size;
     if(dc.card_period_size != null) state.display.periodSize = dc.card_period_size;
-    if(dc.card_headshot_size != null) state.display.headshotSize = dc.card_headshot_size;
     if(dc.card_live_color != null) state.display.liveColor = dc.card_live_color;
     if(dc.card_final_color != null) state.display.finalColor = dc.card_final_color;
     if(dc.card_period_color != null) state.display.periodColor = dc.card_period_color;
@@ -4150,7 +4152,6 @@ function initDisplayControls(){
     displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
     displayRoot.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
     displayRoot.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    displayRoot.style.setProperty('--card-headshot-size',(state.display.headshotSize||28)+'px');
     if(state.display.liveColor) displayRoot.style.setProperty('--card-live-color',state.display.liveColor);
     if(state.display.finalColor) displayRoot.style.setProperty('--card-final-color',state.display.finalColor);
     if(state.display.periodColor) displayRoot.style.setProperty('--card-period-color',state.display.periodColor);
@@ -4164,7 +4165,6 @@ function initDisplayControls(){
   const chanEl=document.getElementById('sl-channel');if(chanEl){chanEl.value=state.display.channelSize||11;const cv=document.getElementById('val-channel');if(cv)cv.textContent=(state.display.channelSize||11)+'px';}
   const headerEl2=document.getElementById('sl-header');if(headerEl2){const v=state.display.headerSize||11;headerEl2.value=v;document.getElementById('val-header').textContent=v+'px';}
   const periodEl2=document.getElementById('sl-period');if(periodEl2){const v=state.display.periodSize||11;periodEl2.value=v;document.getElementById('val-period').textContent=v+'px';}
-  const headshotEl2=document.getElementById('sl-headshot');if(headshotEl2){const v=state.display.headshotSize||28;headshotEl2.value=v;document.getElementById('val-headshot').textContent=v+'px';}
   const liveColorEl2=document.getElementById('liveColorPicker');if(liveColorEl2){const v=state.display.liveColor||'#00ff88';liveColorEl2.value=v;document.getElementById('liveColorSwatch').style.background=v;document.getElementById('liveColorVal').textContent=v;}
   const finalColorEl2=document.getElementById('finalColorPicker');if(finalColorEl2){const v=state.display.finalColor||'#3d5a78';finalColorEl2.value=v;document.getElementById('finalColorSwatch').style.background=v;document.getElementById('finalColorVal').textContent=v;}
   const periodColorEl2=document.getElementById('periodColorPicker');if(periodColorEl2){const v=state.display.periodColor||'#7a9ab8';periodColorEl2.value=v;document.getElementById('periodColorSwatch').style.background=v;document.getElementById('periodColorVal').textContent=v;}
@@ -4255,22 +4255,70 @@ function handleModalOverlay(e){}
 // =====================
 //  SPORTS SETTINGS TAB
 // =====================
+// Sports that render player/driver headshots (have per-sport display settings)
+const INDIVIDUAL_HEADSHOT_SPORTS = new Set(['pga','f1','nascar','nascar-noaps','nascar-trucks','atp','wta']);
+
 function buildSportsTab(){
-  ['pro','soccer','ncaam','ncaaw'].forEach(group=>{
+  if(!state.display.sportHeadshots) state.display.sportHeadshots={};
+  ['pro','motor','tennis','soccer','ncaam','ncaaw'].forEach(group=>{
     const c=document.getElementById(`sg-${group}`);if(!c)return;c.innerHTML='';
     ALL_SPORTS.filter(s=>s.group===group).forEach(sport=>{
       const on=state.enabledSports.has(sport.id);
-      const row=document.createElement('div');
-      row.className=`sport-setting-row${on?' enabled':''}`;
-      row.innerHTML=`
-        <div class="sport-setting-info">
-          <div style="width:8px;height:8px;border-radius:2px;background:${sport.color}"></div>
-          <span class="sport-setting-name">${sport.emoji} ${sport.name}</span>
+      const expandable=INDIVIDUAL_HEADSHOT_SPORTS.has(sport.id);
+      const wrap=document.createElement('div');
+      wrap.style.cssText='margin-bottom:5px;';
+      const curHs=state.display.sportHeadshots[sport.id]||28;
+      // Top row: name + expand chevron (if expandable) + enable toggle
+      const expandBtn=expandable
+        ? `<button type="button" id="sport-expand-${sport.id}" onclick="toggleSportExpand('${sport.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:14px;padding:0 8px;display:flex;align-items:center;transition:transform 0.2s;" title="Display settings">▸</button>`
+        : '';
+      wrap.innerHTML=`
+        <div class="sport-setting-row${on?' enabled':''}" style="display:flex;align-items:center;">
+          ${expandBtn}
+          <div class="sport-setting-info" style="flex:1;">
+            <div style="width:8px;height:8px;border-radius:2px;background:${sport.color}"></div>
+            <span class="sport-setting-name">${sport.emoji} ${sport.name}</span>
+          </div>
+          <div class="small-toggle${on?' on':''}" id="ss-toggle-${sport.id}" onclick="toggleSportEnabled('${sport.id}',this)"></div>
         </div>
-        <div class="small-toggle${on?' on':''}" id="ss-toggle-${sport.id}" onclick="toggleSportEnabled('${sport.id}',this)"></div>`;
-      c.appendChild(row);
+        ${expandable?`
+          <div id="sport-expand-panel-${sport.id}" style="display:none;padding:12px 14px;margin-top:4px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">${sport.emoji} ${sport.name} · Main View Display</div>
+            <div class="modal-slider-row" style="margin:0;">
+              <span class="modal-slider-label" data-tip="Size of driver/player headshot circles on ${sport.name} cards in the main scoreboard.html browsing view. Per-scoreboard stream output is controlled in the scoreboard editor's Display step.">Headshot Size</span>
+              <input type="range" min="20" max="64" step="1" value="${curHs}" id="sport-hs-${sport.id}"
+                oninput="setSportHeadshotSize('${sport.id}',this.value)">
+              <span class="modal-slider-val" id="sport-hs-val-${sport.id}">${curHs}px</span>
+            </div>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:6px;line-height:1.5;">
+              Affects the main scoreboard.html browsing view only. For per-scoreboard stream output, use the scoreboard editor's <strong>Display</strong> step.
+            </div>
+          </div>
+        `:''}
+      `;
+      c.appendChild(wrap);
     });
   });
+}
+
+function toggleSportExpand(sportId){
+  const panel=document.getElementById('sport-expand-panel-'+sportId);
+  const btn=document.getElementById('sport-expand-'+sportId);
+  if(!panel)return;
+  const open=panel.style.display==='none';
+  panel.style.display=open?'block':'none';
+  if(btn)btn.style.transform=open?'rotate(90deg)':'';
+}
+
+function setSportHeadshotSize(sportId,val){
+  const n=parseInt(val)||28;
+  if(!state.display.sportHeadshots) state.display.sportHeadshots={};
+  state.display.sportHeadshots[sportId]=n;
+  const valEl=document.getElementById('sport-hs-val-'+sportId);
+  if(valEl)valEl.textContent=n+'px';
+  settingsSave(saveDisplay);
+  // Re-render scoreboard to pick up new size on already-rendered cards
+  if(typeof renderScoreboard==='function') renderScoreboard();
 }
 
 function toggleSportEnabled(id,toggleEl){
@@ -4627,18 +4675,21 @@ function buildMotorsportEditorPanel(draft){
   const tenLive=mc.tennis_live!==false,tenUpcoming=mc.tennis_upcoming!==false,tenCompleted=mc.tennis_completed!==false;
   const tenMaxCompleted=mc.tennis_max_completed||5,tenMaxUpcoming=mc.tennis_max_upcoming||10;
   const tenRankings=mc.tennis_rankings!==false,tenRankingsCount=mc.tennis_rankings_count||50;
+  const f1HsSize=mc.f1_headshot_size||28,nasHsSize=mc.nascar_headshot_size||28,noapsHsSize=mc.noaps_headshot_size||28,trucksHsSize=mc.trucks_headshot_size||28,pgaHsSize=mc.pga_headshot_size||28,tenHsSize=mc.tennis_headshot_size||28;
   // Bake the numeric ID at render time — no runtime variable lookup in onclick/onchange
   const _mcSbId=parseInt((draft&&draft.id)||0)||parseInt(_activeSbId)||0;
   const row=(val,key,color,title,sub)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;width:100%;box-sizing:border-box;"><input type="checkbox" ${val?'checked':''} onchange="setMotorConfig('${key}',this.checked,${_mcSbId})" style="width:15px;height:15px;flex-shrink:0;accent-color:${color};"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${title}</div><div style="font-size:11px;color:var(--text-dim);">${sub}</div></div></label>`;
   const countSel=(val,key,color,label)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div></div><div style="display:flex;gap:4px;">${[1,2,3,5,10].map(n=>`<button onclick="setMotorConfig('${key}',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===val?color:'var(--border)'};background:${n===val?color:'var(--bg-card)'};color:${n===val?'#000':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>`;
-  const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Results','Full finishing order pages')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Championship standings')}${countSel(f1MaxRaces,'f1_max_races','#e10600','📋 Past Races to Show')}</div>`:'';
-  const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}</div>`:'';
-  const xfinSec=hasNoaps?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ff6b35;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ff6b35;">NOAPS · O'REILLY AUTO PARTS SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(noapsLive,'noaps_live','#ff6b35','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(noapsLast,'noaps_last','#ff6b35','🏁 Last Race Result','Final finishing order from last race')}${row(noapsStand,'noaps_standings','#ff6b35','📊 Driver Standings','Season points standings')}${countSel(noapsMaxRaces,'noaps_max_races','#ff6b35','📋 Past Races to Show')}</div>`:'';
-  const truckSec=hasTrucks?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00b4d8;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00b4d8;">NASCAR CRAFTSMAN TRUCK SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(truckLive,'trucks_live','#00b4d8','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(truckLast,'trucks_last','#00b4d8','🏁 Last Race Result','Final finishing order from last race')}${row(truckStand,'trucks_standings','#00b4d8','📊 Driver Standings','Season points standings')}${countSel(truckMaxRaces,'trucks_max_races','#00b4d8','📋 Past Races to Show')}</div>`:'';
+  // Headshot size slider — live preview on oninput, save on onchange (debounced by slider release)
+  const hsSlider=(val,prefix,color,label,desc)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">${label}</div><div style="font-size:11px;color:var(--text-dim);">${desc}</div></div><input type="range" min="20" max="64" value="${val}" id="hs-slider-${prefix}" style="width:120px;flex-shrink:0;" oninput="document.getElementById('hs-val-${prefix}').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-headshot-size',this.value+'px');" onchange="setMotorConfig('${prefix}_headshot_size',parseInt(this.value),${_mcSbId})"><span id="hs-val-${prefix}" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:${color};min-width:42px;text-align:right;flex-shrink:0;">${val}px</span></div>`;
+  const f1Sec=hasF1?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #e10600;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏎️</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#e10600;">FORMULA 1</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via Jolpica API · Free</span></div>${row(f1Next,'f1_next_race','#e10600','📅 Next Race','Circuit, country, date and countdown')}${row(f1Last,'f1_last_race','#e10600','🏆 Last Race Results','Full finishing order pages')}${row(f1Stand,'f1_standings','#e10600','📊 Driver Standings','Championship standings')}${countSel(f1MaxRaces,'f1_max_races','#e10600','📋 Past Races to Show')}${hsSlider(f1HsSize,'f1','#e10600','🖼️ Headshot Size','Driver photo circle size on F1 cards')}</div>`:'';
+  const nasSec=hasNascar?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ffd700;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffd700;">NASCAR CUP SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(nasLive,'nascar_live','#ffd700','🟢 Live Race Leaderboard','Real-time top 10 during active races')}${row(nasLast,'nascar_last','#ffd700','🏁 Last Race Result','Final finishing order from last race')}${row(nasStand,'nascar_standings','#ffd700','📊 Driver Standings','Season points standings')}${countSel(nasMaxRaces,'nascar_max_races','#ffd700','📋 Past Races to Show')}${hsSlider(nasHsSize,'nascar','#ffd700','🖼️ Headshot Size','Driver photo circle size on Cup Series cards')}</div>`:'';
+  const xfinSec=hasNoaps?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #ff6b35;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#ff6b35;">NOAPS · O'REILLY AUTO PARTS SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(noapsLive,'noaps_live','#ff6b35','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(noapsLast,'noaps_last','#ff6b35','🏁 Last Race Result','Final finishing order from last race')}${row(noapsStand,'noaps_standings','#ff6b35','📊 Driver Standings','Season points standings')}${countSel(noapsMaxRaces,'noaps_max_races','#ff6b35','📋 Past Races to Show')}${hsSlider(noapsHsSize,'noaps','#ff6b35','🖼️ Headshot Size','Driver photo circle size on NOAPS cards')}</div>`:'';
+  const truckSec=hasTrucks?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00b4d8;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🏁</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00b4d8;">NASCAR CRAFTSMAN TRUCK SERIES</span><span style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-left:4px;">via NASCAR Live Feed</span></div>${row(truckLive,'trucks_live','#00b4d8','🟢 Live Race Leaderboard','Real-time leaderboard during active races')}${row(truckLast,'trucks_last','#00b4d8','🏁 Last Race Result','Final finishing order from last race')}${row(truckStand,'trucks_standings','#00b4d8','📊 Driver Standings','Season points standings')}${countSel(truckMaxRaces,'trucks_max_races','#00b4d8','📋 Past Races to Show')}${hsSlider(trucksHsSize,'trucks','#00b4d8','🖼️ Headshot Size','Driver photo circle size on Truck Series cards')}</div>`:'';
   const hasPGA=(_editorDraft.sport_config||{})['pga'];
   const pgaHistory=mc.pga_history!==false,pgaLive=mc.pga_live!==false,pgaShowCut=mc.pga_show_cut!==false;
-  const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${row(pgaShowCut,'pga_show_cut','#00594f','✂️ Show Cut Players','Include players who missed the cut (CUT/MC/WD/DQ) in results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}</div>`:'';
-  const tenSec=(hasATP||hasWTA)?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #0066cc;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🎾</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#0066cc;">TENNIS${hasATP&&hasWTA?' (ATP + WTA)':hasATP?' (ATP)':' (WTA)'}</span></div>${row(tenLive,'tennis_live','#0066cc','🟢 Live Matches','Show active matches with set-by-set scores')}${row(tenUpcoming,'tennis_upcoming','#0066cc','📅 Upcoming Matches','Show scheduled matches not yet started')}${row(tenCompleted,'tennis_completed','#0066cc','🏆 Completed Matches','Show recently finished match results')}${row(tenRankings,'tennis_rankings','#0066cc','📊 World Rankings','Show ATP/WTA world ranking standings card')}<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📋 Completed Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_completed',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxCompleted?'#0066cc':'var(--border)'};background:${n===tenMaxCompleted?'#0066cc':'var(--bg-card)'};color:${n===tenMaxCompleted?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📅 Upcoming Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_upcoming',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxUpcoming?'#0066cc':'var(--border)'};background:${n===tenMaxUpcoming?'#0066cc':'var(--bg-card)'};color:${n===tenMaxUpcoming?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🏅 Rankings Players to Show</div></div><div style="display:flex;gap:4px;">${[10,20,30,50].map(n=>`<button onclick="setMotorConfig('tennis_rankings_count',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenRankingsCount?'#0066cc':'var(--border)'};background:${n===tenRankingsCount?'#0066cc':'var(--bg-card)'};color:${n===tenRankingsCount?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div></div>`:'' ;
+  const pgaSec=hasPGA?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #00594f;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">⛳</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#00594f;">PGA TOUR</span></div>${row(pgaLive,'pga_live','#00594f','🟢 Live Tournament','Show leaderboard during active rounds')}${row(pgaHistory,'pga_history','#00594f','🏆 Past Tournaments','Show completed tournament results')}${row(pgaShowCut,'pga_show_cut','#00594f','✂️ Show Cut Players','Include players who missed the cut (CUT/MC/WD/DQ) in results')}${countSel(pgaMaxEventsUI,'pga_max_events','#00594f','📋 Past Tournaments to Show')}${hsSlider(pgaHsSize,'pga','#00594f','🖼️ Headshot Size','Player photo circle size on PGA leaderboard cards')}</div>`:'';
+  const tenSec=(hasATP||hasWTA)?`<div style="margin-bottom:16px;padding:16px;background:var(--bg-card);border:1px solid #0066cc;border-radius:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:18px;">🎾</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;color:#0066cc;">TENNIS${hasATP&&hasWTA?' (ATP + WTA)':hasATP?' (ATP)':' (WTA)'}</span></div>${row(tenLive,'tennis_live','#0066cc','🟢 Live Matches','Show active matches with set-by-set scores')}${row(tenUpcoming,'tennis_upcoming','#0066cc','📅 Upcoming Matches','Show scheduled matches not yet started')}${row(tenCompleted,'tennis_completed','#0066cc','🏆 Completed Matches','Show recently finished match results')}${row(tenRankings,'tennis_rankings','#0066cc','📊 World Rankings','Show ATP/WTA world ranking standings card')}<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📋 Completed Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_completed',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxCompleted?'#0066cc':'var(--border)'};background:${n===tenMaxCompleted?'#0066cc':'var(--bg-card)'};color:${n===tenMaxCompleted?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">📅 Upcoming Matches to Show</div></div><div style="display:flex;gap:4px;">${[5,10,15,20,25].map(n=>`<button onclick="setMotorConfig('tennis_max_upcoming',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenMaxUpcoming?'#0066cc':'var(--border)'};background:${n===tenMaxUpcoming?'#0066cc':'var(--bg-card)'};color:${n===tenMaxUpcoming?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:7px;margin-bottom:6px;"><div style="flex:1;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);">🏅 Rankings Players to Show</div></div><div style="display:flex;gap:4px;">${[10,20,30,50].map(n=>`<button onclick="setMotorConfig('tennis_rankings_count',${n},${_mcSbId})" style="padding:3px 8px;border-radius:4px;border:1px solid ${n===tenRankingsCount?'#0066cc':'var(--border)'};background:${n===tenRankingsCount?'#0066cc':'var(--bg-card)'};color:${n===tenRankingsCount?'#fff':'var(--text-primary)'};font-size:12px;font-weight:700;cursor:pointer;font-family:'Share Tech Mono',monospace;">${n}</button>`).join('')}</div></div>${hsSlider(tenHsSize,'tennis','#0066cc','🖼️ Headshot Size','Player photo circle size (applies to both ATP and WTA)')}</div>`:'' ;
   const none=!hasF1&&!hasNascar&&!hasNoaps&&!hasTrucks&&!hasPGA&&!hasATP&&!hasWTA?`<div style="text-align:center;padding:30px;color:var(--text-dim);"><div style="font-size:36px;margin-bottom:10px;">🏎️</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">No Sport Configured</div><div style="font-size:11px;margin-top:4px;">Go to Step 2 → Sports to enable Formula 1, NASCAR, PGA, or Tennis</div></div>`:'';
   return `<div id="motorPanel" style=""><div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Configure what this scoreboard displays:</div>${f1Sec}${nasSec}${xfinSec}${truckSec}${pgaSec}${tenSec}${none}<div style="font-size:11px;color:var(--text-dim);padding:8px 12px;background:var(--bg-secondary);border-radius:7px;">💡 To add/remove sports go back to Step 2 → Sports</div>`;
 }
@@ -4693,10 +4744,66 @@ function buildGameCard(g){
   return state.layout==='ticker'?buildTickerCard(g):buildFullCard(g);
 }
 
+// =====================================================================
+//  PER-SPORT HEADSHOT SIZE RESOLVER
+// =====================================================================
+// Maps sport.id → motor_config key prefix. Tennis shares one prefix for
+// both ATP and WTA (per-scoreboard they'll be the same size), but the
+// main-view Sports Library lets ATP/WTA differ.
+const _MC_DISPLAY_PREFIX={
+  'f1':'f1','nascar':'nascar','nascar-noaps':'noaps','nascar-trucks':'trucks',
+  'pga':'pga','atp':'tennis','wta':'tennis',
+};
+function resolveSportId(g){
+  if(g.isF1Next||g.isF1Last||g.isF1Standings||g.isF1History) return 'f1';
+  if(g.isPGAHistory||g.isPGALive||(g.isIndividual&&(g.sportName||'').toLowerCase().includes('pga'))) return 'pga';
+  if(g.isNascarLive||g.isNascarStandings||g.isNascarLast||g.isNascarInfo||g.isNascarNext){
+    const n=(g.sportName||'').toLowerCase();
+    if(n.includes('truck')) return 'nascar-trucks';
+    if(n.includes("o'reilly")||n.includes('noaps')||n.includes('auto parts')) return 'nascar-noaps';
+    return 'nascar';
+  }
+  if(g.isTennis||g.isTennisRankings||g.isTennisRankingsHeader){
+    if((g.rankingLeague||'').toLowerCase()==='wta') return 'wta';
+    if((g.sportName||'').toUpperCase().includes('WTA')) return 'wta';
+    return 'atp';
+  }
+  return null;
+}
+function getSportHeadshotSize(sportId){
+  if(!sportId) return 28;
+  // Priority:
+  //   1. Stream mode → scoreboard's motor_config (what viewers see)
+  //   2. Editor open → _editorDraft.motor_config (live preview of in-progress edits)
+  //   3. Main browsing view → state.display.sportHeadshots (Sports Library settings)
+  //   4. Default (28px)
+  let mc={};
+  if(typeof _activeStreamDisplayConfig!=='undefined' && _activeStreamDisplayConfig){
+    const sb=(typeof _scoreboards!=='undefined'&&_scoreboards&&_scoreboards[0])||null;
+    mc=(sb&&sb.motor_config)||{};
+  } else if(typeof _editorDraft!=='undefined' && _editorDraft && _editorDraft.id){
+    mc=_editorDraft.motor_config||{};
+  }
+  const prefix=_MC_DISPLAY_PREFIX[sportId];
+  if(prefix){
+    const v=mc[prefix+'_headshot_size'];
+    if(v!=null&&!isNaN(parseInt(v))) return parseInt(v);
+  }
+  const g=state.display&&state.display.sportHeadshots;
+  if(g&&g[sportId]!=null&&!isNaN(parseInt(g[sportId]))) return parseInt(g[sportId]);
+  return 28;
+}
+function applyCardHeadshotSize(card,g){
+  const sid=resolveSportId(g);
+  const size=getSportHeadshotSize(sid);
+  card.style.setProperty('--card-headshot-size',size+'px');
+}
+
 // ── PGA leaderboard card ─────────────────────────────────────────────────────
 function buildLeaderboardCard(g){
   const card=document.createElement('div');
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
+  applyCardHeadshotSize(card,g);
   card.style.setProperty('--text-dim','var(--motor-label-color,#3d5a78)');
   card.style.setProperty('--text-secondary','var(--motor-secondary-color,#7a9ab8)');
   const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>`;
@@ -4898,6 +5005,7 @@ async function fetchTennisData(sport, sbConfig){
 function buildTennisCard(g){
   const card=document.createElement('div');
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
+  applyCardHeadshotSize(card,g);
   const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--motor-label-color,var(--text-dim));">${g.sportEmoji} ${g.sportName}</span>`;
 
   // ── World Rankings section header card ───────────────────────────────────────
@@ -5590,6 +5698,7 @@ async function fetchF1Data(sport, sbConfig){
 function buildNascarCard(g){
   const card=document.createElement('div');
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
+  applyCardHeadshotSize(card,g);
   card.style.setProperty('--text-dim','var(--motor-label-color,#3d5a78)');
   card.style.setProperty('--text-secondary','var(--motor-secondary-color,#7a9ab8)');
   const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏁 ${g.sportName}</span>`;
@@ -5629,6 +5738,7 @@ function buildNascarCard(g){
 function buildF1Card(g){
   const card = document.createElement('div');
   card.className = `game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
+  applyCardHeadshotSize(card,g);
   card.style.setProperty('--text-dim','var(--motor-label-color,#3d5a78)');
   card.style.setProperty('--text-secondary','var(--motor-secondary-color,#7a9ab8)');
   const tvBadgeF1 = (g.isScheduled && g.tv) ? buildNetworkBadges([g.tv]) : '';
@@ -7652,7 +7762,6 @@ renderFavSummary();
           if(dc.logo_size) displayRoot.style.setProperty('--team-logo-size',dc.logo_size+'px');
           if(dc.card_header_size) displayRoot.style.setProperty('--card-header-size',dc.card_header_size+'px');
           if(dc.card_period_size) displayRoot.style.setProperty('--card-period-size',dc.card_period_size+'px');
-          if(dc.card_headshot_size) displayRoot.style.setProperty('--card-headshot-size',dc.card_headshot_size+'px');
           if(dc.card_live_color) displayRoot.style.setProperty('--card-live-color',dc.card_live_color);
           if(dc.card_final_color) displayRoot.style.setProperty('--card-final-color',dc.card_final_color);
           if(dc.card_period_color) displayRoot.style.setProperty('--card-period-color',dc.card_period_color);
@@ -7664,7 +7773,6 @@ renderFavSummary();
         state.display.logoSize=dc.logo_size||state.display.logoSize;
         if(dc.card_header_size) state.display.headerSize=dc.card_header_size;
         if(dc.card_period_size) state.display.periodSize=dc.card_period_size;
-        if(dc.card_headshot_size) state.display.headshotSize=dc.card_headshot_size;
         if(dc.card_live_color) state.display.liveColor=dc.card_live_color;
         if(dc.card_final_color) state.display.finalColor=dc.card_final_color;
         if(dc.card_period_color) state.display.periodColor=dc.card_period_color;
@@ -8147,7 +8255,6 @@ function renderStreamCanvas() {
       grid.style.setProperty('--team-logo-size',  Math.round((state.display.logoSize||34) * scale) + 'px');
       grid.style.setProperty('--card-header-size', Math.round((state.display.headerSize||11) * scale) + 'px');
       grid.style.setProperty('--card-period-size', Math.round((state.display.periodSize||11) * scale) + 'px');
-      grid.style.setProperty('--card-headshot-size', Math.round((state.display.headshotSize||28) * scale) + 'px');
       if (state.display.liveColor) grid.style.setProperty('--card-live-color', state.display.liveColor);
       if (state.display.finalColor) grid.style.setProperty('--card-final-color', state.display.finalColor);
       if (state.display.periodColor) grid.style.setProperty('--card-period-color', state.display.periodColor);
