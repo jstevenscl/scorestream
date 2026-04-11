@@ -2409,7 +2409,8 @@ function renderEditorStep(sbOverride){
 
       body=`
         <div class="wiz-sublabel" style="margin-bottom:12px;">
-          Check a team to include it on this scoreboard (highlight badge on their games). Star ⭐ a team to mark it as a favorite (pinned to top, drives the Mine filter).
+          <strong>Team sports:</strong> check a team to include it on the scoreboard, star ⭐ it to pin it to the top.<br>
+          <strong>Individual sports</strong> (PGA, F1, NASCAR, ATP, WTA): star ⭐ drivers/players to highlight them on cards with a gold star.
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
           <div style="display:flex;gap:5px;flex-wrap:wrap;overflow-x:auto;padding-bottom:4px;flex:1;" id="sbTeamTabs">
@@ -2563,6 +2564,10 @@ let _sbTeamActiveSport = null;
 let _sbTeamDivFilter = 'd1';
 let _sbTeamAllTeams = [];
 
+// Sports where Step 2 shows a list of drivers/players (favorites only) instead
+// of the team browser. These don't have teams to filter — they're individual sports.
+const _INDIVIDUAL_FAV_SPORTS=new Set(['pga','f1','nascar','nascar-noaps','nascar-trucks','atp','wta']);
+
 async function sbEditorSwitchTeamTab(sportId){
   _sbTeamActiveSport = sportId;
   // Update tab styles
@@ -2572,9 +2577,15 @@ async function sbEditorSwitchTeamTab(sportId){
     t.style.background = active ? 'rgba(0,212,255,0.1)' : 'transparent';
     t.style.color = active ? 'var(--accent)' : 'var(--text-dim)';
   });
-  // Show division pills for NCAA
+  // Show division pills for NCAA only
   const pillEl = document.getElementById('sbTeamDivPills');
   if(pillEl) pillEl.style.display = sportId.startsWith('ncaa') ? 'flex' : 'none';
+  // Hide "Select All" for individual sports (no team filtering, only favorites)
+  const selectAllBtn=document.getElementById('sbSelectAllBtn');
+  if(selectAllBtn) selectAllBtn.style.display=_INDIVIDUAL_FAV_SPORTS.has(sportId)?'none':'';
+  // Update search placeholder
+  const searchInput=document.getElementById('sbTeamSearch');
+  if(searchInput) searchInput.placeholder=_INDIVIDUAL_FAV_SPORTS.has(sportId)?'Search drivers / players...':'Search teams...';
   await sbEditorLoadTeams(sportId);
 }
 
@@ -2582,6 +2593,20 @@ async function sbEditorLoadTeams(sportId){
   const listEl = document.getElementById('sbTeamList');
   if(!listEl) return;
   listEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:12px 0;grid-column:1/-1;">Loading...</div>';
+  // Individual sports → load drivers/players from motor cache for favoriting
+  if(_INDIVIDUAL_FAV_SPORTS.has(sportId)){
+    try{
+      const players=await loadIndividualSportPlayers(sportId);
+      _sbTeamAllTeams=players; // reuse the storage even though it's players now
+      const search=document.getElementById('sbTeamSearch')?.value||'';
+      sbEditorRenderPlayers(search);
+    }catch(e){
+      console.warn('[editor] failed to load players for '+sportId,e);
+      listEl.innerHTML='<div style="color:var(--accent-red);font-size:12px;grid-column:1/-1;">Failed to load players. The motor cache may not be populated yet — trigger update-motor-cache.yml on GitHub Actions.</div>';
+    }
+    return;
+  }
+  // Team sports → existing team browser
   try {
     let teams = [];
     if(sportId.startsWith('ncaa')){
@@ -2595,6 +2620,101 @@ async function sbEditorLoadTeams(sportId){
   } catch(e){
     listEl.innerHTML = '<div style="color:var(--accent-red);font-size:12px;grid-column:1/-1;">Failed to load teams</div>';
   }
+}
+
+// Maps editor sport.id → motor cache key for player/driver lists
+const _PLAYER_CACHE_KEYS={
+  'pga':'pga-players',
+  'f1':'f1-drivers',
+  'nascar':'nascar-drivers',         // Fox Sports cache covers all 3 series
+  'nascar-noaps':'nascar-drivers',
+  'nascar-trucks':'nascar-drivers',
+  'atp':'atp-players',
+  'wta':'wta-players',
+};
+async function loadIndividualSportPlayers(sportId){
+  const cacheKey=_PLAYER_CACHE_KEYS[sportId];
+  if(!cacheKey) return [];
+  const r=await fetch(`${API_BASE}/motor/cache/${cacheKey}`,{signal:AbortSignal.timeout(5000)});
+  if(!r.ok) throw new Error('cache fetch '+r.status);
+  const j=await r.json();
+  let data=j.data||{};
+  if(typeof data==='string'){ try{ data=JSON.parse(data); }catch(e){ data={}; } }
+  // Cache shapes vary: pga-players is keyed by athlete ID, nascar-drivers by name slug,
+  // tennis-players by athlete ID. Normalize to a flat array of {name, headshot, country/team}.
+  const players=[];
+  Object.values(data).forEach(p=>{
+    if(!p||typeof p!=='object'||!p.name) return;
+    players.push({
+      name: p.name,
+      headshot: p.headshot||'',
+      country: p.country||'',
+      team: p.team||'',
+    });
+  });
+  // Sort alphabetically for predictable browsing
+  players.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  return players;
+}
+
+function sbEditorRenderPlayers(query=''){
+  const listEl=document.getElementById('sbTeamList');
+  if(!listEl) return;
+  const sportId=_sbTeamActiveSport;
+  const q=(query||'').toLowerCase().trim();
+  let players=_sbTeamAllTeams||[];
+  if(q) players=players.filter(p=>(p.name||'').toLowerCase().includes(q));
+  if(!players.length){
+    listEl.innerHTML='<div style="color:var(--text-dim);font-size:12px;padding:12px 0;grid-column:1/-1;">No players found. The motor cache may not be populated yet.</div>';
+    return;
+  }
+  // Read favorites for this sport from draft
+  const favPlayers=(_editorDraft.display_config&&_editorDraft.display_config.favPlayers)||{};
+  const favs=new Set(favPlayers[sportId]||[]);
+  // Update count display below the list
+  const countEl=document.getElementById('sbTeamCount');
+  if(countEl){
+    const totalFav=Object.values(favPlayers).flat().length;
+    countEl.textContent=`⭐ ${favs.size} favorited in ${sportId.toUpperCase()} · ${totalFav} total favorites across all sports`;
+  }
+  listEl.innerHTML=players.map(p=>{
+    const safeName=p.name.replace(/'/g,"\\'");
+    const fav=favs.has(p.name);
+    const hsHtml=p.headshot
+      ? `<img src="${p.headshot}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`
+      : `<div style="width:32px;height:32px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-dim);">👤</div>`;
+    const sub=p.country||p.team||'';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:${fav?'rgba(255,215,0,0.06)':'var(--bg-card)'};border:1px solid ${fav?'rgba(255,215,0,0.4)':'var(--border)'};border-radius:8px;transition:all 0.15s;">
+      ${hsHtml}
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
+        ${sub?`<div style="font-size:10px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sub}</div>`:''}
+      </div>
+      <button onclick="sbEditorTogglePlayerFav('${safeName}')" title="${fav?'Unfavorite':'Favorite'} this player"
+        style="background:none;border:none;cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0;
+          filter:${fav?'grayscale(0) drop-shadow(0 0 4px rgba(255,215,0,0.7))':'grayscale(1) opacity(0.35)'};
+          transition:filter 0.15s;">⭐</button>
+    </div>`;
+  }).join('');
+}
+
+function sbEditorTogglePlayerFav(name){
+  const sportId=_sbTeamActiveSport;
+  if(!sportId) return;
+  if(!_editorDraft.display_config) _editorDraft.display_config={};
+  if(!_editorDraft.display_config.favPlayers) _editorDraft.display_config.favPlayers={};
+  const favs=_editorDraft.display_config.favPlayers;
+  if(!favs[sportId]) favs[sportId]=[];
+  const idx=favs[sportId].indexOf(name);
+  if(idx>=0){
+    favs[sportId].splice(idx,1);
+    if(!favs[sportId].length) delete favs[sportId];
+  }else{
+    favs[sportId].push(name);
+  }
+  // Re-render to reflect new state
+  const search=document.getElementById('sbTeamSearch')?.value||'';
+  sbEditorRenderPlayers(search);
 }
 
 function sbEditorRenderTeams(query=''){
@@ -3069,7 +3189,13 @@ function sbPreviewCardScale(val){
 }
 
 function sbEditorFilterTeams(query){
-  sbEditorRenderTeams(query);
+  // Dispatch based on whether the active tab is an individual sport (player favorites)
+  // or a team sport (team browser)
+  if(_INDIVIDUAL_FAV_SPORTS.has(_sbTeamActiveSport)){
+    sbEditorRenderPlayers(query);
+  } else {
+    sbEditorRenderTeams(query);
+  }
 }
 
 // Toggle a team as a favorite within the scoreboard editor (independent of team_config checkbox)
@@ -5009,6 +5135,36 @@ function applyCardHeadshotSize(card,g){
   card.style.setProperty('--card-headshot-size',size+'px');
 }
 
+// Returns the Set of favorited player names for a given sport in the current
+// rendering context. Stream mode reads from the active stream config; editor
+// mode reads from _editorDraft. Returns an empty set in browsing mode (no
+// per-sport player favorites stored globally for browsing yet).
+function getSportFavPlayers(sportId){
+  if(!sportId) return null;
+  let dc=null;
+  if(typeof _activeStreamDisplayConfig!=='undefined' && _activeStreamDisplayConfig){
+    dc=_activeStreamDisplayConfig;
+  } else if(typeof _editorDraft!=='undefined' && _editorDraft && _editorDraft.id){
+    dc=_editorDraft.display_config;
+  }
+  const fp=(dc&&dc.favPlayers)||{};
+  const list=fp[sportId];
+  if(!Array.isArray(list)||!list.length) return null;
+  return new Set(list);
+}
+
+// Returns a gold star <span> HTML if the player name is favorited for
+// the given sport, or '' otherwise. Uses the Unicode ★ glyph at a
+// generous size with a soft glow — renders crisply in HLS output and
+// looks much better than the old clip-path polygon approach.
+function favPlayerStar(sportId, playerName){
+  if(!playerName) return '';
+  const favs=getSportFavPlayers(sportId);
+  if(!favs) return '';
+  if(!favs.has(playerName)) return '';
+  return '<span style="display:inline-block;font-size:18px;line-height:1;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,0.85),0 0 2px rgba(255,180,0,0.9);margin-right:5px;flex-shrink:0;vertical-align:middle;-webkit-font-smoothing:antialiased;" title="Favorited">★</span>';
+}
+
 // ── PGA leaderboard card ─────────────────────────────────────────────────────
 function buildLeaderboardCard(g){
   const card=document.createElement('div');
@@ -5045,6 +5201,7 @@ function buildLeaderboardCard(g){
     ?`<div class="status-live"><div class="status-live-dot"></div>${g.periodDesc}</div>`
     :g.isFinal?`<span class="status-final">FINAL</span>`
     :`<span class="status-upcoming">${formatTime(g.date)}</span>`;
+  const _pgaSid='pga';
   const rows=(g.teams||[]).map((p,i)=>{
     const pos=p.position||(String(i+1));
     const scoreStr=String(p.score||'–');
@@ -5055,10 +5212,11 @@ function buildLeaderboardCard(g){
     const hsHtml=p.headshot
       ?`<img src="${p.headshot}" style="width:var(--card-headshot-size,28px);height:var(--card-headshot-size,28px);border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`
       :'';
+    const star=favPlayerStar(_pgaSid,p.name);
     return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:26px;text-align:right;flex-shrink:0;">${pos}</span>
       ${hsHtml}
-      <span style="flex:1;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span>
+      <span style="flex:1;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></span>
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);font-weight:700;color:${scoreColor};min-width:34px;text-align:right;">${scoreStr}</span>
       ${thruStr?`<span style="font-size:var(--card-name-size,11px);color:${thruColor};font-family:'Share Tech Mono',monospace;min-width:18px;text-align:right;">${thruStr}</span>`:''}
     </div>`;
@@ -5237,6 +5395,7 @@ function buildTennisCard(g){
 
   // ── World Rankings card ───────────────────────────────────────────────────────
   if(g.isTennisRankings){
+    const _tenSid=resolveSportId(g)||'atp';
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-name-size,11px);font-family:'Share Tech Mono',monospace;color:var(--motor-label-color,var(--text-dim));">WORLD RANKINGS</span></div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
     const medals=['🥇','🥈','🥉'];
@@ -5251,11 +5410,12 @@ function buildTennisCard(g){
       } else if(p.flag){
         leftEl=`<img src="${p.flag}" style="width:24px;height:15px;object-fit:cover;border-radius:2px;border:1px solid var(--border);flex-shrink:0;" onerror="this.style.display='none'">`;
       }
+      const star=favPlayerStar(_tenSid,p.name);
       return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
         ${posEl}
         ${leftEl}
         <div style="flex:1;min-width:0;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>
           ${p.country?`<div style="font-size:9px;color:var(--motor-label-color,var(--text-dim));font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;">${p.country}</div>`:''}
         </div>
         <div style="text-align:right;flex-shrink:0;">
@@ -5286,6 +5446,7 @@ function buildTennisCard(g){
   // Determine left-element width for header alignment
   const leftW = (p1.headshot||p2.headshot) ? 38 : (p1.flag||p2.flag) ? 36 : 0;
   const setHeader=setCols.map((_,i)=>`<span style="font-size:9px;color:var(--motor-label-color,var(--text-dim));font-family:'Share Tech Mono',monospace;width:18px;text-align:center;">S${i+1}</span>`).join('');
+  const _tenMatchSid=resolveSportId(g)||'atp';
   const renderPlayer=(p,sets)=>{
     const setsWonColor=p.winner?'var(--accent-green)':'var(--motor-secondary-color,var(--text-secondary))';
     const setsHtml=sets.map(s=>{
@@ -5306,9 +5467,11 @@ function buildTennisCard(g){
         ${p.country?`<span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:0.3px;text-transform:uppercase;">${p.country.slice(0,3)}</span>`:''}
       </div>`;
     }
+    // Tennis match cards favorite by full name (p.name) since p.abbr is "Sinner J." style
+    const star=favPlayerStar(_tenMatchSid,p.name);
     return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);">
       ${leftEl}
-      <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.abbr}</span>
+      <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.abbr}</span></span>
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);font-weight:900;color:${setsWonColor};width:16px;text-align:center;">${(g.isLive||g.isFinal)?p.score:''}</span>
       ${setsHtml}
     </div>`;
@@ -5929,9 +6092,11 @@ function buildNascarCard(g){
     return card;
   }
   const _nasHsImg=hs=>hs?`<img src="${hs}" style="width:var(--card-headshot-size,28px);height:var(--card-headshot-size,28px);border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`:'';
+  // Resolve which NASCAR series this card belongs to so favorites are scoped per-series
+  const _nasSid=resolveSportId(g)||'nascar';
   if(g.isNascarStandings){
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-name-size,11px);font-family:'Share Tech Mono',monospace;color:var(--text-dim);">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
-    const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-secondary);width:20px;text-align:right;flex-shrink:0;">${d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||'').replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`).join('');
+    const rows=(g.drivers||[]).map(d=>{const star=favPlayerStar(_nasSid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-secondary);width:20px;text-align:right;flex-shrink:0;">${d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||'').replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`}).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
   }
@@ -5939,7 +6104,7 @@ function buildNascarCard(g){
     const medals=['🥇','🥈','🥉'];
     const statusBadge=g.isFinal?'<span class="status-final">RESULT</span>':`<span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'Share Tech Mono',monospace;color:#4ade80;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span>LIVE</span>`;
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${statusBadge}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${g.name}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.trackName||''} ${g.raceDate?' · '+g.raceDate:''}</div>`;
-    const rows=(g.drivers||[]).map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;flex-shrink:0;">${d.pos<=3?medals[d.pos-1]:d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||d.number||'').toString().replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`).join('');
+    const rows=(g.drivers||[]).map(d=>{const star=favPlayerStar(_nasSid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;flex-shrink:0;">${d.pos<=3?medals[d.pos-1]:d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${d.manufacturer} ${(d.car||d.number||'').toString().replace(/^#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`}).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
   }
@@ -5969,6 +6134,7 @@ function buildF1Card(g){
 
   let body = '';
   const _f1HsImg=hs=>hs?`<img src="${hs}" style="width:var(--card-headshot-size,28px);height:var(--card-headshot-size,28px);border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--bg-secondary);" onerror="this.style.display='none'">`:'';
+  const _f1Sid='f1';
   if(g.isF1Next){
     body = `<div style="display:flex;flex-direction:column;gap:4px;font-size:var(--card-name-size,11px);font-family:'Barlow Condensed',sans-serif;">
       <div style="display:flex;gap:6px;align-items:center;">
@@ -5987,40 +6153,40 @@ function buildF1Card(g){
     const medals = ['🥇','🥈','🥉'];
     const rows = (g.results||g.podium||[]);
     body = `<div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.circuit||''} ${g.raceDate?'· '+g.raceDate:''}</div>` +
-    rows.map((d,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
+    rows.map((d,i)=>{const star=favPlayerStar(_f1Sid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:18px;text-align:right;flex-shrink:0;">${d.pos<=3?['🥇','🥈','🥉'][d.pos-1]:d.pos}</span>
       ${_f1HsImg(d.headshot)}
       <div style="flex:1;min-width:0;">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></div>
         <div style="font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.team}</div>
       </div>
       <div style="text-align:right;">
         <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--accent-green);">${d.points>0?'+'+d.points+'pts':''}</div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.time||''}</div>
       </div>
-    </div>`).join('');
+    </div>`}).join('');
   } else if(g.isF1Standings){
-    body = `<div style="display:flex;flex-direction:column;">` + g.drivers.map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
+    body = `<div style="display:flex;flex-direction:column;">` + g.drivers.map(d=>{const star=favPlayerStar(_f1Sid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:14px;text-align:right;flex-shrink:0;">${d.pos}</span>
       ${_f1HsImg(d.headshot)}
-      <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span>
+      <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></span>
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</span>
       ${d.wins>0?`<span style="font-size:var(--card-name-size,11px);color:#ffd700;font-family:'Share Tech Mono',monospace;">🏆${d.wins}</span>`:''}
-    </div>`).join('') + `</div>`;
+    </div>`}).join('') + `</div>`;
   } else if(g.isF1History){
     const medals=['🥇','🥈','🥉'];
     body = `<div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:6px;">📍 ${g.circuit} · ${g.country} · ${g.date}</div>` +
-      g.results.map((d,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
+      g.results.map((d,i)=>{const star=favPlayerStar(_f1Sid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
         <span style="font-size:var(--card-abbr-size,14px);">${medals[i]||d.pos}</span>
         <div style="flex:1;min-width:0;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></div>
           <div style="font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.team}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--accent-green);">+${d.points}pts</div>
           <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.time||''}</div>
         </div>
-      </div>`).join('');
+      </div>`}).join('');
   }
   card.innerHTML = header + `<div style="display:flex;flex-direction:column;gap:1px;">${body}</div>`;
   return card;
@@ -6052,14 +6218,14 @@ function buildFullCard(g){
         <div class="team-row${aw?' winning':g.isFinal?' losing':''}">
           ${teamLogo(away)}
           <div class="team-name-block"><div class="team-abbr">${away?.abbr||'–'}</div><div class="team-full-name">${away?.name||''} · Away</div></div>
-          ${af?'<span style="display:inline-block;width:14px;height:14px;position:relative;top:1px;background:gold;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);filter:drop-shadow(0 0 3px rgba(255,215,0,0.8));"></span>':'<button class="star-btn" onclick="toggleFavTeam(\''+an+'\')">⭐</button>'}
+          ${af?'<span style="display:inline-block;font-size:20px;line-height:1;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,0.85),0 0 2px rgba(255,180,0,0.9);position:relative;top:1px;-webkit-font-smoothing:antialiased;flex-shrink:0;">★</span>':'<button class="star-btn" onclick="toggleFavTeam(\''+an+'\')">⭐</button>'}
           <div class="team-score">${g.isScheduled?'–':away?.score??'–'}</div>
         </div>
         <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:2px 0;"></div>
         <div class="team-row${hw?' winning':g.isFinal?' losing':''}">
           ${teamLogo(home)}
           <div class="team-name-block"><div class="team-abbr">${home?.abbr||'–'}</div><div class="team-full-name">${home?.name||''} · Home</div></div>
-          ${hf?'<span style="display:inline-block;width:14px;height:14px;position:relative;top:1px;background:gold;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);filter:drop-shadow(0 0 3px rgba(255,215,0,0.8));"></span>':'<button class="star-btn" onclick="toggleFavTeam(\''+hn+'\')">⭐</button>'}
+          ${hf?'<span style="display:inline-block;font-size:20px;line-height:1;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,0.85),0 0 2px rgba(255,180,0,0.9);position:relative;top:1px;-webkit-font-smoothing:antialiased;flex-shrink:0;">★</span>':'<button class="star-btn" onclick="toggleFavTeam(\''+hn+'\')">⭐</button>'}
           <div class="team-score">${g.isScheduled?'–':home?.score??'–'}</div>
         </div>
       </div>
