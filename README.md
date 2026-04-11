@@ -24,6 +24,7 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
   - [Stream Defaults](#stream-defaults)
   - [Themes](#themes)
   - [System Theme (App UI)](#system-theme-app-ui)
+  - [Per-Sport Display Settings (Headshots)](#per-sport-display-settings-headshots)
   - [Audio Library and Playlists](#audio-library-and-playlists)
   - [Assigning Audio to a Scoreboard](#assigning-audio-to-a-scoreboard)
   - [Pushing to Dispatcharr](#pushing-to-dispatcharr)
@@ -238,29 +239,38 @@ A **Scoreboard** is a named configuration that defines which sports, teams, and 
 2. Click **+ New Scoreboard**
 3. The editor opens with three steps:
 
-**Step 1 — Display Settings**
-- Give the scoreboard a name (this becomes the channel name in Dispatcharr)
-- Set the timezone for game times
-- Adjust card scale, rotation speed, layout, and typography
-- Choose a theme or leave it on the global default
+**Step 1 — Sports & Leagues**
+- Toggle on which sports appear on this scoreboard. Available groups:
+  - **Pro Leagues** — NFL, NBA, MLB, NHL, WNBA, CFL, XFL, UFL, MLS, NWSL, PGA Tour
+  - **Motorsport** — Formula 1, NASCAR Cup, NASCAR NOAPS, NASCAR Trucks
+  - **Tennis** — ATP Tour, WTA Tour
+  - **International Soccer** — Premier League, Champions League, La Liga, Bundesliga, Serie A, Ligue 1
+  - **NCAA Men** — Football, Men's Basketball, Men's Baseball
+  - **NCAA Women** — Women's Basketball, Softball, Women's Volleyball, Women's Lacrosse
+- For standard team sports (NFL, NBA, MLB, NHL, soccer, NCAA, etc.), choose whether to show recent final scores and how many days back to show them
+- Sport selection drives what's available in Step 3 — a PGA-only scoreboard sees PGA-specific display settings, a mixed scoreboard sees all relevant controls
 
-**Step 2 — Sports**
-- Toggle on which sports to include
-- For standard team sports (NFL, NBA, etc.), choose whether to show recent final scores and how many days back to show them
-- For motorsports (F1, NASCAR, PGA), a dedicated settings panel appears with options specific to each series
-
-**Step 3 — Teams** *(optional)*
+**Step 2 — Teams** *(optional)*
 - If you want the scoreboard to show only specific teams, use the team browser to select them
 - Leave all teams deselected to show all games for the enabled sports
 - Star (⭐) specific teams to pin their games to the top of the scoreboard
 
-4. Click **Save** — ScoreStream immediately begins generating an HLS stream for this scoreboard
+**Step 3 — Display & Layout** *(sport-aware)*
+- Give the scoreboard a name (this becomes the channel name in Dispatcharr)
+- Set the timezone for game times
+- Adjust card scale, rotation speed, layout, and typography
+- Choose a theme or leave it on the global default
+- For motor sports / golf / tennis, a **Per-Sport Display & Data** section appears with content options (which races, standings, etc.) and per-sport headshot size sliders
+
+4. Click **Save & Close** — ScoreStream immediately begins generating an HLS stream for this scoreboard
+
+> **Why this order?** Display settings are tailored to the sports you've enabled. Picking sports first means Step 3 only shows the controls relevant to your scoreboard.
 
 ---
 
 ### Selecting Sports
 
-In the editor Step 2, you can enable any combination of:
+In the editor Step 1 (Sports & Leagues), you can enable any combination of:
 
 - **Pro leagues:** NFL, NBA, MLB, NHL, WNBA, CFL, XFL, UFL, MLS, NWSL, PGA Tour
 - **Motorsport:** Formula 1, NASCAR Cup Series, NASCAR O'Reilly Auto Parts Series (NOAPS), NASCAR Craftsman Truck Series
@@ -269,13 +279,13 @@ In the editor Step 2, you can enable any combination of:
 - **NCAA Men:** Football, Basketball, Baseball
 - **NCAA Women:** Basketball, Softball, Volleyball, Lacrosse
 
-When only motorsport/golf sports are enabled, a dedicated settings panel appears for that scoreboard instead of the standard team-sport settings.
+For motor sports (F1, NASCAR, PGA) and tennis (ATP, WTA), a per-sport configuration panel appears in **Step 3 — Display & Layout** with options for which races/standings/tournaments to show, how many to show, headshot size on the cards, and more. Each enabled motor/tennis sport gets its own labeled section.
 
 ---
 
 ### Selecting Teams and Favorites
 
-In editor Step 3, the team browser lets you filter which teams appear on the scoreboard:
+In editor Step 2 (Teams), the team browser lets you filter which teams appear on the scoreboard:
 
 - **No teams selected:** All games for enabled sports are shown
 - **Teams selected:** Only games involving those teams are shown
@@ -291,7 +301,7 @@ To select teams:
 
 ### Display Settings Per Scoreboard
 
-In editor Step 1, each scoreboard has independent control over:
+In editor Step 3 (Display & Layout), each scoreboard has independent control over:
 
 | Setting | Description |
 |---|---|
@@ -319,7 +329,7 @@ Each setting can also inherit from **Stream Defaults** (the global defaults) by 
 
 ### Previewing Your Scoreboard
 
-The editor Step 1 includes a **Card Scale Preview** — a live two-card preview that updates as you adjust typography and scale settings.
+The editor Step 3 (Display & Layout) includes a **Card Scale Preview** — a live two-card preview that updates as you adjust typography and scale settings. The preview renders a representative card based on the sports you enabled in Step 1, so you see a real PGA leaderboard if PGA is enabled, an F1 race card for F1, etc.
 
 To preview the full scoreboard stream output:
 1. Save the scoreboard
@@ -369,7 +379,7 @@ ScoreStream includes five built-in themes:
 3. Enter a name and click **Save Theme** — the theme is saved and appears in the swatch row
 
 **Per-scoreboard theme override:**
-In the editor Step 1, the **Theme Override** section lets you choose a different theme for just that scoreboard. Select **Use Global** to follow the global default.
+In editor Step 3 (Display & Layout), the **Theme Override** section lets you choose a different theme for just that scoreboard. Select **Use Global** to follow the global default.
 
 Custom themes are stored in your display defaults and are available across all scoreboards.
 
@@ -401,6 +411,39 @@ Custom themes are stored in your display defaults and are available across all s
 
 ---
 
+### Per-Sport Display Settings (Headshots)
+
+Individual-sport cards (PGA, F1, NASCAR Cup, NASCAR NOAPS, NASCAR Trucks, ATP, WTA) render player or driver headshot circles. The size of those circles is **per-sport** and lives in two places depending on which view you're configuring:
+
+| Where | Affects | Saved to |
+|---|---|---|
+| **Settings → Sports Library** → expand a sport row (▸) → Headshot Size | The main scoreboard.html browsing view (the sidebar live-scores cards) | Browser local storage (`state.display.sportHeadshots[sportId]`) |
+| **Scoreboard editor → Step 3 (Display & Layout) → Per-Sport Display & Data** → headshot slider in each sport's section | A specific scoreboard's HLS stream output | Database (`motor_config.{sport}_headshot_size`) |
+
+**Why two places?** The Sports Library setting controls the *browsing view* you see in your browser when you have ScoreStream open. The scoreboard editor setting controls what *viewers of a Dispatcharr channel see* when they tune into that scoreboard's stream. They're independent — you can have a 32px headshot for browsing and a 28px headshot in the actual stream.
+
+**Priority for stream output:** Each card builder reads its sport's headshot size in this order:
+1. Stream mode → the scoreboard's `motor_config.{sport}_headshot_size`
+2. Editor preview → `_editorDraft.motor_config.{sport}_headshot_size` (live preview while editing)
+3. Browsing mode → `state.display.sportHeadshots[sportId]`
+4. Default → 28px
+
+The size is set on each card element via `--card-headshot-size`, so multiple sports on the same page can have different sizes.
+
+**Sports Library row layout:**
+- Click the **▸** chevron next to PGA, F1, any NASCAR series, ATP, or WTA to expand
+- Drag the Headshot Size slider (range 20–64px)
+- Changes apply instantly to the main scoreboard.html view
+- Tennis ATP and WTA are separate rows so you can size them independently
+
+**Scoreboard editor location:**
+- Open the scoreboard, navigate to **Step 3 — Display & Layout**
+- Scroll to **🏁 Per-Sport Display & Data**
+- Each enabled motor/tennis sport has its own labeled card with options including a **🖼️ Headshot Size** slider
+- For tennis, the size applies to both ATP and WTA on that scoreboard (one shared `tennis_headshot_size`)
+
+---
+
 ### Audio Library and Playlists
 
 ScoreStream can mix background music into the HLS stream output.
@@ -425,7 +468,7 @@ The stream container ships with 6 royalty-free instrumental tracks that play whe
 
 ### Assigning Audio to a Scoreboard
 
-In the scoreboard editor Step 1, scroll to **Stream Audio**:
+In editor Step 3 (Display & Layout), scroll to **Stream Audio**:
 
 - **None** — stream is silent (default)
 - **Built-in Music** — plays royalty-free sports/hype instrumentals bundled in the stream container, no setup needed
@@ -715,7 +758,7 @@ The workflow runs automatically on schedule. To manually refresh:
 - Check the API container logs: `docker logs scorestream-api`
 
 **Scoreboard shows "Not Configured":**
-- The scoreboard has no sports enabled. Edit it and enable at least one sport in Step 2.
+- The scoreboard has no sports enabled. Edit it and enable at least one sport in Step 1 (Sports & Leagues).
 
 **Dispatcharr connection fails:**
 - Verify the API token is correct (Dispatcharr → Profile → API Keys)
