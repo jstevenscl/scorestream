@@ -691,7 +691,12 @@ body.stream-mode .card-header{padding:4px 10px;}
       </div>
       <div id="sbListView">
         <div id="sbCards" class="sb-cards-grid"></div>
-        <button class="modal-btn" onclick="createNewScoreboard()" style="margin-top:14px;padding:10px 24px;">+ New Scoreboard</button>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+          <button class="modal-btn" onclick="createNewScoreboard()" style="padding:10px 24px;">+ New Scoreboard</button>
+          <button class="modal-btn" onclick="importSbFromJson()" style="padding:10px 18px;border-color:var(--border);color:var(--text-secondary);" title="Paste a JSON snippet exported from another ScoreStream install">📥 Import from JSON</button>
+        </div>
+        <input type="file" id="sbImportFile" accept=".json,application/json" style="display:none;" onchange="handleSbImportFile(event)">
+        <div id="sbImportResult" style="margin-top:10px;font-size:12px;display:none;"></div>
       </div>
       <!-- Quick update panel for existing channels -->
       <div id="sbQuickUpdate" style="display:none;max-width:520px;margin:0 auto;">
@@ -1769,6 +1774,7 @@ function renderSbCards(){
       <div class="sb-card-actions">
         <button class="sb-action-btn primary" onclick="openSbEditor(${sb.id})">Edit</button>
         <button class="sb-action-btn" onclick="duplicateScoreboard(${sb.id})">Duplicate</button>
+        <button class="sb-action-btn" onclick="exportSbAsJson(${sb.id})" title="Download this scoreboard's complete config as JSON for sharing or backup">📤 Export JSON</button>
         <button class="sb-action-btn stream-url" id="urlbtn-${sb.id}" onclick="copyStreamUrl('${sb.slug}',${sb.id})">📡 Stream URL</button>
         <button class="sb-action-btn primary" onclick="openPushWizard(${sb.id})">${hasChannel?'⟳ Update Channel':'🚀 Push to Dispatcharr'}</button>
         ${hasChannel?`<button class="sb-action-btn" onclick="unlinkChannel(${sb.id})" title="Clear Dispatcharr channel link from ScoreStream (does not delete from Dispatcharr)">⊘ Unlink</button>`:''}
@@ -1812,6 +1818,143 @@ async function duplicateScoreboard(id){
   const r=await fetch(`${API_BASE}/scoreboards/${id}/duplicate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
   if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();initSidebarScoreboardSelector();}
   else alert('Failed to duplicate scoreboard');
+}
+
+// =============================================================================
+//  Per-Scoreboard JSON Export / Import (sharable layouts)
+// =============================================================================
+// Builds a portable JSON snapshot of a single scoreboard's configuration —
+// excludes Dispatcharr channel binding, IDs, and slugs that are install-specific.
+function _buildSbJsonExport(sb){
+  return {
+    scorestream_export_version: 1,
+    type: 'scoreboard',
+    exported_at: new Date().toISOString(),
+    scoreboard: {
+      name: sb.name,
+      description: sb.description || '',
+      sport_config: sb.sport_config || {},
+      team_config: sb.team_config || {},
+      display_config: sb.display_config || {},
+      motor_config: sb.motor_config || {},
+      audio_mode: sb.audio_mode || 'none',
+      audio_source_url: sb.audio_source_url || '',
+      audio_playlist_id: sb.audio_playlist_id || null,
+      use_default_fonts: sb.use_default_fonts !== false,
+      use_default_colors: sb.use_default_colors !== false,
+      use_default_card_size: sb.use_default_card_size !== false,
+    }
+  };
+}
+
+function exportSbAsJson(id){
+  const sb=_scoreboards.find(s=>s.id===id);
+  if(!sb){alert('Scoreboard not found');return;}
+  const payload=_buildSbJsonExport(sb);
+  const json=JSON.stringify(payload,null,2);
+  // Trigger download
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`scorestream-${(sb.slug||sb.name||'scoreboard').replace(/[^a-z0-9-]/gi,'_').toLowerCase()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function importSbFromJson(){
+  // Offer two ways: file upload or paste
+  const choice=confirm('Click OK to upload a JSON file. Click Cancel to paste JSON text instead.');
+  if(choice){
+    document.getElementById('sbImportFile')?.click();
+  }else{
+    const txt=prompt('Paste the JSON export from another ScoreStream install:');
+    if(!txt) return;
+    _processSbImportText(txt);
+  }
+}
+
+function handleSbImportFile(ev){
+  const file=ev.target.files&&ev.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>_processSbImportText(reader.result);
+  reader.readAsText(file);
+  // Reset so the same file can be re-selected later
+  ev.target.value='';
+}
+
+async function _processSbImportText(text){
+  const result=document.getElementById('sbImportResult');
+  const showResult=(msg,ok)=>{
+    if(!result) return;
+    result.style.display='block';
+    result.style.color=ok?'var(--accent-green)':'var(--accent-red)';
+    result.textContent=msg;
+    if(ok) setTimeout(()=>{result.style.display='none';},5000);
+  };
+  let payload;
+  try{ payload=JSON.parse(text); }
+  catch(e){ showResult('❌ Invalid JSON: '+e.message,false); return; }
+  if(!payload || payload.type!=='scoreboard' || !payload.scoreboard){
+    showResult('❌ Not a ScoreStream scoreboard export (missing type or scoreboard field)',false);
+    return;
+  }
+  const sb=payload.scoreboard;
+  if(!sb.name || typeof sb.name!=='string'){
+    showResult('❌ Imported scoreboard is missing a name',false);
+    return;
+  }
+  // Ask for a name (default to original + " (Imported)" to avoid collision)
+  const existingNames=new Set(_scoreboards.map(s=>s.name));
+  let proposedName=sb.name;
+  if(existingNames.has(proposedName)) proposedName=sb.name+' (Imported)';
+  const finalName=prompt(`Import scoreboard as:`,proposedName);
+  if(!finalName?.trim()){ showResult('Import cancelled',false); return; }
+  // Step 1: POST to create the scoreboard with the core configs
+  // (POST /scoreboards only accepts name + 4 *_config fields — additional
+  // fields like audio_mode/use_default_* are set via PATCH below)
+  try{
+    showResult('Importing...',true);
+    const createResp=await fetch(`${API_BASE}/scoreboards`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:finalName.trim(),
+        sport_config:sb.sport_config||{},
+        team_config:sb.team_config||{},
+        display_config:sb.display_config||{},
+        motor_config:sb.motor_config||{},
+      })
+    });
+    if(!createResp.ok){ showResult('❌ Server rejected import: '+createResp.status,false); return; }
+    const created=await createResp.json();
+    // Step 2: PATCH any additional fields the POST endpoint doesn't accept
+    const patchBody={};
+    if(sb.audio_mode!=null) patchBody.audio_mode=sb.audio_mode;
+    if(sb.audio_source_url!=null) patchBody.audio_source_url=sb.audio_source_url;
+    if(sb.audio_playlist_id!=null) patchBody.audio_playlist_id=sb.audio_playlist_id;
+    if(sb.use_default_fonts!=null) patchBody.use_default_fonts=sb.use_default_fonts;
+    if(sb.use_default_colors!=null) patchBody.use_default_colors=sb.use_default_colors;
+    if(sb.use_default_card_size!=null) patchBody.use_default_card_size=sb.use_default_card_size;
+    let final=created;
+    if(Object.keys(patchBody).length){
+      const patchResp=await fetch(`${API_BASE}/scoreboards/${created.id}`,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(patchBody)
+      });
+      if(patchResp.ok) final=await patchResp.json();
+    }
+    _scoreboards.push(final);
+    renderSbCards();
+    initSidebarScoreboardSelector();
+    showResult(`✅ Imported "${final.name}" successfully`,true);
+  }catch(e){
+    showResult('❌ Import failed: '+e.message,false);
+  }
 }
 
 async function deleteScoreboard(id){

@@ -25,6 +25,7 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
   - [Themes](#themes)
   - [System Theme (App UI)](#system-theme-app-ui)
   - [Per-Sport Display Settings (Headshots)](#per-sport-display-settings-headshots)
+  - [Sharing Scoreboards (Export / Import JSON)](#sharing-scoreboards-export--import-json)
   - [Audio Library and Playlists](#audio-library-and-playlists)
   - [Assigning Audio to a Scoreboard](#assigning-audio-to-a-scoreboard)
   - [Pushing to Dispatcharr](#pushing-to-dispatcharr)
@@ -454,6 +455,29 @@ The size is set on each card element via `--card-headshot-size`, so multiple spo
 - Scroll to **🏁 Per-Sport Display & Data**
 - Each enabled motor/tennis sport has its own labeled card with options including a **🖼️ Headshot Size** slider
 - For tennis, the size applies to both ATP and WTA on that scoreboard (one shared `tennis_headshot_size`)
+
+---
+
+### Sharing Scoreboards (Export / Import JSON)
+
+You can export any scoreboard's complete configuration to a JSON file and share it with other ScoreStream users. The export includes the scoreboard's name, sports, teams, display settings, theme, motor config, and audio settings — but **excludes** install-specific things like the Dispatcharr channel binding, IDs, and slug.
+
+**To export a scoreboard:**
+1. Go to **My Scoreboards**
+2. Find the scoreboard card and click **📤 Export JSON**
+3. A `.json` file downloads to your computer (named after the scoreboard's slug)
+4. Share the file directly, paste its contents in chat, post to a forum, etc.
+
+**To import a scoreboard:**
+1. Go to **My Scoreboards**
+2. Click **📥 Import from JSON** below the scoreboard list
+3. Choose **OK** to upload a `.json` file, or **Cancel** to paste JSON text
+4. Confirm or change the scoreboard name (auto-suffixed with "(Imported)" if a name collision exists)
+5. The imported scoreboard appears in your list — review it in the editor and click **🚀 Push to Dispatcharr** when ready
+
+> **Validation:** The importer rejects anything that isn't a valid ScoreStream scoreboard export (`scorestream_export_version: 1, type: "scoreboard"`). Invalid JSON or missing fields show a clear error.
+
+> **Channel binding excluded:** Imports never bring over Dispatcharr channel IDs, channel numbers, group IDs, or stream profile IDs. You configure those fresh on your install via the Push to Dispatcharr wizard.
 
 ---
 
