@@ -25,3 +25,25 @@ Thumbs.db
 
 # Local assets — not for repo
 Logo/
+
+# Screenshots and reference images shared with Claude — never commit
+Screenshot*.png
+Screenshot*.jpg
+*.screenshot.png
+screenshots/
+
+# Reference / scratch files that are NOT part of the project
+# (data dumps, error logs, handoff notes, ad-hoc scripts)
+*Handoff*.md
+ScoreStream_Handoff*.md
+error logs.txt
+error_logs.txt
+*.error.log
+2026*.csv
+Dispatcharr API.yaml
+rename_cache_keys.py
+seed_motor_cache.py
+scoreboard_fixed.html
+*_fixed.html
+*_backup.html
+*.bak
