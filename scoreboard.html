@@ -2649,8 +2649,11 @@ function renderEditorStep(sbOverride){
     }
   }
 
+  // On Step 3, add right padding to the entire editor so the header Save button
+  // and bottom Save & Close button are pushed left of the floating preview panel.
+  const _step3Pad=_editorStep===3?'padding-right:400px;':'';
   el.innerHTML=`
-    <div class="sb-editor">
+    <div class="sb-editor" style="${_step3Pad}">
       <div class="sb-editor-header">
         <button class="sb-editor-back" onclick="closeSbEditor()" title="Cancel editing">← Cancel</button>
         <div class="sb-editor-title">✏️ ${sb.name}</div>
@@ -3422,25 +3425,22 @@ function sbGetEffectiveDisplayConfig(sb){
 }
 
 function sbPreviewCardScale(val){
-  const scale = parseFloat(val) || 1.0;
-  if(!document.getElementById('sbCardScaleInner')) return;
+  // The floating preview panel renders cards at their natural CSS-variable-driven
+  // sizes — no transform:scale needed. The preview's purpose is to show how
+  // sliders affect card appearance, not to simulate stream output resolution.
+  // Removing the transform avoids layout/scroll conflicts where transform:scale
+  // didn't affect the parent's scroll calculation, causing the second and third
+  // cards to be unreachable (no vertical scrollbar despite content overflow).
   const inner = document.getElementById('sbCardScaleInner');
   const wrap  = document.getElementById('sbCardScaleWrap');
   if(!inner || !wrap) return;
-  // Reset transform to measure natural size, then re-apply
+  // Clear any previous transform that might have been set
   inner.style.transform = '';
-  const naturalW = inner.offsetWidth;
-  const naturalH = inner.offsetHeight;
-  inner.style.transform = `scale(${scale})`;
-  inner.style.transformOrigin = 'top left';
-  // Resize wrapper to match scaled dimensions. The previous version capped
-  // the wrapper at 260px tall with overflow:hidden, which clipped the second
-  // and third sample cards. Now we let the wrapper grow to the full scaled
-  // height — the parent container (#sbStep3FloatPreview when in editor Step 3)
-  // has its own overflow:auto and handles scrolling for any overflow.
-  wrap.style.width  = Math.round(naturalW * scale) + 'px';
-  wrap.style.height = Math.round(naturalH * scale) + 'px';
-  wrap.style.overflow = 'visible';
+  inner.style.transformOrigin = '';
+  // Let the wrap size naturally from its content (auto height/width)
+  wrap.style.width  = '';
+  wrap.style.height = '';
+  wrap.style.overflow = '';
 }
 
 function sbEditorFilterTeams(query){
