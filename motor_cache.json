@@ -1,318 +1,698 @@
 {
   "nascar-last": {
     "data": {
-      "run_name": "Cook Out 400",
-      "track_name": "Martinsville Speedway",
-      "race_date": "2026-03-29",
-      "flag_state": 9,
+      "run_name": "Food City 500",
+      "track_name": "Bristol Motor Speedway",
+      "race_date": "2026-04-12",
+      "flag_state": 1,
       "laps_in_race": 500,
       "series_id": 1,
-      "series_name": "NASCAR Cup Series",
+      "race_id": 5604,
       "drivers": [
         {
           "pos": 1,
-          "driver": "C. Elliott",
-          "car": "#9",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 55
+          "car": "#5",
+          "driver": "Kyle Larson",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 2,
-          "driver": "D. Hamlin",
-          "car": "#11",
-          "manufacturer": "Toyota",
-          "status": "Finished",
-          "points": 56
+          "car": "#21",
+          "driver": "Josh Berry",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 3,
-          "driver": "J. Logano",
-          "car": "#22",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 46
+          "car": "#20",
+          "driver": "Christopher Bell",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 4,
-          "driver": "T. Gibbs",
-          "car": "#54",
-          "manufacturer": "Toyota",
-          "status": "Finished",
-          "points": 49
+          "car": "#12",
+          "driver": "Ryan Blaney",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 5,
-          "driver": "W. Byron",
-          "car": "#24",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 47
+          "car": "#9",
+          "driver": "Chase Elliott",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 6,
-          "driver": "R. Blaney",
-          "car": "#12",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 41
+          "car": "#35",
+          "driver": "Riley Herbst",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 7,
-          "driver": "C. Bell",
-          "car": "#20",
-          "manufacturer": "Toyota",
-          "status": "Finished",
-          "points": 30
+          "car": "#19",
+          "driver": "Chase Briscoe",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 8,
-          "driver": "A. Cindric",
-          "car": "#2",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 40
+          "car": "#77",
+          "driver": "Carson Hocevar",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 9,
-          "driver": "K. Larson",
-          "car": "#5",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 30
+          "car": "#2",
+          "driver": "Austin Cindric",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 10,
-          "driver": "J. Berry",
-          "car": "#21",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 36
+          "car": "#23",
+          "driver": "Bubba Wallace",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 11,
-          "driver": "S. van Gisbergen",
-          "car": "#97",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 34
+          "car": "#1",
+          "driver": "Ross Chastain",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 12,
-          "driver": "R. Preece",
-          "car": "#60",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 26
+          "car": "#17",
+          "driver": "Chris Buescher",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 13,
-          "driver": "B. Keselowski",
-          "car": "#6",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 24
+          "car": "#11",
+          "driver": "Denny Hamlin",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 14,
-          "driver": "C. Briscoe",
-          "car": "#19",
-          "manufacturer": "Toyota",
-          "status": "Finished",
-          "points": 23
+          "car": "#7",
+          "driver": "Daniel Suarez",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 15,
-          "driver": "T. Reddick",
-          "car": "#45",
-          "manufacturer": "Toyota",
-          "status": "Finished",
-          "points": 28
+          "car": "#38",
+          "driver": "Zane Smith",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 16,
-          "driver": "R. Chastain",
-          "car": "#1",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 21
+          "car": "#3",
+          "driver": "Austin Dillon",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 17,
-          "driver": "C. Hocevar",
-          "car": "#77",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 20
+          "car": "#4",
+          "driver": "Noah Gragson",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 18,
-          "driver": "M. McDowell",
-          "car": "#71",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 19
+          "car": "#47",
+          "driver": "Ricky Stenhouse Jr.",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 19,
-          "driver": "C. Buescher",
-          "car": "#17",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 18
+          "car": "#54",
+          "driver": "Ty Gibbs",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 20,
-          "driver": "D. Su\u00e1rez",
-          "car": "#7",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 17
+          "car": "#71",
+          "driver": "Michael McDowell",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 21,
-          "driver": "E. Jones",
-          "car": "#43",
-          "manufacturer": "Toyota",
-          "status": "Finished",
-          "points": 16
+          "car": "#16",
+          "driver": "AJ Allmendinger",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 22,
-          "driver": "J. Allgaier",
-          "car": "#48",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
+          "car": "#8",
+          "driver": "Kyle Busch",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
           "points": 0
         },
         {
           "pos": 23,
-          "driver": "T. Gilliland",
-          "car": "#34",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 14
+          "car": "#43",
+          "driver": "Erik Jones",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 24,
-          "driver": "K. Busch",
-          "car": "#8",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 13
+          "car": "#22",
+          "driver": "Joey Logano",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 25,
-          "driver": "A. Dillon",
-          "car": "#3",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 12
+          "car": "#60",
+          "driver": "Ryan Preece",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 26,
-          "driver": "C. Zilisch",
-          "car": "#88",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 11
+          "car": "#6",
+          "driver": "Brad Keselowski",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 27,
-          "driver": "AJ Allmendinger",
-          "car": "#16",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 10
+          "car": "#88",
+          "driver": "Connor Zilisch #",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 28,
-          "driver": "N. Gragson",
-          "car": "#4",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 9
+          "car": "#45",
+          "driver": "Tyler Reddick",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 29,
-          "driver": "J. Nemechek",
           "car": "#42",
-          "manufacturer": "Toyota",
-          "status": "Finished",
-          "points": 8
+          "driver": "John Hunter Nemechek",
+          "manufacturer": "Tyt",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 30,
-          "driver": "R. Stenhouse Jr.",
-          "car": "#47",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 7
+          "car": "#48",
+          "driver": "Alex Bowman",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 31,
-          "driver": "C. Custer",
-          "car": "#41",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 6
+          "car": "#97",
+          "driver": "Shane Van Gisbergen",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 32,
-          "driver": "C. Ware",
-          "car": "#51",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
-          "points": 5
+          "car": "#34",
+          "driver": "Todd Gilliland",
+          "manufacturer": "Frd",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 33,
-          "driver": "A. Hill",
-          "car": "#33",
-          "manufacturer": "Chevrolet",
-          "status": "Finished",
+          "car": "#10",
+          "driver": "Ty Dillon",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
           "points": 0
         },
         {
           "pos": 34,
-          "driver": "Z. Smith",
-          "car": "#38",
-          "manufacturer": "Ford",
-          "status": "Finished",
-          "points": 3
+          "car": "#51",
+          "driver": "Cody Ware",
+          "manufacturer": "Chv",
+          "laps": 79,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 35,
-          "driver": "R. Herbst",
-          "car": "#35",
-          "manufacturer": "Toyota",
-          "status": "DNF",
-          "points": 2
+          "car": "#41",
+          "driver": "Cole Custer",
+          "manufacturer": "Chv",
+          "laps": 78,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 36,
-          "driver": "D. Wallace Jr.",
-          "car": "#23",
-          "manufacturer": "Toyota",
-          "status": "DNF",
-          "points": 1
+          "car": "#24",
+          "driver": "William Byron",
+          "manufacturer": "Chv",
+          "laps": 78,
+          "status": 1,
+          "points": 0
         },
         {
           "pos": 37,
-          "driver": "T. Dillon",
-          "car": "#10",
-          "manufacturer": "Chevrolet",
-          "status": "DNF",
-          "points": 1
+          "car": "#66",
+          "driver": "* Chad Finchum(i)",
+          "manufacturer": "Frd",
+          "laps": 75,
+          "status": 1,
+          "points": 0
         }
       ]
     },
-    "_updated": "2026-04-07"
+    "_updated": "2026-04-12"
   },
   "nascar-history": {
     "data": {
-      "series_name": "NASCAR Cup Series",
       "races": [
+        {
+          "run_name": "Food City 500",
+          "track_name": "Bristol Motor Speedway",
+          "race_date": "2026-04-12",
+          "flag_state": 1,
+          "laps_in_race": 500,
+          "series_id": 1,
+          "race_id": 5604,
+          "drivers": [
+            {
+              "pos": 1,
+              "car": "#5",
+              "driver": "Kyle Larson",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 2,
+              "car": "#21",
+              "driver": "Josh Berry",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 3,
+              "car": "#20",
+              "driver": "Christopher Bell",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 4,
+              "car": "#12",
+              "driver": "Ryan Blaney",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 5,
+              "car": "#9",
+              "driver": "Chase Elliott",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 6,
+              "car": "#35",
+              "driver": "Riley Herbst",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 7,
+              "car": "#19",
+              "driver": "Chase Briscoe",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 8,
+              "car": "#77",
+              "driver": "Carson Hocevar",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 9,
+              "car": "#2",
+              "driver": "Austin Cindric",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 10,
+              "car": "#23",
+              "driver": "Bubba Wallace",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 11,
+              "car": "#1",
+              "driver": "Ross Chastain",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 12,
+              "car": "#17",
+              "driver": "Chris Buescher",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 13,
+              "car": "#11",
+              "driver": "Denny Hamlin",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 14,
+              "car": "#7",
+              "driver": "Daniel Suarez",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 15,
+              "car": "#38",
+              "driver": "Zane Smith",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 16,
+              "car": "#3",
+              "driver": "Austin Dillon",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 17,
+              "car": "#4",
+              "driver": "Noah Gragson",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 18,
+              "car": "#47",
+              "driver": "Ricky Stenhouse Jr.",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 19,
+              "car": "#54",
+              "driver": "Ty Gibbs",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 20,
+              "car": "#71",
+              "driver": "Michael McDowell",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 21,
+              "car": "#16",
+              "driver": "AJ Allmendinger",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 22,
+              "car": "#8",
+              "driver": "Kyle Busch",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 23,
+              "car": "#43",
+              "driver": "Erik Jones",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 24,
+              "car": "#22",
+              "driver": "Joey Logano",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 25,
+              "car": "#60",
+              "driver": "Ryan Preece",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 26,
+              "car": "#6",
+              "driver": "Brad Keselowski",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 27,
+              "car": "#88",
+              "driver": "Connor Zilisch #",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 28,
+              "car": "#45",
+              "driver": "Tyler Reddick",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 29,
+              "car": "#42",
+              "driver": "John Hunter Nemechek",
+              "manufacturer": "Tyt",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 30,
+              "car": "#48",
+              "driver": "Alex Bowman",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 31,
+              "car": "#97",
+              "driver": "Shane Van Gisbergen",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 32,
+              "car": "#34",
+              "driver": "Todd Gilliland",
+              "manufacturer": "Frd",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 33,
+              "car": "#10",
+              "driver": "Ty Dillon",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 34,
+              "car": "#51",
+              "driver": "Cody Ware",
+              "manufacturer": "Chv",
+              "laps": 79,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 35,
+              "car": "#41",
+              "driver": "Cole Custer",
+              "manufacturer": "Chv",
+              "laps": 78,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 36,
+              "car": "#24",
+              "driver": "William Byron",
+              "manufacturer": "Chv",
+              "laps": 78,
+              "status": 1,
+              "points": 0
+            },
+            {
+              "pos": 37,
+              "car": "#66",
+              "driver": "* Chad Finchum(i)",
+              "manufacturer": "Frd",
+              "laps": 75,
+              "status": 1,
+              "points": 0
+            }
+          ]
+        },
         {
           "run_name": "Cook Out 400",
           "track_name": "Martinsville Speedway",
@@ -2487,9 +2867,10 @@
             }
           ]
         }
-      ]
+      ],
+      "updated": "2026-04-12"
     },
-    "_updated": "2026-04-07"
+    "_updated": "2026-04-12"
   },
   "nascar-2026-season": {
     "data": {
