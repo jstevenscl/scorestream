@@ -26,6 +26,15 @@ Thumbs.db
 # Local assets — not for repo
 Logo/
 
+# Database + runtime state — created by the container at runtime, never commit
+config/scorestream.db
+config/scorestream.db-shm
+config/scorestream.db-wal
+
+# Legacy root-level duplicates (active copies live in stream/ and data branch)
+/manager.js
+/motor_cache.json
+
 # Screenshots and reference images shared with Claude — never commit
 Screenshot*.png
 Screenshot*.jpg
