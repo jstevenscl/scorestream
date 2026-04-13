@@ -2452,6 +2452,10 @@ function renderEditorStep(sbOverride){
         <!-- Single-column card stack for the narrower right preview pane -->
         <div id="sbCardScaleInner" style="display:flex;flex-direction:column;gap:9px;"></div>
       </div>
+      <!-- Drag handle on bottom edge to resize the panel height -->
+      <div id="sbPreviewResizeHandleY" title="Drag to resize preview height" style="position:sticky;bottom:0;left:0;right:0;height:10px;cursor:ns-resize;display:flex;align-items:center;justify-content:center;margin:6px -14px -14px;flex-shrink:0;">
+        <div style="height:3px;width:36px;background:var(--border);border-radius:2px;opacity:0.6;"></div>
+      </div>
     </div>
       `;
   setTimeout(()=>{
@@ -2468,9 +2472,10 @@ function renderEditorStep(sbOverride){
       },{passive:false});
       fp._wheelBound=true;
     }
-    // Restore saved width (user may have resized on a prior open).
+    // Restore saved width + height (user may have resized on a prior open).
     try{const w=parseInt(localStorage.getItem('sbPreviewWidth'));if(w>=200&&w<=800)fp.style.width=w+'px';}catch(e){}
-    // Left-edge drag-to-resize. Dragging left widens the panel, right narrows it.
+    try{const h=parseInt(localStorage.getItem('sbPreviewHeight'));if(h>=150&&h<=window.innerHeight-40)fp.style.height=h+'px';}catch(e){}
+    // Left-edge drag-to-resize: dragging left widens, right narrows.
     const rh=document.getElementById('sbPreviewResizeHandle');
     if(rh&&!rh._resizeBound){
       rh.addEventListener('mousedown',(e)=>{
@@ -2490,6 +2495,27 @@ function renderEditorStep(sbOverride){
         document.addEventListener('mouseup',onUp);
       });
       rh._resizeBound=true;
+    }
+    // Bottom-edge drag-to-resize: dragging down talls, up shortens.
+    const rhy=document.getElementById('sbPreviewResizeHandleY');
+    if(rhy&&!rhy._resizeBound){
+      rhy.addEventListener('mousedown',(e)=>{
+        e.preventDefault();
+        const startY=e.clientY;
+        const startH=fp.offsetHeight;
+        function onMove(ev){
+          const newH=Math.min(window.innerHeight-40,Math.max(150,startH+(ev.clientY-startY)));
+          fp.style.height=newH+'px';
+        }
+        function onUp(){
+          document.removeEventListener('mousemove',onMove);
+          document.removeEventListener('mouseup',onUp);
+          try{localStorage.setItem('sbPreviewHeight',parseInt(fp.style.height));}catch(e){}
+        }
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseup',onUp);
+      });
+      rhy._resizeBound=true;
     }
   },0);
   // Init preview to current scale after render
