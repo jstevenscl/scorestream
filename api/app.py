@@ -2136,9 +2136,35 @@ def set_config_route():
 # ── Entry ─────────────────────────────────────────────────────────────────────
 # ── Audio Library ────────────────────────────────────────────────────────────
 import os as _os, uuid as _uuid
+from werkzeug.utils import secure_filename as _secure_filename
 
-AUDIO_DIR = _os.environ.get('AUDIO_DIR', '/audio_library')
+AUDIO_DIR      = _os.environ.get('AUDIO_DIR', '/audio_library')
 _os.makedirs(AUDIO_DIR, exist_ok=True)
+
+CUSTOM_LOGOS_DIR = _os.path.join(_os.path.dirname(DB_PATH), 'logos', 'custom')
+_os.makedirs(CUSTOM_LOGOS_DIR, exist_ok=True)
+_LOGO_ALLOWED_EXT = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'}
+
+@app.route('/upload-logo', methods=['POST'])
+def upload_logo():
+    """Accept a multipart logo file, save it, return the public URL."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'no file field'}), 400
+    f = request.files['file']
+    if not f.filename:
+        return jsonify({'error': 'empty filename'}), 400
+    ext = _os.path.splitext(_secure_filename(f.filename))[1].lower()
+    if ext not in _LOGO_ALLOWED_EXT:
+        return jsonify({'error': f'unsupported type: {ext}'}), 400
+    fname = f'{_uuid.uuid4().hex}{ext}'
+    f.save(_os.path.join(CUSTOM_LOGOS_DIR, fname))
+    url = f'{STREAM_BASE_URL}/api/logos/custom/{fname}' if STREAM_BASE_URL else f'/api/logos/custom/{fname}'
+    return jsonify({'url': url})
+
+@app.route('/logos/custom/<filename>', methods=['GET'])
+def serve_custom_logo(filename):
+    safe = _secure_filename(filename)
+    return send_from_directory(CUSTOM_LOGOS_DIR, safe)
 
 @app.route('/audio/library/register', methods=['POST'])
 def audio_library_register():

@@ -99,20 +99,57 @@ function frameDir(slug)  { return path.join(FRAMES_DIR, slug); }
 function framePath(slug) { return path.join(frameDir(slug), 'frame.jpg'); }
 function frameTmp(slug)  { return path.join(frameDir(slug), 'frame.tmp.jpg'); }
 
+// ── Logo for loading frame ───────────────────────────────────────────────────
+const LOADING_LOGO_PATH = path.join(FRAMES_DIR, 'scorestream_logo.png');
+
+function fetchLoadingLogo() {
+  // Download glow_blue.png from nginx once at startup; cached for the session.
+  if (fs.existsSync(LOADING_LOGO_PATH)) return;
+  const url = `${WEB_BASE}/logos/glow_blue.png`;
+  http.get(url, res => {
+    if (res.statusCode !== 200) { res.resume(); console.warn(`[manager] Logo fetch ${res.statusCode}: ${url}`); return; }
+    const chunks = [];
+    res.on('data', c => chunks.push(c));
+    res.on('end', () => {
+      try {
+        ensureDir(FRAMES_DIR);
+        fs.writeFileSync(LOADING_LOGO_PATH, Buffer.concat(chunks));
+        console.log('[manager] Loading logo cached:', LOADING_LOGO_PATH);
+      } catch(e) { console.warn('[manager] Logo save failed:', e.message); }
+    });
+  }).on('error', e => console.warn('[manager] Logo fetch error:', e.message));
+}
+
 // ── Static loading frame ─────────────────────────────────────────────────────
 function writeStartingFrame(slug) {
   const dest  = framePath(slug);
   const label = slug.replace(/-/g, ' ').toUpperCase();
   ensureDir(frameDir(slug));
+  const hasLogo = fs.existsSync(LOADING_LOGO_PATH);
   try {
-    execSync(
-      `ffmpeg -y -loglevel error -f lavfi -i color=c=0x0a0e1a:size=${WIDTH}x${HEIGHT}:rate=1 ` +
-      `-vf "drawtext=text='SCORESTREAM':fontcolor=0x00d4ff:fontsize=64:x=(w-text_w)/2:y=(h-text_h)/2-60,` +
-      `drawtext=text='${label}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2+10,` +
-      `drawtext=text='LOADING...':fontcolor=0x3d5a78:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+70,` +
-      `format=yuv420p" -frames:v 1 -q:v 3 "${dest}"`,
-      { stdio: 'pipe' }
-    );
+    if (hasLogo) {
+      // Overlay the ScoreStream logo image, centred above the sport label
+      execSync(
+        `ffmpeg -y -loglevel error ` +
+        `-f lavfi -i color=c=0x0a0e1a:size=${WIDTH}x${HEIGHT}:rate=1 ` +
+        `-i "${LOADING_LOGO_PATH}" ` +
+        `-filter_complex "[1:v]scale=340:-1[logo];[0:v][logo]overlay=(W-w)/2:(H-h)/2-80[bg];` +
+        `[bg]drawtext=text='${label}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2+70,` +
+        `drawtext=text='LOADING...':fontcolor=0x3d5a78:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+130,` +
+        `format=yuv420p" -frames:v 1 -q:v 3 "${dest}"`,
+        { stdio: 'pipe' }
+      );
+    } else {
+      // Fallback: text only (logo not yet fetched or unavailable)
+      execSync(
+        `ffmpeg -y -loglevel error -f lavfi -i color=c=0x0a0e1a:size=${WIDTH}x${HEIGHT}:rate=1 ` +
+        `-vf "drawtext=text='SCORESTREAM':fontcolor=0x00d4ff:fontsize=64:x=(w-text_w)/2:y=(h-text_h)/2-60,` +
+        `drawtext=text='${label}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2+10,` +
+        `drawtext=text='LOADING...':fontcolor=0x3d5a78:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+70,` +
+        `format=yuv420p" -frames:v 1 -q:v 3 "${dest}"`,
+        { stdio: 'pipe' }
+      );
+    }
   } catch (e) {
     try {
       execSync(
@@ -686,6 +723,7 @@ async function main() {
   console.log(`[manager] ${WIDTH}x${HEIGHT} @ ${FPS}fps | ${SEG_DURATION}s segs x ${PLAYLIST_SIZE} | idle=${IDLE_TIMEOUT}s`);
   ensureDir(HLS_DIR);
   ensureDir(FRAMES_DIR);
+  fetchLoadingLogo();
   // Start HTTP server FIRST so Dispatcharr/VLC can connect immediately.
   // The m3u8 handler waits up to 20s for pre-bake to produce the file,
   // so starting the server before pre-baking is safe.

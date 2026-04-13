@@ -6,6 +6,7 @@ RUN apk add --no-cache curl && \
 
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY scoreboard.html /usr/share/nginx/html/index.html
+COPY web/logos /usr/share/nginx/html/logos
 
 EXPOSE 80
 
