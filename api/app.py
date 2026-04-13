@@ -2613,9 +2613,10 @@ if __name__ == '__main__':
                 def _norm_mfr(m):
                     s = str(m or '').lstrip(',').strip()
                     low = s.lower()
-                    if 'chev' in low or low.startswith('chv'): return 'Chevy'
-                    if 'ford' in low: return 'Ford'
-                    if 'toyota' in low or 'toyot' in low: return 'Toyota'
+                    if not low: return s
+                    if low.startswith('ch') or 'chev' in low: return 'Chevy'
+                    if low.startswith('fo') or low.startswith('fr') or 'ford' in low: return 'Ford'
+                    if low.startswith('to') or low.startswith('ty') or 'toyota' in low: return 'Toyota'
                     return s
                 def _points(v):
                     # Live feed: points_earned or points; race-results JSON: points_earned, total_points, points
@@ -2714,9 +2715,10 @@ if __name__ == '__main__':
                         def _norm_mfr(m):
                             s = str(m or '').lstrip(',').strip()
                             low = s.lower()
-                            if 'chev' in low or low.startswith('chv'): return 'Chevy'
-                            if 'ford' in low: return 'Ford'
-                            if 'toyota' in low or 'toyot' in low: return 'Toyota'
+                            if not low: return s
+                            if low.startswith('ch') or 'chev' in low: return 'Chevy'
+                            if low.startswith('fo') or low.startswith('fr') or 'ford' in low: return 'Ford'
+                            if low.startswith('to') or low.startswith('ty') or 'toyota' in low: return 'Toyota'
                             return s
                         def _safe_int(v, default=0):
                             try: return int(str(v).replace(',','').strip())
