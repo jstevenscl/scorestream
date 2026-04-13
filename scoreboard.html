@@ -2444,9 +2444,9 @@ function renderEditorStep(sbOverride){
           <div class="league-name">SAMPLE SECTION HEADER</div>
         </div>
       </div>
-      <div id="sbCardScaleWrap" style="overflow:hidden;">
+      <div id="sbCardScaleWrap">
         <!-- Single-column card stack for the narrower right preview pane -->
-        <div id="sbCardScaleInner" style="display:flex;flex-direction:column;gap:9px;transform-origin:top left;transition:transform 0.2s ease;"></div>
+        <div id="sbCardScaleInner" style="display:flex;flex-direction:column;gap:9px;"></div>
       </div>
     </div>
       `;
@@ -3116,17 +3116,11 @@ function _previewHeadshotSize(px){
   const inner=document.getElementById('sbCardScaleInner');
   if(!inner) return;
   const sizePx=parseInt(px)||28;
-  // Update --card-headshot-size on every card element so future scans pick it up
+  // Update --card-headshot-size on every card element. The headshot imgs use
+  // var(--card-headshot-size,28px) for width/height, so updating the CSS var
+  // on their parent card cascades automatically.
   inner.querySelectorAll('.game-card').forEach(card=>{
     card.style.setProperty('--card-headshot-size',sizePx+'px');
-  });
-  // Also update the inline width/height on every circular headshot img
-  // (the inline style on these uses var(--card-headshot-size,28px), so updating
-  // the var on the parent card propagates automatically — but we set it
-  // explicitly too as a belt-and-suspenders fix in case the cascade is broken)
-  inner.querySelectorAll('img[style*="border-radius:50%"]').forEach(img=>{
-    img.style.width=sizePx+'px';
-    img.style.height=sizePx+'px';
   });
 }
 
@@ -5432,7 +5426,7 @@ function favPlayerStar(sportId, playerName){
   const favs=getSportFavPlayers(sportId);
   if(!favs) return '';
   if(!favs.has(playerName)) return '';
-  return '<span style="display:inline-block;font-size:18px;line-height:1;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,0.85),0 0 2px rgba(255,180,0,0.9);margin-right:5px;flex-shrink:0;vertical-align:middle;-webkit-font-smoothing:antialiased;" title="Favorited">★</span>';
+  return '<span style="display:inline-block;font-family:Arial,Liberation Sans,sans-serif;font-size:18px;line-height:1;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,0.85),0 0 2px rgba(255,180,0,0.9);margin-right:5px;flex-shrink:0;vertical-align:middle;-webkit-font-smoothing:antialiased;" title="Favorited">★</span>';
 }
 
 // ── PGA leaderboard card ─────────────────────────────────────────────────────
