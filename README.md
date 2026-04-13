@@ -25,6 +25,7 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
   - [Default Stream Settings](#default-stream-settings)
   - [Themes](#themes)
   - [System Theme (App UI)](#system-theme-app-ui)
+  - [Stream Layout and Pagination](#stream-layout-and-pagination)
   - [Per-Sport Display Settings (Headshots)](#per-sport-display-settings-headshots)
   - [Sharing Scoreboards (Export / Import JSON)](#sharing-scoreboards-export--import-json)
   - [Audio Library and Playlists](#audio-library-and-playlists)
@@ -410,7 +411,12 @@ Each setting can also inherit from **Default Stream Settings** (the global defau
 
 ### Previewing Your Scoreboard
 
-The editor Step 3 (Display & Layout) includes a **Card Scale Preview** — a live two-card preview that updates as you adjust typography and scale settings. The preview renders a representative card based on the sports you enabled in Step 1, so you see a real PGA leaderboard if PGA is enabled, an F1 race card for F1, etc.
+The editor Step 3 (Display & Layout) includes a **Live Preview** panel — a floating card stack anchored to the right side of the screen that updates in real time as you adjust typography, scale, colors, and section header settings. The preview renders representative cards based on the sports enabled in Step 1.
+
+**Resizing the preview panel:**
+- Drag the **⤡** grip in the top-left corner of the panel to resize both width and height simultaneously
+- The panel size is saved per-browser so it persists across editor sessions
+- The panel automatically counter-scales when the UI Text Size setting (S / M / L / XL) is changed, so it stays at a readable size regardless of zoom level
 
 To preview the full scoreboard stream output:
 1. Save the scoreboard
@@ -424,7 +430,7 @@ To preview the full scoreboard stream output:
 **Default Stream Settings** (found in the sidebar under Settings) let you set values that apply to all scoreboards unless individually overridden. These control **stream output only** — the video that viewers see.
 
 Sections:
-- **Theme** — color scheme applied to stream cards (Dark Blue, Carbon, Dark Red, Dark Green, Light, or custom)
+- **Theme** — color scheme applied to stream cards (Blue, Cyan, Green, Lime, Mono, Prism, Orange, Pink, Purple, Red, Teal, Yellow, or custom)
 - **Font Sizes** — default Abbreviation, Score, and Team Name sizes for game cards
 - **Colors** — default Team Name color on game cards
 - **Card Size** — default Card Scale, Rotation Timer, Logo Size, and Layout (Grid/Fullscreen/Ticker)
@@ -439,15 +445,22 @@ Click **Save Defaults** to apply. Any scoreboard using defaults will pick up the
 
 ### Themes
 
-ScoreStream includes five built-in themes:
+ScoreStream includes 12 built-in themes, each paired with a matching color variant of the ScoreStream logo. The sidebar logo automatically changes when you apply a system theme preset.
 
-| Theme | Description |
-|---|---|
-| **Dark Blue** | Deep navy with cyan accent (default) |
-| **Carbon** | Pure black with white accent |
-| **Dark Red** | Deep crimson with red/pink accent |
-| **Dark Green** | Dark forest with green accent |
-| **Light** | Light grey with blue accent |
+| Theme | Accent Color | Style |
+|---|---|---|
+| **Blue** *(default)* | `#0173e1` | Deep navy with blue accent |
+| **Cyan** | `#02e5e4` | Dark teal with cyan accent |
+| **Green** | `#54ed55` | Dark forest with neon green accent |
+| **Lime** | `#a0ec55` | Dark olive with lime accent |
+| **Mono** | `#c8c8c8` | Pure black with silver/white accent |
+| **Prism** | `#e040fb` | Deep purple with orchid accent (multicolor logo) |
+| **Orange** | `#f8932c` | Dark amber with orange accent |
+| **Pink** | `#ea53a0` | Deep magenta with pink accent |
+| **Purple** | `#ab01e3` | Dark violet with purple accent |
+| **Red** | `#e00002` | Deep crimson with red accent |
+| **Teal** | `#03edb1` | Dark seafoam with teal accent |
+| **Yellow** | `#ecd801` | Dark ochre with yellow accent |
 
 **Applying a theme globally:**
 1. Go to **Default Stream Settings** → Theme section
@@ -484,7 +497,7 @@ Custom themes are stored in your display defaults and are available across all s
 | **Sidebar Font Scale** | Scales the left sidebar of the main scoreboard.html view independently (0.8×–1.6×, stacks with Base Font Size) |
 | **Topbar Meta Size** | Font size of "Live: # / Total: # / clock" in the top bar (9–22px) |
 
-**Presets:** Five built-in presets (Dark Blue, Carbon, Dark Green, Dark Red, Light) let you quick-apply a full color scheme and customize from there.
+**Presets:** Twelve built-in presets (Blue, Cyan, Green, Lime, Mono, Prism, Orange, Pink, Purple, Red, Teal, Yellow) let you quick-apply a full color scheme and customize from there. Applying a preset also swaps the sidebar logo to the matching color variant automatically.
 
 **Saving:** Slider drags **auto-save** to local storage on release AND push to the server database (debounced ~600ms). The active stream's puppeteer browser also re-fetches the system theme on every config refresh (every 30s), so changes propagate to live streams without restarting any container. The **Save System Theme** button is now optional — it just forces an immediate server push.
 
@@ -765,6 +778,30 @@ Sports are organized into groups: Pro Leagues, Motorsport, Tennis, International
 **⚠ Performance Note — GPU Encoding Recommended**
 
 The ticker overlay requires FFmpeg to decode and re-encode the video stream in real time. This works with CPU-only transcoding (`libx264 ultrafast`), but results may not be optimal — especially on lower-powered hardware or with high-resolution source streams. For the best experience, a system with GPU hardware encoding (NVENC, VAAPI, or QSV) is recommended. Without a GPU, you may experience intermittent stuttering or frame drops during playback.
+
+---
+
+## Stream Layout and Pagination
+
+### Page Composition
+
+ScoreStream organizes stream cards into **pages** — full-canvas views that rotate on the configured timer. Each page is filled dynamically based on the available resolution and card sizes.
+
+**Key rules:**
+- Live/upcoming games and final scores for the same sport are always on **separate pages**. A page showing live NBA games will never also contain final MLB scores.
+- When a sport has more games than fit on one page, that sport continues onto additional pages automatically (e.g. MLB Finals Apr 12 · Page 1, MLB Finals Apr 12 · Page 2)
+- Motor sports (F1, NASCAR, PGA), tennis rankings, and other individual-sport card types each get their own dedicated page(s)
+- Favorited teams are pinned to a "My Teams" section that appears first in the rotation
+
+### Team Logo Rendering
+
+Team logos sourced from ESPN are PNG images with transparent backgrounds, designed to display on white/light backgrounds. ScoreStream renders them on a **white box with a team-color border** so every logo is clearly legible against the dark stream background — including teams whose primary color closely matches their own logo (e.g. Yankees navy, Cardinals red).
+
+If a logo fails to load, the box falls back to a solid team-color background with the team abbreviation in white text.
+
+### Favorited Player Stars
+
+Individual-sport cards (PGA, F1, NASCAR, ATP, WTA) show a gold star next to favorited players/drivers. The star is rendered as an inline SVG polygon, not a Unicode glyph, to ensure correct rendering in the Chromium-based HLS stream renderer on all systems.
 
 ---
 
