@@ -1837,33 +1837,37 @@ def scoreboard_push(sid):
             elif logo_r.status_code == 400 and 'already exists' in logo_r.text.lower():
                 # Dispatcharr enforces URL uniqueness — find the existing logo and reuse its ID
                 try:
-                    # Filter directly by URL — much more reliable than paginating all logos
-                    filter_r = s.get(f'{base}/api/channels/logos/', params={'url': logo_url}, timeout=10)
+                    # Paginate through all Dispatcharr logos to find exact URL match
+                    norm = logo_url.rstrip('/').lower()
                     match = None
-                    if filter_r.ok:
-                        fr = filter_r.json()
-                        items = fr.get('results', fr) if isinstance(fr, dict) else fr
-                        if isinstance(items, list) and items:
-                            match = items[0]
-                    # Fallback: filter by filename in case host/port differs
-                    if not match:
-                        fname = logo_url.rstrip('/').split('/')[-1]
-                        filter_r2 = s.get(f'{base}/api/channels/logos/', params={'url': fname}, timeout=10)
-                        if filter_r2.ok:
-                            fr2 = filter_r2.json()
-                            items2 = fr2.get('results', fr2) if isinstance(fr2, dict) else fr2
-                            if isinstance(items2, list) and items2:
-                                match = items2[0]
-                                logo_debug['matched_by'] = 'filename_filter'
+                    page = 1
+                    pages_checked = 0
+                    while not match and pages_checked < 20:
+                        pr = s.get(f'{base}/api/channels/logos/',
+                                   params={'page': page, 'page_size': 100}, timeout=10)
+                        if not pr.ok:
+                            break
+                        pd = pr.json()
+                        page_items = pd.get('results', pd) if isinstance(pd, dict) else pd
+                        if not isinstance(page_items, list) or not page_items:
+                            break
+                        match = next((x for x in page_items
+                                      if str(x.get('url','')).rstrip('/').lower() == norm), None)
+                        pages_checked += 1
+                        # Stop if no more pages
+                        if not (isinstance(pd, dict) and pd.get('next')):
+                            break
+                        page += 1
+                    logo_debug['pages_checked'] = pages_checked
                     if match:
                         logo_id = str(match['id'])
                         logo_debug['logo_id'] = logo_id
                         logo_debug['reused_existing'] = True
-                        log.info(f'Reusing existing Dispatcharr logo id={logo_id} for URL: {logo_url}')
+                        log.info(f'Reusing existing Dispatcharr logo id={logo_id} (page {page}) for URL: {logo_url}')
                     else:
-                        logo_debug['filter_status'] = filter_r.status_code
-                        logo_debug['filter_response'] = filter_r.text[:300]
-                        log.warning(f'Logo 400 already-exists, filter found nothing for: {logo_url}')
+                        logo_debug['skipped'] = True
+                        logo_debug['skip_reason'] = f'Checked {pages_checked} pages, no exact URL match found'
+                        log.warning(f'Logo skipped: no exact match after {pages_checked} pages for: {logo_url}')
                 except Exception as se:
                     logo_debug['search_error'] = str(se)
                     log.warning(f'Logo search exception: {se}')
