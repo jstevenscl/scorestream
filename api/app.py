@@ -1823,8 +1823,9 @@ def scoreboard_push(sid):
     existing_stream_id  = sb['dispatcharr_stream_id']
     base = c['url']
 
-    # If logoUrl provided and no logo_id yet, upload it to Dispatcharr
-    if logo_url and not logo_id:
+    # If a new logoUrl is provided, always upload it — overrides any existing logo_id
+    # (previously only uploaded when no logo_id existed, which silently skipped updates)
+    if logo_url:
         try:
             logo_r = s.post(f'{base}/api/channels/logos/', json={'url': logo_url, 'name': channel_name}, timeout=15)
             if logo_r.ok:
