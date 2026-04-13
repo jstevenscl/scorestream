@@ -1825,15 +1825,20 @@ def scoreboard_push(sid):
 
     # If a new logoUrl is provided, always upload it — overrides any existing logo_id
     # (previously only uploaded when no logo_id existed, which silently skipped updates)
+    logo_debug = {}
     if logo_url:
         try:
             logo_r = s.post(f'{base}/api/channels/logos/', json={'url': logo_url, 'name': channel_name}, timeout=15)
+            logo_debug['upload_status'] = logo_r.status_code
+            logo_debug['upload_response'] = logo_r.json() if logo_r.headers.get('content-type','').startswith('application/json') else logo_r.text[:200]
             if logo_r.ok:
                 logo_id = str(logo_r.json().get('id',''))
+                logo_debug['logo_id'] = logo_id
                 log.info(f'Logo uploaded for scoreboard {sid}: id={logo_id}')
             else:
-                log.warning(f'Logo upload failed: {logo_r.text[:200]}')
+                log.warning(f'Logo upload failed ({logo_r.status_code}): {logo_r.text[:200]}')
         except Exception as e:
+            logo_debug['upload_error'] = str(e)
             log.warning(f'Logo upload exception: {e}')
 
     # Resolve profile_ids to a list of ints (or None)
@@ -1920,6 +1925,8 @@ def scoreboard_push(sid):
             'channel_number': channel_number,
             'channel_name': channel_name,
             'stream_url': stream_url,
+            'logo_id': logo_id,
+            'logo_debug': logo_debug,
             'scoreboard': scoreboard_to_dict(row)
         })
 
