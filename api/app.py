@@ -1900,7 +1900,9 @@ def scoreboard_push(sid):
         if channel_number:          channel_payload['channel_number']  = float(channel_number)
         if group_id:                channel_payload['channel_group_id']= int(group_id)
         if stream_prof_id:          channel_payload['stream_profile_id']= int(stream_prof_id)
-        if logo_id:                 channel_payload['logo_id']          = int(logo_id)
+        if logo_id:
+            channel_payload['logo_id'] = int(logo_id)  # some Dispatcharr versions
+            channel_payload['logo']    = int(logo_id)  # other Dispatcharr versions
         if resolved_profile_ids:    channel_payload['channel_profile_ids'] = resolved_profile_ids
 
         if existing_channel_id:
