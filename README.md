@@ -430,7 +430,7 @@ To preview the full scoreboard stream output:
 **Default Stream Settings** (found in the sidebar under Settings) let you set values that apply to all scoreboards unless individually overridden. These control **stream output only** — the video that viewers see.
 
 Sections:
-- **Theme** — color scheme applied to stream cards (Blue, Cyan, Green, Lime, Mono, Prism, Orange, Pink, Purple, Red, Teal, Yellow, or custom)
+- **Theme** — color scheme applied to stream cards (Dark Blue, Carbon, Dark Red, Dark Green, Light, or custom)
 - **Font Sizes** — default Abbreviation, Score, and Team Name sizes for game cards
 - **Colors** — default Team Name color on game cards
 - **Card Size** — default Card Scale, Rotation Timer, Logo Size, and Layout (Grid/Fullscreen/Ticker)
@@ -445,22 +445,15 @@ Click **Save Defaults** to apply. Any scoreboard using defaults will pick up the
 
 ### Themes
 
-ScoreStream includes 12 built-in themes, each paired with a matching color variant of the ScoreStream logo. The sidebar logo automatically changes when you apply a system theme preset.
+ScoreStream includes 5 built-in themes. The default is **Dark Blue** (`#00d4ff` accent).
 
 | Theme | Accent Color | Style |
 |---|---|---|
-| **Blue** *(default)* | `#0173e1` | Deep navy with blue accent |
-| **Cyan** | `#02e5e4` | Dark teal with cyan accent |
-| **Green** | `#54ed55` | Dark forest with neon green accent |
-| **Lime** | `#a0ec55` | Dark olive with lime accent |
-| **Mono** | `#c8c8c8` | Pure black with silver/white accent |
-| **Prism** | `#e040fb` | Deep purple with orchid accent (multicolor logo) |
-| **Orange** | `#f8932c` | Dark amber with orange accent |
-| **Pink** | `#ea53a0` | Deep magenta with pink accent |
-| **Purple** | `#ab01e3` | Dark violet with purple accent |
-| **Red** | `#e00002` | Deep crimson with red accent |
-| **Teal** | `#03edb1` | Dark seafoam with teal accent |
-| **Yellow** | `#ecd801` | Dark ochre with yellow accent |
+| **Dark Blue** *(default)* | `#00d4ff` | Dark navy with cyan accent |
+| **Carbon** | `#e0e0e0` | Pure black with silver/white accent |
+| **Dark Red** | `#ff4466` | Deep crimson with red accent |
+| **Dark Green** | `#00e676` | Dark forest with neon green accent |
+| **Light** | `#0066cc` | Light grey/white with blue accent |
 
 **Applying a theme globally:**
 1. Go to **Default Stream Settings** → Theme section
@@ -493,11 +486,11 @@ Custom themes are stored in your display defaults and are available across all s
 | **Accent Secondary** | Secondary accent (warnings, secondary highlights) |
 | **Accent Green / Red** | Status colors (success/live indicators, error/danger) |
 | **Text Primary / Secondary / Dim** | Text brightness levels throughout the UI |
-| **Base Font Size** | Scales all UI text in the settings, sidebar, and topbar uniformly (12–20px) |
-| **Sidebar Font Scale** | Scales the left sidebar of the main scoreboard.html view independently (0.8×–1.6×, stacks with Base Font Size) |
+| **Global UI Scale** | Scales all app UI globally — settings pages, navigation, and the main scoreboard sidebar (12–20px) |
+| **Scoreboard Sidebar Scale** | Adds extra zoom to the main scoreboard's left sidebar only (sport toggles, section labels, refresh button) — stacks on top of Global UI Scale (0.8×–1.6×) |
 | **Topbar Meta Size** | Font size of "Live: # / Total: # / clock" in the top bar (9–22px) |
 
-**Presets:** Twelve built-in presets (Blue, Cyan, Green, Lime, Mono, Prism, Orange, Pink, Purple, Red, Teal, Yellow) let you quick-apply a full color scheme and customize from there. Applying a preset also swaps the sidebar logo to the matching color variant automatically.
+**Presets:** Five built-in presets (Dark Blue, Carbon, Dark Green, Dark Red, Light) let you quick-apply a full color scheme and customize from there.
 
 **Saving:** Slider drags **auto-save** to local storage on release AND push to the server database (debounced ~600ms). The active stream's puppeteer browser also re-fetches the system theme on every config refresh (every 30s), so changes propagate to live streams without restarting any container. The **Save System Theme** button is now optional — it just forces an immediate server push.
 
