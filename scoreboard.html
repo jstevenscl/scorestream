@@ -2431,7 +2431,7 @@ function renderEditorStep(sbOverride){
          top:160px clears the editor header (Cancel/Title/Save row) and the
          step navigation pills below it; right:30px keeps it inside the
          settings content area without covering the Save button. -->
-    <div id="sbStep3FloatPreview" style="position:fixed;top:160px;right:30px;width:360px;max-height:calc(100vh - 200px);overflow-y:auto;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+    <div id="sbStep3FloatPreview" style="position:fixed;top:80px;right:30px;width:360px;height:calc(100vh - 120px);overflow-y:scroll;overflow-x:hidden;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);box-sizing:border-box;">
       <div class="wiz-label" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
         <span>Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust)</span></span>
         <button onclick="document.getElementById('sbStep3FloatPreview').style.display='none'" title="Hide preview" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;">✕</button>
@@ -5426,7 +5426,7 @@ function favPlayerStar(sportId, playerName){
   const favs=getSportFavPlayers(sportId);
   if(!favs) return '';
   if(!favs.has(playerName)) return '';
-  return '<span style="display:inline-block;font-family:Arial,Liberation Sans,sans-serif;font-size:18px;line-height:1;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,0.85),0 0 2px rgba(255,180,0,0.9);margin-right:5px;flex-shrink:0;vertical-align:middle;-webkit-font-smoothing:antialiased;" title="Favorited">★</span>';
+  return '<svg width="16" height="16" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-right:5px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(255,215,0,0.85));" xmlns="http://www.w3.org/2000/svg" title="Favorited"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="#ffd700"/></svg>';
 }
 
 // ── PGA leaderboard card ─────────────────────────────────────────────────────
