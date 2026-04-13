@@ -2450,40 +2450,19 @@ function renderEditorStep(sbOverride){
       </div>
     </div>
       `;
-  // Move float preview to document.body so it escapes #main{overflow:hidden}
-  // which was swallowing mouse-wheel scroll events and preventing the panel
-  // from scrolling internally. Elements appended to body have no ancestor
-  // overflow/transform constraints that can interfere with position:fixed.
   setTimeout(()=>{
     const fp=document.getElementById('sbStep3FloatPreview');
-    if(fp && fp.parentElement !== document.body) document.body.appendChild(fp);
-    function _floatPreviewLayout(){
-      const fp=document.getElementById('sbStep3FloatPreview');
-      const stepBody=document.querySelector('.sb-editor-step3-body');
-      if(!fp) return;
-      if(window.innerWidth<900){
-        fp.style.position='static';
-        fp.style.width='100%';
-        fp.style.height='auto';
-        fp.style.overflowY='visible';
-        fp.style.marginTop='16px';
-        if(stepBody) stepBody.style.paddingRight='';
-      } else {
-        fp.style.position='fixed';
-        fp.style.top='80px';
-        fp.style.right='30px';
-        fp.style.width='360px';
-        fp.style.height='calc(100vh - 110px)';
-        fp.style.overflowY='scroll';
-        fp.style.overflowX='hidden';
-        fp.style.marginTop='';
-        if(stepBody) stepBody.style.paddingRight='400px';
-      }
-    }
-    _floatPreviewLayout();
-    if(!window._sbStep3FloatBound){
-      window.addEventListener('resize',_floatPreviewLayout);
-      window._sbStep3FloatBound=true;
+    if(!fp) return;
+    // #main has overflow:hidden which swallows wheel events before they reach
+    // the fixed panel. Capture wheel events on the panel and scroll it manually
+    // so they never bubble up to the blocked ancestor.
+    if(!fp._wheelBound){
+      fp.addEventListener('wheel',(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        fp.scrollTop += e.deltaY;
+      },{passive:false});
+      fp._wheelBound=true;
     }
   },0);
   // Init preview to current scale after render
