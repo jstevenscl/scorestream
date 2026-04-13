@@ -2432,11 +2432,9 @@ function renderEditorStep(sbOverride){
          step navigation pills below it; right:30px keeps it inside the
          settings content area without covering the Save button. -->
     <div id="sbStep3FloatPreview" style="position:fixed;top:80px;right:30px;width:360px;height:calc(100vh - 120px);overflow-y:scroll;overflow-x:hidden;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);box-sizing:border-box;">
-      <!-- Drag handle on left edge to resize the panel width -->
-      <div id="sbPreviewResizeHandle" title="Drag to resize preview" style="position:absolute;left:0;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:1;border-radius:10px 0 0 10px;display:flex;align-items:center;justify-content:center;">
-        <div style="width:3px;height:36px;background:var(--border);border-radius:2px;opacity:0.6;"></div>
-      </div>
       <div class="wiz-label" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <!-- Top-left corner resize grip — always accessible, controls both width and height -->
+        <div id="sbPreviewResizeHandle" title="Drag to resize preview" style="cursor:nwse-resize;padding:2px 6px 2px 0;flex-shrink:0;opacity:0.5;line-height:1;font-size:13px;color:var(--text-dim);">⤡</div>
         <span>Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust)</span></span>
         <button onclick="document.getElementById('sbStep3FloatPreview').style.display='none'" title="Hide preview" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;">✕</button>
       </div>
@@ -2451,10 +2449,6 @@ function renderEditorStep(sbOverride){
       <div id="sbCardScaleWrap">
         <!-- Single-column card stack for the narrower right preview pane -->
         <div id="sbCardScaleInner" style="display:flex;flex-direction:column;gap:9px;"></div>
-      </div>
-      <!-- Drag handle on bottom edge to resize the panel height -->
-      <div id="sbPreviewResizeHandleY" title="Drag to resize preview height" style="position:sticky;bottom:0;left:0;right:0;height:10px;cursor:ns-resize;display:flex;align-items:center;justify-content:center;margin:6px -14px -14px;flex-shrink:0;">
-        <div style="height:3px;width:36px;background:var(--border);border-radius:2px;opacity:0.6;"></div>
       </div>
     </div>
       `;
@@ -2472,50 +2466,39 @@ function renderEditorStep(sbOverride){
       },{passive:false});
       fp._wheelBound=true;
     }
-    // Restore saved width + height (user may have resized on a prior open).
+    // Counter-zoom: cancel out whatever zoom .settings-content currently has
+    // so the panel stays at its natural size regardless of the S/M/L/XL setting.
+    try{
+      const savedPx=parseInt(localStorage.getItem('ssSettingsScale'))||15;
+      const zoomMap={13:0.84,15:1.0,17:1.15,20:1.38};
+      const z=zoomMap[savedPx]||1.0;
+      fp.style.zoom=(1/z)+'';
+    }catch(e){}
+    // Restore saved width + height (user may have manually resized).
     try{const w=parseInt(localStorage.getItem('sbPreviewWidth'));if(w>=200&&w<=800)fp.style.width=w+'px';}catch(e){}
     try{const h=parseInt(localStorage.getItem('sbPreviewHeight'));if(h>=150&&h<=window.innerHeight-40)fp.style.height=h+'px';}catch(e){}
-    // Left-edge drag-to-resize: dragging left widens, right narrows.
+    // Top-left corner grip: drag controls both width (leftward) and height (downward).
     const rh=document.getElementById('sbPreviewResizeHandle');
     if(rh&&!rh._resizeBound){
       rh.addEventListener('mousedown',(e)=>{
         e.preventDefault();
-        const startX=e.clientX;
-        const startW=fp.offsetWidth;
+        const startX=e.clientX, startY=e.clientY;
+        const startW=fp.offsetWidth, startH=fp.offsetHeight;
         function onMove(ev){
           const newW=Math.min(800,Math.max(200,startW-(ev.clientX-startX)));
-          fp.style.width=newW+'px';
-        }
-        function onUp(){
-          document.removeEventListener('mousemove',onMove);
-          document.removeEventListener('mouseup',onUp);
-          try{localStorage.setItem('sbPreviewWidth',parseInt(fp.style.width));}catch(e){}
-        }
-        document.addEventListener('mousemove',onMove);
-        document.addEventListener('mouseup',onUp);
-      });
-      rh._resizeBound=true;
-    }
-    // Bottom-edge drag-to-resize: dragging down talls, up shortens.
-    const rhy=document.getElementById('sbPreviewResizeHandleY');
-    if(rhy&&!rhy._resizeBound){
-      rhy.addEventListener('mousedown',(e)=>{
-        e.preventDefault();
-        const startY=e.clientY;
-        const startH=fp.offsetHeight;
-        function onMove(ev){
           const newH=Math.min(window.innerHeight-40,Math.max(150,startH+(ev.clientY-startY)));
+          fp.style.width=newW+'px';
           fp.style.height=newH+'px';
         }
         function onUp(){
           document.removeEventListener('mousemove',onMove);
           document.removeEventListener('mouseup',onUp);
-          try{localStorage.setItem('sbPreviewHeight',parseInt(fp.style.height));}catch(e){}
+          try{localStorage.setItem('sbPreviewWidth',parseInt(fp.style.width));localStorage.setItem('sbPreviewHeight',parseInt(fp.style.height));}catch(e){}
         }
         document.addEventListener('mousemove',onMove);
         document.addEventListener('mouseup',onUp);
       });
-      rhy._resizeBound=true;
+      rh._resizeBound=true;
     }
   },0);
   // Init preview to current scale after render
@@ -7825,7 +7808,14 @@ function setSettingsScale(px){
   const content=document.querySelector('.settings-content');
   // Use zoom so all descendants (even those with explicit px font-sizes) scale uniformly
   const zoomMap={13:0.84,15:1.0,17:1.15,20:1.38};
-  if(content) content.style.zoom=(zoomMap[px]||1.0)+'';
+  const z=zoomMap[px]||1.0;
+  if(content) content.style.zoom=z+'';
+  // Counter-zoom the float preview so the settings zoom never bleeds into it.
+  // The panel is position:fixed but lives inside .settings-content in the DOM,
+  // so it inherits zoom. Applying 1/z cancels that out and keeps the panel at
+  // its natural CSS size regardless of which text-size button is active.
+  const fp=document.getElementById('sbStep3FloatPreview');
+  if(fp) fp.style.zoom=(1/z)+'';
   for(const id of ['scaleS','scaleM','scaleL','scaleXL'])
     document.getElementById(id)?.classList.remove('active');
   const map={13:'scaleS',15:'scaleM',17:'scaleL',20:'scaleXL'};
