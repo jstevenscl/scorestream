@@ -1837,19 +1837,35 @@ def scoreboard_push(sid):
             elif logo_r.status_code == 400 and 'already exists' in logo_r.text.lower():
                 # Dispatcharr enforces URL uniqueness — find the existing logo and reuse its ID
                 try:
-                    list_r = s.get(f'{base}/api/channels/logos/', params={'page_size': 500}, timeout=10)
+                    list_r = s.get(f'{base}/api/channels/logos/', params={'page_size': 500, 'limit': 500}, timeout=10)
                     if list_r.ok:
-                        items = list_r.json()
-                        if isinstance(items, dict): items = items.get('results', [])
-                        match = next((x for x in items if x.get('url','').rstrip('/') == logo_url.rstrip('/')), None)
+                        raw_list = list_r.json()
+                        # Dispatcharr may return {results:[...], count:N} or a plain list
+                        if isinstance(raw_list, dict):
+                            items = raw_list.get('results', raw_list.get('logos', []))
+                        else:
+                            items = raw_list
+                        # Expose first item's keys so we can see the schema
+                        logo_debug['list_count'] = len(items)
+                        if items:
+                            logo_debug['sample_keys'] = list(items[0].keys())
+                            logo_debug['sample_item'] = {k: items[0][k] for k in list(items[0].keys())[:6]}
+                        # Try matching against all plausible URL field names
+                        norm = logo_url.rstrip('/').lower()
+                        match = next((x for x in items if
+                            str(x.get('url', x.get('logo_url', x.get('image_url', x.get('path', ''))))).rstrip('/').lower() == norm
+                        ), None)
                         if match:
                             logo_id = str(match['id'])
                             logo_debug['logo_id'] = logo_id
                             logo_debug['reused_existing'] = True
                             log.info(f'Reusing existing Dispatcharr logo id={logo_id} for URL: {logo_url}')
                         else:
-                            logo_debug['search_warning'] = 'URL exists in Dispatcharr but could not find it in logo list'
+                            logo_debug['search_warning'] = f'URL exists but not matched in {len(items)} logos'
                             log.warning(f'Logo 400 already-exists but not found in list for: {logo_url}')
+                    else:
+                        logo_debug['list_status'] = list_r.status_code
+                        logo_debug['list_error'] = list_r.text[:200]
                 except Exception as se:
                     logo_debug['search_error'] = str(se)
                     log.warning(f'Logo search exception: {se}')
