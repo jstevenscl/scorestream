@@ -1817,6 +1817,15 @@ def scoreboard_push(sid):
     stream_prof_id  = b.get('streamProfileId') or sb['dispatcharr_stream_profile_id']
     logo_id         = b.get('logoId') or sb['dispatcharr_logo_id']
     logo_url        = b.get('logoUrl')  # URL-based logo to upload to Dispatcharr
+    # Rewrite localhost/127.0.0.1 to STREAM_BASE_URL so Dispatcharr can fetch the logo.
+    # Inside Dispatcharr's container, 'localhost' resolves to Dispatcharr itself — never nginx.
+    # STREAM_BASE_URL (the LAN IP) is reachable from any container regardless of stack topology.
+    if logo_url and STREAM_BASE_URL:
+        from urllib.parse import urlparse, urlunparse
+        _lp = urlparse(logo_url)
+        if _lp.hostname in ('localhost', '127.0.0.1'):
+            _bp = urlparse(STREAM_BASE_URL)
+            logo_url = urlunparse(_lp._replace(scheme=_bp.scheme, netloc=_bp.netloc))
     stream_url      = f'{STREAM_BASE_URL}/hls/{sb["slug"]}.m3u8' if STREAM_BASE_URL else None
 
     existing_channel_id = sb['dispatcharr_channel_id']
