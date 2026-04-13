@@ -1835,42 +1835,24 @@ def scoreboard_push(sid):
                 logo_debug['logo_id'] = logo_id
                 log.info(f'Logo uploaded for scoreboard {sid}: id={logo_id}')
             elif logo_r.status_code == 400 and 'already exists' in logo_r.text.lower():
-                # Dispatcharr enforces URL uniqueness — find the existing logo and reuse its ID
+                # Dispatcharr enforces URL uniqueness — bust the collision with a version param.
+                # nginx ignores unknown query params so the same image file is served.
+                import time as _t
+                bust_url = logo_url + ('&' if '?' in logo_url else '?') + f'_v={int(_t.time())}'
                 try:
-                    # Paginate through all Dispatcharr logos to find exact URL match
-                    norm = logo_url.rstrip('/').lower()
-                    match = None
-                    page = 1
-                    pages_checked = 0
-                    while not match and pages_checked < 20:
-                        pr = s.get(f'{base}/api/channels/logos/',
-                                   params={'page': page, 'page_size': 100}, timeout=10)
-                        if not pr.ok:
-                            break
-                        pd = pr.json()
-                        page_items = pd.get('results', pd) if isinstance(pd, dict) else pd
-                        if not isinstance(page_items, list) or not page_items:
-                            break
-                        match = next((x for x in page_items
-                                      if str(x.get('url','')).rstrip('/').lower() == norm), None)
-                        pages_checked += 1
-                        # Stop if no more pages
-                        if not (isinstance(pd, dict) and pd.get('next')):
-                            break
-                        page += 1
-                    logo_debug['pages_checked'] = pages_checked
-                    if match:
-                        logo_id = str(match['id'])
+                    retry_r = s.post(f'{base}/api/channels/logos/',
+                                     json={'url': bust_url, 'name': channel_name}, timeout=15)
+                    if retry_r.ok:
+                        logo_id = str(retry_r.json().get('id',''))
                         logo_debug['logo_id'] = logo_id
-                        logo_debug['reused_existing'] = True
-                        log.info(f'Reusing existing Dispatcharr logo id={logo_id} (page {page}) for URL: {logo_url}')
+                        log.info(f'Logo created with busted URL id={logo_id}')
                     else:
-                        logo_debug['skipped'] = True
-                        logo_debug['skip_reason'] = f'Checked {pages_checked} pages, no exact URL match found'
-                        log.warning(f'Logo skipped: no exact match after {pages_checked} pages for: {logo_url}')
+                        logo_debug['retry_status'] = retry_r.status_code
+                        logo_debug['retry_error'] = retry_r.text[:200]
+                        log.warning(f'Logo retry failed: {retry_r.status_code}')
                 except Exception as se:
-                    logo_debug['search_error'] = str(se)
-                    log.warning(f'Logo search exception: {se}')
+                    logo_debug['retry_error'] = str(se)
+                    log.warning(f'Logo retry exception: {se}')
             else:
                 logo_debug['upload_response'] = logo_r.text[:200]
                 log.warning(f'Logo upload failed ({logo_r.status_code}): {logo_r.text[:200]}')
