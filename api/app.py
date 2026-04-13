@@ -2613,7 +2613,7 @@ if __name__ == '__main__':
                 def _norm_mfr(m):
                     s = str(m or '').lstrip(',').strip()
                     low = s.lower()
-                    if 'chev' in low: return 'Chevy'
+                    if 'chev' in low or low.startswith('chv'): return 'Chevy'
                     if 'ford' in low: return 'Ford'
                     if 'toyota' in low or 'toyot' in low: return 'Toyota'
                     return s
@@ -2636,9 +2636,9 @@ if __name__ == '__main__':
                     'pos': _pos(v),
                     'car': '#' + str(v.get('vehicle_number', v.get('car_number', '?'))).lstrip('#').lstrip(','),
                     'driver': (v.get('driver', {}).get('full_name') if isinstance(v.get('driver'), dict) else None) or
-                               v.get('driver_name') or
                                ((v.get('driver', {}).get('first_name','') + ' ' +
-                                 v.get('driver', {}).get('last_name','')).strip() if isinstance(v.get('driver'), dict) else '') or '?',
+                                 v.get('driver', {}).get('last_name','')).strip() if isinstance(v.get('driver'), dict) else '') or
+                               v.get('driver_name') or '?',
                     'manufacturer': _norm_mfr(v.get('vehicle_manufacturer', v.get('manufacturer', ''))),
                     'laps': v.get('laps_completed', v.get('laps', 0)),
                     'status': v.get('status', 'Running'),
@@ -2714,7 +2714,7 @@ if __name__ == '__main__':
                         def _norm_mfr(m):
                             s = str(m or '').lstrip(',').strip()
                             low = s.lower()
-                            if 'chev' in low: return 'Chevy'
+                            if 'chev' in low or low.startswith('chv'): return 'Chevy'
                             if 'ford' in low: return 'Ford'
                             if 'toyota' in low or 'toyot' in low: return 'Toyota'
                             return s
@@ -2723,10 +2723,10 @@ if __name__ == '__main__':
                             except (ValueError, TypeError): return default
                         standings = [{
                             'pos': e.get('points_position') or e.get('rank') or (i+1),
-                            'driver': (e.get('driver_name') or
-                                       (e.get('driver', {}).get('full_name') if isinstance(e.get('driver'), dict) else None) or
+                            'driver': ((e.get('driver', {}).get('full_name') if isinstance(e.get('driver'), dict) else None) or
                                        ((e.get('driver', {}).get('first_name','') + ' ' +
-                                         e.get('driver', {}).get('last_name','')).strip() if isinstance(e.get('driver'), dict) else '') or 'Unknown'),
+                                         e.get('driver', {}).get('last_name','')).strip() if isinstance(e.get('driver'), dict) else '') or
+                                       e.get('driver_name') or 'Unknown'),
                             'car': '#' + str(e.get('car_number', '?')).lstrip('#').lstrip(','),
                             'manufacturer': _norm_mfr(e.get('manufacturer', '')),
                             'points': _safe_int(e.get('points', 0)),
