@@ -1823,19 +1823,38 @@ def scoreboard_push(sid):
     existing_stream_id  = sb['dispatcharr_stream_id']
     base = c['url']
 
-    # If a new logoUrl is provided, always upload it — overrides any existing logo_id
-    # (previously only uploaded when no logo_id existed, which silently skipped updates)
+    # If a new logoUrl is provided, upload it — or find existing entry if Dispatcharr
+    # already has a logo for that URL (it enforces URL uniqueness and returns 400).
     logo_debug = {}
     if logo_url:
         try:
             logo_r = s.post(f'{base}/api/channels/logos/', json={'url': logo_url, 'name': channel_name}, timeout=15)
             logo_debug['upload_status'] = logo_r.status_code
-            logo_debug['upload_response'] = logo_r.json() if logo_r.headers.get('content-type','').startswith('application/json') else logo_r.text[:200]
             if logo_r.ok:
                 logo_id = str(logo_r.json().get('id',''))
                 logo_debug['logo_id'] = logo_id
                 log.info(f'Logo uploaded for scoreboard {sid}: id={logo_id}')
+            elif logo_r.status_code == 400 and 'already exists' in logo_r.text.lower():
+                # Dispatcharr enforces URL uniqueness — find the existing logo and reuse its ID
+                try:
+                    list_r = s.get(f'{base}/api/channels/logos/', params={'page_size': 500}, timeout=10)
+                    if list_r.ok:
+                        items = list_r.json()
+                        if isinstance(items, dict): items = items.get('results', [])
+                        match = next((x for x in items if x.get('url','').rstrip('/') == logo_url.rstrip('/')), None)
+                        if match:
+                            logo_id = str(match['id'])
+                            logo_debug['logo_id'] = logo_id
+                            logo_debug['reused_existing'] = True
+                            log.info(f'Reusing existing Dispatcharr logo id={logo_id} for URL: {logo_url}')
+                        else:
+                            logo_debug['search_warning'] = 'URL exists in Dispatcharr but could not find it in logo list'
+                            log.warning(f'Logo 400 already-exists but not found in list for: {logo_url}')
+                except Exception as se:
+                    logo_debug['search_error'] = str(se)
+                    log.warning(f'Logo search exception: {se}')
             else:
+                logo_debug['upload_response'] = logo_r.text[:200]
                 log.warning(f'Logo upload failed ({logo_r.status_code}): {logo_r.text[:200]}')
         except Exception as e:
             logo_debug['upload_error'] = str(e)
@@ -2572,18 +2591,35 @@ if __name__ == '__main__':
             if series_id != 1 or not run_name: return
 
             def _parse_vehicles(vehicles):
+                def _points(v):
+                    # Live feed: points_earned or points; race-results JSON: points_earned, total_points, points
+                    for f in ('points_earned','total_points','points'):
+                        val = v.get(f)
+                        if val is not None:
+                            try: return int(val)
+                            except (ValueError, TypeError): pass
+                    return 0
+                def _pos(v):
+                    for f in ('running_position','finishing_position','finish_position','pos'):
+                        val = v.get(f)
+                        if val is not None:
+                            try: return int(val)
+                            except (ValueError, TypeError): pass
+                    return 99
                 return [{
-                    'pos': v.get('running_position'),
-                    'car': '#' + str(v.get('vehicle_number', '?')).lstrip('#'),
-                    'driver': (v.get('driver', {}).get('full_name') or
-                               (v.get('driver', {}).get('first_name','') + ' ' +
-                                v.get('driver', {}).get('last_name','')).strip()),
-                    'manufacturer': v.get('vehicle_manufacturer', ''),
-                    'laps': v.get('laps_completed', 0),
+                    'pos': _pos(v),
+                    'car': '#' + str(v.get('vehicle_number', v.get('car_number', '?'))).lstrip('#').lstrip(','),
+                    'driver': (v.get('driver', {}).get('full_name') if isinstance(v.get('driver'), dict) else None) or
+                               v.get('driver_name') or
+                               ((v.get('driver', {}).get('first_name','') + ' ' +
+                                 v.get('driver', {}).get('last_name','')).strip() if isinstance(v.get('driver'), dict) else '') or '?',
+                    'manufacturer': str(v.get('vehicle_manufacturer', v.get('manufacturer', ''))).lstrip(','),
+                    'laps': v.get('laps_completed', v.get('laps', 0)),
                     'status': v.get('status', 'Running'),
                     'delta': v.get('delta'),
-                } for v in sorted(vehicles, key=lambda x: x.get('running_position', 99))
-                  if v.get('running_position')]
+                    'points': _points(v),
+                } for v in sorted(vehicles, key=lambda x: _pos(x))
+                  if _pos(v) < 99 or v.get('driver_name') or (isinstance(v.get('driver'),dict) and v['driver'].get('full_name'))]
 
             # Build current/last race from live feed
             drivers = _parse_vehicles(live.get('vehicles', []))
@@ -2651,15 +2687,17 @@ if __name__ == '__main__':
                         entries = raw if isinstance(raw, list) else raw.get('response', [])
                         standings = [{
                             'pos': e.get('points_position') or e.get('rank') or (i+1),
-                            'driver': (e.get('driver_name') or e.get('driver', {}).get('full_name') or
-                                       (e.get('driver', {}).get('first_name','') + ' ' +
-                                        e.get('driver', {}).get('last_name','')).strip() or 'Unknown'),
-                            'car': '#' + str(e.get('car_number', '?')).lstrip('#'),
-                            'manufacturer': e.get('manufacturer', ''),
+                            'driver': (e.get('driver_name') or
+                                       (e.get('driver', {}).get('full_name') if isinstance(e.get('driver'), dict) else None) or
+                                       ((e.get('driver', {}).get('first_name','') + ' ' +
+                                         e.get('driver', {}).get('last_name','')).strip() if isinstance(e.get('driver'), dict) else '') or 'Unknown'),
+                            'car': '#' + str(e.get('car_number', '?')).lstrip('#').lstrip(','),
+                            'manufacturer': str(e.get('manufacturer', '')).lstrip(','),
                             'points': e.get('points', 0),
                             'wins': e.get('wins', 0),
-                            'races': e.get('races', 0),
-                        } for i, e in enumerate(entries[:30])]
+                            'top5': e.get('top5', e.get('top_5', 0)),
+                            'races': e.get('races', e.get('starts', 0)),
+                        } for i, e in enumerate(entries[:40])]
                         if standings:
                             with get_db() as conn:
                                 existing = conn.execute("SELECT data FROM motor_cache WHERE key='nascar-2026-season'").fetchone()
