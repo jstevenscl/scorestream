@@ -1845,16 +1845,23 @@ def scoreboard_push(sid):
                             items = raw_list.get('results', raw_list.get('logos', []))
                         else:
                             items = raw_list
-                        # Expose first item's keys so we can see the schema
                         logo_debug['list_count'] = len(items)
                         if items:
                             logo_debug['sample_keys'] = list(items[0].keys())
-                            logo_debug['sample_item'] = {k: items[0][k] for k in list(items[0].keys())[:6]}
-                        # Try matching against all plausible URL field names
+                            logo_debug['sample_url'] = str(items[0].get('url', ''))
+                        # Exact match first (case-insensitive, strip trailing slash)
                         norm = logo_url.rstrip('/').lower()
                         match = next((x for x in items if
-                            str(x.get('url', x.get('logo_url', x.get('image_url', x.get('path', ''))))).rstrip('/').lower() == norm
+                            str(x.get('url', '')).rstrip('/').lower() == norm
                         ), None)
+                        # Fallback: filename-only match (handles host/port differences)
+                        if not match:
+                            fname = logo_url.rstrip('/').split('/')[-1].lower()
+                            match = next((x for x in items if
+                                str(x.get('url', '')).rstrip('/').lower().endswith('/' + fname)
+                            ), None)
+                            if match:
+                                logo_debug['matched_by'] = 'filename'
                         if match:
                             logo_id = str(match['id'])
                             logo_debug['logo_id'] = logo_id
@@ -1862,6 +1869,7 @@ def scoreboard_push(sid):
                             log.info(f'Reusing existing Dispatcharr logo id={logo_id} for URL: {logo_url}')
                         else:
                             logo_debug['search_warning'] = f'URL exists but not matched in {len(items)} logos'
+                            logo_debug['we_sent'] = logo_url
                             log.warning(f'Logo 400 already-exists but not found in list for: {logo_url}')
                     else:
                         logo_debug['list_status'] = list_r.status_code
