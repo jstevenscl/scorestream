@@ -5432,7 +5432,7 @@ function favPlayerStar(sportId, playerName){
   const favs=getSportFavPlayers(sportId);
   if(!favs) return '';
   if(!favs.has(playerName)) return '';
-  return '<svg width="16" height="16" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-right:5px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(255,215,0,0.85));" xmlns="http://www.w3.org/2000/svg" title="Favorited"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="#ffd700"/></svg>';
+  return '<svg width="16" height="16" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-right:5px;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="#ffd700"/></svg>';
 }
 
 // ── PGA leaderboard card ─────────────────────────────────────────────────────
