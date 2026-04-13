@@ -445,7 +445,7 @@ Click **Save Defaults** to apply. Any scoreboard using defaults will pick up the
 
 ### Themes
 
-ScoreStream includes 5 built-in themes. The default is **Dark Blue** (`#00d4ff` accent).
+ScoreStream includes 5 built-in color themes for stream output. The default is **Dark Blue** (`#00d4ff` accent).
 
 | Theme | Accent Color | Style |
 |---|---|---|
@@ -607,9 +607,15 @@ Before pushing, configure your Dispatcharr connection:
    - The scoreboard's name as the channel name
    - The HLS stream URL pointing to this server
    - The channel group "ScoreStream"
+   - The selected logo (if one was chosen in the wizard or Quick Update)
 
 **Channel group and numbering:**
 Channels are placed in a group called **ScoreStream** by default. Channel numbers are assigned automatically starting from 900. Both can be customized in the Integrations settings.
+
+**Channel logo:**
+The push wizard (Step 5) and Quick Update modal both include a logo picker. You can select one of the 12 bundled ScoreStream logos (glow variants in various colors), upload a custom image file, or paste any public image URL. The selected logo is uploaded to Dispatcharr's logo manager and assigned to the channel. Once a logo has been applied, the **currently applied logo** is shown as a thumbnail in the Quick Update modal so you always know what's set — leave the logo field blank on subsequent updates to keep the existing one.
+
+> **Logo URL requirement:** The logo URL sent to Dispatcharr must use your `STREAM_BASE_URL` (your server's LAN IP), not `localhost`. ScoreStream automatically rewrites any `localhost` or `127.0.0.1` address to `STREAM_BASE_URL` before uploading — no manual action required as long as `STREAM_BASE_URL` is set correctly in your `.env`.
 
 ---
 
@@ -914,6 +920,10 @@ The workflow runs automatically on schedule. To manually refresh:
 - Set `STREAM_QUALITY=low` to drop back to original behavior (~800 kbps, lowest CPU).
 - Confirm `STREAM_FPS=1` (the default). Higher FPS values multiply CPU cost — 30 FPS uses ~30x more CPU than 1 FPS.
 - If using `STREAM_DPR=2`, drop back to `STREAM_DPR=1` to save browser memory.
+
+**NASCAR standings showing incorrect points or manufacturer names:**
+- Points values are parsed from NASCAR's API as integers (comma-separated thousands separators are stripped automatically). Manufacturer names are normalized to `Chevy`, `Ford`, or `Toyota` regardless of how the API returns them (e.g., "Chevrolet", "CHEVY", "Toyota Motor Corp").
+- If standings data looks stale, go to GitHub → Actions → **Update Motor Cache Data** → Run workflow, then restart `scorestream-api`.
 
 **Ticker overlay not appearing after enabling:**
 - Restart the channel in Dispatcharr — existing ffmpeg processes use the old stream profile until restarted

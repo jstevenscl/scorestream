@@ -334,6 +334,7 @@ def init_db():
             dispatcharr_profile_ids TEXT,
             dispatcharr_stream_profile_id TEXT,
             dispatcharr_logo_id TEXT,
+            dispatcharr_logo_url TEXT,
             is_default INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at TEXT NOT NULL DEFAULT (datetime('now')))""")
@@ -364,6 +365,10 @@ def init_db():
             pass
         try:
             conn.execute("ALTER TABLE scoreboards ADD COLUMN ticker_config TEXT NOT NULL DEFAULT '{}'")
+        except Exception:
+            pass
+        try:
+            conn.execute('ALTER TABLE scoreboards ADD COLUMN dispatcharr_logo_url TEXT')
         except Exception:
             pass
         conn.execute('''CREATE TABLE IF NOT EXISTS ticker_profile_backup(
@@ -1566,6 +1571,7 @@ def scoreboard_to_dict(r):
         'dispatcharr_profile_ids': _json.loads(r['dispatcharr_profile_ids'] or 'null'),
         'dispatcharr_stream_profile_id': r['dispatcharr_stream_profile_id'],
         'dispatcharr_logo_id': r['dispatcharr_logo_id'],
+        'dispatcharr_logo_url': r['dispatcharr_logo_url'] if 'dispatcharr_logo_url' in r.keys() else None,
         'is_default': bool(r['is_default']),
         'audio_mode': r['audio_mode'] if r['audio_mode'] else 'none',
         'audio_source_url': r['audio_source_url'] or '',
@@ -1936,7 +1942,8 @@ def scoreboard_push(sid):
                 dispatcharr_channel_id=?, dispatcharr_stream_id=?,
                 dispatcharr_channel_number=?, dispatcharr_group_id=?,
                 dispatcharr_profile_ids=?, dispatcharr_stream_profile_id=?,
-                dispatcharr_logo_id=?, updated_at=datetime('now')
+                dispatcharr_logo_id=?, dispatcharr_logo_url=?,
+                updated_at=datetime('now')
                 WHERE id=?""",
                 (channel_id, stream_id,
                  int(channel_number) if channel_number else None,
@@ -1944,6 +1951,7 @@ def scoreboard_push(sid):
                  _json.dumps(profile_ids_raw) if profile_ids_raw else None,
                  str(stream_prof_id) if stream_prof_id else None,
                  str(logo_id) if logo_id else None,
+                 logo_url if logo_url else None,
                  sid))
             conn.commit()
             row = conn.execute('SELECT * FROM scoreboards WHERE id=?',(sid,)).fetchone()
@@ -2602,12 +2610,19 @@ if __name__ == '__main__':
             if series_id != 1 or not run_name: return
 
             def _parse_vehicles(vehicles):
+                def _norm_mfr(m):
+                    s = str(m or '').lstrip(',').strip()
+                    low = s.lower()
+                    if 'chev' in low: return 'Chevy'
+                    if 'ford' in low: return 'Ford'
+                    if 'toyota' in low or 'toyot' in low: return 'Toyota'
+                    return s
                 def _points(v):
                     # Live feed: points_earned or points; race-results JSON: points_earned, total_points, points
                     for f in ('points_earned','total_points','points'):
                         val = v.get(f)
                         if val is not None:
-                            try: return int(val)
+                            try: return int(str(val).replace(',','').strip())
                             except (ValueError, TypeError): pass
                     return 0
                 def _pos(v):
@@ -2624,7 +2639,7 @@ if __name__ == '__main__':
                                v.get('driver_name') or
                                ((v.get('driver', {}).get('first_name','') + ' ' +
                                  v.get('driver', {}).get('last_name','')).strip() if isinstance(v.get('driver'), dict) else '') or '?',
-                    'manufacturer': str(v.get('vehicle_manufacturer', v.get('manufacturer', ''))).lstrip(','),
+                    'manufacturer': _norm_mfr(v.get('vehicle_manufacturer', v.get('manufacturer', ''))),
                     'laps': v.get('laps_completed', v.get('laps', 0)),
                     'status': v.get('status', 'Running'),
                     'delta': v.get('delta'),
@@ -2696,6 +2711,16 @@ if __name__ == '__main__':
                     if rs.ok:
                         raw = rs.json()
                         entries = raw if isinstance(raw, list) else raw.get('response', [])
+                        def _norm_mfr(m):
+                            s = str(m or '').lstrip(',').strip()
+                            low = s.lower()
+                            if 'chev' in low: return 'Chevy'
+                            if 'ford' in low: return 'Ford'
+                            if 'toyota' in low or 'toyot' in low: return 'Toyota'
+                            return s
+                        def _safe_int(v, default=0):
+                            try: return int(str(v).replace(',','').strip())
+                            except (ValueError, TypeError): return default
                         standings = [{
                             'pos': e.get('points_position') or e.get('rank') or (i+1),
                             'driver': (e.get('driver_name') or
@@ -2703,11 +2728,11 @@ if __name__ == '__main__':
                                        ((e.get('driver', {}).get('first_name','') + ' ' +
                                          e.get('driver', {}).get('last_name','')).strip() if isinstance(e.get('driver'), dict) else '') or 'Unknown'),
                             'car': '#' + str(e.get('car_number', '?')).lstrip('#').lstrip(','),
-                            'manufacturer': str(e.get('manufacturer', '')).lstrip(','),
-                            'points': e.get('points', 0),
-                            'wins': e.get('wins', 0),
-                            'top5': e.get('top5', e.get('top_5', 0)),
-                            'races': e.get('races', e.get('starts', 0)),
+                            'manufacturer': _norm_mfr(e.get('manufacturer', '')),
+                            'points': _safe_int(e.get('points', 0)),
+                            'wins': _safe_int(e.get('wins', 0)),
+                            'top5': _safe_int(e.get('top5', e.get('top_5', 0))),
+                            'races': _safe_int(e.get('races', e.get('starts', 0))),
                         } for i, e in enumerate(entries[:40])]
                         if standings:
                             with get_db() as conn:
