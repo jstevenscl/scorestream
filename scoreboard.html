@@ -2450,28 +2450,34 @@ function renderEditorStep(sbOverride){
       </div>
     </div>
       `;
-  // Float preview responsive: collapse if viewport gets too narrow,
-  // restore on wider viewports
+  // Move float preview to document.body so it escapes #main{overflow:hidden}
+  // which was swallowing mouse-wheel scroll events and preventing the panel
+  // from scrolling internally. Elements appended to body have no ancestor
+  // overflow/transform constraints that can interfere with position:fixed.
   setTimeout(()=>{
+    const fp=document.getElementById('sbStep3FloatPreview');
+    if(fp && fp.parentElement !== document.body) document.body.appendChild(fp);
     function _floatPreviewLayout(){
       const fp=document.getElementById('sbStep3FloatPreview');
-      const body=document.querySelector('.sb-editor-step3-body');
-      if(!fp||!body) return;
+      const stepBody=document.querySelector('.sb-editor-step3-body');
+      if(!fp) return;
       if(window.innerWidth<900){
-        // Too narrow — disable floating, push preview back into the body flow
         fp.style.position='static';
         fp.style.width='100%';
-        fp.style.maxHeight='none';
+        fp.style.height='auto';
+        fp.style.overflowY='visible';
         fp.style.marginTop='16px';
-        body.style.paddingRight='';
+        if(stepBody) stepBody.style.paddingRight='';
       } else {
         fp.style.position='fixed';
-        fp.style.top='160px';
+        fp.style.top='80px';
         fp.style.right='30px';
         fp.style.width='360px';
-        fp.style.maxHeight='calc(100vh - 200px)';
+        fp.style.height='calc(100vh - 110px)';
+        fp.style.overflowY='scroll';
+        fp.style.overflowX='hidden';
         fp.style.marginTop='';
-        body.style.paddingRight='400px';
+        if(stepBody) stepBody.style.paddingRight='400px';
       }
     }
     _floatPreviewLayout();
