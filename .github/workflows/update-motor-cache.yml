@@ -79,7 +79,78 @@ jobs:
               return _re.sub(r'\s*\.\s*', '.', name.lower()).strip()
           # NASCAR driver name map — populated from cf.nascar.com/cacher/drivers.json
           # Maps normalized abbreviated key (e.g. "t.reddick") → full name ("Tyler Reddick")
-          _nascar_name_map = {}
+          # Static fallback — covers all known abbreviated names across Cup/NOAPS/Trucks.
+          # Used when cf.nascar.com/cacher/drivers.json is unreachable from CI.
+          # Keys are normalized: first_initial.last_name (lowercase, no spaces around dots).
+          _NASCAR_FALLBACK = {
+            # ── Cup ─────────────────────────────────────────────────────────────────
+            'r.blaney':'Ryan Blaney','w.byron':'William Byron','k.larson':'Kyle Larson',
+            'c.elliott':'Chase Elliott','c.bell':'Christopher Bell','d.hamlin':'Denny Hamlin',
+            'm.truex':'Martin Truex Jr.','m.truex jr.':'Martin Truex Jr.',
+            'j.logano':'Joey Logano','b.keselowski':'Brad Keselowski','a.cindric':'Austin Cindric',
+            't.reddick':'Tyler Reddick','r.chastain':'Ross Chastain','a.bowman':'Alex Bowman',
+            'j.berry':'Josh Berry','k.busch':'Kyle Busch','t.gibbs':'Ty Gibbs',
+            'b.wallace':'Bubba Wallace','d.wallace jr.':'Bubba Wallace','d.wallace jr':'Bubba Wallace',
+            'd.suarez':'Daniel Suarez','d.suárez':'Daniel Suarez',
+            'r.stenhouse':'Ricky Stenhouse Jr.','r.stenhouse jr.':'Ricky Stenhouse Jr.',
+            'c.buescher':'Chris Buescher','m.mcdowell':'Michael McDowell','c.briscoe':'Chase Briscoe',
+            'a.dillon':'Austin Dillon','t.dillon':'Ty Dillon','h.burton':'Harrison Burton',
+            'e.jones':'Erik Jones','t.gilliland':'Todd Gilliland','r.preece':'Ryan Preece',
+            'c.hocevar':'Carson Hocevar','n.gragson':'Noah Gragson','c.lajoie':'Corey LaJoie',
+            'j.haley':'Justin Haley','z.smith':'Zane Smith',
+            'j.nemechek':'John Hunter Nemechek','j.hunter nemechek':'John Hunter Nemechek',
+            's.van gisbergen':'Shane van Gisbergen','k.grala':'Kaz Grala',
+            'b.j.mcleod':'BJ McLeod','b.mcleod':'BJ McLeod','b.jones':'Brandon Jones',
+            'c.ware':'Cody Ware','k.harvick':'Kevin Harvick','b.brown':'Brandon Brown',
+            'c.zilisch':'Connor Zilisch','a.hill':'Austin Hill','n.sanchez':'Nick Sanchez',
+            'r.ellis':'Ryan Ellis','s.creed':'Sheldon Creed','r.herbst':'Riley Herbst',
+            'c.custer':'Cole Custer','t.hill':'Timmy Hill','j.love':'Jesse Love',
+            'j.johnson':'Jimmie Johnson','c.mears':'Casey Mears',
+            'j.j.yeley':'JJ Yeley','j.yeley':'JJ Yeley','a.alfredo':'Anthony Alfredo',
+            # ── NOAPS (Xfinity) ─────────────────────────────────────────────────────
+            'j.allgaier':'Justin Allgaier','c.smith':'Chandler Smith','s.mayer':'Sam Mayer',
+            's.smith':'Sammy Smith','j.williams':'Josh Williams','j.clements':'Jeremy Clements',
+            'a.allmendinger':'A.J. Allmendinger','b.perkins':'Blaine Perkins',
+            'p.retzlaff':'Parker Retzlaff','r.caruth':'Rajah Caruth',
+            'j.anderson':'Jordan Anderson','c.kvapil':'Carson Kvapil','k.sieg':'Kyle Sieg',
+            'j.burton':'Jeb Burton','w.sawalich':'William Sawalich','c.day':'Corey Day',
+            'b.poole':'Brennan Poole','m.snider':'Myatt Snider','b.crews':'Brent Crews',
+            'a.green':'Austin Green','a.labbe':'Alex Labbe','a.labbé':'Alex Labbe',
+            'a.patterson':'Andrew Patterson','b.leguizamon':'Baltazar Leguizamon',
+            'b.leguizamón':'Baltazar Leguizamon','b.lothian':'Blake Lothian',
+            'b.perez':'Brad Perez','c.finchum':'Chad Finchum','d.cram':'Dawson Cram',
+            'd.thompson':'Dean Thompson','g.smithley':'Garrett Smithley',
+            'j.bilicki':'Josh Bilicki','j.gase':'Joey Gase','l.fenhaus':'Luke Fenhaus',
+            'l.pulliam':'Lee Pulliam','l.scott':'Lavar Scott','m.maggio':'Mason Maggio',
+            'n.byrd':'Nathan Byrd','n.decker':'Natalie Decker','p.emerling':'Patrick Emerling',
+            'p.pardus':'Preston Pardus','p.staropoli':'Patrick Staropoli',
+            'r.sieg':'Ryan Sieg','s.karam':'Sage Karam',
+            'p.martinez':'Patrick Martinez','i.shymanovich':'Ilya Shymanovich',
+            # ── Trucks ───────────────────────────────────────────────────────────────
+            'b.rhodes':'Ben Rhodes','c.heim':'Corey Heim','c.eckes':'Christian Eckes',
+            't.majeski':'Ty Majeski','g.enfinger':'Grant Enfinger','t.gray':'Tanner Gray',
+            't.ankrum':'Tyler Ankrum','b.queen':'Brenden Queen','k.honeycutt':'Kaden Honeycutt',
+            's.friesen':'Stewart Friesen','f.muniz':'Frankie Muniz','d.dye':'Daniel Dye',
+            's.boyd':'Spencer Boyd','l.riggs':'Layne Riggs','j.garcia':'Jake Garcia',
+            'd.sutton':'Dawson Sutton','n.leitz':'Nick Leitz','t.pastrana':'Travis Pastrana',
+            'd.hemric':'Daniel Hemric','g.ruggiero':'Giovanni Ruggiero',
+            'b.maier':'Ben Maier','c.braun':'Colin Braun','c.butcher':'Cole Butcher',
+            'c.costner':'Caleb Costner','c.fartuch':'Carter Fartuch',
+            'c.green':'Clayton Green','c.greenfield':'Clay Greenfield',
+            'c.hall':'Connor Hall','c.jones':'Conner Jones','c.mosack':'Connor Mosack',
+            'd.franchitti':'Dario Franchitti','d.white':'Derek White',
+            'j.carroll':'Justin Carroll','j.hinchcliffe':'James Hinchcliffe',
+            'j.kitzmiller':'Jason Kitzmiller','j.lee':'Jackson Lee',
+            'j.reaume':'Josh Reaume','j.white':'Jason White',
+            'k.wright':'Kris Wright','l.baldwin':'Luke Baldwin','l.lewis':'Landen Lewis',
+            'm.christopher':'Michael Christopher Jr.','m.tyrrell':'Mini Tyrrell',
+            'n.nicholson':'Nathan Nicholson','p.eatmon':'Parker Eatmon',
+            't.reif':'Tyler Reif','t.stewart':'Tony Stewart','t.tomassi':'Tyler Tomassi',
+            'w.slimp':'Wesley Slimp','c.lee':'Chris Lee','c.ugo carabelli':'Cruz Ugo Carabelli',
+            'a.andretti':'Adam Andretti','a.perez de lara':'Andres Perez de Lara',
+            'a.pérez de lara':'Andres Perez de Lara',
+          }
+          _nascar_name_map = dict(_NASCAR_FALLBACK)   # start with fallback; roster fetch may extend it
           _nascar_image_map = {}
           def norm_driver(v, fallback=''):
               if isinstance(v, dict):
