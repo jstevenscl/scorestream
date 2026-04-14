@@ -141,9 +141,9 @@ function writeStartingFrame(slug) {
         `ffmpeg -y -loglevel error ` +
         `-f lavfi -i color=c=0x0a0e1a:size=${WIDTH}x${HEIGHT}:rate=1 ` +
         `-i "${logoPath}" ` +
-        `-filter_complex "[1:v]scale=340:-1[logo];[0:v][logo]overlay=(W-w)/2:(H-h)/2-80[bg];` +
-        `[bg]drawtext=text='${label}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2+70,` +
-        `drawtext=text='LOADING...':fontcolor=0x3d5a78:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+130,` +
+        `-filter_complex "[1:v]scale=560:-1[logo];[0:v][logo]overlay=(W-w)/2:(H-h)/2-110[bg];` +
+        `[bg]drawtext=text='${label}':fontcolor=white:fontsize=48:x=(w-text_w)/2:y=(h-text_h)/2+100,` +
+        `drawtext=text='LOADING...':fontcolor=0x3d5a78:fontsize=32:x=(w-text_w)/2:y=(h-text_h)/2+165,` +
         `format=yuv420p" -frames:v 1 -q:v 3 "${dest}"`,
         { stdio: 'pipe' }
       );
