@@ -372,11 +372,29 @@ def init_db():
         except Exception:
             pass
         conn.execute('''CREATE TABLE IF NOT EXISTS ticker_profile_backup(
-            scoreboard_id INTEGER PRIMARY KEY,
-            channel_id    INTEGER NOT NULL,
+            channel_id    INTEGER PRIMARY KEY,
+            scoreboard_id INTEGER NOT NULL DEFAULT 0,
             original_profile_id INTEGER NOT NULL,
             ticker_profile_id   INTEGER NOT NULL,
             created_at TEXT NOT NULL DEFAULT (datetime('now')))''')
+        # Migrate old schema (scoreboard_id PK → channel_id PK) if needed
+        try:
+            cols = conn.execute("PRAGMA table_info(ticker_profile_backup)").fetchall()
+            pk_col = next((c['name'] for c in cols if c['pk']==1), None)
+            if pk_col == 'scoreboard_id':
+                conn.execute('''CREATE TABLE ticker_profile_backup_v2(
+                    channel_id INTEGER PRIMARY KEY,
+                    scoreboard_id INTEGER NOT NULL DEFAULT 0,
+                    original_profile_id INTEGER NOT NULL,
+                    ticker_profile_id INTEGER NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')))''')
+                conn.execute('''INSERT OR IGNORE INTO ticker_profile_backup_v2
+                    SELECT channel_id,scoreboard_id,original_profile_id,ticker_profile_id,created_at
+                    FROM ticker_profile_backup''')
+                conn.execute('DROP TABLE ticker_profile_backup')
+                conn.execute('ALTER TABLE ticker_profile_backup_v2 RENAME TO ticker_profile_backup')
+        except Exception:
+            pass
         # Audio library table for uploaded music files
         conn.execute('''CREATE TABLE IF NOT EXISTS audio_library(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1127,12 +1145,12 @@ def ticker_preview_params():
 def get_ticker_config_global():
     try:
         with get_db() as conn:
-            row    = conn.execute("SELECT value FROM global_settings WHERE key='ticker_config'").fetchone()
-            backup = conn.execute('SELECT channel_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=0').fetchone()
+            row     = conn.execute("SELECT value FROM global_settings WHERE key='ticker_config'").fetchone()
+            backups = conn.execute('SELECT channel_id,ticker_profile_id FROM ticker_profile_backup').fetchall()
         cfg = _json.loads(row['value']) if row else {}
-        cfg['ticker_active'] = backup is not None
-        if backup:
-            cfg['active_ticker_profile_id'] = backup['ticker_profile_id']
+        cfg['ticker_active'] = len(backups) > 0
+        if backups:
+            cfg['active_channel_ids'] = [b['channel_id'] for b in backups]
         return jsonify(cfg)
     except Exception as e: return jsonify({'error':str(e)}),500
 
@@ -1243,9 +1261,9 @@ def ticker_enable():
         # Store backup
         with get_db() as conn:
             conn.execute('''INSERT OR REPLACE INTO ticker_profile_backup
-                            (scoreboard_id,channel_id,original_profile_id,ticker_profile_id)
+                            (channel_id,scoreboard_id,original_profile_id,ticker_profile_id)
                             VALUES(?,?,?,?)''',
-                         (sb_id,channel_id,original_profile_id,ticker_profile_id))
+                         (channel_id,sb_id,original_profile_id,ticker_profile_id))
             conn.commit()
         return jsonify({'ok':True,'ticker_profile_id':ticker_profile_id,
                         'ticker_profile_name':ticker_name,
@@ -1280,17 +1298,24 @@ def _disable_ticker_row(backup_row, session, creds):
 @app.route('/ticker/disable', methods=['POST'])
 def ticker_disable():
     b = request.get_json(force=True) or {}
-    sb_id = int(b.get('scoreboard_id', 0))
+    channel_id = b.get('channel_id')
     with get_db() as conn:
-        backup = conn.execute(
-            'SELECT channel_id,original_profile_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=?',
-            (sb_id,)).fetchone()
+        if channel_id is not None:
+            backup = conn.execute(
+                'SELECT channel_id,original_profile_id,ticker_profile_id FROM ticker_profile_backup WHERE channel_id=?',
+                (int(channel_id),)).fetchone()
+        else:
+            # Backward compat: find by scoreboard_id
+            sb_id = int(b.get('scoreboard_id', 0))
+            backup = conn.execute(
+                'SELECT channel_id,original_profile_id,ticker_profile_id FROM ticker_profile_backup WHERE scoreboard_id=?',
+                (sb_id,)).fetchone()
     if not backup: return jsonify({'error':'No active ticker found'}),404
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
     warnings = _disable_ticker_row(backup, s, c)
     with get_db() as conn:
-        conn.execute('DELETE FROM ticker_profile_backup WHERE scoreboard_id=?',(sb_id,))
+        conn.execute('DELETE FROM ticker_profile_backup WHERE channel_id=?',(backup['channel_id'],))
         conn.commit()
     return jsonify({'ok':True,'warnings':warnings} if warnings else {'ok':True})
 
