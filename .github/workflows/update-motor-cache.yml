@@ -189,9 +189,7 @@ jobs:
                       if data:
                           entries = data if isinstance(data,list) else data.get('response',[])
                           standings = [{'pos':e.get('points_position') or (i+1),
-                                        'driver':(((e.get('driver',{}).get('full_name') if isinstance(e.get('driver'),dict) else None) or
-                                                  ((e.get('driver',{}).get('first_name','')+' '+e.get('driver',{}).get('last_name','')).strip() if isinstance(e.get('driver'),dict) else '') or
-                                                  e.get('driver_name','Unknown')).rstrip(' #0123456789').strip() or 'Unknown'),
+                                        'driver': norm_driver(e.get('driver', {}), fallback=e.get('driver_name','Unknown')),
                                         'car':norm_car(e.get('car_number','?')),
                                         'manufacturer':norm_mfr(e.get('manufacturer','')),
                                         'points':safe_int(e.get('points',0)),
