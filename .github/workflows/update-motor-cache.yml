@@ -37,7 +37,7 @@ jobs:
       - name: Write fetch script
         run: |
           cat > fetch_motor.py << 'PYEOF'
-          import json, urllib.request, datetime, os
+          import json, urllib.request, datetime, os, re as _re
           today = datetime.date.today()
           today_str = today.isoformat()
           month = today.month
@@ -71,14 +71,33 @@ jobs:
               except (ValueError, TypeError): return default
           def norm_car(v):
               return '#' + str(v or '?').lstrip(',').lstrip('#')
+          def _abbrev_key(name):
+              """Normalize an abbreviated driver name to a lookup key.
+              Matches the same logic as JS _normNascarDriver."""
+              name = _re.sub(r'\s*#\d*\s*$', '', str(name or '')).strip()
+              if '.' not in name: return None
+              return _re.sub(r'\s*\.\s*', '.', name.lower()).strip()
+          # NASCAR driver name map — populated from cf.nascar.com/cacher/drivers.json
+          # Maps normalized abbreviated key (e.g. "t.reddick") → full name ("Tyler Reddick")
+          _nascar_name_map = {}
+          _nascar_image_map = {}
           def norm_driver(v, fallback=''):
               if isinstance(v, dict):
                   full = v.get('full_name','').strip()
-                  if full: return full.rstrip(' #0123456789').strip()
+                  if full:
+                      name = full.rstrip(' #0123456789').strip()
+                      k = _abbrev_key(name)
+                      return _nascar_name_map.get(k, name) if k else name
                   combo = (v.get('first_name','') + ' ' + v.get('last_name','')).strip()
-                  if combo: return combo.rstrip(' #0123456789').strip()
-              s = str(v or fallback).strip()
-              return s.rstrip(' #0123456789').strip() or 'Unknown'
+                  if combo:
+                      name = combo.rstrip(' #0123456789').strip()
+                      k = _abbrev_key(name)
+                      return _nascar_name_map.get(k, name) if k else name
+              s = str(v or fallback).strip().rstrip(' #0123456789').strip()
+              if s:
+                  k = _abbrev_key(s)
+                  if k: return _nascar_name_map.get(k, s)
+              return s or 'Unknown'
           cache_path = 'motor_cache.json'
           cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
           print(f"Loaded {len(cache)} existing keys. Today: {today_str}")
@@ -101,6 +120,33 @@ jobs:
               if 'pga-2026-tournaments' in cache:
                   cache['pga-2026-tournaments']['data']['tournaments'] = []
                   print("PGA off-season: tournament history purged")
+          # ── Build NASCAR driver name + image map from official roster ─────────────
+          print("\n--- NASCAR Driver Roster ---")
+          roster = fetch('https://cf.nascar.com/cacher/drivers.json', NASCAR_HDR)
+          if roster and isinstance(roster.get('response'), list):
+              for d in roster['response']:
+                  fn = str(d.get('First_Name') or '').strip()
+                  ln = str(d.get('Last_Name') or '').strip()
+                  full = str(d.get('Full_Name') or '').strip()
+                  if not fn or not ln or not full: continue
+                  # Primary key: first_initial.last_name
+                  k1 = fn[0].lower() + '.' + ln.lower()
+                  _nascar_name_map[k1] = full
+                  img = {'id': d.get('Nascar_Driver_ID'), 'helmet': d.get('Image',''), 'firesuit': d.get('Firesuit_Image','')}
+                  _nascar_image_map[k1] = img
+                  # Secondary key for first names that contain dots (e.g. "J.J." → "j.j.yeley")
+                  if '.' in fn:
+                      k2 = _re.sub(r'\s*\.\s*', '.', fn.lower()) + ln.lower()
+                      if k2 != k1:
+                          _nascar_name_map[k2] = full
+                          _nascar_image_map[k2] = img
+              print(f"  {len(_nascar_name_map)} driver keys loaded")
+              cache['nascar-drivers'] = {
+                  'data': {'name_map': _nascar_name_map, 'images': _nascar_image_map, 'updated': today_str},
+                  '_updated': today_str
+              }
+          else:
+              print("  WARNING: driver roster fetch failed — name normalization will use fallback only")
           if in_season('nascar'):
               print("\n--- NASCAR (all series) ---")
               live = fetch('https://cf.nascar.com/live/feeds/live-feed.json', NASCAR_HDR)
