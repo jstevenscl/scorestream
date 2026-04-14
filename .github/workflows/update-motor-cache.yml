@@ -98,8 +98,28 @@ jobs:
                   k = _abbrev_key(s)
                   if k: return _nascar_name_map.get(k, s)
               return s or 'Unknown'
-          cache_path = 'motor_cache.json'
-          cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
+          cache_path  = 'motor_cache.json'
+          backup_path = 'motor_cache.backup.json'
+          def load_cache(path):
+              with open(path) as f:
+                  return json.load(f)
+          if os.path.exists(cache_path):
+              try:
+                  cache = load_cache(cache_path)
+              except Exception as e:
+                  print(f"WARNING: motor_cache.json corrupt ({e})")
+                  if os.path.exists(backup_path):
+                      try:
+                          cache = load_cache(backup_path)
+                          print(f"  Recovered {len(cache)} keys from backup")
+                      except Exception as e2:
+                          print(f"  Backup also corrupt ({e2}), starting fresh")
+                          cache = {}
+                  else:
+                      print("  No backup available, starting fresh")
+                      cache = {}
+          else:
+              cache = {}
           print(f"Loaded {len(cache)} existing keys. Today: {today_str}")
           nascar_off = not in_season('nascar')
           pga_off = not in_season('pga')
@@ -195,7 +215,8 @@ jobs:
                               fox_hs_slug[sname.lower().replace(' ', '_')] = {'name': sname, 'headshot': shs}
                           standings.append({'pos': spos, 'driver': sname, 'car': scar,
                                             'manufacturer': smfr, 'points': spts, 'wins': swins, 'races': 0})
-                      if standings:
+                      MIN_STANDINGS_ROWS = 20
+                      if len(standings) >= MIN_STANDINGS_ROWS:
                           existing = cache.get(stand_key, {}).get('data', {})
                           if isinstance(existing, str): existing = json.loads(existing)
                           existing['standings'] = standings
@@ -203,6 +224,8 @@ jobs:
                           existing['updated'] = today_str
                           cache[stand_key] = {'data': existing, '_updated': today_str}
                           print(f"  {stprefix} standings: {len(standings)} drivers from Fox Sports HTML")
+                      elif standings:
+                          print(f"  {stprefix}: only {len(standings)} rows parsed — below threshold ({MIN_STANDINGS_ROWS}), keeping existing cache")
                       else:
                           print(f"  {stprefix}: no standings rows found in Fox Sports HTML")
                   except Exception as e:
@@ -543,6 +566,9 @@ jobs:
           except Exception as e: print(f"  PGA pre-populate error: {e}")
           with open(cache_path,'w') as f: json.dump(cache,f,indent=2)
           print(f"\nWritten {len(cache)} keys ({os.path.getsize(cache_path):,} bytes)")
+          import shutil
+          shutil.copy2(cache_path, backup_path)
+          print(f"Backup written: {backup_path}")
           PYEOF
 
       - name: Run fetch script
@@ -552,7 +578,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add motor_cache.json
+          git add motor_cache.json motor_cache.backup.json
           git diff --staged --quiet && echo "No changes" || (
             git commit -m "chore: motor cache update $(date -u +%Y-%m-%d)"
             git push origin data
