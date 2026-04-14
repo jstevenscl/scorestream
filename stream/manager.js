@@ -100,10 +100,17 @@ function framePath(slug) { return path.join(frameDir(slug), 'frame.jpg'); }
 function frameTmp(slug)  { return path.join(frameDir(slug), 'frame.tmp.jpg'); }
 
 // ── Logo for loading frame ───────────────────────────────────────────────────
-const LOADING_LOGO_PATH = path.join(FRAMES_DIR, 'scorestream_logo.png');
+// Bundled at build time — always available with no timing or network dependency.
+const BUNDLED_LOGO_PATH  = '/app/glow_blue.png';
+const LOADING_LOGO_PATH  = path.join(FRAMES_DIR, 'scorestream_logo.png');
 
 function fetchLoadingLogo() {
-  // Download glow_blue.png from nginx once at startup; cached for the session.
+  // Bundled logo takes priority — no HTTP fetch needed if it exists.
+  if (fs.existsSync(BUNDLED_LOGO_PATH)) {
+    console.log('[manager] Using bundled loading logo:', BUNDLED_LOGO_PATH);
+    return;
+  }
+  // Fallback: try to fetch from nginx (older images without the bundled file).
   if (fs.existsSync(LOADING_LOGO_PATH)) return;
   const url = `${WEB_BASE}/logos/glow_blue.png`;
   http.get(url, res => {
@@ -125,14 +132,15 @@ function writeStartingFrame(slug) {
   const dest  = framePath(slug);
   const label = slug.replace(/-/g, ' ').toUpperCase();
   ensureDir(frameDir(slug));
-  const hasLogo = fs.existsSync(LOADING_LOGO_PATH);
+  const logoPath = fs.existsSync(BUNDLED_LOGO_PATH) ? BUNDLED_LOGO_PATH : LOADING_LOGO_PATH;
+  const hasLogo  = fs.existsSync(logoPath);
   try {
     if (hasLogo) {
       // Overlay the ScoreStream logo image, centred above the sport label
       execSync(
         `ffmpeg -y -loglevel error ` +
         `-f lavfi -i color=c=0x0a0e1a:size=${WIDTH}x${HEIGHT}:rate=1 ` +
-        `-i "${LOADING_LOGO_PATH}" ` +
+        `-i "${logoPath}" ` +
         `-filter_complex "[1:v]scale=340:-1[logo];[0:v][logo]overlay=(W-w)/2:(H-h)/2-80[bg];` +
         `[bg]drawtext=text='${label}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2+70,` +
         `drawtext=text='LOADING...':fontcolor=0x3d5a78:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+130,` +

@@ -642,7 +642,8 @@ def _attempt_espn_sync_inner():
             # Step 2: fetch all teams from site API
             resp = http.get(teams_url, timeout=15); resp.raise_for_status()
             data = resp.json()
-            raw = data.get('sports',[{}])[0].get('leagues',[{}])[0].get('teams',[])
+            sports_list = data.get('sports') or []
+            raw = (sports_list[0].get('leagues') or [{}])[0].get('teams',[]) if sports_list else []
             if not raw: raw = data.get('teams',[])
             counts = {'d1':0,'d2':0,'d3':0,'unknown':0}
             with get_db() as conn:
@@ -1178,13 +1179,17 @@ def save_ticker_config(sb_id):
 def ticker_enable():
     b = request.get_json(force=True) or {}
     # scoreboard_id is optional — default 0 means global ticker
-    sb_id      = int(b.get('scoreboard_id', 0))
+    try:
+        sb_id        = int(b.get('scoreboard_id', 0))
+        font_size    = int(b.get('font_size', 24))
+        bg_opacity   = float(b.get('bg_opacity', 0.75))
+        scroll_speed = int(b.get('scroll_speed', 0))
+    except (ValueError, TypeError) as e:
+        return jsonify({'error': f'Invalid numeric parameter: {e}'}), 400
     channel_id = b.get('channel_id')
-    font_size  = int(b.get('font_size', 24))
     position   = b.get('position', 'bottom')
-    bg_opacity = float(b.get('bg_opacity', 0.75))
-    test_text  = b.get('test_text', '').strip() or None
-    scroll_speed = int(b.get('scroll_speed', 0))
+    raw_test   = b.get('test_text', '')
+    test_text  = str(raw_test).strip() or None if raw_test is not None else None
     if not channel_id:
         return jsonify({'error':'channel_id required'}),400
     c = get_creds(); s,err = dispatcharr_session(c)
@@ -1507,7 +1512,11 @@ def create_channels():
     if err: return jsonify({'error':err}),400
     b = request.get_json(force=True)
     mode,sports = b.get('mode','both'),b.get('sports',[])
-    num_mode,start = b.get('numberingMode','auto'),int(b.get('startChannel',900))
+    try:
+        start = int(b.get('startChannel', 900))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'startChannel must be a number'}), 400
+    num_mode = b.get('numberingMode', 'auto')
     group_id,profile_ids_raw = b.get('groupId'),b.get('profileIds')
     stream_profile_id = b.get('streamProfileId')
     assignments = {a['sportId']:a for a in (b.get('channelAssignments') or [])}
