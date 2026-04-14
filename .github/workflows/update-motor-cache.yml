@@ -71,13 +71,14 @@ jobs:
               except (ValueError, TypeError): return default
           def norm_car(v):
               return '#' + str(v or '?').lstrip(',').lstrip('#')
-          def norm_driver(v):
+          def norm_driver(v, fallback=''):
               if isinstance(v, dict):
                   full = v.get('full_name','').strip()
-                  if full: return full
+                  if full: return full.rstrip(' #0123456789').strip()
                   combo = (v.get('first_name','') + ' ' + v.get('last_name','')).strip()
-                  if combo: return combo
-              return str(v or '').strip() or 'Unknown'
+                  if combo: return combo.rstrip(' #0123456789').strip()
+              s = str(v or fallback).strip()
+              return s.rstrip(' #0123456789').strip() or 'Unknown'
           cache_path = 'motor_cache.json'
           cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
           print(f"Loaded {len(cache)} existing keys. Today: {today_str}")
@@ -142,9 +143,9 @@ jobs:
                       if data:
                           entries = data if isinstance(data,list) else data.get('response',[])
                           standings = [{'pos':e.get('points_position') or (i+1),
-                                        'driver':(e.get('driver',{}).get('full_name') if isinstance(e.get('driver'),dict) else None) or
+                                        'driver':(((e.get('driver',{}).get('full_name') if isinstance(e.get('driver'),dict) else None) or
                                                   ((e.get('driver',{}).get('first_name','')+' '+e.get('driver',{}).get('last_name','')).strip() if isinstance(e.get('driver'),dict) else '') or
-                                                  e.get('driver_name','Unknown'),
+                                                  e.get('driver_name','Unknown')).rstrip(' #0123456789').strip() or 'Unknown'),
                                         'car':norm_car(e.get('car_number','?')),
                                         'manufacturer':norm_mfr(e.get('manufacturer','')),
                                         'points':safe_int(e.get('points',0)),
