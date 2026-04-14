@@ -1723,6 +1723,15 @@ def scoreboard_stream_url(sid):
     url = f'{STREAM_BASE_URL}/hls/{sb["slug"]}.m3u8' if STREAM_BASE_URL else None
     return jsonify({'stream_url': url, 'base_url': STREAM_BASE_URL})
 
+@app.route('/stream/status', methods=['GET'])
+def stream_status():
+    """Proxy GET /status from the stream manager so the frontend can show live badges."""
+    try:
+        r = http.get(f'{STREAM_MANAGER_URL}/status', timeout=3)
+        return jsonify(r.json()), r.status_code
+    except Exception:
+        return jsonify({'streams': {}, 'count': 0}), 200
+
 @app.route('/backup/export', methods=['GET'])
 def backup_export():
     import json as _json, datetime

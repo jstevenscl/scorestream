@@ -371,9 +371,7 @@ jobs:
                       flag=(core.get('flag') or {}).get('href') or ''
                       country=(core.get('flag') or {}).get('alt') or core.get('citizenship','')
                       hs_url=(core.get('headshot') or {}).get('href') or ''
-                  # Fallback to ESPN CDN pattern (frontend handles broken images via onerror)
-                  if not hs_url:
-                      hs_url=f'https://a.espncdn.com/i/headshots/tennis/players/full/{aid}.png'
+                  # ESPN core API does not provide tennis headshots — skip CDN fallback (always 404)
                   existing[aid]={'id':aid,'name':name,'shortName':shortName,
                       'headshot':hs_url,
                       'flag':flag,'country':country}
@@ -421,9 +419,7 @@ jobs:
                                   cf=core.get('flag') or {}
                                   country=(cf.get('alt') if isinstance(cf,dict) else '') or core.get('citizenship','') or country
                                   if not name: name=core.get('displayName','')
-                          # Use ESPN CDN if no headshot from cache
-                          if not headshot and aid:
-                              headshot=f'https://a.espncdn.com/i/headshots/tennis/players/full/{aid}.png'
+                          # ESPN CDN does not host tennis headshots — leave blank if not in cache
                           if country: rank_country_cache[aid]=country
                           if headshot: rank_country_cache[aid+'_hs']=headshot
                           entries.append({'rank':r.get('current') or r.get('rank') or len(entries)+1,
