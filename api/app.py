@@ -1197,6 +1197,55 @@ def save_ticker_config(sb_id):
         return jsonify({'ok':True})
     except Exception as e: return jsonify({'error':str(e)}),500
 
+def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, session, creds):
+    """Enable ticker on a single channel. Returns (ok: bool, result: dict)."""
+    import re as _re
+    try:
+        r = session.get(f'{creds["url"]}/api/channels/channels/{channel_id}/',timeout=15)
+        r.raise_for_status()
+        channel = r.json()
+        original_profile_id = channel.get('stream_profile_id')
+        if not original_profile_id:
+            return False, {'error':'Channel has no stream profile assigned. Assign one in Dispatcharr first.'}
+        r = session.get(f'{creds["url"]}/api/core/streamprofiles/{original_profile_id}/',timeout=15)
+        r.raise_for_status()
+        profile = r.json()
+        if profile.get('locked'):
+            return False, {'error':f'Profile "{profile["name"]}" is locked. Duplicate it in Dispatcharr first.'}
+        original_params = profile.get('parameters','')
+        if not original_params:
+            return False, {'error':'Stream profile has no parameters'}
+        # Strip any existing drawtext to prevent stacking
+        clean_params = _re.sub(r',?drawtext=[^\s"]*', '', original_params)
+        if clean_params != original_params:
+            clean_params = _re.sub(
+                r'-vf\s+""\s+-c:v\s+libx264\s+-preset\s+ultrafast\s+-tune\s+zerolatency',
+                '-c:v copy', clean_params)
+            clean_params = _re.sub(r'-vf\s+""\s*', '', clean_params)
+        modified_params = _build_ticker_params(clean_params,channel_id,font_size,position,bg_opacity,test_text,scroll_speed)
+        if modified_params == clean_params:
+            return False, {'error':'Could not inject ticker — "-c:v copy" not found in profile parameters.'}
+        base_name = profile['name'].removesuffix(' (Ticker)')
+        ticker_name = f'{base_name} (Ticker)'
+        r = session.post(f'{creds["url"]}/api/core/streamprofiles/',
+                         json={'name':ticker_name,'command':profile.get('command','ffmpeg'),
+                               'parameters':modified_params,'is_active':True},timeout=15)
+        r.raise_for_status()
+        ticker_profile_id = r.json()['id']
+        r = session.patch(f'{creds["url"]}/api/channels/channels/{channel_id}/',
+                          json={'stream_profile_id':ticker_profile_id},timeout=15)
+        r.raise_for_status()
+        with get_db() as conn:
+            conn.execute('''INSERT OR REPLACE INTO ticker_profile_backup
+                            (channel_id,scoreboard_id,original_profile_id,ticker_profile_id)
+                            VALUES(?,?,?,?)''',
+                         (channel_id,sb_id,original_profile_id,ticker_profile_id))
+            conn.commit()
+        return True, {'channel_id':channel_id,'ticker_profile_id':ticker_profile_id,
+                      'ticker_profile_name':ticker_name,'original_profile_id':original_profile_id}
+    except Exception as e:
+        return False, {'error':str(e)}
+
 @app.route('/ticker/enable', methods=['POST'])
 def ticker_enable():
     b = request.get_json(force=True) or {}
@@ -1208,68 +1257,24 @@ def ticker_enable():
         scroll_speed = int(b.get('scroll_speed', 0))
     except (ValueError, TypeError) as e:
         return jsonify({'error': f'Invalid numeric parameter: {e}'}), 400
-    channel_id = b.get('channel_id')
-    position   = b.get('position', 'bottom')
-    raw_test   = b.get('test_text', '')
-    test_text  = str(raw_test).strip() or None if raw_test is not None else None
-    if not channel_id:
-        return jsonify({'error':'channel_id required'}),400
+    # Accept channel_ids array or legacy single channel_id
+    channel_ids = b.get('channel_ids') or ([b.get('channel_id')] if b.get('channel_id') else [])
+    if not channel_ids:
+        return jsonify({'error':'channel_ids required'}),400
+    position  = b.get('position', 'bottom')
+    raw_test  = b.get('test_text', '')
+    test_text = str(raw_test).strip() or None if raw_test is not None else None
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
-    try:
-        # Get channel's current stream profile
-        r = s.get(f'{c["url"]}/api/channels/channels/{channel_id}/',timeout=15)
-        r.raise_for_status()
-        channel = r.json()
-        original_profile_id = channel.get('stream_profile_id')
-        if not original_profile_id:
-            return jsonify({'error':'Channel has no stream profile assigned. Assign one in Dispatcharr first.'}),400
-        # Get the profile
-        r = s.get(f'{c["url"]}/api/core/streamprofiles/{original_profile_id}/',timeout=15)
-        r.raise_for_status()
-        profile = r.json()
-        if profile.get('locked'):
-            return jsonify({'error':f'Profile "{profile["name"]}" is locked. Duplicate it in Dispatcharr first.'}),400
-        original_params = profile.get('parameters','')
-        if not original_params:
-            return jsonify({'error':'Stream profile has no parameters'}),400
-        # Strip any existing drawtext filters to prevent stacking
-        import re as _re
-        clean_params = _re.sub(r',?drawtext=[^\s"]*', '', original_params)
-        if clean_params != original_params:
-            # Profile already had drawtext — restore the -c:v copy if we injected libx264 before
-            clean_params = _re.sub(
-                r'-vf\s+""\s+-c:v\s+libx264\s+-preset\s+ultrafast\s+-tune\s+zerolatency',
-                '-c:v copy', clean_params)
-            # Clean up empty -vf ""
-            clean_params = _re.sub(r'-vf\s+""\s*', '', clean_params)
-        modified_params = _build_ticker_params(clean_params,channel_id,font_size,position,bg_opacity,test_text,scroll_speed)
-        if modified_params == clean_params:
-            return jsonify({'error':'Could not inject ticker — "-c:v copy" not found in profile parameters.'}),400
-        # Create ticker profile — avoid double-suffixing
-        base_name = profile['name'].removesuffix(' (Ticker)')
-        ticker_name = f'{base_name} (Ticker)'
-        r = s.post(f'{c["url"]}/api/core/streamprofiles/',
-                   json={'name':ticker_name,'command':profile.get('command','ffmpeg'),
-                         'parameters':modified_params,'is_active':True},timeout=15)
-        r.raise_for_status()
-        ticker_profile_id = r.json()['id']
-        # Assign ticker profile to channel
-        r = s.patch(f'{c["url"]}/api/channels/channels/{channel_id}/',
-                    json={'stream_profile_id':ticker_profile_id},timeout=15)
-        r.raise_for_status()
-        # Store backup
-        with get_db() as conn:
-            conn.execute('''INSERT OR REPLACE INTO ticker_profile_backup
-                            (channel_id,scoreboard_id,original_profile_id,ticker_profile_id)
-                            VALUES(?,?,?,?)''',
-                         (channel_id,sb_id,original_profile_id,ticker_profile_id))
-            conn.commit()
-        return jsonify({'ok':True,'ticker_profile_id':ticker_profile_id,
-                        'ticker_profile_name':ticker_name,
-                        'original_profile_id':original_profile_id,
-                        'modified_params':modified_params})
-    except Exception as e: return jsonify({'error':str(e)}),500
+    results = []
+    for ch_id in channel_ids:
+        ok, result = _enable_ticker_for_channel(ch_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, s, c)
+        result['channel_id'] = ch_id
+        result['ok'] = ok
+        results.append(result)
+    successes = [r for r in results if r['ok']]
+    failures  = [r for r in results if not r['ok']]
+    return jsonify({'ok':True,'results':results,'enabled':len(successes),'failed':len(failures)})
 
 def _disable_ticker_row(backup_row, session, creds):
     """Shared logic to disable a single ticker backup entry. Returns list of warnings."""
@@ -1384,9 +1389,15 @@ def _ticker_text_for_config(cfg):
     # Custom text mode: return hardcoded message instead of sport scores
     if cfg.get('custom_text_enabled') and cfg.get('custom_text', '').strip():
         raw = cfg['custom_text'].strip()
-        PAD_WIDTH = 300
-        padded = raw + ' ' * max(PAD_WIDTH - len(raw) % PAD_WIDTH, PAD_WIDTH)
-        return jsonify({'text': padded})
+        # Repeat the message with a separator until the total length is at least
+        # 250 chars — this fills the visible bar width before the scroll loops,
+        # preventing a long blank gap between repetitions.
+        separator = '    \u00b7    '
+        repeated = raw
+        while len(repeated) < 250:
+            repeated += separator + raw
+        # Minimal trailing gap so the last char scrolls fully off before restart
+        return jsonify({'text': repeated + '   '})
     sports = cfg.get('sports', [])
     import json as _jt
     from datetime import date as _date
