@@ -80,7 +80,7 @@ jobs:
           # NASCAR driver name map — populated from cf.nascar.com/cacher/drivers.json
           # Maps normalized abbreviated key (e.g. "t.reddick") → full name ("Tyler Reddick")
           _nascar_name_map = {}
-          _nascar_image_map = {}
+          fox_hs_slug = {}  # slug → {name, headshot} built during standings scrape
           def norm_driver(v, fallback=''):
               if isinstance(v, dict):
                   full = v.get('full_name','').strip()
@@ -120,33 +120,7 @@ jobs:
               if 'pga-2026-tournaments' in cache:
                   cache['pga-2026-tournaments']['data']['tournaments'] = []
                   print("PGA off-season: tournament history purged")
-          # ── Build NASCAR driver name + image map from official roster ─────────────
-          print("\n--- NASCAR Driver Roster ---")
-          roster = fetch('https://cf.nascar.com/cacher/drivers.json', NASCAR_HDR)
-          if roster and isinstance(roster.get('response'), list):
-              for d in roster['response']:
-                  fn = str(d.get('First_Name') or '').strip()
-                  ln = str(d.get('Last_Name') or '').strip()
-                  full = str(d.get('Full_Name') or '').strip()
-                  if not fn or not ln or not full: continue
-                  # Primary key: first_initial.last_name
-                  k1 = fn[0].lower() + '.' + ln.lower()
-                  _nascar_name_map[k1] = full
-                  img = {'id': d.get('Nascar_Driver_ID'), 'helmet': d.get('Image',''), 'firesuit': d.get('Firesuit_Image','')}
-                  _nascar_image_map[k1] = img
-                  # Secondary key for first names that contain dots (e.g. "J.J." → "j.j.yeley")
-                  if '.' in fn:
-                      k2 = _re.sub(r'\s*\.\s*', '.', fn.lower()) + ln.lower()
-                      if k2 != k1:
-                          _nascar_name_map[k2] = full
-                          _nascar_image_map[k2] = img
-              print(f"  {len(_nascar_name_map)} driver keys loaded")
-              cache['nascar-drivers'] = {
-                  'data': {'name_map': _nascar_name_map, 'images': _nascar_image_map, 'updated': today_str},
-                  '_updated': today_str
-              }
-          else:
-              print("  WARNING: driver roster fetch failed — name normalization will use fallback only")
+          # cf.nascar.com/cacher/drivers.json returns 403 from GitHub Actions — skip
           if in_season('nascar'):
               print("\n--- NASCAR (all series) ---")
               live = fetch('https://cf.nascar.com/live/feeds/live-feed.json', NASCAR_HDR)
@@ -177,33 +151,62 @@ jobs:
                               print(f"  Added {live['run_name']} to {prefix} history ({len(races)} races)")
                           cache[hist_key] = {'data':{'races':races,'updated':today_str},'_updated':today_str}
                           print(f"  {prefix}: last race '{live['run_name']}' {len(drivers)} drivers")
-              # Standings for all three series
-              series_map = [
-                  (1,'nascar','nascar-2026-season','NASCAR Cup Series'),
-                  (2,'nascar-noaps','nascar-noaps-season',"NASCAR O'Reilly Auto Parts Series"),
-                  (3,'nascar-trucks','nascar-trucks-season','NASCAR Craftsman Truck Series'),
+              # Standings: Fox Sports HTML (cf.nascar.com/cacher returns 403 from GitHub Actions)
+              fox_series = [
+                  ('cup-series', 'nascar', 'nascar-2026-season', 'NASCAR Cup Series'),
+                  ('xfinity-series', 'nascar-noaps', 'nascar-noaps-season', "NASCAR O'Reilly Auto Parts Series"),
+                  ('truck-series', 'nascar-trucks', 'nascar-trucks-season', 'NASCAR Craftsman Truck Series'),
               ]
-              for sid, prefix, stand_key, series_name in series_map:
-                  for year in ['2026','2025']:
-                      data = fetch(f'https://cf.nascar.com/cacher/{year}/{sid}/standings/driver-standings.json', NASCAR_HDR)
-                      if data:
-                          entries = data if isinstance(data,list) else data.get('response',[])
-                          standings = [{'pos':e.get('points_position') or (i+1),
-                                        'driver': norm_driver(e.get('driver', {}), fallback=e.get('driver_name','Unknown')),
-                                        'car':norm_car(e.get('car_number','?')),
-                                        'manufacturer':norm_mfr(e.get('manufacturer','')),
-                                        'points':safe_int(e.get('points',0)),
-                                        'wins':safe_int(e.get('wins',0)),
-                                        'races':safe_int(e.get('races',0))} for i,e in enumerate(entries[:44])]
-                          if standings:
-                              existing = cache.get(stand_key,{}).get('data',{})
-                              if isinstance(existing,str): existing=json.loads(existing)
-                              existing['standings'] = standings
-                              existing['series_name'] = series_name  # authoritative name — update if sponsorship changes
-                              existing['updated'] = today_str
-                              cache[stand_key] = {'data':existing,'_updated':today_str}
-                              print(f"  {prefix} standings: {len(standings)} drivers from {year}")
-                              break
+              mfr_map = {}
+              if live:
+                  for sv in (live.get('vehicles') or []):
+                      sd = sv.get('driver', {})
+                      sdn = (sd.get('full_name') or '').strip().rstrip(' #0123456789').strip()
+                      smfr = norm_mfr(sv.get('vehicle_manufacturer', ''))
+                      if sdn and smfr:
+                          mfr_map[sdn.lower()] = smfr
+              for fox_slug, stprefix, stand_key, series_name in fox_series:
+                  try:
+                      req = urllib.request.Request(
+                          f'https://www.foxsports.com/nascar/{fox_slug}/standings',
+                          headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                      )
+                      with urllib.request.urlopen(req, timeout=20) as r:
+                          shtml = r.read().decode('utf-8', 'ignore')
+                      srows = _re.findall(r'id="tbl-row-\d+"[^>]*>(.*?)</tr>', shtml, _re.DOTALL)
+                      standings = []
+                      for srow in srows:
+                          spos_m = _re.search(r'<span class="cell-rank[^"]*"[^>]*>(\d+)</span>', srow)
+                          sname_m = _re.search(r'class="table-entity-name[^"]*"[^>]*><!----> *([^<\n]+?) *(?:<sup|</)', srow)
+                          scar_m = _re.search(r'<sup[^>]*>(#[\d]+)</sup>', srow)
+                          shs_m = _re.search(r'<img src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"', srow)
+                          spts_m = _re.search(r'data-index="2"[^>]*>.*?<span class="table-result[^"]*"[^>]*>([\d]+)', srow, _re.DOTALL)
+                          swins_m = _re.search(r'data-index="6"[^>]*>.*?<span class="table-result[^"]*"[^>]*>([\d]+)', srow, _re.DOTALL)
+                          if not sname_m:
+                              continue
+                          sname = sname_m.group(1).strip()
+                          spos = safe_int(spos_m.group(1)) if spos_m else len(standings) + 1
+                          scar = scar_m.group(1) if scar_m else '?'
+                          spts = safe_int(spts_m.group(1)) if spts_m else 0
+                          swins = safe_int(swins_m.group(1)) if swins_m else 0
+                          smfr = mfr_map.get(sname.lower(), '')
+                          shs = shs_m.group(1).replace('.72.72.', '.140.140.') if shs_m else ''
+                          if sname and shs:
+                              fox_hs_slug[sname.lower().replace(' ', '_')] = {'name': sname, 'headshot': shs}
+                          standings.append({'pos': spos, 'driver': sname, 'car': scar,
+                                            'manufacturer': smfr, 'points': spts, 'wins': swins, 'races': 0})
+                      if standings:
+                          existing = cache.get(stand_key, {}).get('data', {})
+                          if isinstance(existing, str): existing = json.loads(existing)
+                          existing['standings'] = standings
+                          existing['series_name'] = series_name
+                          existing['updated'] = today_str
+                          cache[stand_key] = {'data': existing, '_updated': today_str}
+                          print(f"  {stprefix} standings: {len(standings)} drivers from Fox Sports HTML")
+                      else:
+                          print(f"  {stprefix}: no standings rows found in Fox Sports HTML")
+                  except Exception as e:
+                      print(f"  {stprefix} standings error: {e}")
           if in_season('pga'):
               print("\n--- PGA ---")
               espn = fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard', ESPN_HDR)
@@ -435,53 +438,36 @@ jobs:
           # --- NASCAR Drivers (Fox Sports headshots) ---
           print("\n--- NASCAR Drivers (Fox Sports) ---")
           try:
-              import re as _re
-              nascar_drivers = cache.get('nascar-drivers',{}).get('data',{})
-              if isinstance(nascar_drivers,str): nascar_drivers=json.loads(nascar_drivers)
-              fox_nascar=fetch('https://api.foxsports.com/bifrost/v1/nascar/cup/standings?season=2026',
-                  {'User-Agent':'Mozilla/5.0','Accept':'application/json'})
-              fox_count=0
-              if fox_nascar and isinstance(fox_nascar,dict):
-                  for section in (fox_nascar.get('standings') or fox_nascar.get('sections') or [fox_nascar]):
-                      for row in (section.get('rows') or section.get('entries') or section.get('standings') or []):
-                          if not isinstance(row,dict): continue
-                          athlete=row.get('athlete') or row.get('driver') or row
-                          name=athlete.get('name') or athlete.get('displayName') or ''
-                          img=athlete.get('imageUrl') or athlete.get('headshot') or ''
-                          if name and img:
-                              key=name.lower().replace(' ','_')
-                              nascar_drivers[key]={'name':name,'headshot':img}
-                              fox_count+=1
-              # Always supplement with Fox Sports HTML standings (all 3 series)
-              print(f"  Fox API: {fox_count} drivers, supplementing with HTML scrape...")
-              fox_pages=[
-                  'https://www.foxsports.com/nascar/cup-series/standings',
-                  'https://www.foxsports.com/nascar/xfinity-series/standings',
-                  'https://www.foxsports.com/nascar/truck-series/standings',
-              ]
-              for fox_url in fox_pages:
+              # fox_hs_slug is pre-populated from standings scrape above; supplement here
+              fox_count = len(fox_hs_slug)
+              for fox_url in ['https://www.foxsports.com/nascar/cup-series/standings',
+                              'https://www.foxsports.com/nascar/xfinity-series/standings',
+                              'https://www.foxsports.com/nascar/truck-series/standings']:
                   try:
-                      req=urllib.request.Request(fox_url,
-                          headers={'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'})
-                      with urllib.request.urlopen(req,timeout=15) as r: html=r.read().decode('utf-8','ignore')
-                      # Extract from: <img src="...headshots/XXXX..." alt="Driver Name">
-                      matches=_re.findall(r'<img[^>]*src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"[^>]*alt="([^"]+)"',html)
-                      if not matches:
-                          matches=_re.findall(r'alt="([^"]+)"[^>]*src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"',html)
-                          matches=[(url,name) for name,url in matches]
-                      for img,name in matches:
-                          name=name.strip()
-                          if not name or name.lower()=='headshot': continue
-                          img=img.replace('.72.72.','.140.140.')
-                          key=name.lower().replace(' ','_')
-                          if key not in nascar_drivers:
-                              nascar_drivers[key]={'name':name,'headshot':img}
-                              fox_count+=1
-                      print(f"  {fox_url.split('/')[-2]}: {len(matches)} drivers")
-                  except Exception as e: print(f"  Scrape error {fox_url}: {e}")
-              print(f"  NASCAR drivers from Fox Sports: {fox_count}, total: {len(nascar_drivers)}")
-              cache['nascar-drivers']={'data':nascar_drivers,'_updated':today_str}
-          except Exception as e: print(f"  NASCAR drivers error: {e}")
+                      req = urllib.request.Request(fox_url,
+                          headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'})
+                      with urllib.request.urlopen(req, timeout=15) as r:
+                          fhtml = r.read().decode('utf-8', 'ignore')
+                      fmatches = _re.findall(r'<img[^>]*src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"[^>]*alt="([^"]+)"', fhtml)
+                      if not fmatches:
+                          fmatches = _re.findall(r'alt="([^"]+)"[^>]*src="(https://b\.fssta\.com/uploads/application/nascar/headshots/[^"]+)"', fhtml)
+                          fmatches = [(url, fname) for fname, url in fmatches]
+                      for fimg, fname in fmatches:
+                          fname = fname.strip()
+                          if not fname or fname.lower() == 'headshot': continue
+                          fimg = fimg.replace('.72.72.', '.140.140.')
+                          fslug = fname.lower().replace(' ', '_')
+                          if fslug not in fox_hs_slug:
+                              fox_hs_slug[fslug] = {'name': fname, 'headshot': fimg}
+                              fox_count += 1
+                      print(f"  {fox_url.split('/')[-2]}: {len(fmatches)} drivers")
+                  except Exception as e:
+                      print(f"  Scrape error {fox_url}: {e}")
+              print(f"  NASCAR drivers from Fox Sports: {fox_count}")
+              # Write clean slug-keyed data — JS legacy path reads {name, headshot} per slug
+              cache['nascar-drivers'] = {'data': fox_hs_slug, '_updated': today_str}
+          except Exception as e:
+              print(f"  NASCAR drivers error: {e}")
           # --- F1 Drivers (formula1.com headshots) ---
           print("\n--- F1 Drivers ---")
           try:
