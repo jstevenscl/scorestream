@@ -361,7 +361,8 @@ jobs:
                                   if aid: all_ids.add(aid)
               print(f"  IDs found: {len(all_ids)} (rankings + scoreboard)")
               for aid in all_ids:
-                  if aid in existing and existing[aid].get('headshot'): continue
+                  cached_hs = (existing.get(aid) or {}).get('headshot','')
+                  if aid in existing and cached_hs and 'espncdn.com/i/headshots/tennis' not in cached_hs: continue
                   # Use ESPN core API for name/flag/headshot
                   core=fetch(f'https://sports.core.api.espn.com/v2/sports/tennis/leagues/{league}/athletes/{aid}',ESPN_HDR)
                   name=''; shortName=''; flag=''; country=''; hs_url=''
