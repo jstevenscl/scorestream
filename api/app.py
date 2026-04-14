@@ -1077,9 +1077,12 @@ def get_channel(channel_id):
 
 # ── Ticker Overlay ────────────────────────────────────────────────────────────
 
-TICKER_FILE = '/ticker/scores.txt'
+TICKER_DIR = '/ticker'
 
-def _build_ticker_params(original_params, font_size=24, position='bottom', bg_opacity=0.75, test_text=None, scroll_speed=0):
+def _ticker_scores_path(channel_id):
+    return f'{TICKER_DIR}/scores_{channel_id}.txt'
+
+def _build_ticker_params(original_params, channel_id, font_size=24, position='bottom', bg_opacity=0.75, test_text=None, scroll_speed=0):
     import re
     params = original_params.strip()
     y_expr = 'H-th-6' if position == 'bottom' else '6'
@@ -1093,8 +1096,9 @@ def _build_ticker_params(original_params, font_size=24, position='bottom', bg_op
             f':x={x_expr}:y={y_expr}'
         )
     else:
+        ticker_file = _ticker_scores_path(channel_id)
         drawtext = (
-            f'drawtext=textfile={TICKER_FILE}:reload=1'
+            f'drawtext=textfile={ticker_file}:reload=1'
             f':fontsize={font_size}:fontcolor=white'
             f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
             f':x={x_expr}:y={y_expr}'
@@ -1115,7 +1119,7 @@ def ticker_preview_params():
     b = request.get_json(force=True) or {}
     original = b.get('parameters','').strip()
     if not original: return jsonify({'error':'parameters required'}),400
-    modified = _build_ticker_params(original, int(b.get('font_size',24)),
+    modified = _build_ticker_params(original, 0, int(b.get('font_size',24)),
                                     b.get('position','bottom'), float(b.get('bg_opacity',0.75)))
     return jsonify({'original':original,'modified':modified})
 
@@ -1221,7 +1225,7 @@ def ticker_enable():
                 '-c:v copy', clean_params)
             # Clean up empty -vf ""
             clean_params = _re.sub(r'-vf\s+""\s*', '', clean_params)
-        modified_params = _build_ticker_params(clean_params,font_size,position,bg_opacity,test_text,scroll_speed)
+        modified_params = _build_ticker_params(clean_params,channel_id,font_size,position,bg_opacity,test_text,scroll_speed)
         if modified_params == clean_params:
             return jsonify({'error':'Could not inject ticker — "-c:v copy" not found in profile parameters.'}),400
         # Create ticker profile — avoid double-suffixing
@@ -1264,6 +1268,13 @@ def _disable_ticker_row(backup_row, session, creds):
             warnings.append(f'Delete ticker profile: HTTP {r.status_code}')
     except Exception as e:
         warnings.append(f'Delete ticker profile: {e}')
+    try:
+        import os as _os
+        scores_file = _ticker_scores_path(backup_row['channel_id'])
+        if _os.path.exists(scores_file):
+            _os.remove(scores_file)
+    except Exception as e:
+        warnings.append(f'Delete ticker file: {e}')
     return warnings
 
 @app.route('/ticker/disable', methods=['POST'])
@@ -1339,16 +1350,19 @@ def ticker_text_global():
             row = conn.execute("SELECT value FROM global_settings WHERE key='ticker_config'").fetchone()
         if not row: return jsonify({'text':''}),200
         cfg = _jg.loads(row['value'])
-        sports = cfg.get('sports', [])
     except Exception as e:
         return jsonify({'error':str(e)}),500
-    # Reuse per-sb logic by injecting sports into a mock config and calling the shared helper
-    from flask import g as _fg
-    _fg._ticker_sports_override = sports
-    return _ticker_text_for_sports(sports)
+    return _ticker_text_for_config(cfg)
 
-def _ticker_text_for_sports(sports):
+def _ticker_text_for_config(cfg):
     """Shared ticker text builder — called by both global and per-sb endpoints."""
+    # Custom text mode: return hardcoded message instead of sport scores
+    if cfg.get('custom_text_enabled') and cfg.get('custom_text', '').strip():
+        raw = cfg['custom_text'].strip()
+        PAD_WIDTH = 300
+        padded = raw + ' ' * max(PAD_WIDTH - len(raw) % PAD_WIDTH, PAD_WIDTH)
+        return jsonify({'text': padded})
+    sports = cfg.get('sports', [])
     import json as _jt
     from datetime import date as _date
     today = str(_date.today())
@@ -1487,10 +1501,10 @@ def ticker_text(sb_id):
         with get_db() as conn:
             row = conn.execute('SELECT ticker_config FROM scoreboards WHERE id=?',(sb_id,)).fetchone()
         if not row: return jsonify({'error':'scoreboard not found'}),404
-        sports = _jt.loads(row['ticker_config'] or '{}').get('sports',[])
+        cfg = _jt.loads(row['ticker_config'] or '{}')
     except Exception as e:
         return jsonify({'error':str(e)}),500
-    return _ticker_text_for_sports(sports)
+    return _ticker_text_for_config(cfg)
 
 @app.route('/dispatcharr/groups', methods=['POST'])
 def create_group():

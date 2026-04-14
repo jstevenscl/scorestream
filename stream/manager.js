@@ -683,7 +683,7 @@ function prebakeAll() {
 }
 
 // ── Ticker Writer ─────────────────────────────────────────────────────────────
-const TICKER_FILE     = process.env.TICKER_FILE      || '/ticker/scores.txt';
+const TICKER_DIR      = process.env.TICKER_DIR       || '/ticker';
 const TICKER_API_BASE = process.env.TICKER_API_BASE  || 'http://scorestream-api:5000';
 const TICKER_INTERVAL = parseInt(process.env.TICKER_INTERVAL || '30') * 1000;
 
@@ -704,15 +704,25 @@ function httpGetJson(url) {
 
 async function updateTickerFile() {
   try {
-    const db      = new Database(DB_PATH, { fileMustExist: true });
-    const active  = db.prepare('SELECT COUNT(*) as n FROM ticker_profile_backup').get();
+    const db   = new Database(DB_PATH, { fileMustExist: true });
+    const rows = db.prepare('SELECT scoreboard_id, channel_id FROM ticker_profile_backup').all();
     db.close();
-    if (!active || active.n === 0) return;  // no active ticker — nothing to write
-    const data = await httpGetJson(`${TICKER_API_BASE}/ticker/text`);
-    if (data.text) {
-      const dir = path.dirname(TICKER_FILE);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(TICKER_FILE, data.text, 'utf8');
+    if (!rows || rows.length === 0) return;  // no active tickers — nothing to write
+    if (!fs.existsSync(TICKER_DIR)) fs.mkdirSync(TICKER_DIR, { recursive: true });
+    for (const row of rows) {
+      try {
+        // Scoreboard_id 0 = global ticker config; >0 = per-scoreboard config
+        const url = row.scoreboard_id === 0
+          ? `${TICKER_API_BASE}/ticker/text`
+          : `${TICKER_API_BASE}/ticker/text/${row.scoreboard_id}`;
+        const data = await httpGetJson(url);
+        if (data.text !== undefined) {
+          const filePath = path.join(TICKER_DIR, `scores_${row.channel_id}.txt`);
+          fs.writeFileSync(filePath, data.text, 'utf8');
+        }
+      } catch(e) {
+        console.warn(`[ticker] channel ${row.channel_id} error: ${e.message}`);
+      }
     }
   } catch(e) {
     console.warn(`[ticker] update error: ${e.message}`);
