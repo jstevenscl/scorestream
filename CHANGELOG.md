@@ -15,6 +15,19 @@ ghcr.io/OWNER/scorestream-pro-api:v0.2.0-beta  # pinned version
 
 ---
 
+## [Unreleased] — 2026-04-14
+
+### Fixed
+- **NASCAR driver names** — standings for NOAPS (O'Reilly Auto Parts Series) and Craftsman Truck Series were showing abbreviated names (T. Reddick, J. Allgaier). Root cause: `cf.nascar.com/cacher/` standings endpoints return 403 from GitHub Actions CI. All three NASCAR series (Cup, NOAPS, Trucks) now scrape full driver names, car numbers, points, wins, and headshots directly from Fox Sports standings pages.
+- **NASCAR headshot cache format** — the motor cache workflow was writing a mixed-key format that caused the frontend to silently fall back to the legacy name-map path. The nascar-drivers cache now always writes clean slug-keyed entries.
+- **Tennis headshot 404 errors** — ESPN CDN (`espncdn.com/i/headshots/tennis/players/full/{id}.png`) does not host tennis player images and returned 404 for every request. Removed the CDN fallback from the motor cache workflow; tennis players are now fetched via ESPN Core API (which provides limited coverage — ESPN does not publish headshots for most tennis players).
+- **`/api/stream/status` returning 404** — added a proxy route in `api/app.py` that forwards `GET /stream/status` to the stream manager. This endpoint is polled by the frontend to show live stream badges; it was silently failing on every page load.
+
+### Changed
+- Motor cache reseed no longer requires a container restart — call `POST /api/motor/reseed` to force the API to re-read the data branch into SQLite immediately.
+
+---
+
 ## [v0.2.0-beta] — 2026-02-19
 
 ### Added

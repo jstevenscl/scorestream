@@ -868,9 +868,9 @@ A GitHub Actions workflow (`update-motor-cache.yml`) runs on a schedule and popu
 | Sport | Source | Coverage |
 |---|---|---|
 | PGA Tour | ESPN CDN (`a.espncdn.com/i/headshots/golf/players/full/{id}.png`) | ~300 players via scoreboard IDs + ESPN name search backfill |
-| ATP Tour | ESPN CDN (`a.espncdn.com/i/headshots/tennis/players/full/{id}.png`) | 150 ranked players (~80% have images) |
-| WTA Tour | ESPN CDN (same pattern as ATP) | 150 ranked players (~75% have images) |
-| NASCAR | Fox Sports CDN (scraped from Cup/Xfinity/Truck standings pages) | ~100 active drivers |
+| ATP Tour | ESPN Core API (player profile where available) | 150 ranked players — ESPN does not provide tennis headshot images for most players; coverage is limited |
+| WTA Tour | ESPN Core API (same as ATP) | 150 ranked players — same limited coverage as ATP |
+| NASCAR | Fox Sports CDN (scraped from Cup/NOAPS/Truck standings pages) | ~195 active drivers across all three series |
 | Formula 1 | formula1.com (official driver images with Cloudinary face crop) | All 22 current drivers |
 
 ### Lookup behavior
@@ -884,7 +884,9 @@ A GitHub Actions workflow (`update-motor-cache.yml`) runs on a schedule and popu
 
 The workflow runs automatically on schedule. To manually refresh:
 1. Go to GitHub → Actions → **Update Motor Cache Data** → Run workflow
-2. After completion, restart the `scorestream-api` container to pick up the new data
+2. After completion, either:
+   - **Restart** the `scorestream-api` container (seeds from the data branch on startup), or
+   - **Call the reseed endpoint** without restarting: `POST http://YOUR_IP:7777/api/motor/reseed` — forces the API to re-read the data branch into its SQLite cache immediately
 
 ---
 
@@ -921,9 +923,9 @@ The workflow runs automatically on schedule. To manually refresh:
 - Confirm `STREAM_FPS=1` (the default). Higher FPS values multiply CPU cost — 30 FPS uses ~30x more CPU than 1 FPS.
 - If using `STREAM_DPR=2`, drop back to `STREAM_DPR=1` to save browser memory.
 
-**NASCAR standings showing incorrect points or manufacturer names:**
-- Points values are parsed from NASCAR's API as integers (comma-separated thousands separators are stripped automatically). Manufacturer names are normalized to `Chevy`, `Ford`, or `Toyota` regardless of how the API returns them (e.g., "Chevrolet", "CHEVY", "Toyota Motor Corp").
-- If standings data looks stale, go to GitHub → Actions → **Update Motor Cache Data** → Run workflow, then restart `scorestream-api`.
+**NASCAR standings showing abbreviated names (T. Reddick instead of Tyler Reddick) or missing data:**
+- NASCAR standings (Cup, NOAPS, Trucks) are scraped from Fox Sports standings pages. If data looks stale or incorrect, go to GitHub → Actions → **Update Motor Cache Data** → Run workflow, then call `POST /api/motor/reseed` or restart `scorestream-api`.
+- A simple container repull does **not** flush the in-memory cache — you must stop and remove the container before repulling, or use the `/motor/reseed` endpoint.
 
 **Ticker overlay not appearing after enabling:**
 - Restart the channel in Dispatcharr — existing ffmpeg processes use the old stream profile until restarted
@@ -941,6 +943,8 @@ The workflow runs automatically on schedule. To manually refresh:
 docker compose pull
 docker compose up -d
 ```
+
+> **Important:** A simple repull does **not** flush in-memory state. If updated data (standings, headshots, motor cache) is not appearing after a pull, stop and remove the containers before repulling: in Portainer, use **Stop → Remove → Redeploy**, or via CLI: `docker compose down && docker compose pull && docker compose up -d`. Alternatively, call `POST /api/motor/reseed` to force the API to re-read the motor cache from the data branch without restarting.
 
 ---
 
