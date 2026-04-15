@@ -40,6 +40,9 @@ Screenshot*.png
 Screenshot*.jpg
 *.screenshot.png
 screenshots/
+# But docs/screenshots/ are documentation assets — always commit
+!docs/screenshots/
+!docs/screenshots/**
 
 # Reference / scratch files that are NOT part of the project
 # (data dumps, error logs, handoff notes, ad-hoc scripts)

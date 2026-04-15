@@ -1,470 +1,807 @@
 # ScoreStream Pro — User Guide
 
 **Version:** 0.2.0-beta  
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-04-15
 
-ScoreStream Pro is a self-hosted live sports scoreboard that streams directly into Dispatcharr as real IPTV channels — automatically registering and numbering them for you.
+ScoreStream Pro is a self-hosted live sports scoreboard that streams directly into Dispatcharr as real IPTV channels. It pulls live data from ESPN, renders a full HD scoreboard, and delivers it as an HLS video stream — automatically registering and numbering channels in Dispatcharr for you.
 
 ---
 
 ## Table of Contents
 
-1. [Requirements](#1-requirements)
-2. [Installation](#2-installation)
-3. [Configuration Reference](#3-configuration-reference)
-4. [Channel Profiles](#4-channel-profiles)
-5. [Choosing Your Image Tag](#5-choosing-your-image-tag)
-6. [Updating ScoreStream Pro](#6-updating-scorestream-pro)
-7. [Troubleshooting](#7-troubleshooting)
-8. [FAQ](#8-faq)
+1. [How It Works](#1-how-it-works)
+2. [Requirements](#2-requirements)
+3. [Installation](#3-installation)
+4. [Finding Your STREAM_BASE_URL](#4-finding-your-stream_base_url)
+5. [The Main Scoreboard](#5-the-main-scoreboard)
+6. [Settings Overview](#6-settings-overview)
+7. [Integrations — Connecting Dispatcharr](#7-integrations--connecting-dispatcharr)
+8. [My Scoreboards](#8-my-scoreboards)
+9. [Creating & Editing a Scoreboard](#9-creating--editing-a-scoreboard)
+10. [Stream Card Style](#10-stream-card-style)
+11. [Default Stream Settings](#11-default-stream-settings)
+12. [Sports Library](#12-sports-library)
+13. [Audio Library](#13-audio-library)
+14. [Ticker Overlay](#14-ticker-overlay)
+15. [System Theme](#15-system-theme)
+16. [Backup & Restore](#16-backup--restore)
+17. [Pushing Channels to Dispatcharr](#17-pushing-channels-to-dispatcharr)
+18. [Troubleshooting](#18-troubleshooting)
 
 ---
 
-## 1. Requirements
+## 1. How It Works
+
+ScoreStream Pro runs four Docker containers that work together:
+
+| Container | Role |
+|-----------|------|
+| `scorestream-api` | Fetches ESPN data, manages the database, talks to Dispatcharr |
+| `scorestream-web` | Nginx — serves the scoreboard UI and HLS streams on port 7777 |
+| `scorestream-stream` | Headless Chrome renderer + FFmpeg — turns the scoreboard into live video |
+
+When you create a scoreboard, the stream manager starts a dedicated headless Chrome instance that renders the scoreboard UI. FFmpeg captures that rendered page at your configured framerate and encodes it to HLS. Dispatcharr then picks up those HLS streams as IPTV channels.
+
+---
+
+## 2. Requirements
 
 | Requirement | Minimum | Recommended |
 |-------------|---------|-------------|
-| CPU | 2 cores | 4 cores |
-| RAM | 2 GB | 4 GB |
-| Disk | 5 GB free | 10 GB free |
+| CPU | 2 cores | 4+ cores (1 core per active scoreboard stream) |
+| RAM | 3 GB | 6 GB |
+| Disk | 5 GB free | 10 GB+ (audio files add up) |
 | OS | Linux (any) | Ubuntu 22.04+ |
 | Docker | 24.x | Latest |
 | Docker Compose | v2 | Latest |
 | Dispatcharr | 0.15.0+ | Latest |
 
-ScoreStream Pro works on any system that runs Docker: Proxmox LXC, Unraid, a Raspberry Pi 5, a NAS (with Docker support), or a bare Linux box.
-
-The Dispatcharr instance and ScoreStream Pro must be on the same **local network** or otherwise mutually reachable. They do not need to be on the same machine.
+> **Note:** Headless Chrome is the most resource-intensive part. Each active scoreboard stream runs its own Chrome instance. The `shm_size: 512mb` on the stream container is required — Chrome will crash without it.
 
 ---
 
-## 2. Installation
+## 3. Installation
 
-### Step 1 — Create a folder
-
-```bash
-mkdir ~/scorestream-pro && cd ~/scorestream-pro
-```
-
-### Step 2 — Download the stack files
+### Step 1 — Create a folder on your server
 
 ```bash
-# Download the compose file
-curl -O https://raw.githubusercontent.com/OWNER/scorestream-pro/main/scorestream/docker-compose.yml
-
-# Download the environment template
-curl -O https://raw.githubusercontent.com/OWNER/scorestream-pro/main/scorestream/.env.example
-mv .env.example .env
-
-# Download the default channel config
-mkdir config
-curl -o config/config.json https://raw.githubusercontent.com/OWNER/scorestream-pro/main/scorestream/config/config.json
+mkdir ~/scorestream && cd ~/scorestream
 ```
 
-### Step 3 — Edit your `.env` file
+### Step 2 — Create your `docker-compose.yml`
 
-Open `.env` in any text editor and fill in your values:
+Create a file called `docker-compose.yml` with the following contents:
 
-```env
-# Your GitHub username (for pulling Docker images)
-GITHUB_OWNER=YOURUSERNAME
+```yaml
+services:
+  scorestream-api:
+    image: ghcr.io/jstevenscl/scorestream-api:beta
+    container_name: scorestream-api
+    restart: unless-stopped
+    environment:
+      - TZ=America/New_York
+      - STREAM_BASE_URL=http://172.19.0.1:7777
+      - STREAM_MANAGER_URL=http://scorestream-stream:3001
+      - DISPATCHARR_URL=http://10.0.0.40:9191
+      - DB_PATH=/config/scorestream.db
+    volumes:
+      - scorestream_config:/config
+      - scorestream_audio:/audio_library
+    networks:
+      - scorestream_net
 
-# Which image version to run (latest, beta, or pinned like v0.2.0-beta)
-SCORESTREAM_TAG=latest
+  scorestream-web:
+    image: ghcr.io/jstevenscl/scorestream-web:beta
+    container_name: scorestream-web
+    restart: unless-stopped
+    ports:
+      - "7777:80"
+    volumes:
+      - scorestream_hls:/usr/share/nginx/html/hls:ro
+    networks:
+      - scorestream_net
 
-# Your Dispatcharr connection
-DISPATCHARR_URL=http://192.168.1.100:9191
-DISPATCHARR_USER=admin
-DISPATCHARR_PASS=yourpassword
+  scorestream-stream:
+    image: ghcr.io/jstevenscl/scorestream-stream:beta
+    container_name: scorestream-stream
+    restart: unless-stopped
+    environment:
+      - TZ=America/New_York
+      - STREAM_WIDTH=1920
+      - STREAM_HEIGHT=1080
+      - STREAM_FPS=1
+      - STREAM_QUALITY=balanced
+      - WEB_BASE=http://scorestream-web
+      - DB_PATH=/config/scorestream.db
+      - HLS_DIR=/hls
+      - PIPES_DIR=/tmp/pipes
+      - MANAGER_PORT=3001
+      - HLS_SEGMENT_DURATION=2
+      - HLS_PLAYLIST_SIZE=4
+      - AUDIO_DIR=/audio_library
+    volumes:
+      - scorestream_config:/config
+      - scorestream_hls:/hls
+      - scorestream_audio:/audio_library
+      - scorestream_ticker:/ticker
+    networks:
+      - scorestream_net
+    shm_size: 512mb
 
-# THIS server's IP address — must be reachable FROM Dispatcharr's container
-# Do NOT use localhost or 127.0.0.1 here
-STREAM_BASE_URL=http://192.168.1.50:8888
+networks:
+  scorestream_net:
+    name: scorestream_net
+    driver: bridge
 
-# Timezone for the scoreboard clock
-TZ=America/Chicago
+volumes:
+  scorestream_config:
+    name: scorestream_config
+  scorestream_hls:
+    name: scorestream_hls
+  scorestream_audio:
+    name: scorestream_audio
+  scorestream_ticker:
+    external: true
 ```
 
-> ⚠️ **Important about STREAM_BASE_URL**
-> This is the URL Dispatcharr uses to reach your HLS streams.
-> It must be the **LAN IP address** of the machine running ScoreStream Pro.
-> `localhost` will not work because Dispatcharr runs in its own container.
+### Key environment variables explained
 
-### Step 4 — Start everything
+| Variable | Description |
+|----------|-------------|
+| `TZ` | Your timezone. Controls how game times display on the scoreboard. |
+| `STREAM_BASE_URL` | The URL Dispatcharr uses to reach your HLS streams. **See Section 4 — this is the most important setting to get right.** |
+| `STREAM_MANAGER_URL` | Internal address of the stream container. Leave as `http://scorestream-stream:3001`. |
+| `DISPATCHARR_URL` | Your Dispatcharr instance URL. |
+| `DB_PATH` | Path inside the container where the database is stored. Leave as-is. |
+| `STREAM_WIDTH` / `STREAM_HEIGHT` | Resolution of the output video stream (1920×1080 recommended). |
+| `STREAM_FPS` | Frames per second. `1` is ideal for a scoreboard — it changes infrequently and low FPS dramatically reduces CPU load. |
+| `STREAM_QUALITY` | Encoding quality preset: `fast`, `balanced`, or `quality`. |
+| `HLS_SEGMENT_DURATION` | Length of each HLS chunk in seconds. Lower = less latency. |
+| `HLS_PLAYLIST_SIZE` | Number of HLS segments kept in the playlist. |
+
+### Step 3 — Create the ticker volume (required before first start)
+
+The ticker volume must be created before starting the stack:
 
 ```bash
-docker compose --env-file .env up -d
+docker volume create scorestream_ticker
 ```
 
-### Step 5 — Watch the registration happen
+### Step 4 — Start the stack
 
 ```bash
-docker logs -f scorestream-api
+docker compose up -d
+```
+
+### Step 5 — Verify it's running
+
+```bash
+docker logs scorestream-api --tail 30
+docker logs scorestream-stream --tail 30
+```
+
+You should see the API start up and the stream manager come online. Once both are healthy, open your browser to:
+
+```
+http://YOUR_SERVER_IP:7777
+```
+
+---
+
+## 4. Finding Your STREAM_BASE_URL
+
+This is the single most common setup issue. The `STREAM_BASE_URL` is the URL that **Dispatcharr's container** uses to reach ScoreStream's HLS streams. It cannot be `localhost` or a container name because Dispatcharr runs in its own Docker network.
+
+### Scenario A — Same host machine, different Docker stacks
+
+If ScoreStream and Dispatcharr are both on the same physical server but in separate Docker stacks (the most common setup), use the **Docker bridge gateway IP**:
+
+```bash
+# After starting your stack, run:
+docker network inspect scorestream_net | grep Gateway
 ```
 
 You'll see output like:
-
 ```
-[10:30:01] [api] ScoreStream Pro API v0.2.0-beta starting
-[10:30:02] [api] Authenticated ✅
-[10:30:05] [api] HLS live ✅
-[10:30:05] [api] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[10:30:05] [api] ScoreStream Pro — Channel Sync
-[10:30:06] [api] 📺  ScoreStream — All Sports  ch900
-[10:30:07] [api]     ✅ ch900 → http://192.168.1.50:8888/hls/all/stream.m3u8
-[10:30:07] [api] 🏈  ScoreStream — NFL  ch901
-[10:30:08] [api]     ✅ ch901 → http://192.168.1.50:8888/hls/nfl/stream.m3u8
-...
+"Gateway": "172.19.0.1"
 ```
 
-### Step 6 — Verify in Dispatcharr
+Your `STREAM_BASE_URL` would then be:
+```
+STREAM_BASE_URL=http://172.19.0.1:7777
+```
 
-1. Open Dispatcharr in your browser
-2. Go to **Channels**
-3. In the group dropdown, select **ScoreStream**
-4. You should see 6–7 channels listed with HLS stream URLs assigned
-5. Click the preview icon on any channel to confirm video is playing
+### Scenario B — Different machines
+
+If ScoreStream runs on a different server than Dispatcharr, use the **LAN IP of the ScoreStream server**:
+
+```
+STREAM_BASE_URL=http://192.168.1.50:7777
+```
+
+### Scenario C — Same Docker stack
+
+If you add ScoreStream directly to the same Docker Compose file as Dispatcharr, use the container name:
+
+```
+STREAM_BASE_URL=http://scorestream-web:80
+```
+
+> **After changing `STREAM_BASE_URL`**, restart the API container to apply it:
+> ```bash
+> docker restart scorestream-api
+> ```
 
 ---
 
-## 3. Configuration Reference
+## 5. The Main Scoreboard
 
-### `.env` Variables
+Once the containers are running, navigate to `http://YOUR_SERVER_IP:7777` to see the main scoreboard.
 
-These control how the containers start. Changes require a container restart.
+![Main Scoreboard](screenshots/01-main-scoreboard.png)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GITHUB_OWNER` | `yourusername` | GitHub username for ghcr.io image pulls |
-| `SCORESTREAM_TAG` | `latest` | Image track: `latest`, `beta`, or pinned version |
-| `DISPATCHARR_URL` | required | Full URL to your Dispatcharr instance |
-| `DISPATCHARR_USER` | required | Dispatcharr admin username |
-| `DISPATCHARR_PASS` | required | Dispatcharr admin password |
-| `DISPATCHARR_GROUP` | `ScoreStream` | Channel group name created in Dispatcharr |
-| `DISPATCHARR_CHANNEL_START` | `900` | Fallback base channel number if config.json is missing |
-| `STREAM_BASE_URL` | required | LAN URL of this server, reachable from Dispatcharr |
-| `STREAM_WIDTH` | `1920` | Video resolution width |
-| `STREAM_HEIGHT` | `1080` | Video resolution height |
-| `STREAM_FPS` | `30` | Video framerate |
-| `HLS_SEGMENT_DURATION` | `2` | HLS segment length in seconds (lower = lower latency) |
-| `HLS_PLAYLIST_SIZE` | `10` | Number of segments kept in playlist |
-| `WEB_PORT` | `8888` | External port for web/stream access |
-| `TZ` | `America/Chicago` | Timezone for scoreboard clock display |
+### Layout
 
----
+**Left sidebar** — Shows all active sports sections. Click any sport name to jump to that section. Toggle sports on/off for the current view using the toggles next to each label.
 
-### `config/config.json` — Channel Settings
+**Main area** — The live scoreboard grid. Each card represents one game: live scores, team logos, period/inning, and game status (Live, Final, Scheduled). Scores that change are briefly highlighted.
 
-This file controls channel numbering, names, which channels are active, and Dispatcharr profile assignment. It is **reloaded automatically** every 6 hours, or immediately when you restart the API container.
+**Top bar** — Shows the scoreboard name, current date/time, and a connection status indicator.
 
-#### Channel Numbering
+### Sidebar controls
 
-**Auto mode** — channels numbered sequentially starting from `base_number`, skipping disabled channels:
+| Control | Function |
+|---------|----------|
+| Sport toggles | Show/hide each sport's section in the current view |
+| **CPU Saver** button | Pauses the video stream encoding to save CPU when not in use. The scoreboard data still refreshes — only the video output pauses. |
+| **Stream Mode** button | Hides all UI chrome (sidebar, topbar) and shows only the raw scoreboard grid — this is what gets captured for the HLS stream. |
+| **⚙️ Settings** button | Opens the Settings panel |
 
-```json
-{
-  "channel_numbering": {
-    "mode": "auto",
-    "base_number": 900
-  }
-}
-```
+### Understanding game cards
 
-Result: All Sports=900, NFL=901, NBA=902, MLB=903, NHL=904, NCAAB=905, NCAABase=906
-
-**Manual mode** — set each channel's number explicitly:
-
-```json
-{
-  "channel_numbering": {
-    "mode": "manual",
-    "channels": {
-      "all":      { "number": 500 },
-      "nfl":      { "number": 510 },
-      "nba":      { "number": 520 },
-      "mlb":      { "number": 530 },
-      "nhl":      { "number": 540 },
-      "ncaab":    { "number": 550 },
-      "ncaabase": { "number": 560 }
-    }
-  }
-}
-```
-
-#### Per-Channel Options
-
-Each channel in `channels` supports these properties:
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `number` | integer | Channel number (used in manual mode, or as override in auto) |
-| `name` | string | Display name shown in Dispatcharr |
-| `enabled` | boolean | `false` = skip this channel entirely |
-
-**Example — rename NFL and disable NCAA Baseball:**
-
-```json
-{
-  "channel_numbering": {
-    "mode": "auto",
-    "base_number": 900,
-    "channels": {
-      "all":      { "name": "📡 ScoreStream Live",    "enabled": true  },
-      "nfl":      { "name": "🏈 NFL Scores 24/7",     "enabled": true  },
-      "nba":      { "name": "🏀 NBA Scores 24/7",     "enabled": true  },
-      "mlb":      { "name": "⚾ MLB Scores 24/7",     "enabled": true  },
-      "nhl":      { "name": "🏒 NHL Scores 24/7",     "enabled": true  },
-      "ncaab":    { "name": "🏀 College Basketball",  "enabled": true  },
-      "ncaabase": { "enabled": false }
-    }
-  }
-}
-```
-
-#### Applying config.json Changes
-
-To apply immediately (without waiting for the 6-hour auto-sync):
-
-```bash
-docker restart scorestream-api
-```
+Each game card shows:
+- Team logos and abbreviations
+- Current score (or scheduled time for upcoming games)
+- Game status: **LIVE** (with period/quarter/inning), **FINAL**, or a start time
+- A yellow highlight briefly appears on scores when they update
 
 ---
 
-## 4. Channel Profiles
+## 6. Settings Overview
 
-Dispatcharr's **Channel Profiles** let you create different channel lists for different users or outputs (e.g. one profile for kids, one for full access, one for a specific M3U client).
+Click the **⚙️ Settings** button in the sidebar (or click the Dispatcharr status badge at the top of the sidebar) to open Settings.
 
-ScoreStream Pro can automatically assign its channels to the right profiles.
+The Settings panel has a left navigation with these sections:
 
-### Finding your Profile IDs
-
-The easiest way: check the `scorestream-api` logs right after startup. It always prints all available profiles:
-
-```
-[api] Dispatcharr has 3 Channel Profile(s):
-[api]     id=1  name='Default'
-[api]     id=2  name='Kids'
-[api]     id=3  name='Sports'
-```
-
-### Configuring Profile Assignment
-
-In `config/config.json`, under the `dispatcharr` section:
-
-**Add to ALL profiles** (default — backward compatible, safest choice if you're unsure):
-
-```json
-{
-  "dispatcharr": {
-    "channel_profiles": {
-      "mode": "all"
-    }
-  }
-}
-```
-
-**Add to NO profiles** (channels exist in Dispatcharr but won't appear in any profile — you assign them manually):
-
-```json
-{
-  "dispatcharr": {
-    "channel_profiles": {
-      "mode": "none"
-    }
-  }
-}
-```
-
-**Add to specific profiles only:**
-
-```json
-{
-  "dispatcharr": {
-    "channel_profiles": {
-      "mode": "specific",
-      "profile_ids": [1, 3]
-    }
-  }
-}
-```
-
-In this example, ScoreStream channels will appear in **Default** (id=1) and **Sports** (id=3), but not in **Kids** (id=2).
-
-If you specify IDs that don't exist in your Dispatcharr, ScoreStream Pro will warn you in the logs and skip those IDs. If none of the IDs are valid, it falls back to adding to all profiles.
+| Section | Purpose |
+|---------|---------|
+| **My Scoreboards** | Create, edit, and manage your scoreboard channels |
+| **Stream Card Style** | Global card appearance (applies to all scoreboards by default) |
+| **Default Stream Settings** | Default display settings new scoreboards inherit |
+| **System Theme** | UI colors and font scaling |
+| **Sports Library** | Enable/disable sports globally |
+| **Audio Library** | Upload music tracks and create playlists |
+| **Ticker Overlay** | Configure the score ticker crawl for HLS streams |
+| **Integrations** | Dispatcharr connection and channel management |
+| **Backup & Restore** | Export/import your full configuration |
 
 ---
 
-## 5. Choosing Your Image Tag
+## 7. Integrations — Connecting Dispatcharr
 
-Set `SCORESTREAM_TAG` in your `.env`:
+Before you can push channels to Dispatcharr, you need to enter your credentials.
 
-| Tag | Description | Who should use it |
-|-----|-------------|-------------------|
-| `latest` | Last stable release | Most users |
-| `beta` | Bleeding edge, auto-built on code changes | Early adopters |
-| `v0.2.0-beta` | Pinned to exact version | Reproducible setups |
-| `v1.0.0` | Pinned stable version | Production/always-on |
+Go to **Settings → Integrations**.
 
-To switch tracks, edit `.env`, then:
+![Integrations](screenshots/02-integrations.png)
 
-```bash
-docker compose pull
-docker compose up -d
-```
+### Dispatcharr Credentials
 
----
+1. Enter your **Dispatcharr URL** (e.g. `http://10.0.0.40:9191`)
+2. Enter your Dispatcharr **username** and **password**
+3. Click **Save Credentials**
+4. Click **Test Connection** — you should see a green success message
 
-## 6. Updating ScoreStream Pro
+If the test fails:
+- Confirm Dispatcharr is running and reachable from your ScoreStream server
+- Try the URL in a browser to verify it loads
+- Check that your username and password are correct
 
-### Check current version
+### Channel Settings
 
-```bash
-docker exec scorestream-api cat /proc/1/cmdline 2>/dev/null || \
-  docker logs scorestream-api 2>&1 | grep "v0\." | head -1
-```
+After connecting, configure how ScoreStream creates channels in Dispatcharr:
 
-### Update to latest
+**Channel Group** — The group name ScoreStream channels will be placed in within Dispatcharr. Default is `ScoreStream`. You can type a custom name or select an existing group from the dropdown.
 
-```bash
-# Pull new images
-docker compose pull
+**Channel Profile** — Which Dispatcharr channel profile(s) to assign your streams to. Use the dropdown to select a profile, or leave blank to add to all profiles.
 
-# Restart containers with new images
-docker compose up -d
+**Starting Channel Number** — The first channel number to use when auto-numbering. ScoreStream will assign sequential numbers starting from this value.
 
-# Verify
-docker logs scorestream-api | tail -20
-```
+### Manual Channel Actions
 
-### Pinned version → new version
+At the bottom of the Integrations page:
 
-1. Edit `.env`: change `SCORESTREAM_TAG=v0.2.0-beta` to `SCORESTREAM_TAG=v0.3.0-beta`
-2. Run:
-   ```bash
-   docker compose pull
-   docker compose up -d
-   ```
-
-### Rollback if something breaks
-
-```bash
-# Edit .env to previous version tag, then:
-docker compose pull
-docker compose up -d
-```
-
-### Preserving your config across updates
-
-Your `config/config.json` is stored on your host machine (not inside the container), so it survives all updates automatically.
+| Button | Action |
+|--------|--------|
+| **Auto Assign** | Automatically renumber all ScoreStream channels sequentially |
+| **Force Sync** | Re-push all channel metadata to Dispatcharr (useful after URL or name changes) |
+| **Create Group** | Manually create the channel group in Dispatcharr |
+| **Create Profile** | Manually create a channel profile |
 
 ---
 
-## 7. Troubleshooting
+## 8. My Scoreboards
 
-### Channels not appearing in Dispatcharr
+Go to **Settings → My Scoreboards**.
 
-**Step 1:** Check API logs for errors:
-```bash
-docker logs scorestream-api | grep -E "ERROR|Failed|❌"
-```
+![My Scoreboards](screenshots/03-my-scoreboards.png)
 
-**Step 2:** Verify Dispatcharr is reachable from inside the container:
-```bash
-docker exec scorestream-api wget -qO- http://YOUR_DISPATCHARR_IP:9191/api/token/
-# Should return: {"detail":"Method \"GET\" not allowed."}
-# That response means the connection works (405 is expected for GET on this endpoint)
-```
+A **Scoreboard** is one HLS video stream channel. Each scoreboard:
+- Shows only the sports/leagues you choose
+- Can optionally filter to specific teams
+- Has its own display settings (colors, fonts, card layout)
+- Has its own audio track or playlist
+- Gets pushed to Dispatcharr as a separate IPTV channel
 
-**Step 3:** Check credentials:
-```bash
-# Look for auth errors in the log
-docker logs scorestream-api | grep -i "auth\|401\|credential"
-```
+### Scoreboard card actions
 
-### Video not playing / Dispatcharr can't reach the stream
+Each scoreboard card shows:
+- **Name** and how many sports are enabled
+- **Stream status** — 🔴 Streaming (video encoding is active) or paused
+- **Dispatcharr status** — whether it has been pushed and registered
 
-**Step 1:** Verify HLS is working from your browser:
-```
-http://YOUR_SERVER_IP:8888/hls/all/stream.m3u8
-```
-You should see a text file starting with `#EXTM3U`.
+| Button | Action |
+|--------|--------|
+| **Edit** | Open the editor to change sports, teams, and display settings |
+| **Duplicate** | Create a copy of this scoreboard |
+| **📤 Export JSON** | Download this scoreboard's config as a JSON file |
+| **📡 Push to Dispatcharr** | Register this scoreboard as a channel in Dispatcharr |
+| **DELETE** | Permanently remove the scoreboard and its channel |
 
-**Step 2:** Confirm `STREAM_BASE_URL` in `.env` uses your server's LAN IP, not localhost.
+### Creating a new scoreboard
 
-**Step 3:** Check FFmpeg is running:
-```bash
-docker logs scorestream-ffmpeg | tail -30
-```
+Click **+ New Scoreboard** at the bottom of the My Scoreboards page. You can also click **📥 Import from JSON** to restore a previously exported scoreboard.
 
-### Renderer not starting / blank video
+---
 
-```bash
-docker logs scorestream-renderer
-```
+## 9. Creating & Editing a Scoreboard
 
-Common causes:
-- `scorestream-web` container isn't healthy yet — renderer waits for it
-- Not enough shared memory — ensure `shm_size: 512mb` is in your compose file
-- Web container not reachable — check network connectivity between containers
+The scoreboard editor has three steps: **Sports**, **Teams**, and **Display & Save**.
 
-### Channel numbers wrong after changing config.json
+### Step 1 — Sports
 
-Config is reloaded every 6 hours or on container restart. Force immediate apply:
+![Editor Step 1 — Sports](screenshots/04-editor-step1-sports.png)
 
-```bash
-docker restart scorestream-api
-```
+Select which sports and leagues this scoreboard will display. Everything shown here is what the Sports Library has enabled globally (see [Section 12](#12-sports-library)).
 
-### "Invalid profile IDs" warning in logs
+- Toggle any sport or league on/off using the checkboxes
+- You can mix and match — a single scoreboard can show NFL + NBA + NHL together, or just one sport
+- Motorsports like F1 and NASCAR appear in the Motorsports section at the bottom
 
-The API printed the valid profile IDs at startup. Check those and update `config.json`:
+Click **Next →** when done.
 
-```bash
-docker logs scorestream-api | grep "Profile\|id="
-```
+### Step 2 — Teams
 
-### Container keeps restarting
+![Editor Step 2 — Teams](screenshots/05-editor-step2-teams.png)
+
+Optionally filter which teams appear on this scoreboard.
+
+- **All** (default) — shows all games for the sports you selected
+- Toggle individual teams off to exclude their games from this scoreboard
+
+This is useful for creating a dedicated scoreboard for your favourite team — e.g. a scoreboard that only shows Chicago Bulls games within the NBA section.
+
+> **Motorsports note:** For F1 and NASCAR, Step 2 shows **drivers** instead of teams. Toggle individual drivers on/off to filter whose results appear on the scoreboard.
+
+If you leave all selections on, every game/race for every selected sport will appear. Click **Next →** when done.
+
+### Step 3 — Display Settings
+
+![Editor Step 3 — Display](screenshots/06-editor-step3-display-top.png)
+
+The **Sample Section Header** preview panel on the right updates live as you change settings.
+
+#### Scoreboard Name
+The display name for this scoreboard. This name appears in Dispatcharr as the channel name.
+
+#### Inherit from Default
+When this link is active, the scoreboard uses the global defaults from **Default Stream Settings**. Click it to break inheritance and set custom values for just this scoreboard.
+
+#### Font
+Choose the font used for team names, scores, and labels on this scoreboard's cards.
+
+#### Color
+The accent color for this scoreboard — used for score highlights, live indicators, and header accents. Click the color swatch to open a color picker.
+
+#### Resolution
+The video resolution for this scoreboard's stream. Defaults to 960×1080 (half-width, full-height) which is efficient for a sidebar-style scoreboard. Full 1920×1080 is also available.
+
+#### Show Inline options
+
+| Toggle | Effect |
+|--------|--------|
+| **Inline Fonts** | Show/hide team name text labels on game cards |
+| **Inline Icons** | Show/hide team logo icons on game cards |
+| **Inline Card Divi** | Show/hide the divider line between game cards |
+
+#### Ticker
+
+Controls whether a score ticker crawl appears at the bottom of this scoreboard's video stream:
+
+| Option | Effect |
+|--------|--------|
+| **No ticker** | No crawl bar — clean full scoreboard only |
+| **Set idle** | Ticker only appears when the scoreboard has no live games |
+| **Sol** | Ticker always shows (scrolling score crawl alongside the scoreboard) |
+
+> The Ticker Overlay must be configured in **Settings → Ticker Overlay** before this option has an effect. See [Section 14](#14-ticker-overlay).
+
+#### Card Transparency
+Adjusts how transparent/opaque the game cards are. Slide left for more transparent, right for fully solid.
+
+#### Show Today's Date
+Toggle on to display the current date in the scoreboard header bar.
+
+#### Driver / Player Status Size
+(Motorsport and certain sports only) — Controls the font size of driver standings entries in the scoreboard section.
+
+---
+
+### Step 3 — Audio
+
+![Editor Step 3 — Audio](screenshots/07-editor-step3-audio.png)
+
+Scroll down in Step 3 to reach the Audio section.
+
+#### Stream Audio toggle
+Enables audio on this scoreboard's HLS stream. When off, the stream is silent.
+
+#### Audio Mode
+
+| Mode | Description |
+|------|-------------|
+| **None** | No audio |
+| **Stream** | Play audio from a live URL (internet radio, another HLS stream, etc.) |
+| **Playlist** | Play tracks from a playlist you've created in the Audio Library |
+
+#### Stream mode — Custom URL
+Enter any publicly accessible audio stream URL (e.g. an internet radio station's stream URL). ScoreStream will pull the audio and mix it into the HLS output.
+
+#### Playlist mode
+Select a playlist you've created in the Audio Library. Tracks play in order and loop. You can see the available playlists listed in the dropdown.
+
+Click **💾 Save & Exit** to save the scoreboard and return to My Scoreboards.
+
+---
+
+## 10. Stream Card Style
+
+Go to **Settings → Stream Card Style**.
+
+![Stream Card Style](screenshots/09-display-settings.png)
+
+These settings control the visual appearance of game cards **globally** — across all scoreboards that haven't overridden them individually.
+
+### Dark/Light/Preference mode
+Toggle between dark, light, or system-preference card themes.
+
+### Card typography sliders
+
+| Slider | Controls |
+|--------|---------|
+| **Team Abbreviation Size** | Font size of team abbreviations (e.g. NYY, LAD) |
+| **Score Size** | Font size of the score numbers |
+| **Count Size** | Font size of count/period/inning info |
+| **Logo Size** | Size of team logo icons on cards |
+| **Header / Timer Size** | Font size of section headers and game clocks |
+| **Period / Time Size** | Font size of period and time-remaining text |
+
+### Score & status colors
+Set the colors used for:
+- **Live Status** — color of the LIVE badge on in-progress games
+- **Final Status** — color of the FINAL badge on completed games
+
+### Section headers
+Control the size and color of the sport section header bars that separate sports on the scoreboard.
+
+Changes here apply to all scoreboards that use the default style. To override for a specific scoreboard, edit that scoreboard in Step 3.
+
+---
+
+## 11. Default Stream Settings
+
+Go to **Settings → Default Stream Settings**.
+
+![Default Stream Settings](screenshots/10-display-defaults.png)
+
+These are the baseline display settings that new scoreboards inherit. When you create a new scoreboard, it starts with these values. If you later change the defaults, scoreboards that are still set to "Inherit from Default" will update automatically.
+
+### Scoreboard presets
+
+At the top, several quick-apply presets are available — click one to apply a complete style package (font + color combination) as your new default.
+
+### Settings
+
+All the same display options as in the per-scoreboard editor (Step 3) are available here as defaults:
+- Default font
+- Default accent color
+- Default resolution
+- Default Inline Fonts/Icons/Card Divider toggles
+- Default ticker mode
+- Default card transparency
+
+A live preview at the bottom shows how cards will look with your current default settings.
+
+---
+
+## 12. Sports Library
+
+Go to **Settings → Sports Library**.
+
+![Sports Library](screenshots/08-sports-library.png)
+
+The Sports Library is the master on/off switch for every sport and league available in ScoreStream. **If a sport is disabled here, it will not appear in any scoreboard editor and cannot be added to any scoreboard.**
+
+### How to use it
+
+- Toggle any sport or league **on** to make it available across the app
+- Toggle it **off** to completely hide it from all scoreboards and the main scoreboard sidebar
+- Changes take effect immediately — no restart needed
+
+### Organization
+
+Sports are grouped by category:
+- **Pro Leagues** — NFL, NBA, MLB, NHL, MLS, etc.
+- **Motorsports** — Formula 1, NASCAR Cup Series, IndyCar, etc.
+- **College Sports** — NCAAB, NCAAF, NCAA Baseball, etc.
+- **International** — Premier League, Champions League, Liga MX, etc.
+- **Other** — Tennis ATP/WTA, PGA Tour, WNBA, etc.
+
+> **Tip:** Disable sports you never watch to keep the scoreboard and editors clean. You can always re-enable them later.
+
+---
+
+## 13. Audio Library
+
+Go to **Settings → Audio Library**.
+
+![Audio Library](screenshots/12-audio-library.png)
+
+The Audio Library is where you upload music tracks and organize them into playlists that scoreboards can play.
+
+### Uploading tracks
+
+Drag and drop audio files directly onto the **"Drop files here to upload"** area, or click it to browse. Supported formats: MP3, AAC, FLAC, OGG, WAV.
+
+Files upload to the `scorestream_audio` Docker volume, so they persist across container restarts and updates.
+
+### Track list
+
+All uploaded tracks appear in the list below the upload area. Each track shows its filename and has:
+- **▶ Play** — Preview the track in your browser
+- **🗑 Delete** — Remove the track permanently
+
+### Playlists
+
+Playlists group tracks for assignment to scoreboards. By default, a **Default (Built-in)** playlist exists using the built-in background audio.
+
+#### Creating a playlist
+
+1. Click **+ Add Playlist** at the bottom of the page
+2. Give the playlist a name (e.g. "F1 Race Music", "Baseball Chill")
+3. Add tracks to it by dragging them from the track list into the playlist, or by clicking **+ Add Track** inside the playlist
+4. Reorder tracks by dragging them within the playlist
+
+#### Assigning a playlist to a scoreboard
+
+In the scoreboard editor (Step 3 → Audio section), set the mode to **Playlist** and select your playlist from the dropdown.
+
+---
+
+## 14. Ticker Overlay
+
+Go to **Settings → Ticker Overlay**.
+
+![Ticker Overlay](screenshots/13-ticker-settings.png)
+
+The Ticker Overlay adds a scrolling score crawl bar to the bottom of your HLS streams — similar to what you see on ESPN or NFL Network. The ticker shows live scores from all selected sports, scrolling continuously.
+
+> **Performance note:** The ticker feature increases CPU usage because it requires compositing an additional overlay onto the video stream. Review the performance warning shown at the top of this page before enabling it.
+
+### Dispatcher Channel
+
+The Dispatcharr channel that will carry the ticker-enhanced stream. Select from your existing ScoreStream channels in the dropdown.
+
+### Preview Channel
+
+An optional secondary channel that shows only the ticker bar (without the full scoreboard) — useful for testing the layout before pushing it live.
+
+### Source Channel
+
+The underlying scoreboard stream that the ticker reads scores from.
+
+### Sport channels
+
+The grid of checkboxes at the bottom lets you choose which sports feed into the ticker crawl. Enable only the sports you want to appear in the scrolling ticker.
+
+---
+
+## 15. System Theme
+
+Go to **Settings → System Theme**.
+
+![System Theme](screenshots/11-system-theme.png)
+
+System Theme controls the overall color palette of the ScoreStream UI — both the settings interface and the main scoreboard view.
+
+### Color slots
+
+| Slot | Controls |
+|------|---------|
+| **Main Page Background** | The background behind the scoreboard grid |
+| **Canvas Page Background** | The background visible around score cards |
+| **Background / Panels** | Sidebar and settings panel backgrounds |
+| **Scoreboard Accent** | Primary highlight color (cyan/teal by default) |
+| **Secondary Text** | Dimmed label text color |
+| **Ticker Color** | Ticker bar background color |
+| **Error / Change** | Score-change highlight and error indicator color |
+
+Click any color swatch to open a color picker. Changes apply immediately.
+
+### UI Scale
+
+Two scale sliders control how large the interface renders:
+
+**Global UI Scale** — Scales the entire settings UI, navigation, and sidebar. Use this if ScoreStream looks too small or too large on your display.
+
+**Scoreboard Sidebar Scale** — Applies additional zoom to just the main scoreboard's left sidebar (sport toggles and labels). Stacks on top of the global scale.
+
+---
+
+## 16. Backup & Restore
+
+Go to **Settings → Backup & Restore**.
+
+![Backup & Restore](screenshots/14-backup-export.png)
+
+### Creating a backup
+
+Click **Download Backup** to export your entire ScoreStream configuration as a JSON file. This includes:
+- All scoreboard definitions (sports, teams, display settings, audio assignments)
+- Integrations settings (Dispatcharr URL, channel group, channel numbering)
+- Sports Library enable/disable state
+- System Theme colors
+
+> **Note:** The backup does **not** include uploaded audio files (those are in the Docker volume). Back up the `scorestream_audio` volume separately if needed.
+
+### Restoring from a backup
+
+Click **Choose Backup File**, select a previously downloaded backup JSON, and click **Restore**. Your current configuration will be replaced with the backup.
+
+---
+
+## 17. Pushing Channels to Dispatcharr
+
+Once your Dispatcharr credentials are saved and tested (Section 7), you can push any scoreboard to Dispatcharr as an IPTV channel.
+
+### Step 1 — Verify Integrations are configured
+
+Go to **Settings → Integrations** and confirm the Dispatcharr connection shows a green status.
+
+### Step 2 — Push a scoreboard
+
+Go to **Settings → My Scoreboards**. On any scoreboard card, click **📡 Push to Dispatcharr**.
+
+![My Scoreboards — Push button](screenshots/15-my-scoreboards-cards.png)
+
+ScoreStream will:
+1. Create the channel group in Dispatcharr (if it doesn't exist)
+2. Create or update the channel with the scoreboard's name
+3. Assign the channel to the configured channel profile(s)
+4. Set the channel's stream URL to `STREAM_BASE_URL/hls/{scoreboard-id}/stream.m3u8`
+
+After a successful push, the scoreboard card shows **✅ Pushed to Dispatcharr** with the assigned channel number.
+
+### Step 3 — Verify in Dispatcharr
+
+Open Dispatcharr and go to **Channels**. Filter by your ScoreStream group (default: "ScoreStream"). Your scoreboard should appear with an HLS stream URL assigned. Click the preview icon to confirm video is playing.
+
+### Re-pushing after changes
+
+If you rename a scoreboard or change the `STREAM_BASE_URL`, push again from the scoreboard card. ScoreStream will update the existing channel rather than create a duplicate.
+
+### Pushing all scoreboards at once
+
+Go to **Settings → Integrations** and click **Force Sync** to push all scoreboards to Dispatcharr in one operation.
+
+---
+
+## 18. Troubleshooting
+
+### Scoreboard shows a blank page / "ScoreStream" with no games
+
+**Cause:** The container is still starting up, or the API can't reach ESPN's data endpoints.
 
 ```bash
 docker logs scorestream-api --tail 50
-# Look for the last error message before the restart
 ```
 
-Common cause: missing required environment variables (DISPATCHARR_URL, STREAM_BASE_URL).
+Wait 30–60 seconds after first start for data to load. ESPN data refreshes every 60 seconds.
+
+### Dispatcharr shows the channel but video won't play
+
+**Cause:** `STREAM_BASE_URL` is incorrect — Dispatcharr can't reach the HLS stream.
+
+1. Find your correct gateway IP:
+   ```bash
+   docker network inspect scorestream_net | grep Gateway
+   ```
+2. Update `STREAM_BASE_URL` in your `docker-compose.yml` to use that IP on port 7777
+3. Restart the API:
+   ```bash
+   docker restart scorestream-api
+   ```
+4. Re-push the affected scoreboard from My Scoreboards
+
+### "Test Connection" fails in Integrations
+
+1. Verify Dispatcharr is running:
+   ```bash
+   curl http://10.0.0.40:9191/api/v2/health/
+   ```
+2. Test from inside the ScoreStream container:
+   ```bash
+   docker exec scorestream-api wget -qO- http://10.0.0.40:9191/api/token/
+   ```
+   A `405 Method Not Allowed` response means the connection works — that's expected for a GET on that endpoint.
+3. Check for typos in the URL (no trailing slash required)
+
+### Stream container keeps restarting
+
+```bash
+docker logs scorestream-stream --tail 50
+```
+
+Common causes:
+- `shm_size: 512mb` is missing from the compose file — Chrome needs shared memory
+- `scorestream-web` isn't healthy yet — the stream container depends on it
+- Not enough RAM — Chrome requires at least 512 MB per instance
+
+### Audio not playing on a scoreboard stream
+
+1. Confirm **Stream Audio** is toggled on in the scoreboard editor (Step 3 → Audio)
+2. If using **Stream mode**: verify the URL is a direct audio stream, not a website
+3. If using **Playlist mode**: confirm the playlist has at least one track in the Audio Library
+4. Check logs:
+   ```bash
+   docker logs scorestream-stream --tail 50 | grep -i audio
+   ```
+
+### Ticker is not appearing on the stream
+
+1. Go to **Settings → Ticker Overlay** and confirm at least one sport is checked
+2. Confirm the scoreboard's ticker mode (Step 3 → Ticker) is set to **Sol** or **Set idle**
+3. The ticker requires a Dispatcher channel to be selected in Ticker settings
+
+### Channel numbers are wrong after re-pushing
+
+Go to **Settings → Integrations** and click **Auto Assign** to renumber all ScoreStream channels sequentially from your configured starting number.
+
+### Updating ScoreStream Pro
+
+```bash
+# Pull the latest images
+docker compose pull
+
+# Restart with new images
+docker compose up -d
+
+# Check versions
+docker logs scorestream-api 2>&1 | grep -i "version\|starting"
+```
+
+Your configuration (scoreboards, audio playlists, settings) is stored in the `scorestream_config` volume and survives updates.
 
 ---
 
-## 8. FAQ
-
-**Q: Do I need to be on the same machine as Dispatcharr?**  
-No. ScoreStream Pro and Dispatcharr just need to be able to reach each other over the network. Both need to be on your LAN (or VPN).
-
-**Q: What happens during off-season?**  
-The scoreboard displays that league's section with an "Off Season" indicator and no games. The video stream continues — it just shows the off-season state of the board.
-
-**Q: Can I use ScoreStream Pro without Dispatcharr?**  
-Yes. The scoreboard UI is accessible directly at `http://YOUR_SERVER:8888` and works as a standalone dashboard in any browser. The Dispatcharr integration (channel registration) is an optional layer on top.
-
-**Q: Why are all my sport channels showing the same video?**  
-By design in the current version. One Chrome renderer runs the full-scoreboard view, and that video is sent to all 7 HLS channels. The channels are named differently in Dispatcharr (NFL, NBA, etc.) for organization. True per-sport isolated video is planned for a future release.
-
-**Q: How do I add a custom logo to my channels in Dispatcharr?**  
-After ScoreStream creates the channels, you can edit them in Dispatcharr → Channels → Edit → Logo. This setting persists — ScoreStream won't overwrite logos you set manually.
-
-**Q: How often does the scoreboard data refresh?**  
-The scoreboard pulls live data from ESPN's API every 60 seconds. The video stream is continuous — FFmpeg re-encodes frames in real time regardless of data refresh timing.
-
-**Q: Can I run this on a Raspberry Pi?**  
-The Docker images are built for both `linux/amd64` and `linux/arm64`, so a Raspberry Pi 4 or 5 with 4+ GB RAM should work. Headless Chrome is the resource-intensive part — give it at least 2 GB RAM.
-
-**Q: Will updates break my config.json?**  
-New fields added in updates always have safe defaults, so your existing `config.json` will continue to work. When new options are added, they'll be documented in the release notes with their default behavior.
-
-**Q: How do I completely remove ScoreStream Pro?**  
-
-```bash
-docker compose down -v    # Stops containers and removes volumes
-# Then delete the folder:
-rm -rf ~/scorestream-pro
-```
+*ScoreStream Pro — ESPN Data*
