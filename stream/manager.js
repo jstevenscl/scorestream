@@ -345,6 +345,7 @@ function startFfmpeg(slug) {
     }
   } else if (audio.mode === 'stream' && audio.url) {
     // Custom online audio stream URL
+    console.log(`[manager][${slug}] Audio: custom stream URL: ${audio.url}`);
     args.push('-reconnect', '1', '-reconnect_streamed', '1',
               '-reconnect_delay_max', '5', '-i', audio.url);
   }
