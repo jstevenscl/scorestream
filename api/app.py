@@ -1110,9 +1110,12 @@ TICKER_DIR = '/ticker'
 def _ticker_scores_path(channel_id):
     return f'{TICKER_DIR}/scores_{channel_id}.txt'
 
-def _build_ticker_params(original_params, channel_id, font_size=24, position='bottom', bg_opacity=0.75, test_text=None, scroll_speed=0):
+def _build_ticker_params(original_params, channel_id, font_size=24, position='bottom', bg_opacity=0.75, test_text=None, scroll_speed=0, cpu_saver_scale=False, cpu_saver_fps=False, cpu_saver_crf=False):
     """Returns (modified_params: str, changes: list[str]).
     changes describes every parameter that was stripped or altered for CPU/encode compatibility.
+    cpu_saver_scale: prepend scale=min(iw,1280):min(ih,720) before drawtext (no-op on 720p sources)
+    cpu_saver_fps:   cap output at 15fps, adjust keyframe interval accordingly
+    cpu_saver_crf:   raise CRF 23 → 28 for lower encode complexity
     """
     import re
     params = original_params.strip()
@@ -1135,6 +1138,21 @@ def _build_ticker_params(original_params, channel_id, font_size=24, position='bo
             f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
             f':x={x_expr}:y={y_expr}'
         )
+    # ── Build CPU Saver components ────────────────────────────────────────────
+    # Scale filter: downscales 1080p/4K → max 1280×720 preserving aspect ratio.
+    # Uses conditional min() so 720p and below sources pass through unchanged.
+    scale_filter = ("scale=w='min(iw,1280)':h='min(ih,720)'"
+                    ":force_original_aspect_ratio=decrease:flags=fast_bilinear")
+    # Full vf prefix: scale (if enabled) then drawtext
+    vf_chain = f'{scale_filter},{drawtext}' if cpu_saver_scale else drawtext
+    # Encoder output args for CPU Saver modes
+    crf_val   = 28 if cpu_saver_crf   else 23
+    fps_val   = 15 if cpu_saver_fps   else None   # None = don't add -r flag
+    gop_val   = 30 if cpu_saver_fps   else 60     # keyframe every 2s at 15fps, 2s at 30fps
+    bmax_val  = '4000k' if cpu_saver_fps else '6000k'
+    buf_val   = '8000k' if cpu_saver_fps else '12000k'
+    fps_arg   = f'-r {fps_val} ' if fps_val else ''
+
     if '-c:v copy' in params:
         # ── Detect and report copy-mode flags that break or explode CPU when encode is added ──
         # 1. -force_key_frames with n_forced*0 expression — evaluates true every frame → all I-frames
@@ -1156,29 +1174,34 @@ def _build_ticker_params(original_params, channel_id, font_size=24, position='bo
         g_m = re.search(r'-g\s+(\d+)', params)
         if g_m:
             old_g = g_m.group(1)
-            if old_g != '60':
-                changes.append(f'INFO: Reset -g {old_g} → 60 (keyframe interval adjusted for encode; was a no-op in copy mode).')
+            if old_g != str(gop_val):
+                changes.append(f'INFO: Reset -g {old_g} → {gop_val} (keyframe interval adjusted for encode; was a no-op in copy mode).')
             params = re.sub(r'-g\s+\d+', '', params)
         ki_m = re.search(r'-keyint_min\s+(\d+)', params)
         if ki_m:
             old_ki = ki_m.group(1)
-            if old_ki != '60':
-                changes.append(f'INFO: Reset -keyint_min {old_ki} → 60 (minimum keyframe interval adjusted for encode).')
+            if old_ki != str(gop_val):
+                changes.append(f'INFO: Reset -keyint_min {old_ki} → {gop_val} (minimum keyframe interval adjusted for encode).')
             params = re.sub(r'-keyint_min\s+\d+', '', params)
-        # 3. -sc_threshold — safe to keep but tidy up; we re-add it with the encoder block
+        # 3. -sc_threshold — safe to keep but tidy up; re-added with the encoder block
         params = re.sub(r'-sc_threshold\s+\d+', '', params)
-        # 4. Report the core encode substitution
-        changes.append(
-            'INFO: Replaced -c:v copy → -c:v libx264 -preset ultrafast -tune zerolatency '
-            '-crf 23 -maxrate 6000k -bufsize 12000k '
-            '(drawtext requires a software encode pass; bitrate cap prevents unbounded CPU load on passthrough streams).'
-        )
+        # 4. Report the core encode substitution and any CPU saver options
+        encode_note = (f'INFO: Replaced -c:v copy → -c:v libx264 -preset ultrafast -tune zerolatency '
+                       f'-crf {crf_val} -maxrate {bmax_val} -bufsize {buf_val} '
+                       f'(drawtext requires a software encode pass; bitrate cap prevents unbounded CPU load).')
+        changes.append(encode_note)
+        if cpu_saver_scale:
+            changes.append('INFO: CPU Saver — scale to 720p max applied (no-op on sources already ≤720p; saves ~40% encode work on 1080p sources).')
+        if cpu_saver_fps:
+            changes.append(f'INFO: CPU Saver — output capped at {fps_val}fps, GOP adjusted to {gop_val} (saves ~40% encode work; ticker scroll unaffected).')
+        if cpu_saver_crf:
+            changes.append(f'INFO: CPU Saver — CRF raised 23 → 28 (saves ~15% encode work; subtle quality reduction on high-detail scenes).')
         params = re.sub(r'\s{2,}', ' ', params).strip()
         params = params.replace(
             '-c:v copy',
-            f'-vf "{drawtext}" -c:v libx264 -preset ultrafast -tune zerolatency '
-            f'-crf 23 -maxrate 6000k -bufsize 12000k '
-            f'-g 60 -keyint_min 60 -sc_threshold 0'
+            f'-vf "{vf_chain}" {fps_arg}-c:v libx264 -preset ultrafast -tune zerolatency '
+            f'-crf {crf_val} -maxrate {bmax_val} -bufsize {buf_val} '
+            f'-g {gop_val} -keyint_min {gop_val} -sc_threshold 0'
         )
     elif '-vf ' in params:
         params = re.sub(r'-vf\s+"([^"]+)"', f'-vf "\\1,{drawtext}"', params)
@@ -1263,7 +1286,7 @@ def save_ticker_config(sb_id):
         return jsonify({'ok':True})
     except Exception as e: return jsonify({'error':str(e)}),500
 
-def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, session, creds, cfg_json='{}'):
+def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, session, creds, cfg_json='{}', cpu_saver_scale=False, cpu_saver_fps=False, cpu_saver_crf=False):
     """Enable ticker on a single channel. Returns (ok: bool, result: dict)."""
     import re as _re
     try:
@@ -1288,7 +1311,7 @@ def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacit
                 r'-vf\s+""\s+-c:v\s+libx264\s+-preset\s+ultrafast\s+-tune\s+zerolatency',
                 '-c:v copy', clean_params)
             clean_params = _re.sub(r'-vf\s+""\s*', '', clean_params)
-        modified_params, param_changes = _build_ticker_params(clean_params,channel_id,font_size,position,bg_opacity,test_text,scroll_speed)
+        modified_params, param_changes = _build_ticker_params(clean_params,channel_id,font_size,position,bg_opacity,test_text,scroll_speed,cpu_saver_scale,cpu_saver_fps,cpu_saver_crf)
         if modified_params == clean_params:
             return False, {'error':'Could not inject ticker — "-c:v copy" not found in profile parameters.'}
         base_name = profile['name'].removesuffix(' (Ticker)')
@@ -1329,9 +1352,12 @@ def ticker_enable():
     channel_ids = b.get('channel_ids') or ([b.get('channel_id')] if b.get('channel_id') else [])
     if not channel_ids:
         return jsonify({'error':'channel_ids required'}),400
-    position  = b.get('position', 'bottom')
-    raw_test  = b.get('test_text', '')
-    test_text = str(raw_test).strip() or None if raw_test is not None else None
+    position         = b.get('position', 'bottom')
+    raw_test         = b.get('test_text', '')
+    test_text        = str(raw_test).strip() or None if raw_test is not None else None
+    cpu_saver_scale  = bool(b.get('cpu_saver_scale', False))
+    cpu_saver_fps    = bool(b.get('cpu_saver_fps',   False))
+    cpu_saver_crf    = bool(b.get('cpu_saver_crf',   False))
     # Store the full config per channel so text generation is independent per channel
     import json as _je
     cfg_json  = _je.dumps({k:v for k,v in b.items() if k not in ('channel_ids','channel_id')})
@@ -1339,7 +1365,7 @@ def ticker_enable():
     if err: return jsonify({'error':err}),400
     results = []
     for ch_id in channel_ids:
-        ok, result = _enable_ticker_for_channel(ch_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, s, c, cfg_json)
+        ok, result = _enable_ticker_for_channel(ch_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, s, c, cfg_json, cpu_saver_scale, cpu_saver_fps, cpu_saver_crf)
         result['channel_id'] = ch_id
         result['ok'] = ok
         results.append(result)
