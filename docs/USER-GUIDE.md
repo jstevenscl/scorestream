@@ -27,6 +27,7 @@ ScoreStream Pro is a self-hosted live sports scoreboard that streams directly in
 16. [Backup & Restore](#16-backup--restore)
 17. [Pushing Channels to Dispatcharr](#17-pushing-channels-to-dispatcharr)
 18. [Troubleshooting](#18-troubleshooting)
+19. [Getting Help & Reporting Issues](#19-getting-help--reporting-issues)
 
 ---
 
@@ -801,6 +802,37 @@ docker logs scorestream-api 2>&1 | grep -i "version\|starting"
 ```
 
 Your configuration (scoreboards, audio playlists, settings) is stored in the `scorestream_config` volume and survives updates.
+
+---
+
+## 19. Getting Help & Reporting Issues
+
+If something isn't working or you have a question, the fastest paths to an answer are:
+
+### Check the troubleshooting section first
+
+Section 18 covers the most common problems. Read through it before opening an issue — many problems are already documented with a fix.
+
+### Search existing GitHub Issues
+
+Someone may have already reported your bug or asked your question. Browse [open and closed issues](https://github.com/jstevenscl/scorestream/issues?q=is%3Aissue) before creating a new one.
+
+### Open a GitHub Issue
+
+Go to the [Issues page](https://github.com/jstevenscl/scorestream/issues/new/choose) and pick the template that fits:
+
+| Template | Use when... |
+|---|---|
+| **Bug Report** | Something isn't working correctly — stream won't play, settings don't save, UI is broken, etc. |
+| **Feature Request** | You want something added or improved that doesn't exist yet |
+| **Question / Support** | You're not sure if something is a bug, or you need help with setup or configuration |
+
+#### Tips for a useful bug report
+
+- **Include your ScoreStream version.** Found at the bottom of the scoreboard sidebar, or run: `docker logs scorestream-api 2>&1 \| grep -i version`
+- **Include relevant logs.** Run `docker logs scorestream-api --tail 50` (or `scorestream-stream` / `scorestream-web` depending on the symptom) and paste the output.
+- **Include your docker-compose.yml** (redact passwords and tokens with `****`). Many problems come from networking or volume configuration.
+- **Describe what you expected vs. what actually happened.** "It doesn't work" is hard to act on — "The Push to Dispatcharr button shows success but no channel appears in Dispatcharr" is much easier to investigate.
 
 ---
 
