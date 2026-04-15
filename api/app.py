@@ -376,10 +376,12 @@ def init_db():
             scoreboard_id INTEGER NOT NULL DEFAULT 0,
             original_profile_id INTEGER NOT NULL,
             ticker_profile_id   INTEGER NOT NULL,
+            ticker_config TEXT NOT NULL DEFAULT '{}',
             created_at TEXT NOT NULL DEFAULT (datetime('now')))''')
         # Migrate old schema (scoreboard_id PK → channel_id PK) if needed
         try:
             cols = conn.execute("PRAGMA table_info(ticker_profile_backup)").fetchall()
+            col_names = {c['name'] for c in cols}
             pk_col = next((c['name'] for c in cols if c['pk']==1), None)
             if pk_col == 'scoreboard_id':
                 conn.execute('''CREATE TABLE ticker_profile_backup_v2(
@@ -387,12 +389,16 @@ def init_db():
                     scoreboard_id INTEGER NOT NULL DEFAULT 0,
                     original_profile_id INTEGER NOT NULL,
                     ticker_profile_id INTEGER NOT NULL,
+                    ticker_config TEXT NOT NULL DEFAULT '{}',
                     created_at TEXT NOT NULL DEFAULT (datetime('now')))''')
                 conn.execute('''INSERT OR IGNORE INTO ticker_profile_backup_v2
+                    (channel_id,scoreboard_id,original_profile_id,ticker_profile_id,created_at)
                     SELECT channel_id,scoreboard_id,original_profile_id,ticker_profile_id,created_at
                     FROM ticker_profile_backup''')
                 conn.execute('DROP TABLE ticker_profile_backup')
                 conn.execute('ALTER TABLE ticker_profile_backup_v2 RENAME TO ticker_profile_backup')
+            elif 'ticker_config' not in col_names:
+                conn.execute("ALTER TABLE ticker_profile_backup ADD COLUMN ticker_config TEXT NOT NULL DEFAULT '{}'")
         except Exception:
             pass
         # Audio library table for uploaded music files
@@ -1197,7 +1203,7 @@ def save_ticker_config(sb_id):
         return jsonify({'ok':True})
     except Exception as e: return jsonify({'error':str(e)}),500
 
-def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, session, creds):
+def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, session, creds, cfg_json='{}'):
     """Enable ticker on a single channel. Returns (ok: bool, result: dict)."""
     import re as _re
     try:
@@ -1237,9 +1243,9 @@ def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacit
         r.raise_for_status()
         with get_db() as conn:
             conn.execute('''INSERT OR REPLACE INTO ticker_profile_backup
-                            (channel_id,scoreboard_id,original_profile_id,ticker_profile_id)
-                            VALUES(?,?,?,?)''',
-                         (channel_id,sb_id,original_profile_id,ticker_profile_id))
+                            (channel_id,scoreboard_id,original_profile_id,ticker_profile_id,ticker_config)
+                            VALUES(?,?,?,?,?)''',
+                         (channel_id,sb_id,original_profile_id,ticker_profile_id,cfg_json))
             conn.commit()
         return True, {'channel_id':channel_id,'ticker_profile_id':ticker_profile_id,
                       'ticker_profile_name':ticker_name,'original_profile_id':original_profile_id}
@@ -1264,11 +1270,14 @@ def ticker_enable():
     position  = b.get('position', 'bottom')
     raw_test  = b.get('test_text', '')
     test_text = str(raw_test).strip() or None if raw_test is not None else None
+    # Store the full config per channel so text generation is independent per channel
+    import json as _je
+    cfg_json  = _je.dumps({k:v for k,v in b.items() if k not in ('channel_ids','channel_id')})
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
     results = []
     for ch_id in channel_ids:
-        ok, result = _enable_ticker_for_channel(ch_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, s, c)
+        ok, result = _enable_ticker_for_channel(ch_id, sb_id, font_size, position, bg_opacity, test_text, scroll_speed, s, c, cfg_json)
         result['channel_id'] = ch_id
         result['ok'] = ok
         results.append(result)
@@ -1371,9 +1380,24 @@ def ticker_status():
         return jsonify({'active':active})
     except Exception as e: return jsonify({'error':str(e)}),500
 
+@app.route('/ticker/text/channel/<int:channel_id>', methods=['GET'])
+def ticker_text_channel(channel_id):
+    """Per-channel ticker text — reads the config stored at enable time for this channel."""
+    import json as _jc
+    try:
+        with get_db() as conn:
+            row = conn.execute(
+                'SELECT ticker_config FROM ticker_profile_backup WHERE channel_id=?',
+                (channel_id,)).fetchone()
+        if not row: return jsonify({'text':''}), 200
+        cfg = _jc.loads(row['ticker_config'] or '{}')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    return _ticker_text_for_config(cfg)
+
 @app.route('/ticker/text', methods=['GET'])
 def ticker_text_global():
-    """Global ticker text — reads sports config from global_settings."""
+    """Global ticker text — reads sports config from global_settings (legacy/fallback)."""
     import json as _jg
     try:
         with get_db() as conn:

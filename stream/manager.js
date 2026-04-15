@@ -711,10 +711,8 @@ async function updateTickerFile() {
     if (!fs.existsSync(TICKER_DIR)) fs.mkdirSync(TICKER_DIR, { recursive: true });
     for (const row of rows) {
       try {
-        // Scoreboard_id 0 = global ticker config; >0 = per-scoreboard config
-        const url = row.scoreboard_id === 0
-          ? `${TICKER_API_BASE}/ticker/text`
-          : `${TICKER_API_BASE}/ticker/text/${row.scoreboard_id}`;
+        // Each channel has its own config stored at enable time — always use per-channel endpoint
+        const url = `${TICKER_API_BASE}/ticker/text/channel/${row.channel_id}`;
         const data = await httpGetJson(url);
         if (data.text !== undefined) {
           const filePath = path.join(TICKER_DIR, `scores_${row.channel_id}.txt`);
