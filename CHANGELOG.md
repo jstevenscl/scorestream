@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to ScoreStream Pro are documented here.
+All notable changes to ScoreStreamArr are documented here.
 
 Versioning follows [Semantic Versioning](https://semver.org/):
 - `MAJOR.MINOR.PATCH` for stable releases (e.g. `v1.0.0`)
@@ -8,9 +8,9 @@ Versioning follows [Semantic Versioning](https://semver.org/):
 
 Docker images are published to [GitHub Container Registry](https://ghcr.io):
 ```
-ghcr.io/OWNER/scorestream-pro-api:latest    # stable
-ghcr.io/OWNER/scorestream-pro-api:beta      # bleeding edge
-ghcr.io/OWNER/scorestream-pro-api:v0.2.0-beta  # pinned version
+ghcr.io/OWNER/scorestreamarr-pro-api:latest    # stable
+ghcr.io/OWNER/scorestreamarr-pro-api:beta      # bleeding edge
+ghcr.io/OWNER/scorestreamarr-pro-api:v0.2.0-beta  # pinned version
 ```
 
 ---
@@ -32,7 +32,7 @@ ghcr.io/OWNER/scorestream-pro-api:v0.2.0-beta  # pinned version
 
 ### Added
 - **Channel numbering modes** — `auto` (sequential from base number) or `manual` (per-channel override in `config.json`)
-- **Channel Profiles integration** — assign ScoreStream channels to Dispatcharr Channel Profiles:
+- **Channel Profiles integration** — assign ScoreStreamArr channels to Dispatcharr Channel Profiles:
   - `all` — added to every profile (default, backward-compatible)
   - `none` — no profile assignment
   - `specific` — list explicit profile IDs; invalid IDs are warned and skipped
@@ -45,7 +45,7 @@ ghcr.io/OWNER/scorestream-pro-api:v0.2.0-beta  # pinned version
 
 ### Changed
 - `docker-compose.yml` now pulls images from `ghcr.io` by default; local build retained as commented fallback
-- `SCORESTREAM_TAG` env var controls which image tag to use (`latest`, `beta`, or pinned version)
+- `SCORESTREAMARR_TAG` env var controls which image tag to use (`latest`, `beta`, or pinned version)
 - `GITHUB_OWNER` env var sets the ghcr.io namespace
 - API container now mounts `./config` volume for persistent `config.json`
 - Token refresh proactively runs every minute loop; refresh + re-auth fallback chain unchanged

@@ -17,7 +17,7 @@ COPY api/app.py .
 # no runtime downloads, no race conditions.
 COPY stream/audio/*.mp3 /builtin_audio/
 
-ENV DB_PATH=/config/scorestream.db \
+ENV DB_PATH=/config/scorestreamarr.db \
     AUDIO_DIR=/audio_library
 
 COPY api/data/motor_cache.json /motor_cache.json

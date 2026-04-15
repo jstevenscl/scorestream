@@ -1,35 +1,35 @@
 services:
 
-  scorestream-api:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-api:${SCORESTREAM_TAG:-beta}
-    container_name: scorestream-api
+  scorestreamarr-api:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-api:${SCORESTREAMARR_TAG:-beta}
+    container_name: scorestreamarr-api
     restart: unless-stopped
     environment:
       - TZ=${TZ:-America/New_York}
       - STREAM_BASE_URL=${STREAM_BASE_URL}
-      - STREAM_MANAGER_URL=http://scorestream-stream:3001
+      - STREAM_MANAGER_URL=http://scorestreamarr-stream:3001
       - DISPATCHARR_URL=${DISPATCHARR_URL}
-      - DB_PATH=/config/scorestream.db
+      - DB_PATH=/config/scorestreamarr.db
     volumes:
-      - scorestream_config:/config
-      - scorestream_audio:/audio_library
+      - scorestreamarr_config:/config
+      - scorestreamarr_audio:/audio_library
     networks:
-      - scorestream_net
+      - scorestreamarr_net
 
-  scorestream-web:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-web:${SCORESTREAM_TAG:-beta}
-    container_name: scorestream-web
+  scorestreamarr-web:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-web:${SCORESTREAMARR_TAG:-beta}
+    container_name: scorestreamarr-web
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-7777}:80"
     volumes:
-      - scorestream_hls:/usr/share/nginx/html/hls:ro
+      - scorestreamarr_hls:/usr/share/nginx/html/hls:ro
     networks:
-      - scorestream_net
+      - scorestreamarr_net
 
-  scorestream-stream:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestream-stream:${SCORESTREAM_TAG:-beta}
-    container_name: scorestream-stream
+  scorestreamarr-stream:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-stream:${SCORESTREAMARR_TAG:-beta}
+    container_name: scorestreamarr-stream
     restart: unless-stopped
     environment:
       - TZ=${TZ:-America/New_York}
@@ -51,8 +51,8 @@ services:
       # Browser supersampling — 2 renders at 2x resolution for crisper text
       # but uses ~4x browser memory. Default 1 = native rendering.
       # - STREAM_DPR=2
-      - WEB_BASE=http://scorestream-web
-      - DB_PATH=/config/scorestream.db
+      - WEB_BASE=http://scorestreamarr-web
+      - DB_PATH=/config/scorestreamarr.db
       - HLS_DIR=/hls
       - PIPES_DIR=/tmp/pipes
       - MANAGER_PORT=3001
@@ -60,28 +60,28 @@ services:
       - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-4}
       - AUDIO_DIR=/audio
       - TICKER_FILE=/ticker/scores.txt
-      - TICKER_API_BASE=http://scorestream-api:5000
+      - TICKER_API_BASE=http://scorestreamarr-api:5000
     volumes:
-      - scorestream_config:/config
-      - scorestream_hls:/hls
-      - scorestream_audio:/audio_library
-      - scorestream_ticker:/ticker
+      - scorestreamarr_config:/config
+      - scorestreamarr_hls:/hls
+      - scorestreamarr_audio:/audio_library
+      - scorestreamarr_ticker:/ticker
     networks:
-      - scorestream_net
+      - scorestreamarr_net
     shm_size: 512mb
 
 networks:
-  scorestream_net:
-    name: scorestream_net
+  scorestreamarr_net:
+    name: scorestreamarr_net
     driver: bridge
 
 volumes:
-  scorestream_config:
-    name: scorestream_config
-  scorestream_hls:
-    name: scorestream_hls
-  scorestream_audio:
-    name: scorestream_audio
-  scorestream_ticker:
-    name: scorestream_ticker
+  scorestreamarr_config:
+    name: scorestreamarr_config
+  scorestreamarr_hls:
+    name: scorestreamarr_hls
+  scorestreamarr_audio:
+    name: scorestreamarr_audio
+  scorestreamarr_ticker:
+    name: scorestreamarr_ticker
     external: true

@@ -48,6 +48,6 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PIPES_DIR=/tmp/pipes \
     HLS_DIR=/hls \
     MANAGER_PORT=3001 \
-    DB_PATH=/config/scorestream.db
+    DB_PATH=/config/scorestreamarr.db
 
 CMD ["node", "manager.js"]

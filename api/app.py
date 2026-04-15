@@ -1,5 +1,5 @@
 """
-ScoreStream API — Flask backend
+ScoreStreamArr API — Flask backend
 See NCAA_ARCHITECTURE.md for full design decisions.
 """
 import os, sqlite3, logging, threading, json as _json
@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # ── Stream manager notify ─────────────────────────────────────────────────────
-STREAM_MANAGER_URL = os.getenv('STREAM_MANAGER_URL', 'http://scorestream-stream:3001')
+STREAM_MANAGER_URL = os.getenv('STREAM_MANAGER_URL', 'http://scorestreamarr-stream:3001')
 
 def notify_stream_manager():
     """Fire-and-forget POST /reload to stream manager. Non-blocking."""
@@ -25,7 +25,7 @@ def notify_stream_manager():
     threading.Thread(target=_notify, daemon=True).start()
 CORS(app)
 
-DB_PATH         = os.getenv('DB_PATH', '/config/scorestream.db')
+DB_PATH         = os.getenv('DB_PATH', '/config/scorestreamarr.db')
 STREAM_BASE_URL = os.getenv('STREAM_BASE_URL', '')
 
 _sync_lock = threading.Lock()
@@ -476,7 +476,7 @@ def init_db():
         # Fetches from dedicated data branch — never conflicts with code pushes to dev/beta/latest
         try:
             import json as _jg
-            DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream/data/motor_cache.json'
+            DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestreamarr/data/motor_cache.json'
             rg = http.get(DATA_URL, timeout=15)
             if rg.ok:
                 gdata = rg.json()
@@ -594,7 +594,7 @@ def init_db():
         existing = conn.execute('SELECT COUNT(*) FROM scoreboards').fetchone()[0]
         if existing == 0:
             conn.execute("""INSERT INTO scoreboards(name,slug,is_default,sport_config,team_config,display_config)
-                VALUES('ScoreStream','scorestream',1,'{}','[]','{}')""")
+                VALUES('ScoreStreamArr','scorestreamarr',1,'{}','[]','{}')""")
         conn.commit()
     log.info(f'DB ready: {DB_PATH}')
     threading.Thread(target=startup_sync, daemon=True, name='ncaa-sync').start()
@@ -1740,7 +1740,7 @@ def create_channels():
             errors.append(f'{name}: {detail}')
         except Exception as e: errors.append(f'{name}: {str(e)}')
     if mode in ('combined','both'):
-        make_channel('ScoreStream — All Sports',ch_num,f'{STREAM_BASE_URL}/hls/scorestream.m3u8' if STREAM_BASE_URL else None)
+        make_channel('ScoreStreamArr — All Sports',ch_num,f'{STREAM_BASE_URL}/hls/scorestreamarr.m3u8' if STREAM_BASE_URL else None)
         ch_num+=1
     if mode in ('per_sport','both'):
         for sport in sports:
@@ -1749,7 +1749,7 @@ def create_channels():
             if num_mode=='manual' and sid in assignments:
                 a=assignments[sid]; num=int(a.get('channelNumber') or ch_num); gid=a.get('groupId')
             else: num=ch_num; gid=None
-            make_channel(f'ScoreStream — {sname}',num,f'{STREAM_BASE_URL}/hls/{slug}.m3u8' if STREAM_BASE_URL else None,gid=gid)
+            make_channel(f'ScoreStreamArr — {sname}',num,f'{STREAM_BASE_URL}/hls/{slug}.m3u8' if STREAM_BASE_URL else None,gid=gid)
             ch_num+=1
     return jsonify({'created':created,'errors':errors})
 
@@ -1946,7 +1946,7 @@ def backup_export():
                'scoreboards':scoreboards,'settings':settings}
     from flask import Response
     return Response(_json.dumps(payload,indent=2), mimetype='application/json',
-        headers={'Content-Disposition':'attachment; filename=scorestream-backup.json'})
+        headers={'Content-Disposition':'attachment; filename=scorestreamarr-backup.json'})
 
 @app.route('/backup/restore', methods=['POST'])
 def backup_restore():
@@ -2638,7 +2638,7 @@ def motor_reseed():
     """Re-fetch motor_cache.json from GitHub data branch and repopulate DB."""
     try:
         import json as _jr
-        DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream/data/motor_cache.json'
+        DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestreamarr/data/motor_cache.json'
         rg = http.get(DATA_URL, timeout=20)
         if not rg.ok:
             return jsonify({'error': f'GitHub fetch failed: {rg.status_code}'}), 502
@@ -2779,7 +2779,7 @@ if __name__ == '__main__':
                 log.warning(f'[auto] PGA refresh error: {e}')
             # Re-seed player caches (headshots) from GitHub data branch
             try:
-                DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestream/data/motor_cache.json'
+                DATA_URL = 'https://raw.githubusercontent.com/jstevenscl/scorestreamarr/data/motor_cache.json'
                 rg = http.get(DATA_URL, timeout=20)
                 if rg.ok:
                     gdata = rg.json()
@@ -3043,5 +3043,5 @@ if __name__ == '__main__':
     _t.start()
     log.info('[auto] Motor sport background refresh started (NASCAR + PGA every 6h)')
 
-    log.info('ScoreStream API starting on :5000')
+    log.info('ScoreStreamArr API starting on :5000')
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)

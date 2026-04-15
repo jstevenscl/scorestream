@@ -1,8 +1,8 @@
-# ScoreStream
+# ScoreStreamArr
 
 A self-hosted live sports scoreboard that generates HLS streams and pushes them to Dispatcharr as real TV channels — automatically.
 
-ScoreStream pulls live scores from ESPN and other public APIs, renders them as a full 1080p scoreboard, and produces an HLS video stream for every scoreboard you create. Each stream updates every 30 seconds without any user interaction.
+ScoreStreamArr pulls live scores from ESPN and other public APIs, renders them as a full 1080p scoreboard, and produces an HLS video stream for every scoreboard you create. Each stream updates every 30 seconds without any user interaction.
 
 ---
 
@@ -14,7 +14,7 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
 - [Stream Quality Tiers](#stream-quality-tiers)
 - [Finding Your STREAM\_BASE\_URL](#finding-your-stream_base_url)
 - [Volumes](#volumes)
-- [Using ScoreStream](#using-scorestream)
+- [Using ScoreStreamArr](#using-scorestreamarr)
   - [Accessing the UI](#accessing-the-ui)
   - [Creating a Scoreboard](#creating-a-scoreboard)
   - [Selecting Sports](#selecting-sports)
@@ -55,8 +55,8 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
 ### 1. Create a folder and download the compose file
 
 ```bash
-mkdir scorestream && cd scorestream
-curl -O https://raw.githubusercontent.com/jstevenscl/scorestream/main/docker-compose.yml
+mkdir scorestreamarr && cd scorestreamarr
+curl -O https://raw.githubusercontent.com/jstevenscl/scorestreamarr/main/docker-compose.yml
 ```
 
 ### 2. Create your `.env` file
@@ -64,14 +64,14 @@ curl -O https://raw.githubusercontent.com/jstevenscl/scorestream/main/docker-com
 ```bash
 cat > .env << 'EOF'
 GITHUB_OWNER=jstevenscl
-SCORESTREAM_TAG=latest
+SCORESTREAMARR_TAG=latest
 
 TZ=America/New_York
 
 # The URL of THIS server as seen from Dispatcharr's container (use LAN IP, not localhost)
 STREAM_BASE_URL=http://192.168.1.100:7777
 
-# Port ScoreStream's web UI and HLS streams are exposed on
+# Port ScoreStreamArr's web UI and HLS streams are exposed on
 WEB_PORT=7777
 
 # Optional — pre-configure Dispatcharr connection (can also be set in the UI)
@@ -98,7 +98,7 @@ Navigate to `http://YOUR_SERVER_IP:7777` in your browser.
 | Variable | Default | Description |
 |---|---|---|
 | `GITHUB_OWNER` | `jstevenscl` | GitHub username for pulling images from ghcr.io |
-| `SCORESTREAM_TAG` | `latest` | Image tag: `latest`, `beta`, or a pinned version like `v1.0.0` |
+| `SCORESTREAMARR_TAG` | `latest` | Image tag: `latest`, `beta`, or a pinned version like `v1.0.0` |
 | `TZ` | `America/New_York` | Timezone used for game times and stream clock |
 | `STREAM_BASE_URL` | *(required)* | LAN URL of this server, reachable from Dispatcharr's container |
 | `WEB_PORT` | `7777` | Port exposed for the web UI and HLS streams |
@@ -120,7 +120,7 @@ Navigate to `http://YOUR_SERVER_IP:7777` in your browser.
 
 ## Stream Quality Tiers
 
-ScoreStream encodes the rendered scoreboard to HLS via Chromium screenshots + x264. Three quality tiers are available via `STREAM_QUALITY`:
+ScoreStreamArr encodes the rendered scoreboard to HLS via Chromium screenshots + x264. Three quality tiers are available via `STREAM_QUALITY`:
 
 | Tier | Bitrate | Max Rate | Buffer | Preset | JPEG Q | Best for |
 |---|---|---|---|---|---|---|
@@ -172,23 +172,23 @@ The biggest single improvement for text crispness is supersampling — render th
 
 ## Finding Your STREAM\_BASE\_URL
 
-`STREAM_BASE_URL` is the address Dispatcharr will use to reach ScoreStream's HLS streams. The correct value depends on how your stacks are arranged.
+`STREAM_BASE_URL` is the address Dispatcharr will use to reach ScoreStreamArr's HLS streams. The correct value depends on how your stacks are arranged.
 
 ---
 
-**Option A — ScoreStream and Dispatcharr in the same Docker stack / network**
+**Option A — ScoreStreamArr and Dispatcharr in the same Docker stack / network**
 
-They share a Docker network and can reach each other by container name. Use the ScoreStream web container name and its internal port:
+They share a Docker network and can reach each other by container name. Use the ScoreStreamArr web container name and its internal port:
 
 ```
-STREAM_BASE_URL=http://scorestream-web:80
+STREAM_BASE_URL=http://scorestreamarr-web:80
 ```
 
 Or if you have defined a custom network alias, use that instead.
 
 ---
 
-**Option B — ScoreStream and Dispatcharr in different stacks on the same host**
+**Option B — ScoreStreamArr and Dispatcharr in different stacks on the same host**
 
 Use your server's **LAN IP** and the exposed `WEB_PORT`. Do not use `localhost` — Dispatcharr runs in its own container and cannot reach `localhost` on the host.
 
@@ -206,10 +206,10 @@ ip addr show | grep 'inet ' | grep -v 127.0.0.1
 Get-NetIPAddress -AddressFamily IPv4 | Where InterfaceAlias -notlike '*Loopback*'
 ```
 
-To find the internal Docker IP of the ScoreStream web container (alternative to LAN IP):
+To find the internal Docker IP of the ScoreStreamArr web container (alternative to LAN IP):
 
 ```bash
-docker inspect scorestream-web | grep '"IPAddress"'
+docker inspect scorestreamarr-web | grep '"IPAddress"'
 ```
 
 You can then use that IP directly:
@@ -219,9 +219,9 @@ STREAM_BASE_URL=http://172.18.0.5:80
 
 ---
 
-**Option C — ScoreStream and Dispatcharr on different hosts / VMs**
+**Option C — ScoreStreamArr and Dispatcharr on different hosts / VMs**
 
-Use the LAN IP (or hostname) of the machine running ScoreStream, with the exposed `WEB_PORT`:
+Use the LAN IP (or hostname) of the machine running ScoreStreamArr, with the exposed `WEB_PORT`:
 
 ```
 STREAM_BASE_URL=http://192.168.1.50:7777
@@ -241,38 +241,38 @@ It should return `OK`.
 
 ## Volumes
 
-ScoreStream uses named Docker volumes. The first three are created automatically on first start.
+ScoreStreamArr uses named Docker volumes. The first three are created automatically on first start.
 
 | Volume | Contents |
 |---|---|
-| `scorestream_config` | SQLite database (`scorestream.db`) — stores all scoreboard settings |
-| `scorestream_hls` | HLS stream segments — shared between the stream container and nginx |
-| `scorestream_audio` | Uploaded audio files for background music |
-| `scorestream_ticker` | Per-channel ticker text files shared with Dispatcharr (`scores_{channel_id}.txt`) — **required only for Ticker Overlay** (see [Ticker Overlay](#ticker-overlay)) |
+| `scorestreamarr_config` | SQLite database (`scorestreamarr.db`) — stores all scoreboard settings |
+| `scorestreamarr_hls` | HLS stream segments — shared between the stream container and nginx |
+| `scorestreamarr_audio` | Uploaded audio files for background music |
+| `scorestreamarr_ticker` | Per-channel ticker text files shared with Dispatcharr (`scores_{channel_id}.txt`) — **required only for Ticker Overlay** (see [Ticker Overlay](#ticker-overlay)) |
 
-> The `scorestream_ticker` volume is **not created automatically**. You must create it manually and add it to both stacks before using the Ticker Overlay feature. See [Shared Volume Setup](#shared-volume-setup).
+> The `scorestreamarr_ticker` volume is **not created automatically**. You must create it manually and add it to both stacks before using the Ticker Overlay feature. See [Shared Volume Setup](#shared-volume-setup).
 
 **To back up your configuration:**
 
 ```bash
-docker run --rm -v scorestream_config:/data -v $(pwd):/backup alpine \
-  tar czf /backup/scorestream-config-backup.tar.gz -C /data .
+docker run --rm -v scorestreamarr_config:/data -v $(pwd):/backup alpine \
+  tar czf /backup/scorestreamarr-config-backup.tar.gz -C /data .
 ```
 
 **To restore:**
 
 ```bash
-docker run --rm -v scorestream_config:/data -v $(pwd):/backup alpine \
-  tar xzf /backup/scorestream-config-backup.tar.gz -C /data
+docker run --rm -v scorestreamarr_config:/data -v $(pwd):/backup alpine \
+  tar xzf /backup/scorestreamarr-config-backup.tar.gz -C /data
 ```
 
 ---
 
-## Using ScoreStream
+## Using ScoreStreamArr
 
 ### Accessing the UI
 
-Open `http://YOUR_SERVER_IP:7777` in your browser. The ScoreStream interface loads as a single-page app. The left sidebar contains navigation between sections.
+Open `http://YOUR_SERVER_IP:7777` in your browser. The ScoreStreamArr interface loads as a single-page app. The left sidebar contains navigation between sections.
 
 ### Settings Pages Overview
 
@@ -303,7 +303,7 @@ Click the gear icon in the sidebar to open Settings. The navigation is grouped:
 | **Integrations** | Connect to Dispatcharr — URL, API token, channel group name, starting channel number. | Dispatcharr push |
 | **Backup & Restore** | Export all settings to a JSON file or restore from a previous backup. | Configuration |
 
-> **Key distinction:** *Stream Card Style* and *Default Stream Settings* control how game cards look in the **stream output** (the video). *System Theme* controls how the **ScoreStream app interface** looks in your browser.
+> **Key distinction:** *Stream Card Style* and *Default Stream Settings* control how game cards look in the **stream output** (the video). *System Theme* controls how the **ScoreStreamArr app interface** looks in your browser.
 
 ---
 
@@ -342,7 +342,7 @@ A **Scoreboard** is a named configuration that defines which sports, teams, and 
 
 > **All Step 3 settings are per-scoreboard.** Each scoreboard has its own copy in the database, so changing settings on one scoreboard never affects another. Headshot sizes are additionally per-sport within a scoreboard.
 
-4. Click **Save & Close** — ScoreStream immediately begins generating an HLS stream for this scoreboard
+4. Click **Save & Close** — ScoreStreamArr immediately begins generating an HLS stream for this scoreboard
 
 > **Why this order?** Display settings are tailored to the sports you've enabled. Picking sports first means Step 3 only shows the controls relevant to your scoreboard.
 
@@ -446,7 +446,7 @@ Click **Save Defaults** to apply. Any scoreboard using defaults will pick up the
 
 ### Themes
 
-ScoreStream includes 5 built-in color themes for stream output. The default is **Dark Blue** (`#00d4ff` accent).
+ScoreStreamArr includes 5 built-in color themes for stream output. The default is **Dark Blue** (`#00d4ff` accent).
 
 | Theme | Accent Color | Style |
 |---|---|---|
@@ -475,7 +475,7 @@ Custom themes are stored in your display defaults and are available across all s
 
 ### System Theme (App UI)
 
-**System Theme** controls the appearance of the ScoreStream **interface itself** — the settings pages, sidebar, navigation buttons, section headers, and all UI controls. This is completely separate from stream themes.
+**System Theme** controls the appearance of the ScoreStreamArr **interface itself** — the settings pages, sidebar, navigation buttons, section headers, and all UI controls. This is completely separate from stream themes.
 
 | Setting | Description |
 |---|---|
@@ -510,7 +510,7 @@ Individual-sport cards (PGA, F1, NASCAR Cup, NASCAR NOAPS, NASCAR Trucks, ATP, W
 | **Settings → Sports Library** → expand a sport row (▸) → Headshot Size | The main scoreboard.html browsing view (the sidebar live-scores cards) | Browser local storage (`state.display.sportHeadshots[sportId]`) |
 | **Scoreboard editor → Step 3 (Display & Layout) → Per-Sport Display & Data** → headshot slider in each sport's section | A specific scoreboard's HLS stream output | Database (`motor_config.{sport}_headshot_size`) |
 
-**Why two places?** The Sports Library setting controls the *browsing view* you see in your browser when you have ScoreStream open. The scoreboard editor setting controls what *viewers of a Dispatcharr channel see* when they tune into that scoreboard's stream. They're independent — you can have a 32px headshot for browsing and a 28px headshot in the actual stream.
+**Why two places?** The Sports Library setting controls the *browsing view* you see in your browser when you have ScoreStreamArr open. The scoreboard editor setting controls what *viewers of a Dispatcharr channel see* when they tune into that scoreboard's stream. They're independent — you can have a 32px headshot for browsing and a 28px headshot in the actual stream.
 
 **Priority for stream output:** Each card builder reads its sport's headshot size in this order:
 1. Stream mode → the scoreboard's `motor_config.{sport}_headshot_size`
@@ -536,7 +536,7 @@ The size is set on each card element via `--card-headshot-size`, so multiple spo
 
 ### Sharing Scoreboards (Export / Import JSON)
 
-You can export any scoreboard's complete configuration to a JSON file and share it with other ScoreStream users. The export includes the scoreboard's name, sports, teams, display settings, theme, motor config, and audio settings — but **excludes** install-specific things like the Dispatcharr channel binding, IDs, and slug.
+You can export any scoreboard's complete configuration to a JSON file and share it with other ScoreStreamArr users. The export includes the scoreboard's name, sports, teams, display settings, theme, motor config, and audio settings — but **excludes** install-specific things like the Dispatcharr channel binding, IDs, and slug.
 
 **To export a scoreboard:**
 1. Go to **My Scoreboards**
@@ -551,7 +551,7 @@ You can export any scoreboard's complete configuration to a JSON file and share 
 4. Confirm or change the scoreboard name (auto-suffixed with "(Imported)" if a name collision exists)
 5. The imported scoreboard appears in your list — review it in the editor and click **🚀 Push to Dispatcharr** when ready
 
-> **Validation:** The importer rejects anything that isn't a valid ScoreStream scoreboard export (`scorestream_export_version: 1, type: "scoreboard"`). Invalid JSON or missing fields show a clear error.
+> **Validation:** The importer rejects anything that isn't a valid ScoreStreamArr scoreboard export (`scorestreamarr_export_version: 1, type: "scoreboard"`). Invalid JSON or missing fields show a clear error.
 
 > **Channel binding excluded:** Imports never bring over Dispatcharr channel IDs, channel numbers, group IDs, or stream profile IDs. You configure those fresh on your install via the Push to Dispatcharr wizard.
 
@@ -559,7 +559,7 @@ You can export any scoreboard's complete configuration to a JSON file and share 
 
 ### Audio Library and Playlists
 
-ScoreStream can mix background music into the HLS stream output.
+ScoreStreamArr can mix background music into the HLS stream output.
 
 **Uploading audio files:**
 1. Go to **Audio Library** in the sidebar
@@ -604,19 +604,19 @@ Before pushing, configure your Dispatcharr connection:
 **To push a scoreboard as a Dispatcharr channel:**
 1. Go to **My Scoreboards**
 2. Find the scoreboard and click **Push to Dispatcharr** (or the Dispatcharr icon)
-3. ScoreStream creates or updates a channel in Dispatcharr with:
+3. ScoreStreamArr creates or updates a channel in Dispatcharr with:
    - The scoreboard's name as the channel name
    - The HLS stream URL pointing to this server
-   - The channel group "ScoreStream"
+   - The channel group "ScoreStreamArr"
    - The selected logo (if one was chosen in the wizard or Quick Update)
 
 **Channel group and numbering:**
-Channels are placed in a group called **ScoreStream** by default. Channel numbers are assigned automatically starting from 900. Both can be customized in the Integrations settings.
+Channels are placed in a group called **ScoreStreamArr** by default. Channel numbers are assigned automatically starting from 900. Both can be customized in the Integrations settings.
 
 **Channel logo:**
-The push wizard (Step 5) and Quick Update modal both include a logo picker. You can select one of the 12 bundled ScoreStream logos (glow variants in various colors), upload a custom image file, or paste any public image URL. The selected logo is uploaded to Dispatcharr's logo manager and assigned to the channel. Once a logo has been applied, the **currently applied logo** is shown as a thumbnail in the Quick Update modal so you always know what's set — leave the logo field blank on subsequent updates to keep the existing one.
+The push wizard (Step 5) and Quick Update modal both include a logo picker. You can select one of the 12 bundled ScoreStreamArr logos (glow variants in various colors), upload a custom image file, or paste any public image URL. The selected logo is uploaded to Dispatcharr's logo manager and assigned to the channel. Once a logo has been applied, the **currently applied logo** is shown as a thumbnail in the Quick Update modal so you always know what's set — leave the logo field blank on subsequent updates to keep the existing one.
 
-> **Logo URL requirement:** The logo URL sent to Dispatcharr must use your `STREAM_BASE_URL` (your server's LAN IP), not `localhost`. ScoreStream automatically rewrites any `localhost` or `127.0.0.1` address to `STREAM_BASE_URL` before uploading — no manual action required as long as `STREAM_BASE_URL` is set correctly in your `.env`.
+> **Logo URL requirement:** The logo URL sent to Dispatcharr must use your `STREAM_BASE_URL` (your server's LAN IP), not `localhost`. ScoreStreamArr automatically rewrites any `localhost` or `127.0.0.1` address to `STREAM_BASE_URL` before uploading — no manual action required as long as `STREAM_BASE_URL` is set correctly in your `.env`.
 
 ---
 
@@ -625,7 +625,7 @@ The push wizard (Step 5) and Quick Update modal both include a logo picker. You 
 When you change a scoreboard's name or settings after it has already been pushed:
 
 1. Make your changes in the editor and **Save**
-2. Click **Push to Dispatcharr** again — ScoreStream will **update** the existing channel (it does not create a duplicate)
+2. Click **Push to Dispatcharr** again — ScoreStreamArr will **update** the existing channel (it does not create a duplicate)
 
 The HLS stream URL does not change between updates (it is based on the scoreboard's slug), so Dispatcharr does not need to re-import anything. The stream content updates automatically every 30 seconds regardless.
 
@@ -638,26 +638,26 @@ If the stream is already playing in VLC, an IPTV player, or any HLS-compatible a
 
 ## Ticker Overlay
 
-The Ticker Overlay feature overlays a live scrolling score ticker onto any channel that Dispatcharr is streaming. It works by injecting an ffmpeg `drawtext` filter into a copy of the channel's stream profile, re-encoding the video on the fly, and reading score text from a per-channel shared file that ScoreStream writes continuously.
+The Ticker Overlay feature overlays a live scrolling score ticker onto any channel that Dispatcharr is streaming. It works by injecting an ffmpeg `drawtext` filter into a copy of the channel's stream profile, re-encoding the video on the fly, and reading score text from a per-channel shared file that ScoreStreamArr writes continuously.
 
 ### How It Works
 
-1. You select a Dispatcharr channel, choose your sports sources, and configure appearance in ScoreStream's **Ticker Overlay** settings panel
-2. When you click **Enable Ticker**, ScoreStream:
+1. You select a Dispatcharr channel, choose your sports sources, and configure appearance in ScoreStreamArr's **Ticker Overlay** settings panel
+2. When you click **Enable Ticker**, ScoreStreamArr:
    - Reads the channel's current stream profile from Dispatcharr via API
    - Creates a new profile named `"[Original Name] (Ticker)"` with a modified ffmpeg command that injects a scrolling `drawtext` overlay
    - Assigns that new profile to the channel via the Dispatcharr API
    - Begins writing live score text to `/ticker/scores_{channel_id}.txt` every **15 seconds**
 3. ffmpeg in Dispatcharr reads the per-channel text file on every frame (`reload=1`) — no stream restart needed when scores update
-4. When you click **Disable Ticker**, ScoreStream restores the original profile ID and deletes the ticker copy
+4. When you click **Disable Ticker**, ScoreStreamArr restores the original profile ID and deletes the ticker copy
 
 **Multiple simultaneous tickers are fully supported.** Each enabled channel gets its own independent text file (`/ticker/scores_{channel_id}.txt`) and its own score generation — different channels can show different sports at the same time without interfering with each other.
 
-> **The original stream profile is never modified.** ScoreStream creates a copy and assigns it. On disable, the original is restored cleanly.
+> **The original stream profile is never modified.** ScoreStreamArr creates a copy and assigns it. On disable, the original is restored cleanly.
 
 > **Re-encoding required:** Adding a drawtext overlay requires re-encoding the video. The ticker uses `-c:v libx264 -preset ultrafast -tune zerolatency` which adds minimal latency. Profiles already using `-c:v copy` (pass-through) are automatically switched to encode mode while the ticker is active.
 
-> **FFmpeg parameter conflict checking:** When a channel's original stream profile contains parameters that are incompatible with the ticker overlay (such as `-force_key_frames`, hardware encoder filters, or conflicting scale settings), ScoreStream automatically strips or replaces the conflicting parameters and records what was changed. You can see exactly what was adjusted in the Active Ticker Status Panel — each active ticker shows a collapsible **⚙ WARN/INFO** pill listing every modification and why it was made.
+> **FFmpeg parameter conflict checking:** When a channel's original stream profile contains parameters that are incompatible with the ticker overlay (such as `-force_key_frames`, hardware encoder filters, or conflicting scale settings), ScoreStreamArr automatically strips or replaces the conflicting parameters and records what was changed. You can see exactly what was adjusted in the Active Ticker Status Panel — each active ticker shows a collapsible **⚙ WARN/INFO** pill listing every modification and why it was made.
 
 > **Live data only:** The ticker only shows games or races that are currently in progress or finished today. Games from prior days are excluded. If there is nothing live or completed today for a selected sport, that sport is silently omitted from the ticker.
 
@@ -665,7 +665,7 @@ The Ticker Overlay feature overlays a live scrolling score ticker onto any chann
 
 ### Shared Volume Setup
 
-The per-channel ticker text files (`/ticker/scores_{channel_id}.txt`) must be accessible to both the ScoreStream stream container (writer) and Dispatcharr's ffmpeg process (reader). This requires a shared Docker named volume.
+The per-channel ticker text files (`/ticker/scores_{channel_id}.txt`) must be accessible to both the ScoreStreamArr stream container (writer) and Dispatcharr's ffmpeg process (reader). This requires a shared Docker named volume.
 
 > **This setup is required once.** After the volume is created and both stacks are updated, the ticker feature will work for all future use.
 
@@ -676,26 +676,26 @@ The per-channel ticker text files (`/ticker/scores_{channel_id}.txt`) must be ac
 Run this from the host machine (SSH or Portainer console), not inside any container:
 
 ```bash
-docker volume create scorestream_ticker
+docker volume create scorestreamarr_ticker
 ```
 
-Or in Portainer: **Volumes → Add volume**, name it `scorestream_ticker`, leave everything else default, click **Create**.
+Or in Portainer: **Volumes → Add volume**, name it `scorestreamarr_ticker`, leave everything else default, click **Create**.
 
 ---
 
-**Step 2 — Add the volume to your ScoreStream stack**
+**Step 2 — Add the volume to your ScoreStreamArr stack**
 
-In your ScoreStream `docker-compose.yml`, add the volume mount to the `scorestream-stream` service and declare it at the bottom:
+In your ScoreStreamArr `docker-compose.yml`, add the volume mount to the `scorestreamarr-stream` service and declare it at the bottom:
 
 ```yaml
 services:
-  scorestream-stream:
+  scorestreamarr-stream:
     # ... existing config ...
     volumes:
-      - scorestream_ticker:/ticker    # add this line
+      - scorestreamarr_ticker:/ticker    # add this line
 
 volumes:
-  scorestream_ticker:
+  scorestreamarr_ticker:
     external: true                    # add this block
 ```
 
@@ -710,14 +710,14 @@ services:
   dispatcharr:
     # ... existing config ...
     volumes:
-      - scorestream_ticker:/ticker    # add this line
+      - scorestreamarr_ticker:/ticker    # add this line
 
 volumes:
-  scorestream_ticker:
+  scorestreamarr_ticker:
     external: true                    # add this block
 ```
 
-> **Same stack:** If ScoreStream and Dispatcharr are in the same `docker-compose.yml`, declare `scorestream_ticker` as a regular named volume (no `external: true`) once under `volumes:` and mount it in both services.
+> **Same stack:** If ScoreStreamArr and Dispatcharr are in the same `docker-compose.yml`, declare `scorestreamarr_ticker` as a regular named volume (no `external: true`) once under `volumes:` and mount it in both services.
 
 ---
 
@@ -728,7 +728,7 @@ In Portainer, click **Update the stack** (or **Stop → Remove → Redeploy**) f
 **Verify the volume is mounted:**
 
 ```bash
-docker exec scorestream-stream ls /ticker
+docker exec scorestreamarr-stream ls /ticker
 docker exec dispatcharr ls /ticker
 ```
 
@@ -738,10 +738,10 @@ Both should return an empty directory with no error. If you get `No such file or
 
 ### Using the Ticker Overlay UI
 
-Navigate to **Ticker Overlay** in the ScoreStream settings sidebar.
+Navigate to **Ticker Overlay** in the ScoreStreamArr settings sidebar.
 
 **Active Ticker Status Panel** — shows all active tickers with channel names, ticker labels (which sports or "Custom Text" each channel is showing), profile IDs, and start times. Each active ticker has:
-- A **⚙ WARN/INFO** pill — click to expand a panel showing every FFmpeg parameter that was adjusted when the ticker was enabled and why (e.g., `force_key_frames stripped — incompatible with encode mode`). This panel is purely informational; all adjustments are handled automatically by ScoreStream.
+- A **⚙ WARN/INFO** pill — click to expand a panel showing every FFmpeg parameter that was adjusted when the ticker was enabled and why (e.g., `force_key_frames stripped — incompatible with encode mode`). This panel is purely informational; all adjustments are handled automatically by ScoreStreamArr.
 - A **KILL** button to disable it individually.
 
 When multiple tickers are active, a **KILL ALL** button appears to disable them all at once.
@@ -750,7 +750,7 @@ When multiple tickers are active, a **KILL ALL** button appears to disable them 
 
 The channel list shows all available channels. Channels that already have an active ticker are **greyed out** and cannot be selected for a new ticker — each channel can only have one ticker at a time. Greyed-out rows show the ticker label (sport names or "Custom Text") below the channel name so you can see what is already enabled.
 
-ScoreStream fetches the selected channel's current stream profile from Dispatcharr and validates it:
+ScoreStreamArr fetches the selected channel's current stream profile from Dispatcharr and validates it:
 - **"✓ FFmpeg ready"** — profile is compatible with the ticker overlay
 - **"⚠ not an FFmpeg profile"** — ticker requires an FFmpeg stream profile; change the channel's profile in Dispatcharr
 - **"[locked]"** — profile cannot be modified; duplicate it in Dispatcharr first
@@ -787,7 +787,7 @@ All three can be enabled together. The toggles apply only to the ticker encode �
 
 **5. Enable / Disable**
 
-- **ENABLE TICKER** — saves config, creates the ticker stream profile in Dispatcharr, and assigns it to the channel. ScoreStream begins writing the per-channel score file immediately. After enabling, the form clears (sport selections, custom text, CPU Saver checkboxes, channel search) so you can immediately configure a second ticker for a different channel.
+- **ENABLE TICKER** — saves config, creates the ticker stream profile in Dispatcharr, and assigns it to the channel. ScoreStreamArr begins writing the per-channel score file immediately. After enabling, the form clears (sport selections, custom text, CPU Saver checkboxes, channel search) so you can immediately configure a second ticker for a different channel.
 - **DISABLE TICKER** — restores the channel's original stream profile and deletes the ticker copy.
 - **KILL (per-ticker)** — in the status panel, instantly disables a single active ticker and restores its original profile.
 - **KILL ALL** — disables every active ticker across all channels in one click.
@@ -799,7 +799,7 @@ All three can be enabled together. The toggles apply only to the ticker encode �
 
 **Performance Note — CPU Transcoding**
 
-The ticker overlay requires FFmpeg to decode and re-encode the video stream in real time. ScoreStream uses `-c:v libx264 -preset ultrafast -tune zerolatency` for minimum latency and CPU overhead. For most setups this works well with CPU-only transcoding. If you experience stuttering on a lower-powered server (Oracle A1 Ampere or similar), enable one or more **CPU Saver** toggles — Cap at 15fps alone typically eliminates stuttering with no visible quality difference for a score ticker. GPU hardware encoding (NVENC, VAAPI, or QSV) is not required but will further reduce CPU load if available.
+The ticker overlay requires FFmpeg to decode and re-encode the video stream in real time. ScoreStreamArr uses `-c:v libx264 -preset ultrafast -tune zerolatency` for minimum latency and CPU overhead. For most setups this works well with CPU-only transcoding. If you experience stuttering on a lower-powered server (Oracle A1 Ampere or similar), enable one or more **CPU Saver** toggles — Cap at 15fps alone typically eliminates stuttering with no visible quality difference for a score ticker. GPU hardware encoding (NVENC, VAAPI, or QSV) is not required but will further reduce CPU load if available.
 
 ---
 
@@ -807,7 +807,7 @@ The ticker overlay requires FFmpeg to decode and re-encode the video stream in r
 
 ### Page Composition
 
-ScoreStream organizes stream cards into **pages** — full-canvas views that rotate on the configured timer. Each page is filled dynamically based on the available resolution and card sizes.
+ScoreStreamArr organizes stream cards into **pages** — full-canvas views that rotate on the configured timer. Each page is filled dynamically based on the available resolution and card sizes.
 
 **Key rules:**
 - Live/upcoming games and final scores for the same sport are always on **separate pages**. A page showing live NBA games will never also contain final MLB scores.
@@ -817,7 +817,7 @@ ScoreStream organizes stream cards into **pages** — full-canvas views that rot
 
 ### Team Logo Rendering
 
-Team logos sourced from ESPN are PNG images with transparent backgrounds, designed to display on white/light backgrounds. ScoreStream renders them on a **white box with a team-color border** so every logo is clearly legible against the dark stream background — including teams whose primary color closely matches their own logo (e.g. Yankees navy, Cardinals red).
+Team logos sourced from ESPN are PNG images with transparent backgrounds, designed to display on white/light backgrounds. ScoreStreamArr renders them on a **white box with a team-color border** so every logo is clearly legible against the dark stream background — including teams whose primary color closely matches their own logo (e.g. Yankees navy, Cardinals red).
 
 If a logo fails to load, the box falls back to a solid team-color background with the team abbreviation in white text.
 
@@ -882,7 +882,7 @@ The ticker overlay supports all sports in the table above. Data sources:
 
 ## Player Headshots
 
-ScoreStream displays player headshots on individual-sport cards (PGA, F1, NASCAR, ATP, WTA) when the **Player Headshots** toggle is enabled in the scoreboard editor's display settings.
+ScoreStreamArr displays player headshots on individual-sport cards (PGA, F1, NASCAR, ATP, WTA) when the **Player Headshots** toggle is enabled in the scoreboard editor's display settings.
 
 ### How headshots are sourced
 
@@ -908,7 +908,7 @@ A GitHub Actions workflow (`update-motor-cache.yml`) runs on a schedule and popu
 The workflow runs automatically on schedule. To manually refresh:
 1. Go to GitHub → Actions → **Update Motor Cache Data** → Run workflow
 2. After completion, either:
-   - **Restart** the `scorestream-api` container (seeds from the data branch on startup), or
+   - **Restart** the `scorestreamarr-api` container (seeds from the data branch on startup), or
    - **Call the reseed endpoint** without restarting: `POST http://YOUR_IP:7777/api/motor/reseed` — forces the API to re-read the data branch into its SQLite cache immediately
 
 ---
@@ -918,18 +918,18 @@ The workflow runs automatically on schedule. To manually refresh:
 **Stream not playing in Dispatcharr / VLC:**
 - Confirm `STREAM_BASE_URL` is your server's **LAN IP**, not `localhost`
 - Test directly: `http://YOUR_IP:7777/hls/YOUR_SLUG/stream.m3u8`
-- Check the stream container is running: `docker logs scorestream-stream`
+- Check the stream container is running: `docker logs scorestreamarr-stream`
 
 **No scores showing:**
-- ScoreStream fetches from ESPN's public APIs — if there are no live or scheduled games today, the scoreboard will show a "No Games" message
-- Check the API container logs: `docker logs scorestream-api`
+- ScoreStreamArr fetches from ESPN's public APIs — if there are no live or scheduled games today, the scoreboard will show a "No Games" message
+- Check the API container logs: `docker logs scorestreamarr-api`
 
 **Scoreboard shows "Not Configured":**
 - The scoreboard has no sports enabled. Edit it and enable at least one sport in Step 1 (Sports & Leagues).
 
 **Dispatcharr connection fails:**
 - Verify the API token is correct (Dispatcharr → Profile → API Keys)
-- Ensure the Dispatcharr URL is reachable from the ScoreStream container (use LAN IP, not localhost)
+- Ensure the Dispatcharr URL is reachable from the ScoreStreamArr container (use LAN IP, not localhost)
 
 **Changes not appearing on stream:**
 - The stream refreshes every 30 seconds. Wait up to 30 seconds after saving.
@@ -939,7 +939,7 @@ The workflow runs automatically on schedule. To manually refresh:
 - Set `STREAM_QUALITY=balanced` or `STREAM_QUALITY=high` in your stream container env. Default `balanced` already gives noticeably crisper text than the old `low` setting at the same CPU cost.
 - For maximum text clarity, also set `STREAM_DPR=2` (renders at 4K then downsamples). Uses ~4x browser RAM, recommended only for 1-2 concurrent streams.
 - See [Stream Quality Tiers](#stream-quality-tiers) for details.
-- Restart the `scorestream-stream` container after changing quality env vars: `docker restart scorestream-stream`
+- Restart the `scorestreamarr-stream` container after changing quality env vars: `docker restart scorestreamarr-stream`
 
 **Stream stuttering, buffering, or high CPU with multiple scoreboards:**
 - Set `STREAM_QUALITY=low` to drop back to original behavior (~800 kbps, lowest CPU).
@@ -950,14 +950,14 @@ The workflow runs automatically on schedule. To manually refresh:
 - See the **Ticker Causing Stream Stuttering** entry above — use CPU Saver toggles to reduce encode load.
 
 **NASCAR standings showing abbreviated names (T. Reddick instead of Tyler Reddick) or missing data:**
-- NASCAR standings (Cup, NOAPS, Trucks) are scraped from Fox Sports standings pages. If data looks stale or incorrect, go to GitHub → Actions → **Update Motor Cache Data** → Run workflow, then call `POST /api/motor/reseed` or restart `scorestream-api`.
+- NASCAR standings (Cup, NOAPS, Trucks) are scraped from Fox Sports standings pages. If data looks stale or incorrect, go to GitHub → Actions → **Update Motor Cache Data** → Run workflow, then call `POST /api/motor/reseed` or restart `scorestreamarr-api`.
 - A simple container repull does **not** flush the in-memory cache — you must stop and remove the container before repulling, or use the `/motor/reseed` endpoint.
 
 **Ticker overlay not appearing after enabling:**
 - Restart the channel in Dispatcharr — existing ffmpeg processes use the old stream profile until restarted
-- Confirm the `scorestream_ticker` volume is mounted in both containers: `docker exec scorestream-stream ls /ticker` and `docker exec dispatcharr ls /ticker` — both should return the per-channel score files (e.g. `scores_42.txt`) or an empty directory with no error
+- Confirm the `scorestreamarr_ticker` volume is mounted in both containers: `docker exec scorestreamarr-stream ls /ticker` and `docker exec dispatcharr ls /ticker` — both should return the per-channel score files (e.g. `scores_42.txt`) or an empty directory with no error
 - Check that at least one enabled sport has live or today's completed data — the ticker writes an empty file if no data is available
-- Check stream container logs: `docker logs scorestream-stream`
+- Check stream container logs: `docker logs scorestreamarr-stream`
 
 **Ticker text file not updating / score lag:**
 - The stream container writes `/ticker/scores_{channel_id}.txt` every **15 seconds** when a ticker is active
@@ -970,7 +970,7 @@ The workflow runs automatically on schedule. To manually refresh:
 - All three CPU Saver options can be combined for maximum CPU reduction
 - To apply CPU Saver to an already-active ticker: Kill the active ticker, re-enable it with the desired CPU Saver options checked, then restart the channel in Dispatcharr
 
-**Updating ScoreStream:**
+**Updating ScoreStreamArr:**
 ```bash
 docker compose pull
 docker compose up -d
@@ -984,11 +984,11 @@ docker compose up -d
 
 Use GitHub Issues to report bugs, request features, or ask questions — there are templates for each:
 
-- **[Report a Bug](https://github.com/jstevenscl/scorestream/issues/new?template=bug_report.yml)** — something isn't working correctly
-- **[Request a Feature](https://github.com/jstevenscl/scorestream/issues/new?template=feature_request.yml)** — suggest an improvement or new capability
-- **[Ask a Question](https://github.com/jstevenscl/scorestream/issues/new?template=question.yml)** — need help with setup, configuration, or usage
+- **[Report a Bug](https://github.com/jstevenscl/scorestreamarr/issues/new?template=bug_report.yml)** — something isn't working correctly
+- **[Request a Feature](https://github.com/jstevenscl/scorestreamarr/issues/new?template=feature_request.yml)** — suggest an improvement or new capability
+- **[Ask a Question](https://github.com/jstevenscl/scorestreamarr/issues/new?template=question.yml)** — need help with setup, configuration, or usage
 
-Before opening an issue, check [existing issues](https://github.com/jstevenscl/scorestream/issues) to see if it's already been reported or answered. The [User Guide](docs/USER-GUIDE.md) covers installation, all settings, and common setups and is a good first stop.
+Before opening an issue, check [existing issues](https://github.com/jstevenscl/scorestreamarr/issues) to see if it's already been reported or answered. The [User Guide](docs/USER-GUIDE.md) covers installation, all settings, and common setups and is a good first stop.
 
 ---
 
