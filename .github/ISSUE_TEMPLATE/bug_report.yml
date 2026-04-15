@@ -1,0 +1,84 @@
+name: Bug Report
+description: Something isn't working correctly in ScoreStream Pro
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please search existing issues before submitting to avoid duplicates.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear description of what is happening. Attach screenshots if possible.
+      placeholder: "Example: The F1 scoreboard shows a blank card after the race ends."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+      placeholder: "Example: The card should show the final race result."
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: ScoreStream version
+      description: Found in the bottom of the scoreboard sidebar, or run `docker logs scorestream-api | grep version`
+      placeholder: "e.g. beta, v0.2.0-beta"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: container
+    attributes:
+      label: Which container is affected?
+      description: Check `docker logs <container-name>` for errors to help identify this.
+      options:
+        - scorestream-api (Dispatcharr connection / data)
+        - scorestream-web (scoreboard UI / page not loading)
+        - scorestream-stream (video stream / HLS output)
+        - Not sure / multiple containers
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste any relevant log lines here. Run `docker logs scorestream-api --tail 50` or the affected container.
+      render: shell
+
+  - type: textarea
+    id: compose
+    attributes:
+      label: Docker Compose (redact passwords and tokens)
+      description: Paste your docker-compose.yml with any passwords/tokens replaced with `****`.
+      render: yaml
+    validations:
+      required: true
+
+  - type: input
+    id: host
+    attributes:
+      label: Host OS / hardware
+      placeholder: "e.g. Ubuntu 22.04 on Intel NUC, Unraid 6.12, Proxmox LXC on Raspberry Pi 5"
+    validations:
+      required: true
