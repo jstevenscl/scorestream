@@ -1353,10 +1353,34 @@ def ticker_disable_all():
 
 @app.route('/ticker/status', methods=['GET'])
 def ticker_status():
+    import json as _js
+    _TICKER_SPORT_LABELS = {
+        'nfl':'NFL','nba':'NBA','mlb':'MLB','nhl':'NHL','wnba':'WNBA',
+        'cfl':'CFL','xfl':'XFL','ufl':'UFL','mls':'MLS','nwsl':'NWSL',
+        'atp':'ATP','wta':'WTA','epl':'EPL','ucl':'UCL','laliga':'La Liga',
+        'bundesliga':'Bundesliga','seriea':'Serie A','ligue1':'Ligue 1',
+        'ncaafb':'NCAAF','ncaamb':'NCAAB','ncaabase':'NCAA Baseball',
+        'ncaawb':'NCAA WBB','ncaasb':'NCAA Softball',
+        'ncaavb':'NCAA VB','ncaalax':'NCAA Lax',
+        'f1':'F1','nascar':'NASCAR','pga':'PGA',
+    }
+    def _ticker_label(cfg_json):
+        try:
+            cfg = _js.loads(cfg_json or '{}')
+        except Exception:
+            return 'Unknown'
+        if cfg.get('custom_text_enabled'):
+            return 'Custom Text'
+        sports = cfg.get('sports', [])
+        if not sports:
+            return 'No sports'
+        labels = [_TICKER_SPORT_LABELS.get(s, s.upper()) for s in sports[:4]]
+        suffix = f' +{len(sports)-4} more' if len(sports) > 4 else ''
+        return ', '.join(labels) + suffix
     try:
         with get_db() as conn:
             rows = conn.execute(
-                'SELECT scoreboard_id,channel_id,original_profile_id,ticker_profile_id,created_at '
+                'SELECT scoreboard_id,channel_id,original_profile_id,ticker_profile_id,created_at,ticker_config '
                 'FROM ticker_profile_backup').fetchall()
         if not rows:
             return jsonify({'active':[]})
@@ -1368,7 +1392,8 @@ def ticker_status():
                      'original_profile_id':r['original_profile_id'],
                      'ticker_profile_id':r['ticker_profile_id'],
                      'created_at':r['created_at'],
-                     'channel_name':f'Channel {r["channel_id"]}'}
+                     'channel_name':f'Channel {r["channel_id"]}',
+                     'ticker_label':_ticker_label(r['ticker_config'])}
             if s and not err:
                 try:
                     cr = s.get(f'{c["url"]}/api/channels/channels/{r["channel_id"]}/',timeout=8)

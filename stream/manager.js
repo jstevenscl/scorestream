@@ -685,7 +685,7 @@ function prebakeAll() {
 // ── Ticker Writer ─────────────────────────────────────────────────────────────
 const TICKER_DIR      = process.env.TICKER_DIR       || '/ticker';
 const TICKER_API_BASE = process.env.TICKER_API_BASE  || 'http://scorestream-api:5000';
-const TICKER_INTERVAL = parseInt(process.env.TICKER_INTERVAL || '30') * 1000;
+const TICKER_INTERVAL = parseInt(process.env.TICKER_INTERVAL || '15') * 1000;
 
 function httpGetJson(url) {
   return new Promise((resolve, reject) => {
@@ -716,7 +716,10 @@ async function updateTickerFile() {
         const data = await httpGetJson(url);
         if (data.text !== undefined) {
           const filePath = path.join(TICKER_DIR, `scores_${row.channel_id}.txt`);
-          fs.writeFileSync(filePath, data.text, 'utf8');
+          const tmpPath  = filePath + '.tmp';
+          // Write to .tmp then atomically rename so FFmpeg never reads a partial file
+          fs.writeFileSync(tmpPath, data.text, 'utf8');
+          fs.renameSync(tmpPath, filePath);
         }
       } catch(e) {
         console.warn(`[ticker] channel ${row.channel_id} error: ${e.message}`);
