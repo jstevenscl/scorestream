@@ -376,7 +376,8 @@ def init_db():
             scoreboard_id INTEGER NOT NULL DEFAULT 0,
             original_profile_id INTEGER NOT NULL,
             ticker_profile_id   INTEGER NOT NULL,
-            ticker_config TEXT NOT NULL DEFAULT '{}',
+            ticker_config  TEXT NOT NULL DEFAULT '{}',
+            param_changes  TEXT NOT NULL DEFAULT '[]',
             created_at TEXT NOT NULL DEFAULT (datetime('now')))''')
         # Migrate old schema (scoreboard_id PK → channel_id PK) if needed
         try:
@@ -389,7 +390,8 @@ def init_db():
                     scoreboard_id INTEGER NOT NULL DEFAULT 0,
                     original_profile_id INTEGER NOT NULL,
                     ticker_profile_id INTEGER NOT NULL,
-                    ticker_config TEXT NOT NULL DEFAULT '{}',
+                    ticker_config  TEXT NOT NULL DEFAULT '{}',
+                    param_changes  TEXT NOT NULL DEFAULT '[]',
                     created_at TEXT NOT NULL DEFAULT (datetime('now')))''')
                 conn.execute('''INSERT OR IGNORE INTO ticker_profile_backup_v2
                     (channel_id,scoreboard_id,original_profile_id,ticker_profile_id,created_at)
@@ -399,6 +401,8 @@ def init_db():
                 conn.execute('ALTER TABLE ticker_profile_backup_v2 RENAME TO ticker_profile_backup')
             elif 'ticker_config' not in col_names:
                 conn.execute("ALTER TABLE ticker_profile_backup ADD COLUMN ticker_config TEXT NOT NULL DEFAULT '{}'")
+            if 'param_changes' not in col_names:
+                conn.execute("ALTER TABLE ticker_profile_backup ADD COLUMN param_changes TEXT NOT NULL DEFAULT '[]'")
         except Exception:
             pass
         # Audio library table for uploaded music files
@@ -1107,8 +1111,12 @@ def _ticker_scores_path(channel_id):
     return f'{TICKER_DIR}/scores_{channel_id}.txt'
 
 def _build_ticker_params(original_params, channel_id, font_size=24, position='bottom', bg_opacity=0.75, test_text=None, scroll_speed=0):
+    """Returns (modified_params: str, changes: list[str]).
+    changes describes every parameter that was stripped or altered for CPU/encode compatibility.
+    """
     import re
     params = original_params.strip()
+    changes = []
     y_expr = 'H-th-6' if position == 'bottom' else '6'
     x_expr = f'w-mod(t*{scroll_speed}\\,w+tw)' if scroll_speed > 0 else '0'
     if test_text:
@@ -1117,6 +1125,7 @@ def _build_ticker_params(original_params, channel_id, font_size=24, position='bo
             f"drawtext=text='{safe}'"
             f':fontsize={font_size}:fontcolor=white'
             f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
+            f':fix_bounds=1'
             f':x={x_expr}:y={y_expr}'
         )
     else:
@@ -1125,27 +1134,79 @@ def _build_ticker_params(original_params, channel_id, font_size=24, position='bo
             f'drawtext=textfile={ticker_file}:reload=1'
             f':fontsize={font_size}:fontcolor=white'
             f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
+            f':fix_bounds=1'
             f':x={x_expr}:y={y_expr}'
         )
     if '-c:v copy' in params:
+        # ── Detect and report copy-mode flags that break or explode CPU when encode is added ──
+        # 1. -force_key_frames with n_forced*0 expression — evaluates true every frame → all I-frames
+        fkf_q = re.search(r'-force_key_frames\s+"([^"]*)"', params)
+        fkf_u = re.search(r'-force_key_frames\s+(\S+)', params) if not fkf_q else None
+        if fkf_q:
+            expr = fkf_q.group(1)
+            severity = 'CRITICAL' if 'n_forced*0' in expr or 'n_forced * 0' in expr else 'WARNING'
+            changes.append(
+                f'{severity}: Removed -force_key_frames "{expr}" — '
+                f'{"expression always evaluates true (n_forced×0=0), forcing every frame to an I-frame with no inter-compression. Left in place this would max out CPU and cause constant buffering." if severity=="CRITICAL" else "copy-mode keyframe flag removed to prevent encoder conflict."}'
+            )
+            params = re.sub(r'-force_key_frames\s+"[^"]*"', '', params)
+        elif fkf_u:
+            changes.append(
+                f'WARNING: Removed -force_key_frames {fkf_u.group(1)} — copy-mode artifact, stripped to prevent encoder conflict.'
+            )
+            params = re.sub(r'-force_key_frames\s+\S+', '', params)
+        # 2. -g / -keyint_min — silently ignored in copy mode but can conflict; reset to sane encode values
+        g_m = re.search(r'-g\s+(\d+)', params)
+        if g_m:
+            old_g = g_m.group(1)
+            if old_g != '60':
+                changes.append(f'INFO: Reset -g {old_g} → 60 (keyframe interval adjusted for encode; was a no-op in copy mode).')
+            params = re.sub(r'-g\s+\d+', '', params)
+        ki_m = re.search(r'-keyint_min\s+(\d+)', params)
+        if ki_m:
+            old_ki = ki_m.group(1)
+            if old_ki != '60':
+                changes.append(f'INFO: Reset -keyint_min {old_ki} → 60 (minimum keyframe interval adjusted for encode).')
+            params = re.sub(r'-keyint_min\s+\d+', '', params)
+        # 3. -sc_threshold — safe to keep but tidy up; we re-add it with the encoder block
+        params = re.sub(r'-sc_threshold\s+\d+', '', params)
+        # 4. Report the core encode substitution
+        changes.append(
+            'INFO: Replaced -c:v copy → -c:v libx264 -preset ultrafast -tune zerolatency '
+            '(drawtext filter requires a software encode pass; ultrafast minimises CPU overhead).'
+        )
+        params = re.sub(r'\s{2,}', ' ', params).strip()
         params = params.replace(
             '-c:v copy',
-            f'-vf "{drawtext}" -c:v libx264 -preset ultrafast -tune zerolatency'
+            f'-vf "{drawtext}" -c:v libx264 -preset ultrafast -tune zerolatency '
+            f'-g 60 -keyint_min 60 -sc_threshold 0'
         )
     elif '-vf ' in params:
         params = re.sub(r'-vf\s+"([^"]+)"', f'-vf "\\1,{drawtext}"', params)
+        preset_m = re.search(r'-preset\s+(slow|medium|fast|faster)', params)
+        if preset_m:
+            changes.append(f'INFO: Upgraded -preset {preset_m.group(1)} → veryfast (drawtext encode pass — slower presets waste CPU on filter output).')
+            params = re.sub(r'-preset\s+(slow|medium|fast|faster)', '-preset veryfast', params)
     else:
         params = re.sub(r'(-f\s+\S+\s*(?:pipe:\d+)?)\s*$', f'-vf "{drawtext}" \\1', params.rstrip())
-    return params
+        if '-preset' not in params:
+            params = re.sub(r'(-c:v\s+libx264)', r'\1 -preset ultrafast -tune zerolatency', params)
+            changes.append('INFO: Added -preset ultrafast -tune zerolatency (no preset found; added for CPU efficiency).')
+        else:
+            preset_m = re.search(r'-preset\s+(slow|medium|fast|faster)', params)
+            if preset_m:
+                changes.append(f'INFO: Upgraded -preset {preset_m.group(1)} → veryfast.')
+                params = re.sub(r'-preset\s+(slow|medium|fast|faster)', '-preset veryfast', params)
+    return params, changes
 
 @app.route('/ticker/preview-params', methods=['POST'])
 def ticker_preview_params():
     b = request.get_json(force=True) or {}
     original = b.get('parameters','').strip()
     if not original: return jsonify({'error':'parameters required'}),400
-    modified = _build_ticker_params(original, 0, int(b.get('font_size',24)),
-                                    b.get('position','bottom'), float(b.get('bg_opacity',0.75)))
-    return jsonify({'original':original,'modified':modified})
+    modified, changes = _build_ticker_params(original, 0, int(b.get('font_size',24)),
+                                             b.get('position','bottom'), float(b.get('bg_opacity',0.75)))
+    return jsonify({'original':original,'modified':modified,'changes':changes})
 
 @app.route('/ticker/config', methods=['GET'])
 def get_ticker_config_global():
@@ -1228,7 +1289,7 @@ def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacit
                 r'-vf\s+""\s+-c:v\s+libx264\s+-preset\s+ultrafast\s+-tune\s+zerolatency',
                 '-c:v copy', clean_params)
             clean_params = _re.sub(r'-vf\s+""\s*', '', clean_params)
-        modified_params = _build_ticker_params(clean_params,channel_id,font_size,position,bg_opacity,test_text,scroll_speed)
+        modified_params, param_changes = _build_ticker_params(clean_params,channel_id,font_size,position,bg_opacity,test_text,scroll_speed)
         if modified_params == clean_params:
             return False, {'error':'Could not inject ticker — "-c:v copy" not found in profile parameters.'}
         base_name = profile['name'].removesuffix(' (Ticker)')
@@ -1241,14 +1302,16 @@ def _enable_ticker_for_channel(channel_id, sb_id, font_size, position, bg_opacit
         r = session.patch(f'{creds["url"]}/api/channels/channels/{channel_id}/',
                           json={'stream_profile_id':ticker_profile_id},timeout=15)
         r.raise_for_status()
+        import json as _jpc
         with get_db() as conn:
             conn.execute('''INSERT OR REPLACE INTO ticker_profile_backup
-                            (channel_id,scoreboard_id,original_profile_id,ticker_profile_id,ticker_config)
-                            VALUES(?,?,?,?,?)''',
-                         (channel_id,sb_id,original_profile_id,ticker_profile_id,cfg_json))
+                            (channel_id,scoreboard_id,original_profile_id,ticker_profile_id,ticker_config,param_changes)
+                            VALUES(?,?,?,?,?,?)''',
+                         (channel_id,sb_id,original_profile_id,ticker_profile_id,cfg_json,_jpc.dumps(param_changes)))
             conn.commit()
         return True, {'channel_id':channel_id,'ticker_profile_id':ticker_profile_id,
-                      'ticker_profile_name':ticker_name,'original_profile_id':original_profile_id}
+                      'ticker_profile_name':ticker_name,'original_profile_id':original_profile_id,
+                      'param_changes':param_changes}
     except Exception as e:
         return False, {'error':str(e)}
 
@@ -1380,7 +1443,7 @@ def ticker_status():
     try:
         with get_db() as conn:
             rows = conn.execute(
-                'SELECT scoreboard_id,channel_id,original_profile_id,ticker_profile_id,created_at,ticker_config '
+                'SELECT scoreboard_id,channel_id,original_profile_id,ticker_profile_id,created_at,ticker_config,param_changes '
                 'FROM ticker_profile_backup').fetchall()
         if not rows:
             return jsonify({'active':[]})
@@ -1388,12 +1451,17 @@ def ticker_status():
         active = []
         c = get_creds(); s, err = dispatcharr_session(c)
         for r in rows:
+            try:
+                pc = _js.loads(r['param_changes'] or '[]')
+            except Exception:
+                pc = []
             entry = {'scoreboard_id':r['scoreboard_id'],'channel_id':r['channel_id'],
                      'original_profile_id':r['original_profile_id'],
                      'ticker_profile_id':r['ticker_profile_id'],
                      'created_at':r['created_at'],
                      'channel_name':f'Channel {r["channel_id"]}',
-                     'ticker_label':_ticker_label(r['ticker_config'])}
+                     'ticker_label':_ticker_label(r['ticker_config']),
+                     'param_changes':pc}
             if s and not err:
                 try:
                     cr = s.get(f'{c["url"]}/api/channels/channels/{r["channel_id"]}/',timeout=8)
