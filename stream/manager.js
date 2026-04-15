@@ -347,7 +347,8 @@ function startFfmpeg(slug) {
     // Custom online audio stream URL
     console.log(`[manager][${slug}] Audio: custom stream URL: ${audio.url}`);
     args.push('-reconnect', '1', '-reconnect_streamed', '1',
-              '-reconnect_delay_max', '5', '-i', audio.url);
+              '-reconnect_delay_max', '5', '-thread_queue_size', '512',
+              '-i', audio.url);
   }
 
   const hasAudio = (audio.mode === 'playlist' || audio.mode === 'stream') && audio.mode !== 'none';
