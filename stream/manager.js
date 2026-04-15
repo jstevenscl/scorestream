@@ -716,10 +716,16 @@ async function updateTickerFile() {
         const data = await httpGetJson(url);
         if (data.text !== undefined) {
           const filePath = path.join(TICKER_DIR, `scores_${row.channel_id}.txt`);
-          const tmpPath  = filePath + '.tmp';
-          // Write to .tmp then atomically rename so FFmpeg never reads a partial file
-          fs.writeFileSync(tmpPath, data.text, 'utf8');
-          fs.renameSync(tmpPath, filePath);
+          // Skip write if content hasn't changed — avoids inode churn that
+          // drawtext reload=1 would see as a "new" file on every frame read
+          let current = '';
+          try { current = fs.readFileSync(filePath, 'utf8'); } catch(_) {}
+          if (current !== data.text) {
+            const tmpPath = filePath + '.tmp';
+            // Atomic write: .tmp → rename so FFmpeg never reads a partial file
+            fs.writeFileSync(tmpPath, data.text, 'utf8');
+            fs.renameSync(tmpPath, filePath);
+          }
         }
       } catch(e) {
         console.warn(`[ticker] channel ${row.channel_id} error: ${e.message}`);

@@ -1170,12 +1170,14 @@ def _build_ticker_params(original_params, channel_id, font_size=24, position='bo
         # 4. Report the core encode substitution
         changes.append(
             'INFO: Replaced -c:v copy → -c:v libx264 -preset ultrafast -tune zerolatency '
-            '(drawtext filter requires a software encode pass; ultrafast minimises CPU overhead).'
+            '-crf 23 -maxrate 6000k -bufsize 12000k '
+            '(drawtext requires a software encode pass; bitrate cap prevents unbounded CPU load on passthrough streams).'
         )
         params = re.sub(r'\s{2,}', ' ', params).strip()
         params = params.replace(
             '-c:v copy',
             f'-vf "{drawtext}" -c:v libx264 -preset ultrafast -tune zerolatency '
+            f'-crf 23 -maxrate 6000k -bufsize 12000k '
             f'-g 60 -keyint_min 60 -sc_threshold 0'
         )
     elif '-vf ' in params:
