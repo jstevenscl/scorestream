@@ -247,7 +247,7 @@ ScoreStream uses named Docker volumes. The first three are created automatically
 | `scorestream_config` | SQLite database (`scorestream.db`) — stores all scoreboard settings |
 | `scorestream_hls` | HLS stream segments — shared between the stream container and nginx |
 | `scorestream_audio` | Uploaded audio files for background music |
-| `scorestream_ticker` | Ticker text file shared with Dispatcharr — **required only for Ticker Overlay** (see [Ticker Overlay](#ticker-overlay)) |
+| `scorestream_ticker` | Per-channel ticker text files shared with Dispatcharr (`scores_{channel_id}.txt`) — **required only for Ticker Overlay** (see [Ticker Overlay](#ticker-overlay)) |
 
 > The `scorestream_ticker` volume is **not created automatically**. You must create it manually and add it to both stacks before using the Ticker Overlay feature. See [Shared Volume Setup](#shared-volume-setup).
 
@@ -637,7 +637,7 @@ If the stream is already playing in VLC, an IPTV player, or any HLS-compatible a
 
 ## Ticker Overlay
 
-The Ticker Overlay feature overlays a live scrolling score ticker onto any channel that Dispatcharr is streaming. It works by injecting an ffmpeg `drawtext` filter into a copy of the channel's stream profile, re-encoding the video on the fly, and reading score text from a shared file that ScoreStream writes continuously.
+The Ticker Overlay feature overlays a live scrolling score ticker onto any channel that Dispatcharr is streaming. It works by injecting an ffmpeg `drawtext` filter into a copy of the channel's stream profile, re-encoding the video on the fly, and reading score text from a per-channel shared file that ScoreStream writes continuously.
 
 ### How It Works
 
@@ -646,13 +646,17 @@ The Ticker Overlay feature overlays a live scrolling score ticker onto any chann
    - Reads the channel's current stream profile from Dispatcharr via API
    - Creates a new profile named `"[Original Name] (Ticker)"` with a modified ffmpeg command that injects a scrolling `drawtext` overlay
    - Assigns that new profile to the channel via the Dispatcharr API
-   - Begins writing live score text to `/ticker/scores.txt` every 30 seconds
-3. ffmpeg in Dispatcharr reads the text file on every frame (`reload=1`) — no stream restart needed when scores update
+   - Begins writing live score text to `/ticker/scores_{channel_id}.txt` every **15 seconds**
+3. ffmpeg in Dispatcharr reads the per-channel text file on every frame (`reload=1`) — no stream restart needed when scores update
 4. When you click **Disable Ticker**, ScoreStream restores the original profile ID and deletes the ticker copy
+
+**Multiple simultaneous tickers are fully supported.** Each enabled channel gets its own independent text file (`/ticker/scores_{channel_id}.txt`) and its own score generation — different channels can show different sports at the same time without interfering with each other.
 
 > **The original stream profile is never modified.** ScoreStream creates a copy and assigns it. On disable, the original is restored cleanly.
 
 > **Re-encoding required:** Adding a drawtext overlay requires re-encoding the video. The ticker uses `-c:v libx264 -preset ultrafast -tune zerolatency` which adds minimal latency. Profiles already using `-c:v copy` (pass-through) are automatically switched to encode mode while the ticker is active.
+
+> **FFmpeg parameter conflict checking:** When a channel's original stream profile contains parameters that are incompatible with the ticker overlay (such as `-force_key_frames`, hardware encoder filters, or conflicting scale settings), ScoreStream automatically strips or replaces the conflicting parameters and records what was changed. You can see exactly what was adjusted in the Active Ticker Status Panel — each active ticker shows a collapsible **⚙ WARN/INFO** pill listing every modification and why it was made.
 
 > **Live data only:** The ticker only shows games or races that are currently in progress or finished today. Games from prior days are excluded. If there is nothing live or completed today for a selected sport, that sport is silently omitted from the ticker.
 
@@ -660,7 +664,7 @@ The Ticker Overlay feature overlays a live scrolling score ticker onto any chann
 
 ### Shared Volume Setup
 
-The ticker text file (`/ticker/scores.txt`) must be accessible to both the ScoreStream stream container (writer) and Dispatcharr's ffmpeg process (reader). This requires a shared Docker named volume.
+The per-channel ticker text files (`/ticker/scores_{channel_id}.txt`) must be accessible to both the ScoreStream stream container (writer) and Dispatcharr's ffmpeg process (reader). This requires a shared Docker named volume.
 
 > **This setup is required once.** After the volume is created and both stacks are updated, the ticker feature will work for all future use.
 
@@ -735,11 +739,17 @@ Both should return an empty directory with no error. If you get `No such file or
 
 Navigate to **Ticker Overlay** in the ScoreStream settings sidebar.
 
-**Active Ticker Status Panel** — shows all active tickers with channel names, profile IDs, and start times. Each active ticker has a **KILL** button to disable it individually. When multiple tickers are active, a **KILL ALL** button appears to disable them all at once.
+**Active Ticker Status Panel** — shows all active tickers with channel names, ticker labels (which sports or "Custom Text" each channel is showing), profile IDs, and start times. Each active ticker has:
+- A **⚙ WARN/INFO** pill — click to expand a panel showing every FFmpeg parameter that was adjusted when the ticker was enabled and why (e.g., `force_key_frames stripped — incompatible with encode mode`). This panel is purely informational; all adjustments are handled automatically by ScoreStream.
+- A **KILL** button to disable it individually.
+
+When multiple tickers are active, a **KILL ALL** button appears to disable them all at once.
 
 **1. Select a Dispatcharr channel**
 
-Choose the channel from the dropdown. ScoreStream fetches the channel's current stream profile from Dispatcharr and validates it:
+The channel list shows all available channels. Channels that already have an active ticker are **greyed out** and cannot be selected for a new ticker — each channel can only have one ticker at a time. Greyed-out rows show the ticker label (sport names or "Custom Text") below the channel name so you can see what is already enabled.
+
+ScoreStream fetches the selected channel's current stream profile from Dispatcharr and validates it:
 - **"✓ FFmpeg ready"** — profile is compatible with the ticker overlay
 - **"⚠ not an FFmpeg profile"** — ticker requires an FFmpeg stream profile; change the channel's profile in Dispatcharr
 - **"[locked]"** — profile cannot be modified; duplicate it in Dispatcharr first
@@ -762,9 +772,21 @@ Sports are organized into groups: Pro Leagues, Motorsport, Tennis, International
 | **Scroll speed** | 0 = static text, 1–400 px/s for scrolling marquee. Recommended: 100–200 px/s |
 | **Background opacity** | Darkness of the black bar behind the ticker text (0–100%) |
 
-**4. Enable / Disable**
+**4. CPU Saver (optional)**
 
-- **ENABLE TICKER** — saves config, creates the ticker stream profile in Dispatcharr, and assigns it to the channel. ScoreStream begins writing `/ticker/scores.txt` immediately. Re-enabling on a channel that already has a ticker safely replaces the existing filter (no stacking).
+The ticker re-encodes the video stream in real time, which adds CPU load. Three independent toggles let you trade stream quality for CPU headroom:
+
+| Toggle | What It Does | When to Use |
+|---|---|---|
+| **Scale to 720p** | Downscales the video to 720p during ticker encoding (scales down only — sources already at 720p or lower are not upscaled) | Source is 1080p and you have multiple tickers running concurrently |
+| **Cap at 15fps** | Reduces the encoded output to 15 FPS during ticker re-encoding | Any situation where CPU headroom is tight; 15 FPS is imperceptible for a score ticker |
+| **Raise CRF** | Increases the x264 CRF from 23 to 28, reducing encode work at the cost of slightly lower bitrate | Lower-powered servers (e.g. 4 vCPU ARM) running multiple simultaneous tickers |
+
+All three can be enabled together. The toggles apply only to the ticker encode — the original stream quality is fully restored when the ticker is disabled.
+
+**5. Enable / Disable**
+
+- **ENABLE TICKER** — saves config, creates the ticker stream profile in Dispatcharr, and assigns it to the channel. ScoreStream begins writing the per-channel score file immediately. After enabling, the form clears (sport selections, custom text, CPU Saver checkboxes, channel search) so you can immediately configure a second ticker for a different channel.
 - **DISABLE TICKER** — restores the channel's original stream profile and deletes the ticker copy.
 - **KILL (per-ticker)** — in the status panel, instantly disables a single active ticker and restores its original profile.
 - **KILL ALL** — disables every active ticker across all channels in one click.
@@ -772,11 +794,11 @@ Sports are organized into groups: Pro Leagues, Motorsport, Tennis, International
 
 > After enabling, **restart the channel in Dispatcharr** to pick up the new stream profile. Existing ffmpeg processes use the old profile until restarted.
 
-> Score text updates every 30 seconds automatically. No stream restart is needed when scores change — ffmpeg re-reads the file on each frame.
+> Score text updates every **15 seconds** automatically. No stream restart is needed when scores change — ffmpeg re-reads the file on each frame using atomic writes (`.tmp` → rename) to prevent partial reads during updates.
 
-**⚠ Performance Note — GPU Encoding Recommended**
+**Performance Note — CPU Transcoding**
 
-The ticker overlay requires FFmpeg to decode and re-encode the video stream in real time. This works with CPU-only transcoding (`libx264 ultrafast`), but results may not be optimal — especially on lower-powered hardware or with high-resolution source streams. For the best experience, a system with GPU hardware encoding (NVENC, VAAPI, or QSV) is recommended. Without a GPU, you may experience intermittent stuttering or frame drops during playback.
+The ticker overlay requires FFmpeg to decode and re-encode the video stream in real time. ScoreStream uses `-c:v libx264 -preset ultrafast -tune zerolatency` for minimum latency and CPU overhead. For most setups this works well with CPU-only transcoding. If you experience stuttering on a lower-powered server (Oracle A1 Ampere or similar), enable one or more **CPU Saver** toggles — Cap at 15fps alone typically eliminates stuttering with no visible quality difference for a score ticker. GPU hardware encoding (NVENC, VAAPI, or QSV) is not required but will further reduce CPU load if available.
 
 ---
 
@@ -918,10 +940,13 @@ The workflow runs automatically on schedule. To manually refresh:
 - See [Stream Quality Tiers](#stream-quality-tiers) for details.
 - Restart the `scorestream-stream` container after changing quality env vars: `docker restart scorestream-stream`
 
-**Stream stuttering, buffering, or high CPU with multiple streams:**
+**Stream stuttering, buffering, or high CPU with multiple scoreboards:**
 - Set `STREAM_QUALITY=low` to drop back to original behavior (~800 kbps, lowest CPU).
 - Confirm `STREAM_FPS=1` (the default). Higher FPS values multiply CPU cost — 30 FPS uses ~30x more CPU than 1 FPS.
 - If using `STREAM_DPR=2`, drop back to `STREAM_DPR=1` to save browser memory.
+
+**Stream stuttering or buffering caused by Ticker Overlay:**
+- See the **Ticker Causing Stream Stuttering** entry above — use CPU Saver toggles to reduce encode load.
 
 **NASCAR standings showing abbreviated names (T. Reddick instead of Tyler Reddick) or missing data:**
 - NASCAR standings (Cup, NOAPS, Trucks) are scraped from Fox Sports standings pages. If data looks stale or incorrect, go to GitHub → Actions → **Update Motor Cache Data** → Run workflow, then call `POST /api/motor/reseed` or restart `scorestream-api`.
@@ -929,14 +954,20 @@ The workflow runs automatically on schedule. To manually refresh:
 
 **Ticker overlay not appearing after enabling:**
 - Restart the channel in Dispatcharr — existing ffmpeg processes use the old stream profile until restarted
-- Confirm the `scorestream_ticker` volume is mounted in both containers: `docker exec scorestream-stream ls /ticker` and `docker exec dispatcharr ls /ticker` — both should return an empty directory or `scores.txt` with no error
+- Confirm the `scorestream_ticker` volume is mounted in both containers: `docker exec scorestream-stream ls /ticker` and `docker exec dispatcharr ls /ticker` — both should return the per-channel score files (e.g. `scores_42.txt`) or an empty directory with no error
 - Check that at least one enabled sport has live or today's completed data — the ticker writes an empty file if no data is available
 - Check stream container logs: `docker logs scorestream-stream`
 
-**Ticker text file not updating:**
-- The stream container writes `/ticker/scores.txt` every 30 seconds when a ticker is active
+**Ticker text file not updating / score lag:**
+- The stream container writes `/ticker/scores_{channel_id}.txt` every **15 seconds** when a ticker is active
 - Verify a ticker is active: check the **Ticker Overlay** status bar in the UI
 - The file is only written when there is at least one active ticker profile in the database
+- Writes are atomic (`.tmp` → rename) — if you see stale data, confirm the `/ticker` volume is writable by the stream container
+
+**Ticker causing stream stuttering or buffering:**
+- Enable one or more **CPU Saver** toggles in the Ticker Overlay settings — **Cap at 15fps** alone typically resolves stuttering on CPU-only servers
+- All three CPU Saver options can be combined for maximum CPU reduction
+- To apply CPU Saver to an already-active ticker: Kill the active ticker, re-enable it with the desired CPU Saver options checked, then restart the channel in Dispatcharr
 
 **Updating ScoreStream:**
 ```bash
