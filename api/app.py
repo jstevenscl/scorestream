@@ -1125,7 +1125,6 @@ def _build_ticker_params(original_params, channel_id, font_size=24, position='bo
             f"drawtext=text='{safe}'"
             f':fontsize={font_size}:fontcolor=white'
             f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
-            f':fix_bounds=1'
             f':x={x_expr}:y={y_expr}'
         )
     else:
@@ -1134,7 +1133,6 @@ def _build_ticker_params(original_params, channel_id, font_size=24, position='bo
             f'drawtext=textfile={ticker_file}:reload=1'
             f':fontsize={font_size}:fontcolor=white'
             f':box=1:boxcolor=black@{bg_opacity}:boxborderw=10'
-            f':fix_bounds=1'
             f':x={x_expr}:y={y_expr}'
         )
     if '-c:v copy' in params:
@@ -1144,11 +1142,10 @@ def _build_ticker_params(original_params, channel_id, font_size=24, position='bo
         fkf_u = re.search(r'-force_key_frames\s+(\S+)', params) if not fkf_q else None
         if fkf_q:
             expr = fkf_q.group(1)
-            severity = 'CRITICAL' if 'n_forced*0' in expr or 'n_forced * 0' in expr else 'WARNING'
-            changes.append(
-                f'{severity}: Removed -force_key_frames "{expr}" — '
-                f'{"expression always evaluates true (n_forced×0=0), forcing every frame to an I-frame with no inter-compression. Left in place this would max out CPU and cause constant buffering." if severity=="CRITICAL" else "copy-mode keyframe flag removed to prevent encoder conflict."}'
-            )
+            note = ('expression always evaluates true (n_forced×0=0), which forces every frame to be an I-frame with no inter-compression — stripped to prevent high CPU load and buffering.'
+                    if 'n_forced*0' in expr or 'n_forced * 0' in expr
+                    else 'copy-mode keyframe flag removed to prevent encoder conflict.')
+            changes.append(f'WARNING: Removed -force_key_frames "{expr}" — {note}')
             params = re.sub(r'-force_key_frames\s+"[^"]*"', '', params)
         elif fkf_u:
             changes.append(
