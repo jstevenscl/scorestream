@@ -1,5 +1,5 @@
 name: Bug Report
-description: Something isn't working correctly in ScoreStream Pro
+description: Something isn't working correctly in ScoreStreamArr
 title: "[Bug]: "
 labels: ["bug"]
 body:
@@ -40,8 +40,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: ScoreStream version
-      description: Found in the bottom of the scoreboard sidebar, or run `docker logs scorestream-api | grep version`
+      label: ScoreStreamArr version
+      description: Found in the bottom of the scoreboard sidebar, or run `docker logs scorestreamarr-api | grep version`
       placeholder: "e.g. beta, v0.2.0-beta"
     validations:
       required: true
@@ -52,9 +52,9 @@ body:
       label: Which container is affected?
       description: Check `docker logs <container-name>` for errors to help identify this.
       options:
-        - scorestream-api (Dispatcharr connection / data)
-        - scorestream-web (scoreboard UI / page not loading)
-        - scorestream-stream (video stream / HLS output)
+        - scorestreamarr-api (Dispatcharr connection / data)
+        - scorestreamarr-web (scoreboard UI / page not loading)
+        - scorestreamarr-stream (video stream / HLS output)
         - Not sure / multiple containers
     validations:
       required: true
@@ -63,7 +63,7 @@ body:
     id: logs
     attributes:
       label: Relevant log output
-      description: Paste any relevant log lines here. Run `docker logs scorestream-api --tail 50` or the affected container.
+      description: Paste any relevant log lines here. Run `docker logs scorestreamarr-api --tail 50` or the affected container.
       render: shell
 
   - type: textarea

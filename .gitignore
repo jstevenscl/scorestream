@@ -27,19 +27,28 @@ Thumbs.db
 Logo/
 
 # Database + runtime state — created by the container at runtime, never commit
-config/scorestream.db
-config/scorestream.db-shm
-config/scorestream.db-wal
+config/scorestreamarr.db
+config/scorestreamarr.db-shm
+config/scorestreamarr.db-wal
 
 # Legacy root-level duplicates (active copies live in stream/ and data branch)
 /manager.js
 /motor_cache.json
+
+# Playwright MCP session files — never commit
+.playwright-mcp/
+
+# Claude local settings — machine-specific, never commit
+.claude/settings.local.json
 
 # Screenshots and reference images shared with Claude — never commit
 Screenshot*.png
 Screenshot*.jpg
 *.screenshot.png
 screenshots/
+# Root-level ad-hoc screenshots
+/*.png
+/*.jpg
 # But docs/screenshots/ are documentation assets — always commit
 !docs/screenshots/
 !docs/screenshots/**
@@ -47,7 +56,7 @@ screenshots/
 # Reference / scratch files that are NOT part of the project
 # (data dumps, error logs, handoff notes, ad-hoc scripts)
 *Handoff*.md
-ScoreStream_Handoff*.md
+ScoreStreamArr_Handoff*.md
 error logs.txt
 error_logs.txt
 *.error.log

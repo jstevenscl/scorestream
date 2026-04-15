@@ -1,0 +1,16 @@
+{
+  "name": "scorestreamarr-stream",
+  "version": "0.0.1",
+  "description": "ScoreStreamArr stream manager — Puppeteer + ffmpeg per scoreboard",
+  "main": "manager.js",
+  "scripts": {
+    "start": "node manager.js"
+  },
+  "dependencies": {
+    "puppeteer-core": "22.15.0",
+    "better-sqlite3": "9.6.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,88 @@
+name: Beta — Build on Dev Push
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'api/**'
+      - 'stream/**'
+      - 'nginx/**'
+      - 'scoreboard.html'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/scorestreamarr
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-beta:
+    name: Build Beta Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get short SHA
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Build & Push — API (beta)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./api/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:beta
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:beta-${{ steps.sha.outputs.short }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build & Push — Web/Nginx (beta)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./nginx/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:beta
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:beta-${{ steps.sha.outputs.short }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+      - name: Build & Push — Stream Manager (beta)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./stream
+          file: ./stream/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-stream:beta-${{ steps.sha.outputs.short }}
+          cache-from: type=gha,scope=stream
+          cache-to: type=gha,mode=max,scope=stream
+
+      - name: Summary
+        run: |
+          echo "### Beta images pushed" >> $GITHUB_STEP_SUMMARY
+          echo "SHA: ${{ steps.sha.outputs.short }}" >> $GITHUB_STEP_SUMMARY

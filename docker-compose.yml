@@ -1,0 +1,87 @@
+services:
+
+  scorestreamarr-api:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-api:${SCORESTREAMARR_TAG:-beta}
+    container_name: scorestreamarr-api
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-America/New_York}
+      - STREAM_BASE_URL=${STREAM_BASE_URL}
+      - STREAM_MANAGER_URL=http://scorestreamarr-stream:3001
+      - DISPATCHARR_URL=${DISPATCHARR_URL}
+      - DB_PATH=/config/scorestreamarr.db
+    volumes:
+      - scorestreamarr_config:/config
+      - scorestreamarr_audio:/audio_library
+    networks:
+      - scorestreamarr_net
+
+  scorestreamarr-web:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-web:${SCORESTREAMARR_TAG:-beta}
+    container_name: scorestreamarr-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-7777}:80"
+    volumes:
+      - scorestreamarr_hls:/usr/share/nginx/html/hls:ro
+    networks:
+      - scorestreamarr_net
+
+  scorestreamarr-stream:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-stream:${SCORESTREAMARR_TAG:-beta}
+    container_name: scorestreamarr-stream
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-America/New_York}
+      - STREAM_WIDTH=${STREAM_WIDTH:-1920}
+      - STREAM_HEIGHT=${STREAM_HEIGHT:-1080}
+      - STREAM_FPS=${STREAM_FPS:-1}
+      # Stream quality tier — controls text crispness vs resource usage.
+      # Options: low | balanced | high (default: balanced)
+      #   low      = original behavior, lowest bandwidth, ~800 kbps
+      #   balanced = noticeably crisper text, ~1.5 Mbps, SAME CPU as low
+      #   high     = best text quality, ~3 Mbps, ~3x more CPU per frame
+      - STREAM_QUALITY=${STREAM_QUALITY:-balanced}
+      # Individual encoder overrides (set any of these to override the tier)
+      # - STREAM_BITRATE=1500k
+      # - STREAM_MAXRATE=2500k
+      # - STREAM_BUFSIZE=4000k
+      # - STREAM_PRESET=veryfast
+      # - JPEG_QUALITY=92
+      # Browser supersampling — 2 renders at 2x resolution for crisper text
+      # but uses ~4x browser memory. Default 1 = native rendering.
+      # - STREAM_DPR=2
+      - WEB_BASE=http://scorestreamarr-web
+      - DB_PATH=/config/scorestreamarr.db
+      - HLS_DIR=/hls
+      - PIPES_DIR=/tmp/pipes
+      - MANAGER_PORT=3001
+      - HLS_SEGMENT_DURATION=${HLS_SEGMENT_DURATION:-2}
+      - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-4}
+      - AUDIO_DIR=/audio
+      - TICKER_FILE=/ticker/scores.txt
+      - TICKER_API_BASE=http://scorestreamarr-api:5000
+    volumes:
+      - scorestreamarr_config:/config
+      - scorestreamarr_hls:/hls
+      - scorestreamarr_audio:/audio_library
+      - scorestreamarr_ticker:/ticker
+    networks:
+      - scorestreamarr_net
+    shm_size: 512mb
+
+networks:
+  scorestreamarr_net:
+    name: scorestreamarr_net
+    driver: bridge
+
+volumes:
+  scorestreamarr_config:
+    name: scorestreamarr_config
+  scorestreamarr_hls:
+    name: scorestreamarr_hls
+  scorestreamarr_audio:
+    name: scorestreamarr_audio
+  scorestreamarr_ticker:
+    name: scorestreamarr_ticker
+    external: true
