@@ -1545,13 +1545,14 @@ def _ticker_text_for_config(cfg):
     all_parts=live_parts+final_parts
     if not all_parts:
         return jsonify({'text':''})
-    raw = '    ·    '.join(all_parts)
-    # Pad with trailing spaces so the ticker scrolls fully off-screen before
-    # repeating. This keeps text width (tw) large and stable between updates,
-    # preventing the visible scroll-position jump when scores refresh.
-    PAD_WIDTH = 300  # characters — wide enough for ~1920px at font 28
-    padded = raw + ' ' * max(PAD_WIDTH - len(raw) % PAD_WIDTH, PAD_WIDTH)
-    return jsonify({'text': padded})
+    raw = '    \u00b7    '.join(all_parts)
+    # Repeat content with separators until ≥300 chars — keeps tw stable between
+    # refreshes AND fills the visible bar so there is no long blank scroll gap.
+    separator = '    \u00b7    '
+    repeated = raw
+    while len(repeated) < 300:
+        repeated += separator + raw
+    return jsonify({'text': repeated + '   '})
 
 @app.route('/ticker/text/<int:sb_id>', methods=['GET'])
 def ticker_text(sb_id):
