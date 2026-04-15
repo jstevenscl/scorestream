@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: User Guide
+    url: https://github.com/jstevenscl/scorestream-pro/blob/main/docs/USER-GUIDE.md
+    about: Installation, configuration, and feature walkthroughs
