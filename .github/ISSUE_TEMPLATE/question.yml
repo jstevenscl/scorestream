@@ -1,0 +1,56 @@
+name: Question / Support
+description: Ask a question or get help with ScoreStream Pro
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Need help? Check the [User Guide](docs/USER-GUIDE.md) first — it covers installation, all settings, and common setups. If you're still stuck, ask away!
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What do you need help with?
+      description: Describe what you're trying to do and what isn't working or isn't clear.
+      placeholder: "Example: I can't figure out how to set STREAM_BASE_URL when ScoreStream is on a different Docker stack than Dispatcharr."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area does this relate to?
+      options:
+        - Installation / Docker setup
+        - STREAM_BASE_URL / networking
+        - Scoreboard Editor
+        - Audio / playlists
+        - Ticker Overlay
+        - Dispatcharr integration / push
+        - Sports Library / display settings
+        - System Theme / UI
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: ScoreStream version
+      description: Found in the bottom of the scoreboard sidebar, or run `docker logs scorestream-api | grep version`
+      placeholder: "e.g. beta, v0.2.0-beta"
+
+  - type: textarea
+    id: setup
+    attributes:
+      label: Your setup
+      description: Briefly describe your environment — host OS, where Dispatcharr is running, any relevant config.
+      placeholder: "Example: Unraid, Dispatcharr and ScoreStream are on separate Docker networks."
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you already tried?
+      description: Steps you've already taken so we don't repeat suggestions you've already ruled out.
+      placeholder: "Optional — leave blank if you haven't tried anything yet."
