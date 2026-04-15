@@ -901,7 +901,7 @@ def dispatcharr_session(creds=None):
 
 @app.route('/health')
 def health():
-    return jsonify({'status':'ok','version':'v0.3.0'})
+    return jsonify({'status':'ok','version':'v0.3.0-beta'})
 
 # ── Audio ──────────────────────────────────────────────────────────────────────
 @app.route('/audio/test', methods=['POST'])
