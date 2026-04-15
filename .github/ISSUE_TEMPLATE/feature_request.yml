@@ -1,0 +1,57 @@
+name: Feature Request
+description: Suggest a new feature or improvement for ScoreStream Pro
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make ScoreStream Pro better? We'd love to hear it!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the frustration or limitation you're running into.
+      placeholder: "Example: I can't tell which scoreboard is streaming to which Dispatcharr channel without opening the editor."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: What would you like ScoreStream Pro to do? Be as specific as you can.
+      placeholder: "Example: Show the Dispatcharr channel number on each scoreboard card in My Scoreboards."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area of the app does this affect?
+      options:
+        - Main Scoreboard / display
+        - Scoreboard Editor (sports, teams, display settings)
+        - Audio / playlists
+        - Ticker Overlay
+        - Dispatcharr integration / push
+        - Sports Library
+        - System Theme / UI
+        - Docker / installation / setup
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Any workarounds you're currently using, or other ways this could be solved.
+      placeholder: "Optional — leave blank if none."
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, mockups, or anything else that helps explain the request.
