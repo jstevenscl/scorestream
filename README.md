@@ -38,6 +38,7 @@ ScoreStream pulls live scores from ESPN and other public APIs, renders them as a
   - [Using the Ticker Overlay UI](#using-the-ticker-overlay-ui)
 - [Supported Sports](#supported-sports)
 - [Troubleshooting](#troubleshooting)
+- [Getting Help & Reporting Issues](#getting-help--reporting-issues)
 
 ---
 
@@ -979,7 +980,20 @@ docker compose up -d
 
 ---
 
+## Getting Help & Reporting Issues
+
+Use GitHub Issues to report bugs, request features, or ask questions — there are templates for each:
+
+- **[Report a Bug](https://github.com/jstevenscl/scorestream/issues/new?template=bug_report.yml)** — something isn't working correctly
+- **[Request a Feature](https://github.com/jstevenscl/scorestream/issues/new?template=feature_request.yml)** — suggest an improvement or new capability
+- **[Ask a Question](https://github.com/jstevenscl/scorestream/issues/new?template=question.yml)** — need help with setup, configuration, or usage
+
+Before opening an issue, check [existing issues](https://github.com/jstevenscl/scorestream/issues) to see if it's already been reported or answered. The [User Guide](docs/USER-GUIDE.md) covers installation, all settings, and common setups and is a good first stop.
+
+---
+
 ## See Also
 
+- [User Guide](docs/USER-GUIDE.md) — full installation, configuration, and feature reference
 - [CHANGELOG.md](./CHANGELOG.md) — version history
 - [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) — the IPTV manager this integrates with
