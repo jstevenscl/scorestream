@@ -30,9 +30,9 @@ Logo/
 config/scorecastarr.db
 config/scorecastarr.db-shm
 config/scorecastarr.db-wal
-config/scorestream.db
-config/scorestream.db-shm
-config/scorestream.db-wal
+config/scorestreamarr.db
+config/scorestreamarr.db-shm
+config/scorestreamarr.db-wal
 
 # Legacy root-level duplicates (active copies live in stream/ and data branch)
 /manager.js
