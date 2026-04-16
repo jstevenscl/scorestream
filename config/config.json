@@ -1,5 +1,5 @@
 {
-  "_comment": "ScoreStreamArr configuration — edit and restart scorestreamarr-api to apply",
+  "_comment": "ScorecastArr configuration — edit and restart scorecastarr-api to apply",
   "version": "0.2.0-beta",
 
   "channel_numbering": {
@@ -8,18 +8,18 @@
     "_auto_note": "In auto mode, channels are numbered sequentially from base_number",
     "base_number": 900,
     "channels": {
-      "all":      { "name": "ScoreStreamArr — All Sports",      "number": 900, "enabled": true  },
-      "nfl":      { "name": "ScoreStreamArr — NFL",             "number": 901, "enabled": true  },
-      "nba":      { "name": "ScoreStreamArr — NBA",             "number": 902, "enabled": true  },
-      "mlb":      { "name": "ScoreStreamArr — MLB",             "number": 903, "enabled": true  },
-      "nhl":      { "name": "ScoreStreamArr — NHL",             "number": 904, "enabled": true  },
-      "ncaab":    { "name": "ScoreStreamArr — NCAA Basketball", "number": 905, "enabled": true  },
-      "ncaabase": { "name": "ScoreStreamArr — NCAA Baseball",   "number": 906, "enabled": false }
+      "all":      { "name": "ScorecastArr — All Sports",      "number": 900, "enabled": true  },
+      "nfl":      { "name": "ScorecastArr — NFL",             "number": 901, "enabled": true  },
+      "nba":      { "name": "ScorecastArr — NBA",             "number": 902, "enabled": true  },
+      "mlb":      { "name": "ScorecastArr — MLB",             "number": 903, "enabled": true  },
+      "nhl":      { "name": "ScorecastArr — NHL",             "number": 904, "enabled": true  },
+      "ncaab":    { "name": "ScorecastArr — NCAA Basketball", "number": 905, "enabled": true  },
+      "ncaabase": { "name": "ScorecastArr — NCAA Baseball",   "number": 906, "enabled": false }
     }
   },
 
   "dispatcharr": {
-    "group_name": "ScoreStreamArr",
+    "group_name": "ScorecastArr",
     "channel_profiles": {
       "mode": "all",
       "_mode_options": ["all", "none", "specific"],

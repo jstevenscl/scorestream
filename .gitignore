@@ -27,9 +27,9 @@ Thumbs.db
 Logo/
 
 # Database + runtime state — created by the container at runtime, never commit
-config/scorestreamarr.db
-config/scorestreamarr.db-shm
-config/scorestreamarr.db-wal
+config/scorecastarr.db
+config/scorecastarr.db-shm
+config/scorecastarr.db-wal
 config/scorestream.db
 config/scorestream.db-shm
 config/scorestream.db-wal
@@ -59,7 +59,7 @@ screenshots/
 # Reference / scratch files that are NOT part of the project
 # (data dumps, error logs, handoff notes, ad-hoc scripts)
 *Handoff*.md
-ScoreStreamArr_Handoff*.md
+ScorecastArr_Handoff*.md
 error logs.txt
 error_logs.txt
 *.error.log

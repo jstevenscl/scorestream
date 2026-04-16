@@ -1,7 +1,7 @@
 {
-  "name": "scorestreamarr-stream",
+  "name": "scorecastarr-stream",
   "version": "0.0.1",
-  "description": "ScoreStreamArr stream manager — Puppeteer + ffmpeg per scoreboard",
+  "description": "ScorecastArr stream manager — Puppeteer + ffmpeg per scoreboard",
   "main": "manager.js",
   "scripts": {
     "start": "node manager.js"

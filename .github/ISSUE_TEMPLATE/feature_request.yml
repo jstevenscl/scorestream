@@ -1,12 +1,12 @@
 name: Feature Request
-description: Suggest a new feature or improvement for ScoreStreamArr
+description: Suggest a new feature or improvement for ScorecastArr
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Have an idea to make ScoreStreamArr better? We'd love to hear it!
+        Have an idea to make ScorecastArr better? We'd love to hear it!
 
   - type: textarea
     id: problem
@@ -21,7 +21,7 @@ body:
     id: solution
     attributes:
       label: Describe the solution you'd like
-      description: What would you like ScoreStreamArr to do? Be as specific as you can.
+      description: What would you like ScorecastArr to do? Be as specific as you can.
       placeholder: "Example: Show the Dispatcharr channel number on each scoreboard card in My Scoreboards."
     validations:
       required: true

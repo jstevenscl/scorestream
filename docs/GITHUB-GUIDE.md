@@ -1,6 +1,6 @@
-# ScoreStreamArr — GitHub & Version Management Guide
+# ScorecastArr — GitHub & Version Management Guide
 
-This guide covers everything you need to manage ScoreStreamArr on GitHub — from first push to publishing releases, managing beta vs. stable builds, and keeping documentation current.
+This guide covers everything you need to manage ScorecastArr on GitHub — from first push to publishing releases, managing beta vs. stable builds, and keeping documentation current.
 
 ---
 
@@ -36,12 +36,12 @@ git config --global user.email "you@email.com"
 
 ### Create a GitHub account
 
-Go to https://github.com and sign up. Your username becomes part of all your image URLs (e.g. `ghcr.io/YOURUSERNAME/scorestreamarr-pro-api:latest`), so pick something you're happy with.
+Go to https://github.com and sign up. Your username becomes part of all your image URLs (e.g. `ghcr.io/YOURUSERNAME/scorecastarr-pro-api:latest`), so pick something you're happy with.
 
 ### Create the repository on GitHub
 
 1. Click the **+** in the top right → **New repository**
-2. Name it: `scorestreamarr-pro`
+2. Name it: `scorecastarr-pro`
 3. Set it to **Public** (required for free ghcr.io image hosting)
 4. **Do NOT** check "Initialize with README" — we'll push our own files
 5. Click **Create repository**
@@ -50,10 +50,10 @@ GitHub will show you a page with commands. Keep that tab open.
 
 ### Push your code for the first time
 
-Open a terminal in the folder where you extracted `scorestreamarr-pro.zip`:
+Open a terminal in the folder where you extracted `scorecastarr-pro.zip`:
 
 ```bash
-cd scorestreamarr
+cd scorecastarr
 
 # Initialize git in this folder
 git init
@@ -65,7 +65,7 @@ git add .
 git commit -m "feat: initial release v0.1.0-beta"
 
 # Connect your local folder to GitHub
-git remote add origin https://github.com/YOURUSERNAME/scorestreamarr-pro.git
+git remote add origin https://github.com/YOURUSERNAME/scorecastarr-pro.git
 
 # Push everything to GitHub
 git push -u origin main
@@ -93,13 +93,13 @@ That's it. The workflows in `.github/workflows/` will now run automatically.
 ## 2. Understanding the Repository Structure
 
 ```
-scorestreamarr-pro/
+scorecastarr-pro/
 ├── .github/
 │   └── workflows/
 │       ├── beta.yml       ← Runs on every push to main → builds :beta Docker image
 │       └── release.yml    ← Runs when you publish a version tag → builds :latest image
 │
-├── scorestreamarr/           ← All the actual application code
+├── scorecastarr/           ← All the actual application code
 │   ├── api/               ← Python Dispatcharr integration
 │   ├── renderer/          ← Headless Chrome capture
 │   ├── ffmpeg/            ← HLS encoding
@@ -124,7 +124,7 @@ scorestreamarr-pro/
 
 ## 3. Daily Git Workflow
 
-When you make changes to ScoreStreamArr using vibe coding or manually, here's the process to get those changes saved and published.
+When you make changes to ScorecastArr using vibe coding or manually, here's the process to get those changes saved and published.
 
 ### The three commands you'll use constantly
 
@@ -134,7 +134,7 @@ git status
 
 # 2. Stage (select) the changes you want to save
 git add .                    # Add everything
-git add scorestreamarr/api/app.py   # Or add one specific file
+git add scorecastarr/api/app.py   # Or add one specific file
 
 # 3. Commit — save a snapshot with a description
 git commit -m "fix: channel numbers not updating after config change"
@@ -168,7 +168,7 @@ chore: bump ffmpeg base image to alpine 3.20
 The `beta.yml` workflow runs automatically and:
 1. Builds all 4 Docker images (api, web, renderer, ffmpeg)
 2. Tags them as `:beta` and `:beta-abc1234` (short commit hash)
-3. Pushes to `ghcr.io/YOURUSERNAME/scorestreamarr-pro-*:beta`
+3. Pushes to `ghcr.io/YOURUSERNAME/scorecastarr-pro-*:beta`
 
 Your beta users can then pull the latest:
 ```bash
@@ -179,7 +179,7 @@ docker compose pull && docker compose up -d
 
 ## 4. Beta vs. Stable — How Versioning Works
 
-ScoreStreamArr uses **Semantic Versioning**: `MAJOR.MINOR.PATCH`
+ScorecastArr uses **Semantic Versioning**: `MAJOR.MINOR.PATCH`
 
 | Number | Change when... |
 |--------|---------------|
@@ -274,7 +274,7 @@ Each image (api, web, renderer, ffmpeg) is listed separately.
 
 By default new packages are private. To make them public so users can pull without logging in:
 
-1. Go to `https://github.com/YOURUSERNAME/scorestreamarr-pro-api/settings`  
+1. Go to `https://github.com/YOURUSERNAME/scorecastarr-pro-api/settings`  
    (repeat for each of the 4 packages: api, web, renderer, ffmpeg)
 2. Scroll to "Danger Zone" → **Change package visibility** → Public
 
@@ -283,10 +283,10 @@ By default new packages are private. To make them public so users can pull witho
 ```bash
 # In their .env file:
 GITHUB_OWNER=YOURUSERNAME
-SCORESTREAMARR_TAG=latest
+SCORECASTARR_TAG=latest
 
 # Or to pull manually:
-docker pull ghcr.io/YOURUSERNAME/scorestreamarr-pro-api:latest
+docker pull ghcr.io/YOURUSERNAME/scorecastarr-pro-api:latest
 ```
 
 ### Deleting old images
@@ -309,18 +309,18 @@ Release notes go in two places:
 Create `docs/RELEASE-NOTES/v0.2.0-beta.md`:
 
 ```markdown
-# ScoreStreamArr v0.2.0-beta — Release Notes
+# ScorecastArr v0.2.0-beta — Release Notes
 
 **Released:** 2026-02-19  
 **Track:** Beta  
-**Docker tag:** `ghcr.io/YOURUSERNAME/scorestreamarr-pro-api:v0.2.0-beta`
+**Docker tag:** `ghcr.io/YOURUSERNAME/scorecastarr-pro-api:v0.2.0-beta`
 
 ---
 
 ## What's New
 
 ### Channel Profile Assignment
-You can now control which Dispatcharr Channel Profiles ScoreStreamArr channels
+You can now control which Dispatcharr Channel Profiles ScorecastArr channels
 appear in. Three modes are available in `config.json`:
 - **All** (default) — channels appear in every profile
 - **None** — no automatic profile assignment
@@ -351,12 +351,12 @@ individually). Individual channels can also be disabled.
 
 1. Pull the new images:
    ```bash
-   SCORESTREAMARR_TAG=v0.2.0-beta docker compose pull
+   SCORECASTARR_TAG=v0.2.0-beta docker compose pull
    ```
 
 2. Add the config volume to your `docker-compose.yml` if upgrading manually:
    ```yaml
-   scorestreamarr-api:
+   scorecastarr-api:
      volumes:
        - ./config:/config
    ```
@@ -388,7 +388,7 @@ sha256: [auto-generated by GitHub Actions]
 
 ## 8. Maintaining the User Guide
 
-The User Guide (`docs/USER-GUIDE.md`) is the document for people who download ScoreStreamArr and need to set it up. Keep it updated whenever you add a feature.
+The User Guide (`docs/USER-GUIDE.md`) is the document for people who download ScorecastArr and need to set it up. Keep it updated whenever you add a feature.
 
 ### Sections to maintain
 
@@ -437,7 +437,7 @@ The GitHub Wiki is a great place for longer documentation that doesn't fit in fi
 
 At the top of your README, add:
 ```markdown
-📖 **[Full Documentation →](https://github.com/YOURUSERNAME/scorestreamarr-pro/wiki)**
+📖 **[Full Documentation →](https://github.com/YOURUSERNAME/scorecastarr-pro/wiki)**
 ```
 
 ### Keeping Wiki and docs/ in sync
@@ -491,7 +491,7 @@ git push
 
 ```bash
 # Discard uncommitted changes to one file
-git checkout -- scorestreamarr/api/app.py
+git checkout -- scorecastarr/api/app.py
 
 # Discard ALL uncommitted changes (careful — this is permanent)
 git checkout -- .
