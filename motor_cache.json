@@ -3231,7 +3231,7 @@
         {
           "pos": 40,
           "driver": "Justin Allgaier",
-          "car": "#48",
+          "car": "#40",
           "manufacturer": "",
           "points": 0,
           "wins": 0,
@@ -3372,7 +3372,7 @@
           "name": "RBC Heritage",
           "date": "2026-04-16",
           "is_complete": false,
-          "is_live": false,
+          "is_live": true,
           "winner": null,
           "winner_score": null,
           "players": []
@@ -23783,7 +23783,7 @@
         {
           "pos": 11,
           "driver": "Rajah Caruth",
-          "car": "#88",
+          "car": "#32",
           "manufacturer": "",
           "points": 238,
           "wins": 0,
