@@ -3716,6 +3716,9 @@ function openPushWizard(id){
   wiz.style.display='block';
   document.getElementById('wizardTitle').textContent='Push to Dispatcharr: '+sb.name;
   document.getElementById('wizardResult').style.display='none';
+  document.getElementById('wizardResult').textContent='';
+  const _wizBtn=document.getElementById('wizPushBtn');
+  if(_wizBtn){_wizBtn.disabled=false;_wizBtn.textContent='🚀 Push to Dispatcharr';}
   renderWizardStep();
   loadDsGroups();
   loadStreamProfiles();
@@ -3743,6 +3746,9 @@ function openQuickUpdate(id){
   document.getElementById('qu_logoUrl').value='';
   document.getElementById('qu_logoPreview').style.display='none';
   document.getElementById('quResult').style.display='none';
+  document.getElementById('quResult').textContent='';
+  const _quBtn=document.getElementById('quSaveBtn');
+  if(_quBtn){_quBtn.disabled=false;_quBtn.textContent='💾 Save Changes';}
   // Show currently applied logo if one is saved
   const currentLogoDiv=document.getElementById('qu_currentLogo');
   if(currentLogoDiv){
@@ -3901,6 +3907,8 @@ async function executeQuickUpdate(){
     });
     const d=await r.json();
     if(r.ok){
+      // Guard: if the user navigated away (cancel or opened different scoreboard), discard this result
+      if(_activeSbId!==_sbId)return;
       resultEl.style.color='var(--accent-green)';
       let msg=`✅ Channel updated: ${d.channel_name}${d.channel_number?' (Ch '+d.channel_number+')':''}`;
       if(d.logo_debug&&Object.keys(d.logo_debug).length){
@@ -3928,13 +3936,15 @@ async function executeQuickUpdate(){
           }
         }
       }
-      setTimeout(()=>{closeQuickUpdate();renderSbCards();},3000);
+      setTimeout(()=>{if(_activeSbId===_sbId){closeQuickUpdate();renderSbCards();}},3000);
     }else{
+      if(_activeSbId!==_sbId)return;
       resultEl.style.color='var(--accent-red)';
       resultEl.textContent='❌ '+(d.error||'Update failed');
       btn.disabled=false;btn.textContent='💾 Save Changes';
     }
   }catch(e){
+    if(_activeSbId!==_sbId)return;
     resultEl.style.color='var(--accent-red)';
     resultEl.textContent='❌ '+e.message;
     btn.disabled=false;btn.textContent='💾 Save Changes';
@@ -4246,6 +4256,7 @@ async function executeWizardPush(){
     });
     const d=await r.json();
     if(r.ok){
+      if(_activeSbId!==_sbId)return;
       resultEl.style.color='var(--accent-green)';
       resultEl.textContent=`✅ ${d.action==='updated'?'Channel updated':'Channel created'}: ${d.channel_name}${d.channel_number?' (Ch '+d.channel_number+')':''}`;
       // Update local scoreboard record
@@ -4254,13 +4265,15 @@ async function executeWizardPush(){
         if(idx>=0)_scoreboards[idx]=d.scoreboard;
       }
       document.getElementById('wizPushBtn').textContent='✅ Done';
-      setTimeout(()=>{closePushWizard();renderSbCards();},2000);
+      setTimeout(()=>{if(_activeSbId===_sbId){closePushWizard();renderSbCards();}},2000);
     }else{
+      if(_activeSbId!==_sbId)return;
       resultEl.style.color='var(--accent-red)';
       resultEl.textContent='❌ '+(d.error||'Push failed');
       document.getElementById('wizPushBtn').disabled=false;
     }
   }catch(e){
+    if(_activeSbId!==_sbId)return;
     resultEl.style.color='var(--accent-red)';
     resultEl.textContent='❌ '+e.message;
     document.getElementById('wizPushBtn').disabled=false;
