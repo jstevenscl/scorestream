@@ -184,8 +184,8 @@ body.stream-mode .game-card.live:hover{border-color:rgba(0,255,136,0.3);}
 /* Motor card header: sport label is redundant with section header in stream — hide it */
 body.stream-mode .motor-sport-label{display:none;}
 /* .card-header: used by motor sport cards (NASCAR/F1/PGA) */
-.card-header{padding:5px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;border-bottom:1px solid var(--border);}
-body.stream-mode .card-header{padding:4px 10px;}
+.card-header{padding:calc(var(--card-header-size,11px) * 0.45) 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;border-bottom:1px solid var(--border);}
+body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 10px;}
 
 #stream-canvas{flex:1;overflow:hidden;position:relative;}
 #stream-pages{width:100%;height:100%;position:relative;}
