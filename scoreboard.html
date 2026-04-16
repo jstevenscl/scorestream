@@ -3871,7 +3871,8 @@ async function quLoadStreamProfiles(){
 }
 
 async function executeQuickUpdate(){
-  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  const _sbId=_activeSbId;  // capture before any awaits
+  const sb=_scoreboards.find(s=>s.id===_sbId);
   if(!sb)return;
   const resultEl=document.getElementById('quResult');
   const btn=document.getElementById('quSaveBtn');
@@ -3894,7 +3895,7 @@ async function executeQuickUpdate(){
   };
 
   try{
-    const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}/push`,{
+    const r=await fetch(`${API_BASE}/scoreboards/${_sbId}/push`,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)
     });
@@ -3913,7 +3914,7 @@ async function executeQuickUpdate(){
       resultEl.textContent=msg;
       btn.textContent='✅ Done';
       if(d.scoreboard){
-        const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);
+        const idx=_scoreboards.findIndex(s=>s.id===_sbId);
         if(idx>=0) _scoreboards[idx]=d.scoreboard;
         // Refresh the "Current" logo indicator without reopening the modal
         const currentLogoDiv=document.getElementById('qu_currentLogo');
@@ -4222,6 +4223,7 @@ function wizardNav(dir){
 }
 
 async function executeWizardPush(){
+  const _sbId=_activeSbId;  // capture before any awaits
   const resultEl=document.getElementById('wizardResult');
   resultEl.style.display='block';
   resultEl.style.color='var(--text-dim)';
@@ -4238,7 +4240,7 @@ async function executeWizardPush(){
   };
 
   try{
-    const r=await fetch(`${API_BASE}/scoreboards/${_activeSbId}/push`,{
+    const r=await fetch(`${API_BASE}/scoreboards/${_sbId}/push`,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)
     });
@@ -4248,7 +4250,7 @@ async function executeWizardPush(){
       resultEl.textContent=`✅ ${d.action==='updated'?'Channel updated':'Channel created'}: ${d.channel_name}${d.channel_number?' (Ch '+d.channel_number+')':''}`;
       // Update local scoreboard record
       if(d.scoreboard){
-        const idx=_scoreboards.findIndex(s=>s.id===_activeSbId);
+        const idx=_scoreboards.findIndex(s=>s.id===_sbId);
         if(idx>=0)_scoreboards[idx]=d.scoreboard;
       }
       document.getElementById('wizPushBtn').textContent='✅ Done';

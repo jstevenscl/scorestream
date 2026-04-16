@@ -2026,10 +2026,12 @@ def scoreboard_push(sid):
     c = get_creds(); s,err = dispatcharr_session(c)
     if err: return jsonify({'error':err}),400
 
-    # Wizard values override stored values; stored values are fallback
+    # Wizard values override stored values; stored values are fallback.
+    # Use explicit None checks so the caller can intentionally clear a value
+    # (e.g. groupId:null means "no group", not "keep existing group").
     channel_name    = b.get('channelName') or sb['name']
     channel_number  = b.get('channelNumber') or sb['dispatcharr_channel_number']
-    group_id        = b.get('groupId') or sb['dispatcharr_group_id']
+    group_id        = b['groupId'] if 'groupId' in b else sb['dispatcharr_group_id']
     profile_ids_raw = b.get('profileIds', _json.loads(sb['dispatcharr_profile_ids'] or 'null'))
     stream_prof_id  = b.get('streamProfileId') or sb['dispatcharr_stream_profile_id']
     logo_id         = b.get('logoId') or sb['dispatcharr_logo_id']
@@ -2104,7 +2106,7 @@ def scoreboard_push(sid):
             'is_custom': True,
         }
         if stream_url:      stream_payload['url']              = stream_url
-        if group_id:        stream_payload['channel_group']    = int(group_id)
+        stream_payload['channel_group'] = int(group_id) if group_id else None
         if stream_prof_id:  stream_payload['stream_profile_id']= int(stream_prof_id)
 
         if existing_stream_id:
@@ -2124,7 +2126,7 @@ def scoreboard_push(sid):
         # ── STEP 2: Channel (the container) ──────────────────────────────────
         channel_payload = {'name': channel_name, 'streams': [int(stream_id)]}
         if channel_number:          channel_payload['channel_number']  = float(channel_number)
-        if group_id:                channel_payload['channel_group_id']= int(group_id)
+        channel_payload['channel_group_id'] = int(group_id) if group_id else None
         if stream_prof_id:          channel_payload['stream_profile_id']= int(stream_prof_id)
         if logo_id:
             channel_payload['logo_id'] = int(logo_id)  # some Dispatcharr versions
