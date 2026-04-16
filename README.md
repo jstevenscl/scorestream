@@ -392,8 +392,8 @@ In editor Step 3 (Display & Layout), each scoreboard has independent **per-score
 | **Score Size** | Font size of the score numbers |
 | **Team Name Size** | Font size of the full team name subtitle |
 | **Channel Name Size** | Font size of the channel/event name at the top of cards |
-| **Header / Status Size** | Font size of the status text (LIVE, FINAL, upcoming time) |
-| **Period / Time Size** | Font size of the period/game-time text (Q4 2:15, 7th, etc.) |
+| **Header / Status Size** | Font size of the status text (LIVE, FINAL, upcoming time) and the sport name label in motor sport card headers (🏎️ Formula 1, 🏁 NASCAR, etc.) |
+| **Period / Time Size** | Font size of the period/game-time text (Q4 2:15, 7th, etc.) for team sports; controls monospace stats data for motor sports — position numbers, lap times, points values, race round, countdown, and circuit/date lines |
 | **Section Header Size** | Font size of the section headers above each card group (e.g. "🏎️ FORMULA 1 — UPCOMING") |
 | **Section Stripe Width** | Width of the colored vertical stripe before each section header (0 to hide) |
 | **Section Header Color** | Color of the section header text |

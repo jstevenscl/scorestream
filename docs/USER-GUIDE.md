@@ -494,8 +494,8 @@ Toggle between dark, light, or system-preference card themes.
 | **Score Size** | Font size of the score numbers |
 | **Count Size** | Font size of count/period/inning info |
 | **Logo Size** | Size of team logo icons on cards |
-| **Header / Timer Size** | Font size of section headers and game clocks |
-| **Period / Time Size** | Font size of period and time-remaining text |
+| **Header / Status Size** | Font size of the status text (LIVE, FINAL, upcoming time) and the sport name label in motor sport card headers (🏎️ Formula 1, 🏁 NASCAR, etc.) |
+| **Period / Time Size** | Font size of period/game-time text for team sports (Q4 2:15, 7th, etc.); controls position numbers, lap times, points, race round, and circuit/date lines for motor sports |
 
 ### Score & status colors
 Set the colors used for:
