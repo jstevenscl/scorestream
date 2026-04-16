@@ -3790,15 +3790,17 @@ function quLogoPreview(){
 async function quLoadGroups(){
   const sel=document.getElementById('qu_groupSel');
   if(!sel)return;
-  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  const _loadId=_activeSbId;  // capture before any awaits
+  const sb=_scoreboards.find(s=>s.id===_loadId);
   sel.innerHTML='<option value="">— loading... —</option>';
   try{
     const r=await fetch(`${API_BASE}/dispatcharr/groups`,{signal:AbortSignal.timeout(50000)});
     const d=await r.json();
+    if(_activeSbId!==_loadId)return;  // scoreboard changed while loading — discard
     const items=(d.groups||[]);
     sel.innerHTML='<option value="">— No group —</option>'+
       items.map(g=>`<option value="${g.id}"${String(g.id)===String(sb?.dispatcharr_group_id)?'selected':''}>${g.name}</option>`).join('');
-  }catch(e){sel.innerHTML='<option value="">— Failed to load —</option>';}
+  }catch(e){if(_activeSbId===_loadId)sel.innerHTML='<option value="">— Failed to load —</option>';}
 }
 function quRefreshGroups(){ quLoadGroups(); }
 
@@ -3806,13 +3808,15 @@ async function quLoadProfiles(){
   const listEl=document.getElementById('quProfileList');
   const labelEl=document.getElementById('quProfileLabel');
   if(!listEl)return;
-  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  const _loadId=_activeSbId;  // capture before any awaits
+  const sb=_scoreboards.find(s=>s.id===_loadId);
   const savedIds=sb?.dispatcharr_profile_ids;
   listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">Loading...</div>';
   if(labelEl)labelEl.textContent='— loading... —';
   try{
     const r=await fetch(`${API_BASE}/dispatcharr/profiles`,{signal:AbortSignal.timeout(50000)});
     const d=await r.json();
+    if(_activeSbId!==_loadId)return;  // scoreboard changed while loading — discard
     const items=d.profiles||[];
     if(!items.length){listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">No profiles found</div>';if(labelEl)labelEl.textContent='— none —';return;}
     listEl.innerHTML=items.map(p=>`<label class="profile-ms-item"><input type="checkbox" class="qu-profile-cb" value="${p.id}" onchange="onQuProfileCbChange()"><span>${p.name}</span></label>`).join('');
@@ -3823,7 +3827,7 @@ async function quLoadProfiles(){
       document.querySelectorAll('.qu-profile-cb').forEach(cb=>{if(savedIds.includes(parseInt(cb.value)))cb.checked=true;});
     }
     updateQuProfileLabel();
-  }catch(e){listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">Failed to load</div>';}
+  }catch(e){if(_activeSbId===_loadId)listEl.innerHTML='<div style="padding:8px;color:var(--text-dim);font-size:12px;">Failed to load</div>';}
 }
 
 function toggleQuProfileDropdown(){
@@ -3859,7 +3863,8 @@ function getQuProfileIds(){
 async function quLoadStreamProfiles(){
   const sel=document.getElementById('qu_streamProf');
   if(!sel)return;
-  const sb=_scoreboards.find(s=>s.id===_activeSbId);
+  const _loadId=_activeSbId;  // capture before any awaits
+  const sb=_scoreboards.find(s=>s.id===_loadId);
   const savedId=sb?.dispatcharr_stream_profile_id;
   sel.innerHTML='<option value="">— loading... —</option>';
   try{
@@ -3869,11 +3874,12 @@ async function quLoadStreamProfiles(){
       const d=await r.json();
       if(r.ok&&d.profiles?.length) _cachedStreamProfiles=d.profiles;
     }
+    if(_activeSbId!==_loadId)return;  // scoreboard changed while loading — discard
     const profiles=_cachedStreamProfiles||[];
     if(!profiles.length){sel.innerHTML='<option value="">— none available —</option>';return;}
     sel.innerHTML='<option value="">— default (none) —</option>'+
       profiles.map(p=>`<option value="${p.id}"${String(p.id)===String(savedId)?'selected':''}>${p.name}</option>`).join('');
-  }catch(e){sel.innerHTML='<option value="">— Failed to load —</option>';}
+  }catch(e){if(_activeSbId===_loadId)sel.innerHTML='<option value="">— Failed to load —</option>';}
 }
 
 async function executeQuickUpdate(){
