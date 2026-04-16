@@ -2239,7 +2239,7 @@ function renderEditorStep(sbOverride){
           <div class="modal-section-title" style="font-size:11px;margin-bottom:10px;letter-spacing:2px;">CARD TYPOGRAPHY</div>
           <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="${_isTennisSb?'Size of player name/abbreviation on tennis cards':_isMotorSb?'Size of driver/player name text on motor sport cards':'Size of the team abbreviation (e.g. LAL, BOS) on stream cards'}">${_isTennisSb?'Player Name Size':_isMotorSb?'Driver/Player Name Size':'Abbreviation Size'}</span>
-            <input type="range" min="14" max="28" step="1"
+            <input type="range" min="14" max="40" step="1"
               value="${_editorDraft.display_config.card_abbr_size || 18}"
               id="sbEditAbbrSize"
               oninput="document.getElementById('sbEditAbbrSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-abbr-size',this.value+'px')">
@@ -2255,7 +2255,7 @@ function renderEditorStep(sbOverride){
           </div>`}
           ${(_hasMotorSb||_isTennisSb)?`<div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="${_isTennisSb?'Size of the tournament name shown on tennis cards':'Size of the race/event title (e.g. Daytona 500, Japanese Grand Prix)'}">${_isTennisSb?'Tournament Name Size':'Title Size'}</span>
-            <input type="range" min="10" max="22" step="1"
+            <input type="range" min="10" max="36" step="1"
               value="${_editorDraft.display_config.card_title_size || 13}"
               id="sbEditTitleSize"
               oninput="document.getElementById('sbEditTitleSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-title-size',this.value+'px')">
@@ -2263,7 +2263,7 @@ function renderEditorStep(sbOverride){
           </div>`:''}
           <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="${_isTennisSb?'Size of set scores, country code, and label text on tennis cards':_isMotorSb?'Size of secondary label text (car number, manufacturer, points, track info)':'Size of the full team name shown below the abbreviation'}">${_isTennisSb?'Set Score / Label Size':_isMotorSb?'Detail/Label Text Size':'Team Name Size'}</span>
-            <input type="range" min="9" max="16" step="1"
+            <input type="range" min="9" max="28" step="1"
               value="${_editorDraft.display_config.card_name_size || 11}"
               id="sbEditNameSize"
               oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-name-size',this.value+'px')">
@@ -2312,7 +2312,7 @@ function renderEditorStep(sbOverride){
           <div class="modal-section-title" style="font-size:11px;margin:18px 0 10px;letter-spacing:2px;">CARD HEADER &amp; STATUS</div>
           <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="Font size of the status text at the top of cards (LIVE, FINAL, UPCOMING, STANDINGS, POINT STANDINGS, etc.)">Header / Status Size</span>
-            <input type="range" min="9" max="24" step="1"
+            <input type="range" min="9" max="36" step="1"
               value="${_editorDraft.display_config.card_header_size || 11}"
               id="sbEditCardHeaderSize"
               oninput="document.getElementById('sbEditCardHeaderSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-header-size',this.value+'px')">
@@ -2320,7 +2320,7 @@ function renderEditorStep(sbOverride){
           </div>
           <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="Font size of the period/game-time text (Q4 2:15, 7th, sport emoji label) on cards">Period / Time Size</span>
-            <input type="range" min="9" max="24" step="1"
+            <input type="range" min="9" max="36" step="1"
               value="${_editorDraft.display_config.card_period_size || 11}"
               id="sbEditCardPeriodSize"
               oninput="document.getElementById('sbEditCardPeriodSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-period-size',this.value+'px')">
@@ -5632,7 +5632,7 @@ function buildLeaderboardCard(g){
   applyCardHeadshotSize(card,g);
   card.style.setProperty('--text-dim','var(--motor-label-color,#3d5a78)');
   card.style.setProperty('--text-secondary','var(--motor-secondary-color,#7a9ab8)');
-  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>`;
+  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-header-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">${g.sportEmoji} ${g.sportName}</span>`;
 
   // ── Upcoming PGA tournament — rich info card (like F1 next race) ──────────
   const todayISO=new Date().toISOString().slice(0,10);
@@ -5838,7 +5838,7 @@ function buildTennisCard(g){
   const card=document.createElement('div');
   card.className=`game-card${g.isLive?' live':''}${g.isFinal?' is-final':''}`;
   applyCardHeadshotSize(card,g);
-  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--motor-label-color,var(--text-dim));">${g.sportEmoji} ${g.sportName}</span>`;
+  const sportLabel=`<div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-header-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--motor-label-color,var(--text-dim));">${g.sportEmoji} ${g.sportName}</span>`;
 
   // ── World Rankings section header card ───────────────────────────────────────
   if(g.isTennisRankingsHeader){
@@ -6759,15 +6759,15 @@ function buildNascarCard(g){
   const _nasSid=resolveSportId(g)||'nascar';
   if(g.isNascarStandings){
     const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div><span style="font-size:var(--card-header-size,11px);font-family:'Share Tech Mono',monospace;color:var(--card-final-color,var(--text-dim));letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">POINT STANDINGS</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 6px;">${g.name}</div>`;
-    const rows=(g.drivers||[]).map(d=>{const driverName=_normNascarDriver(d.driver);const star=favPlayerStar(_nasSid,driverName);const mfr=_normNascarMfr(d.manufacturer);const pts=typeof d.points==='number'?d.points:parseInt(String(d.points||'0').replace(/,/g,''))||0;return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-secondary);width:20px;text-align:right;flex-shrink:0;">${d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${driverName}</span></div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${mfr} ${(d.car||'').replace(/^,*#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${pts}</div>${d.wins>0?`<div style="font-size:var(--card-name-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`}).join('');
+    const rows=(g.drivers||[]).map(d=>{const driverName=_normNascarDriver(d.driver);const star=favPlayerStar(_nasSid,driverName);const mfr=_normNascarMfr(d.manufacturer);const pts=typeof d.points==='number'?d.points:parseInt(String(d.points||'0').replace(/,/g,''))||0;return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--text-secondary);width:20px;text-align:right;flex-shrink:0;">${d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${driverName}</span></div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${mfr} ${(d.car||'').replace(/^,*#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${pts}</div>${d.wins>0?`<div style="font-size:var(--card-period-size,11px);color:#ffd700;">🏆${d.wins}</div>`:''}</div></div>`}).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
   }
   if(g.isNascarLast||g.isNascarLive){
     const medals=['🥇','🥈','🥉'];
     const statusBadge=g.isFinal?'<span class="status-final">RESULT</span>':`<span style="display:flex;align-items:center;gap:4px;font-size:var(--card-header-size,11px);font-family:'Share Tech Mono',monospace;color:var(--card-live-color,#4ade80);font-weight:700;letter-spacing:1.5px;"><span style="width:calc(var(--card-header-size,11px) * 0.55);height:calc(var(--card-header-size,11px) * 0.55);border-radius:50%;background:var(--card-live-color,#4ade80);display:inline-block;"></span>LIVE</span>`;
-    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${statusBadge}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${g.name}</div><div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.trackName||''} ${g.raceDate?' · '+g.raceDate:''}</div>`;
-    const rows=(g.drivers||[]).map(d=>{const driverName=_normNascarDriver(d.driver);const star=favPlayerStar(_nasSid,driverName);const mfr=_normNascarMfr(d.manufacturer);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-name-size,11px);color:var(--text-dim);width:20px;text-align:right;flex-shrink:0;">${d.pos<=3?medals[d.pos-1]:d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${driverName}</span></div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${mfr} ${(d.car||d.number||'').toString().replace(/^,*#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`}).join('');
+    const hdr=`<div class="card-header"><div style="display:flex;align-items:center;gap:6px;">${sportLabel}</div>${statusBadge}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-title-size,13px);font-weight:900;color:var(--text-primary);margin:4px 0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${g.name}</div><div style="font-size:var(--card-period-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.trackName||''} ${g.raceDate?' · '+g.raceDate:''}</div>`;
+    const rows=(g.drivers||[]).map(d=>{const driverName=_normNascarDriver(d.driver);const star=favPlayerStar(_nasSid,driverName);const mfr=_normNascarMfr(d.manufacturer);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="font-size:var(--card-period-size,11px);color:var(--text-dim);width:20px;text-align:right;flex-shrink:0;">${d.pos<=3?medals[d.pos-1]:d.pos}</span>${_nasHsImg(d.headshot)}<div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${driverName}</span></div><div style="font-size:var(--card-name-size,11px);color:var(--text-secondary);">${mfr} ${(d.car||d.number||'').toString().replace(/^,*#+/,'#')}</div></div><div style="text-align:right;"><div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:${(d.status||'Finished')==='Finished'?'var(--accent-green)':'var(--accent-red)'};">${d.status||'Running'}</div>${d.points?`<div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--text-dim);">${d.points}pts</div>`:''}</div></div>`}).join('');
     card.innerHTML=hdr+`<div style="display:flex;flex-direction:column;">${rows}</div>`;
     return card;
   }
@@ -6789,7 +6789,7 @@ function buildF1Card(g){
   const header = `<div class="card-header">
     <div style="display:flex;align-items:center;gap:6px;">
       <div style="width:8px;height:8px;border-radius:2px;background:${g.sportColor};flex-shrink:0;"></div>
-      <span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-name-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏎️ ${g.sportName}</span>
+      <span class="motor-sport-label" style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-header-size,11px);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">🏎️ ${g.sportName}</span>
     </div>
     ${statusBadgeF1}
   </div>
@@ -6808,37 +6808,37 @@ function buildF1Card(g){
       <div style="display:flex;gap:6px;align-items:center;">
         <span style="color:var(--text-dim);">📅</span>
         <span style="color:var(--text-primary);font-weight:700;">${g.date}</span>
-        <span style="color:var(--accent-green);font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);">${g.countdown}</span>
+        <span style="color:var(--accent-green);font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);">${g.countdown}</span>
       </div>
-      <div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;">Round ${g.round}</div>
+      <div style="font-size:var(--card-period-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;">Round ${g.round}</div>
     </div>`;
   } else if(g.isF1Last){
     const medals = ['🥇','🥈','🥉'];
     const rows = (g.results||g.podium||[]);
-    body = `<div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.circuit||''} ${g.raceDate?'· '+g.raceDate:''}</div>` +
+    body = `<div style="font-size:var(--card-period-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📍 ${g.circuit||''} ${g.raceDate?'· '+g.raceDate:''}</div>` +
     rows.map((d,i)=>{const star=favPlayerStar(_f1Sid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
-      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:18px;text-align:right;flex-shrink:0;">${d.pos<=3?['🥇','🥈','🥉'][d.pos-1]:d.pos}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--text-dim);width:18px;text-align:right;flex-shrink:0;">${d.pos<=3?['🥇','🥈','🥉'][d.pos-1]:d.pos}</span>
       ${_f1HsImg(d.headshot)}
       <div style="flex:1;min-width:0;">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></div>
         <div style="font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.team}</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--accent-green);">${d.points>0?'+'+d.points+'pts':''}</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.time||''}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--accent-green);">${d.points>0?'+'+d.points+'pts':''}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--text-dim);">${d.time||''}</div>
       </div>
     </div>`}).join('');
   } else if(g.isF1Standings){
     body = `<div style="display:flex;flex-direction:column;">` + g.drivers.map(d=>{const star=favPlayerStar(_f1Sid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
-      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);width:14px;text-align:right;flex-shrink:0;">${d.pos}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--text-dim);width:14px;text-align:right;flex-shrink:0;">${d.pos}</span>
       ${_f1HsImg(d.headshot)}
       <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:var(--card-abbr-size,14px);font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;">${star}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.driver}</span></span>
       <span style="font-family:'Share Tech Mono',monospace;font-size:var(--card-abbr-size,14px);color:var(--accent-green);font-weight:700;">${d.points}</span>
-      ${d.wins>0?`<span style="font-size:var(--card-name-size,11px);color:#ffd700;font-family:'Share Tech Mono',monospace;">🏆${d.wins}</span>`:''}
+      ${d.wins>0?`<span style="font-size:var(--card-period-size,11px);color:#ffd700;font-family:'Share Tech Mono',monospace;">🏆${d.wins}</span>`:''}
     </div>`}).join('') + `</div>`;
   } else if(g.isF1History){
     const medals=['🥇','🥈','🥉'];
-    body = `<div style="font-size:var(--card-name-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:6px;">📍 ${g.circuit} · ${g.country} · ${g.date}</div>` +
+    body = `<div style="font-size:var(--card-period-size,11px);color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-bottom:6px;">📍 ${g.circuit} · ${g.country} · ${g.date}</div>` +
       g.results.map((d,i)=>{const star=favPlayerStar(_f1Sid,d.driver);return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
         <span style="font-size:var(--card-abbr-size,14px);">${medals[i]||d.pos}</span>
         <div style="flex:1;min-width:0;">
@@ -6846,8 +6846,8 @@ function buildF1Card(g){
           <div style="font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.team}</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--accent-green);">+${d.points}pts</div>
-          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-name-size,11px);color:var(--text-dim);">${d.time||''}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--accent-green);">+${d.points}pts</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--card-period-size,11px);color:var(--text-dim);">${d.time||''}</div>
         </div>
       </div>`}).join('');
   }
