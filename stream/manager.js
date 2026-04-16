@@ -1,5 +1,5 @@
 /**
- * ScoreStream — Stream Manager (On-Demand)
+ * ScorecastArr — Stream Manager (On-Demand)
  *
  * Flow:
  *  1. Startup: pre-bake PREROLL_SEGMENTS of loading screen into HLS for every
@@ -21,10 +21,10 @@ const puppeteer = require('puppeteer-core');
 const Database  = require('better-sqlite3');
 
 // ── Config ──────────────────────────────────────────────────────────────────
-const DB_PATH      = process.env.DB_PATH                || '/config/scorestream.db';
+const DB_PATH      = process.env.DB_PATH                || '/config/scorecastarr.db';
 const HLS_DIR      = process.env.HLS_DIR                || '/hls';
 const FRAMES_DIR   = process.env.FRAMES_DIR             || '/tmp/frames';
-const WEB_BASE     = process.env.WEB_BASE               || 'http://scorestream-web';
+const WEB_BASE     = process.env.WEB_BASE               || 'http://scorecastarr-web';
 const MANAGER_PORT = parseInt(process.env.MANAGER_PORT  || '3001');
 const WIDTH        = parseInt(process.env.STREAM_WIDTH  || '1920');
 const HEIGHT       = parseInt(process.env.STREAM_HEIGHT || '1080');
@@ -101,8 +101,8 @@ function frameTmp(slug)  { return path.join(frameDir(slug), 'frame.tmp.jpg'); }
 
 // ── Logo for loading frame ───────────────────────────────────────────────────
 // Bundled at build time — always available with no timing or network dependency.
-const BUNDLED_LOGO_PATH  = '/app/glow_blue.png';
-const LOADING_LOGO_PATH  = path.join(FRAMES_DIR, 'scorestream_logo.png');
+const BUNDLED_LOGO_PATH  = '/app/scorecastarr_blue.png';
+const LOADING_LOGO_PATH  = path.join(FRAMES_DIR, 'scorecastarr_logo.png');
 
 function fetchLoadingLogo() {
   // Bundled logo takes priority — no HTTP fetch needed if it exists.
@@ -112,7 +112,7 @@ function fetchLoadingLogo() {
   }
   // Fallback: try to fetch from nginx (older images without the bundled file).
   if (fs.existsSync(LOADING_LOGO_PATH)) return;
-  const url = `${WEB_BASE}/logos/glow_blue.png`;
+  const url = `${WEB_BASE}/logos/scorecastarr_blue.png`;
   http.get(url, res => {
     if (res.statusCode !== 200) { res.resume(); console.warn(`[manager] Logo fetch ${res.statusCode}: ${url}`); return; }
     const chunks = [];
@@ -136,7 +136,7 @@ function writeStartingFrame(slug) {
   const hasLogo  = fs.existsSync(logoPath);
   try {
     if (hasLogo) {
-      // Overlay the ScoreStream logo image, centred above the sport label
+      // Overlay the ScorecastArr logo image, centred above the sport label
       execSync(
         `ffmpeg -y -loglevel error ` +
         `-f lavfi -i color=c=0x0a0e1a:size=${WIDTH}x${HEIGHT}:rate=1 ` +
@@ -151,7 +151,7 @@ function writeStartingFrame(slug) {
       // Fallback: text only (logo not yet fetched or unavailable)
       execSync(
         `ffmpeg -y -loglevel error -f lavfi -i color=c=0x0a0e1a:size=${WIDTH}x${HEIGHT}:rate=1 ` +
-        `-vf "drawtext=text='SCORESTREAM':fontcolor=0x00d4ff:fontsize=64:x=(w-text_w)/2:y=(h-text_h)/2-60,` +
+        `-vf "drawtext=text='SCORECASTARR':fontcolor=0x00d4ff:fontsize=64:x=(w-text_w)/2:y=(h-text_h)/2-60,` +
         `drawtext=text='${label}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2+10,` +
         `drawtext=text='LOADING...':fontcolor=0x3d5a78:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+70,` +
         `format=yuv420p" -frames:v 1 -q:v 3 "${dest}"`,
@@ -686,7 +686,7 @@ function prebakeAll() {
 
 // ── Ticker Writer ─────────────────────────────────────────────────────────────
 const TICKER_DIR      = process.env.TICKER_DIR       || '/ticker';
-const TICKER_API_BASE = process.env.TICKER_API_BASE  || 'http://scorestream-api:5000';
+const TICKER_API_BASE = process.env.TICKER_API_BASE  || 'http://scorecastarr-api:5000';
 const TICKER_INTERVAL = parseInt(process.env.TICKER_INTERVAL || '15') * 1000;
 
 function httpGetJson(url) {
@@ -746,7 +746,7 @@ function startTickerWriter() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('[manager] ScoreStream Stream Manager starting');
+  console.log('[manager] ScorecastArr Stream Manager starting');
   console.log(`[manager] ${WIDTH}x${HEIGHT} @ ${FPS}fps | ${SEG_DURATION}s segs x ${PLAYLIST_SIZE} | idle=${IDLE_TIMEOUT}s`);
   ensureDir(HLS_DIR);
   ensureDir(FRAMES_DIR);

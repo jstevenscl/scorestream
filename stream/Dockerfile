@@ -41,7 +41,7 @@ ARG CACHEBUST=1
 RUN echo "Cache bust: $CACHEBUST"
 
 COPY manager.js .
-COPY glow_blue.png /app/glow_blue.png
+COPY scorecastarr_blue.png /app/scorecastarr_blue.png
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \

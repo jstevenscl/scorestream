@@ -1,5 +1,5 @@
 /**
- * ScoreStream Renderer
+ * ScorecastArr Renderer
  * Captures the scoreboard via Puppeteer and pipes JPEG frames to ffmpeg
  * via image2pipe. Uses sustainable frame pacing to prevent stream jitter.
  *
@@ -20,7 +20,7 @@ const WIDTH          = parseInt(process.env.STREAM_WIDTH  || '1920');
 const HEIGHT         = parseInt(process.env.STREAM_HEIGHT || '1080');
 const FPS            = parseInt(process.env.STREAM_FPS    || '10');   // 10fps default — sustainable for scoreboard
 const JPEG_QUALITY   = parseInt(process.env.JPEG_QUALITY  || '85');   // 85% quality, ~300-600KB per frame
-const SCOREBOARD_URL = process.env.SCOREBOARD_URL || 'http://scorestream-web/';
+const SCOREBOARD_URL = process.env.SCOREBOARD_URL || 'http://scorecastarr-web/';
 const PIPE_PATH      = process.env.PIPE_PATH || '/pipes/scoreboard.rawvideo';
 const FRAME_MS       = Math.round(1000 / FPS);
 
