@@ -1,5 +1,5 @@
 name: Question / Support
-description: Ask a question or get help with ScoreStreamArr
+description: Ask a question or get help with ScorecastArr
 title: "[Question]: "
 labels: ["question"]
 body:
@@ -13,7 +13,7 @@ body:
     attributes:
       label: What do you need help with?
       description: Describe what you're trying to do and what isn't working or isn't clear.
-      placeholder: "Example: I can't figure out how to set STREAM_BASE_URL when ScoreStreamArr is on a different Docker stack than Dispatcharr."
+      placeholder: "Example: I can't figure out how to set STREAM_BASE_URL when ScorecastArr is on a different Docker stack than Dispatcharr."
     validations:
       required: true
 
@@ -37,8 +37,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: ScoreStreamArr version
-      description: Found in the bottom of the scoreboard sidebar, or run `docker logs scorestreamarr-api | grep version`
+      label: ScorecastArr version
+      description: Found in the bottom of the scoreboard sidebar, or run `docker logs scorecastarr-api | grep version`
       placeholder: "e.g. beta, v0.2.0-beta"
 
   - type: textarea
@@ -46,7 +46,7 @@ body:
     attributes:
       label: Your setup
       description: Briefly describe your environment — host OS, where Dispatcharr is running, any relevant config.
-      placeholder: "Example: Unraid, Dispatcharr and ScoreStreamArr are on separate Docker networks."
+      placeholder: "Example: Unraid, Dispatcharr and ScorecastArr are on separate Docker networks."
 
   - type: textarea
     id: tried

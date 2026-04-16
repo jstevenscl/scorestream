@@ -1,7 +1,7 @@
 {
-  "name": "scorestreamarr-renderer",
+  "name": "scorecastarr-renderer",
   "version": "0.0.1",
-  "description": "Headless Chrome renderer for ScoreStreamArr scoreboard",
+  "description": "Headless Chrome renderer for ScorecastArr scoreboard",
   "main": "render.js",
   "scripts": {
     "start": "node render.js"

@@ -1,9 +1,9 @@
-# ScoreStreamArr — User Guide
+# ScorecastArr — User Guide
 
 **Version:** 0.2.0-beta  
 **Last Updated:** 2026-04-15
 
-ScoreStreamArr is a self-hosted live sports scoreboard that streams directly into Dispatcharr as real IPTV channels. It pulls live data from ESPN, renders a full HD scoreboard, and delivers it as an HLS video stream — automatically registering and numbering channels in Dispatcharr for you.
+ScorecastArr is a self-hosted live sports scoreboard that streams directly into Dispatcharr as real IPTV channels. It pulls live data from ESPN, renders a full HD scoreboard, and delivers it as an HLS video stream — automatically registering and numbering channels in Dispatcharr for you.
 
 ---
 
@@ -33,13 +33,13 @@ ScoreStreamArr is a self-hosted live sports scoreboard that streams directly int
 
 ## 1. How It Works
 
-ScoreStreamArr runs four Docker containers that work together:
+ScorecastArr runs four Docker containers that work together:
 
 | Container | Role |
 |-----------|------|
-| `scorestreamarr-api` | Fetches ESPN data, manages the database, talks to Dispatcharr |
-| `scorestreamarr-web` | Nginx — serves the scoreboard UI and HLS streams on port 7777 |
-| `scorestreamarr-stream` | Headless Chrome renderer + FFmpeg — turns the scoreboard into live video |
+| `scorecastarr-api` | Fetches ESPN data, manages the database, talks to Dispatcharr |
+| `scorecastarr-web` | Nginx — serves the scoreboard UI and HLS streams on port 7777 |
+| `scorecastarr-stream` | Headless Chrome renderer + FFmpeg — turns the scoreboard into live video |
 
 When you create a scoreboard, the stream manager starts a dedicated headless Chrome instance that renders the scoreboard UI. FFmpeg captures that rendered page at your configured framerate and encodes it to HLS. Dispatcharr then picks up those HLS streams as IPTV channels.
 
@@ -66,7 +66,7 @@ When you create a scoreboard, the stream manager starts a dedicated headless Chr
 ### Step 1 — Create a folder on your server
 
 ```bash
-mkdir ~/scorestreamarr && cd ~/scorestreamarr
+mkdir ~/scorecastarr && cd ~/scorecastarr
 ```
 
 ### Step 2 — Create your `docker-compose.yml`
@@ -75,36 +75,36 @@ Create a file called `docker-compose.yml` with the following contents:
 
 ```yaml
 services:
-  scorestreamarr-api:
-    image: ghcr.io/jstevenscl/scorestreamarr-api:beta
-    container_name: scorestreamarr-api
+  scorecastarr-api:
+    image: ghcr.io/jstevenscl/scorecastarr-api:beta
+    container_name: scorecastarr-api
     restart: unless-stopped
     environment:
       - TZ=America/New_York
       - STREAM_BASE_URL=http://172.19.0.1:7777
-      - STREAM_MANAGER_URL=http://scorestreamarr-stream:3001
+      - STREAM_MANAGER_URL=http://scorecastarr-stream:3001
       - DISPATCHARR_URL=http://10.0.0.40:9191
-      - DB_PATH=/config/scorestreamarr.db
+      - DB_PATH=/config/scorecastarr.db
     volumes:
-      - scorestreamarr_config:/config
-      - scorestreamarr_audio:/audio_library
+      - scorecastarr_config:/config
+      - scorecastarr_audio:/audio_library
     networks:
-      - scorestreamarr_net
+      - scorecastarr_net
 
-  scorestreamarr-web:
-    image: ghcr.io/jstevenscl/scorestreamarr-web:beta
-    container_name: scorestreamarr-web
+  scorecastarr-web:
+    image: ghcr.io/jstevenscl/scorecastarr-web:beta
+    container_name: scorecastarr-web
     restart: unless-stopped
     ports:
       - "7777:80"
     volumes:
-      - scorestreamarr_hls:/usr/share/nginx/html/hls:ro
+      - scorecastarr_hls:/usr/share/nginx/html/hls:ro
     networks:
-      - scorestreamarr_net
+      - scorecastarr_net
 
-  scorestreamarr-stream:
-    image: ghcr.io/jstevenscl/scorestreamarr-stream:beta
-    container_name: scorestreamarr-stream
+  scorecastarr-stream:
+    image: ghcr.io/jstevenscl/scorecastarr-stream:beta
+    container_name: scorecastarr-stream
     restart: unless-stopped
     environment:
       - TZ=America/New_York
@@ -112,8 +112,8 @@ services:
       - STREAM_HEIGHT=1080
       - STREAM_FPS=1
       - STREAM_QUALITY=balanced
-      - WEB_BASE=http://scorestreamarr-web
-      - DB_PATH=/config/scorestreamarr.db
+      - WEB_BASE=http://scorecastarr-web
+      - DB_PATH=/config/scorecastarr.db
       - HLS_DIR=/hls
       - PIPES_DIR=/tmp/pipes
       - MANAGER_PORT=3001
@@ -121,27 +121,27 @@ services:
       - HLS_PLAYLIST_SIZE=4
       - AUDIO_DIR=/audio_library
     volumes:
-      - scorestreamarr_config:/config
-      - scorestreamarr_hls:/hls
-      - scorestreamarr_audio:/audio_library
-      - scorestreamarr_ticker:/ticker
+      - scorecastarr_config:/config
+      - scorecastarr_hls:/hls
+      - scorecastarr_audio:/audio_library
+      - scorecastarr_ticker:/ticker
     networks:
-      - scorestreamarr_net
+      - scorecastarr_net
     shm_size: 512mb
 
 networks:
-  scorestreamarr_net:
-    name: scorestreamarr_net
+  scorecastarr_net:
+    name: scorecastarr_net
     driver: bridge
 
 volumes:
-  scorestreamarr_config:
-    name: scorestreamarr_config
-  scorestreamarr_hls:
-    name: scorestreamarr_hls
-  scorestreamarr_audio:
-    name: scorestreamarr_audio
-  scorestreamarr_ticker:
+  scorecastarr_config:
+    name: scorecastarr_config
+  scorecastarr_hls:
+    name: scorecastarr_hls
+  scorecastarr_audio:
+    name: scorecastarr_audio
+  scorecastarr_ticker:
     external: true
 ```
 
@@ -151,7 +151,7 @@ volumes:
 |----------|-------------|
 | `TZ` | Your timezone. Controls how game times display on the scoreboard. |
 | `STREAM_BASE_URL` | The URL Dispatcharr uses to reach your HLS streams. **See Section 4 — this is the most important setting to get right.** |
-| `STREAM_MANAGER_URL` | Internal address of the stream container. Leave as `http://scorestreamarr-stream:3001`. |
+| `STREAM_MANAGER_URL` | Internal address of the stream container. Leave as `http://scorecastarr-stream:3001`. |
 | `DISPATCHARR_URL` | Your Dispatcharr instance URL. |
 | `DB_PATH` | Path inside the container where the database is stored. Leave as-is. |
 | `STREAM_WIDTH` / `STREAM_HEIGHT` | Resolution of the output video stream (1920×1080 recommended). |
@@ -165,7 +165,7 @@ volumes:
 The ticker volume must be created before starting the stack:
 
 ```bash
-docker volume create scorestreamarr_ticker
+docker volume create scorecastarr_ticker
 ```
 
 ### Step 4 — Start the stack
@@ -177,8 +177,8 @@ docker compose up -d
 ### Step 5 — Verify it's running
 
 ```bash
-docker logs scorestreamarr-api --tail 30
-docker logs scorestreamarr-stream --tail 30
+docker logs scorecastarr-api --tail 30
+docker logs scorecastarr-stream --tail 30
 ```
 
 You should see the API start up and the stream manager come online. Once both are healthy, open your browser to:
@@ -191,15 +191,15 @@ http://YOUR_SERVER_IP:7777
 
 ## 4. Finding Your STREAM_BASE_URL
 
-This is the single most common setup issue. The `STREAM_BASE_URL` is the URL that **Dispatcharr's container** uses to reach ScoreStreamArr's HLS streams. It cannot be `localhost` or a container name because Dispatcharr runs in its own Docker network.
+This is the single most common setup issue. The `STREAM_BASE_URL` is the URL that **Dispatcharr's container** uses to reach ScorecastArr's HLS streams. It cannot be `localhost` or a container name because Dispatcharr runs in its own Docker network.
 
 ### Scenario A — Same host machine, different Docker stacks
 
-If ScoreStreamArr and Dispatcharr are both on the same physical server but in separate Docker stacks (the most common setup), use the **Docker bridge gateway IP**:
+If ScorecastArr and Dispatcharr are both on the same physical server but in separate Docker stacks (the most common setup), use the **Docker bridge gateway IP**:
 
 ```bash
 # After starting your stack, run:
-docker network inspect scorestreamarr_net | grep Gateway
+docker network inspect scorecastarr_net | grep Gateway
 ```
 
 You'll see output like:
@@ -214,7 +214,7 @@ STREAM_BASE_URL=http://172.19.0.1:7777
 
 ### Scenario B — Different machines
 
-If ScoreStreamArr runs on a different server than Dispatcharr, use the **LAN IP of the ScoreStreamArr server**:
+If ScorecastArr runs on a different server than Dispatcharr, use the **LAN IP of the ScorecastArr server**:
 
 ```
 STREAM_BASE_URL=http://192.168.1.50:7777
@@ -222,15 +222,15 @@ STREAM_BASE_URL=http://192.168.1.50:7777
 
 ### Scenario C — Same Docker stack
 
-If you add ScoreStreamArr directly to the same Docker Compose file as Dispatcharr, use the container name:
+If you add ScorecastArr directly to the same Docker Compose file as Dispatcharr, use the container name:
 
 ```
-STREAM_BASE_URL=http://scorestreamarr-web:80
+STREAM_BASE_URL=http://scorecastarr-web:80
 ```
 
 > **After changing `STREAM_BASE_URL`**, restart the API container to apply it:
 > ```bash
-> docker restart scorestreamarr-api
+> docker restart scorecastarr-api
 > ```
 
 ---
@@ -304,19 +304,19 @@ Go to **Settings → Integrations**.
 4. Click **Test Connection** — you should see a green success message
 
 If the test fails:
-- Confirm Dispatcharr is running and reachable from your ScoreStreamArr server
+- Confirm Dispatcharr is running and reachable from your ScorecastArr server
 - Try the URL in a browser to verify it loads
 - Check that your username and password are correct
 
 ### Channel Settings
 
-After connecting, configure how ScoreStreamArr creates channels in Dispatcharr:
+After connecting, configure how ScorecastArr creates channels in Dispatcharr:
 
-**Channel Group** — The group name ScoreStreamArr channels will be placed in within Dispatcharr. Default is `ScoreStreamArr`. You can type a custom name or select an existing group from the dropdown.
+**Channel Group** — The group name ScorecastArr channels will be placed in within Dispatcharr. Default is `ScorecastArr`. You can type a custom name or select an existing group from the dropdown.
 
 **Channel Profile** — Which Dispatcharr channel profile(s) to assign your streams to. Use the dropdown to select a profile, or leave blank to add to all profiles.
 
-**Starting Channel Number** — The first channel number to use when auto-numbering. ScoreStreamArr will assign sequential numbers starting from this value.
+**Starting Channel Number** — The first channel number to use when auto-numbering. ScorecastArr will assign sequential numbers starting from this value.
 
 ### Manual Channel Actions
 
@@ -324,7 +324,7 @@ At the bottom of the Integrations page:
 
 | Button | Action |
 |--------|--------|
-| **Auto Assign** | Automatically renumber all ScoreStreamArr channels sequentially |
+| **Auto Assign** | Automatically renumber all ScorecastArr channels sequentially |
 | **Force Sync** | Re-push all channel metadata to Dispatcharr (useful after URL or name changes) |
 | **Create Group** | Manually create the channel group in Dispatcharr |
 | **Create Profile** | Manually create a channel profile |
@@ -466,7 +466,7 @@ Enables audio on this scoreboard's HLS stream. When off, the stream is silent.
 | **Playlist** | Play tracks from a playlist you've created in the Audio Library |
 
 #### Stream mode — Custom URL
-Enter any publicly accessible audio stream URL (e.g. an internet radio station's stream URL). ScoreStreamArr will pull the audio and mix it into the HLS output.
+Enter any publicly accessible audio stream URL (e.g. an internet radio station's stream URL). ScorecastArr will pull the audio and mix it into the HLS output.
 
 #### Playlist mode
 Select a playlist you've created in the Audio Library. Tracks play in order and loop. You can see the available playlists listed in the dropdown.
@@ -541,7 +541,7 @@ Go to **Settings → Sports Library**.
 
 ![Sports Library](screenshots/08-sports-library.png)
 
-The Sports Library is the master on/off switch for every sport and league available in ScoreStreamArr. **If a sport is disabled here, it will not appear in any scoreboard editor and cannot be added to any scoreboard.**
+The Sports Library is the master on/off switch for every sport and league available in ScorecastArr. **If a sport is disabled here, it will not appear in any scoreboard editor and cannot be added to any scoreboard.**
 
 ### How to use it
 
@@ -574,7 +574,7 @@ The Audio Library is where you upload music tracks and organize them into playli
 
 Drag and drop audio files directly onto the **"Drop files here to upload"** area, or click it to browse. Supported formats: MP3, AAC, FLAC, OGG, WAV.
 
-Files upload to the `scorestreamarr_audio` Docker volume, so they persist across container restarts and updates.
+Files upload to the `scorecastarr_audio` Docker volume, so they persist across container restarts and updates.
 
 ### Track list
 
@@ -611,7 +611,7 @@ The Ticker Overlay adds a scrolling score crawl bar to the bottom of your HLS st
 
 ### Dispatcher Channel
 
-The Dispatcharr channel that will carry the ticker-enhanced stream. Select from your existing ScoreStreamArr channels in the dropdown.
+The Dispatcharr channel that will carry the ticker-enhanced stream. Select from your existing ScorecastArr channels in the dropdown.
 
 ### Preview Channel
 
@@ -633,7 +633,7 @@ Go to **Settings → System Theme**.
 
 ![System Theme](screenshots/11-system-theme.png)
 
-System Theme controls the overall color palette of the ScoreStreamArr UI — both the settings interface and the main scoreboard view.
+System Theme controls the overall color palette of the ScorecastArr UI — both the settings interface and the main scoreboard view.
 
 ### Color slots
 
@@ -653,7 +653,7 @@ Click any color swatch to open a color picker. Changes apply immediately.
 
 Two scale sliders control how large the interface renders:
 
-**Global UI Scale** — Scales the entire settings UI, navigation, and sidebar. Use this if ScoreStreamArr looks too small or too large on your display.
+**Global UI Scale** — Scales the entire settings UI, navigation, and sidebar. Use this if ScorecastArr looks too small or too large on your display.
 
 **Scoreboard Sidebar Scale** — Applies additional zoom to just the main scoreboard's left sidebar (sport toggles and labels). Stacks on top of the global scale.
 
@@ -667,13 +667,13 @@ Go to **Settings → Backup & Restore**.
 
 ### Creating a backup
 
-Click **Download Backup** to export your entire ScoreStreamArr configuration as a JSON file. This includes:
+Click **Download Backup** to export your entire ScorecastArr configuration as a JSON file. This includes:
 - All scoreboard definitions (sports, teams, display settings, audio assignments)
 - Integrations settings (Dispatcharr URL, channel group, channel numbering)
 - Sports Library enable/disable state
 - System Theme colors
 
-> **Note:** The backup does **not** include uploaded audio files (those are in the Docker volume). Back up the `scorestreamarr_audio` volume separately if needed.
+> **Note:** The backup does **not** include uploaded audio files (those are in the Docker volume). Back up the `scorecastarr_audio` volume separately if needed.
 
 ### Restoring from a backup
 
@@ -695,7 +695,7 @@ Go to **Settings → My Scoreboards**. On any scoreboard card, click **📡 Push
 
 ![My Scoreboards — Push button](screenshots/15-my-scoreboards-cards.png)
 
-ScoreStreamArr will:
+ScorecastArr will:
 1. Create the channel group in Dispatcharr (if it doesn't exist)
 2. Create or update the channel with the scoreboard's name
 3. Assign the channel to the configured channel profile(s)
@@ -705,11 +705,11 @@ After a successful push, the scoreboard card shows **✅ Pushed to Dispatcharr**
 
 ### Step 3 — Verify in Dispatcharr
 
-Open Dispatcharr and go to **Channels**. Filter by your ScoreStreamArr group (default: "ScoreStreamArr"). Your scoreboard should appear with an HLS stream URL assigned. Click the preview icon to confirm video is playing.
+Open Dispatcharr and go to **Channels**. Filter by your ScorecastArr group (default: "ScorecastArr"). Your scoreboard should appear with an HLS stream URL assigned. Click the preview icon to confirm video is playing.
 
 ### Re-pushing after changes
 
-If you rename a scoreboard or change the `STREAM_BASE_URL`, push again from the scoreboard card. ScoreStreamArr will update the existing channel rather than create a duplicate.
+If you rename a scoreboard or change the `STREAM_BASE_URL`, push again from the scoreboard card. ScorecastArr will update the existing channel rather than create a duplicate.
 
 ### Pushing all scoreboards at once
 
@@ -719,12 +719,12 @@ Go to **Settings → Integrations** and click **Force Sync** to push all scorebo
 
 ## 18. Troubleshooting
 
-### Scoreboard shows a blank page / "ScoreStreamArr" with no games
+### Scoreboard shows a blank page / "ScorecastArr" with no games
 
 **Cause:** The container is still starting up, or the API can't reach ESPN's data endpoints.
 
 ```bash
-docker logs scorestreamarr-api --tail 50
+docker logs scorecastarr-api --tail 50
 ```
 
 Wait 30–60 seconds after first start for data to load. ESPN data refreshes every 60 seconds.
@@ -735,12 +735,12 @@ Wait 30–60 seconds after first start for data to load. ESPN data refreshes eve
 
 1. Find your correct gateway IP:
    ```bash
-   docker network inspect scorestreamarr_net | grep Gateway
+   docker network inspect scorecastarr_net | grep Gateway
    ```
 2. Update `STREAM_BASE_URL` in your `docker-compose.yml` to use that IP on port 7777
 3. Restart the API:
    ```bash
-   docker restart scorestreamarr-api
+   docker restart scorecastarr-api
    ```
 4. Re-push the affected scoreboard from My Scoreboards
 
@@ -750,9 +750,9 @@ Wait 30–60 seconds after first start for data to load. ESPN data refreshes eve
    ```bash
    curl http://10.0.0.40:9191/api/v2/health/
    ```
-2. Test from inside the ScoreStreamArr container:
+2. Test from inside the ScorecastArr container:
    ```bash
-   docker exec scorestreamarr-api wget -qO- http://10.0.0.40:9191/api/token/
+   docker exec scorecastarr-api wget -qO- http://10.0.0.40:9191/api/token/
    ```
    A `405 Method Not Allowed` response means the connection works — that's expected for a GET on that endpoint.
 3. Check for typos in the URL (no trailing slash required)
@@ -760,12 +760,12 @@ Wait 30–60 seconds after first start for data to load. ESPN data refreshes eve
 ### Stream container keeps restarting
 
 ```bash
-docker logs scorestreamarr-stream --tail 50
+docker logs scorecastarr-stream --tail 50
 ```
 
 Common causes:
 - `shm_size: 512mb` is missing from the compose file — Chrome needs shared memory
-- `scorestreamarr-web` isn't healthy yet — the stream container depends on it
+- `scorecastarr-web` isn't healthy yet — the stream container depends on it
 - Not enough RAM — Chrome requires at least 512 MB per instance
 
 ### Audio not playing on a scoreboard stream
@@ -775,7 +775,7 @@ Common causes:
 3. If using **Playlist mode**: confirm the playlist has at least one track in the Audio Library
 4. Check logs:
    ```bash
-   docker logs scorestreamarr-stream --tail 50 | grep -i audio
+   docker logs scorecastarr-stream --tail 50 | grep -i audio
    ```
 
 ### Ticker is not appearing on the stream
@@ -786,9 +786,9 @@ Common causes:
 
 ### Channel numbers are wrong after re-pushing
 
-Go to **Settings → Integrations** and click **Auto Assign** to renumber all ScoreStreamArr channels sequentially from your configured starting number.
+Go to **Settings → Integrations** and click **Auto Assign** to renumber all ScorecastArr channels sequentially from your configured starting number.
 
-### Updating ScoreStreamArr
+### Updating ScorecastArr
 
 ```bash
 # Pull the latest images
@@ -798,10 +798,10 @@ docker compose pull
 docker compose up -d
 
 # Check versions
-docker logs scorestreamarr-api 2>&1 | grep -i "version\|starting"
+docker logs scorecastarr-api 2>&1 | grep -i "version\|starting"
 ```
 
-Your configuration (scoreboards, audio playlists, settings) is stored in the `scorestreamarr_config` volume and survives updates.
+Your configuration (scoreboards, audio playlists, settings) is stored in the `scorecastarr_config` volume and survives updates.
 
 ---
 
@@ -815,11 +815,11 @@ Section 18 covers the most common problems. Read through it before opening an is
 
 ### Search existing GitHub Issues
 
-Someone may have already reported your bug or asked your question. Browse [open and closed issues](https://github.com/jstevenscl/scorestreamarr/issues?q=is%3Aissue) before creating a new one.
+Someone may have already reported your bug or asked your question. Browse [open and closed issues](https://github.com/jstevenscl/scorecastarr/issues?q=is%3Aissue) before creating a new one.
 
 ### Open a GitHub Issue
 
-Go to the [Issues page](https://github.com/jstevenscl/scorestreamarr/issues/new/choose) and pick the template that fits:
+Go to the [Issues page](https://github.com/jstevenscl/scorecastarr/issues/new/choose) and pick the template that fits:
 
 | Template | Use when... |
 |---|---|
@@ -829,11 +829,11 @@ Go to the [Issues page](https://github.com/jstevenscl/scorestreamarr/issues/new/
 
 #### Tips for a useful bug report
 
-- **Include your ScoreStreamArr version.** Found at the bottom of the scoreboard sidebar, or run: `docker logs scorestreamarr-api 2>&1 \| grep -i version`
-- **Include relevant logs.** Run `docker logs scorestreamarr-api --tail 50` (or `scorestreamarr-stream` / `scorestreamarr-web` depending on the symptom) and paste the output.
+- **Include your ScorecastArr version.** Found at the bottom of the scoreboard sidebar, or run: `docker logs scorecastarr-api 2>&1 \| grep -i version`
+- **Include relevant logs.** Run `docker logs scorecastarr-api --tail 50` (or `scorecastarr-stream` / `scorecastarr-web` depending on the symptom) and paste the output.
 - **Include your docker-compose.yml** (redact passwords and tokens with `****`). Many problems come from networking or volume configuration.
 - **Describe what you expected vs. what actually happened.** "It doesn't work" is hard to act on — "The Push to Dispatcharr button shows success but no channel appears in Dispatcharr" is much easier to investigate.
 
 ---
 
-*ScoreStreamArr — ESPN Data*
+*ScorecastArr — ESPN Data*

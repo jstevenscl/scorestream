@@ -1,35 +1,35 @@
 services:
 
-  scorestreamarr-api:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-api:${SCORESTREAMARR_TAG:-beta}
-    container_name: scorestreamarr-api
+  scorecastarr-api:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorecastarr-api:${SCORECASTARR_TAG:-beta}
+    container_name: scorecastarr-api
     restart: unless-stopped
     environment:
       - TZ=${TZ:-America/New_York}
       - STREAM_BASE_URL=${STREAM_BASE_URL}
-      - STREAM_MANAGER_URL=http://scorestreamarr-stream:3001
+      - STREAM_MANAGER_URL=http://scorecastarr-stream:3001
       - DISPATCHARR_URL=${DISPATCHARR_URL}
-      - DB_PATH=/config/scorestreamarr.db
+      - DB_PATH=/config/scorecastarr.db
     volumes:
-      - scorestreamarr_config:/config
-      - scorestreamarr_audio:/audio_library
+      - scorecastarr_config:/config
+      - scorecastarr_audio:/audio_library
     networks:
-      - scorestreamarr_net
+      - scorecastarr_net
 
-  scorestreamarr-web:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-web:${SCORESTREAMARR_TAG:-beta}
-    container_name: scorestreamarr-web
+  scorecastarr-web:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorecastarr-web:${SCORECASTARR_TAG:-beta}
+    container_name: scorecastarr-web
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-7777}:80"
     volumes:
-      - scorestreamarr_hls:/usr/share/nginx/html/hls:ro
+      - scorecastarr_hls:/usr/share/nginx/html/hls:ro
     networks:
-      - scorestreamarr_net
+      - scorecastarr_net
 
-  scorestreamarr-stream:
-    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorestreamarr-stream:${SCORESTREAMARR_TAG:-beta}
-    container_name: scorestreamarr-stream
+  scorecastarr-stream:
+    image: ghcr.io/${GITHUB_OWNER:-jstevenscl}/scorecastarr-stream:${SCORECASTARR_TAG:-beta}
+    container_name: scorecastarr-stream
     restart: unless-stopped
     environment:
       - TZ=${TZ:-America/New_York}
@@ -51,8 +51,8 @@ services:
       # Browser supersampling — 2 renders at 2x resolution for crisper text
       # but uses ~4x browser memory. Default 1 = native rendering.
       # - STREAM_DPR=2
-      - WEB_BASE=http://scorestreamarr-web
-      - DB_PATH=/config/scorestreamarr.db
+      - WEB_BASE=http://scorecastarr-web
+      - DB_PATH=/config/scorecastarr.db
       - HLS_DIR=/hls
       - PIPES_DIR=/tmp/pipes
       - MANAGER_PORT=3001
@@ -60,28 +60,28 @@ services:
       - HLS_PLAYLIST_SIZE=${HLS_PLAYLIST_SIZE:-4}
       - AUDIO_DIR=/audio
       - TICKER_FILE=/ticker/scores.txt
-      - TICKER_API_BASE=http://scorestreamarr-api:5000
+      - TICKER_API_BASE=http://scorecastarr-api:5000
     volumes:
-      - scorestreamarr_config:/config
-      - scorestreamarr_hls:/hls
-      - scorestreamarr_audio:/audio_library
-      - scorestreamarr_ticker:/ticker
+      - scorecastarr_config:/config
+      - scorecastarr_hls:/hls
+      - scorecastarr_audio:/audio_library
+      - scorecastarr_ticker:/ticker
     networks:
-      - scorestreamarr_net
+      - scorecastarr_net
     shm_size: 512mb
 
 networks:
-  scorestreamarr_net:
-    name: scorestreamarr_net
+  scorecastarr_net:
+    name: scorecastarr_net
     driver: bridge
 
 volumes:
-  scorestreamarr_config:
-    name: scorestreamarr_config
-  scorestreamarr_hls:
-    name: scorestreamarr_hls
-  scorestreamarr_audio:
-    name: scorestreamarr_audio
-  scorestreamarr_ticker:
-    name: scorestreamarr_ticker
+  scorecastarr_config:
+    name: scorecastarr_config
+  scorecastarr_hls:
+    name: scorecastarr_hls
+  scorecastarr_audio:
+    name: scorecastarr_audio
+  scorecastarr_ticker:
+    name: scorecastarr_ticker
     external: true
