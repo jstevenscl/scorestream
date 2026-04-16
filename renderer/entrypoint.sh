@@ -5,7 +5,7 @@ PIPE_PATH="${PIPE_PATH:-/pipes/scoreboard.rawvideo}"
 WIDTH="${STREAM_WIDTH:-1920}"
 HEIGHT="${STREAM_HEIGHT:-1080}"
 FPS="${STREAM_FPS:-30}"
-SCOREBOARD_URL="${SCOREBOARD_URL:-http://scorestream-web/}"
+SCOREBOARD_URL="${SCOREBOARD_URL:-http://scorecastarr-web/}"
 
 echo "[renderer] Starting — ${WIDTH}x${HEIGHT}@${FPS}fps"
 echo "[renderer] Scoreboard URL: ${SCOREBOARD_URL}"

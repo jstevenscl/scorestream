@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-STREAM_SLUG="${STREAM_SLUG:-scorestream}"
+STREAM_SLUG="${STREAM_SLUG:-scorecastarr}"
 PIPE_PATH="${PIPE_PATH:-/pipes/${STREAM_SLUG}.rawvideo}"
 HLS_DIR="${HLS_DIR:-/hls}"
 WIDTH="${STREAM_WIDTH:-1920}"
