@@ -614,7 +614,7 @@ Before pushing, configure your Dispatcharr connection:
 Channels are placed in a group called **ScorecastArr** by default. Channel numbers are assigned automatically starting from 900. Both can be customized in the Integrations settings.
 
 **Channel logo:**
-The push wizard (Step 5) and Quick Update modal both include a logo picker. You can select one of the 12 bundled ScorecastArr logos (glow variants in various colors), upload a custom image file, or paste any public image URL. The selected logo is uploaded to Dispatcharr's logo manager and assigned to the channel. Once a logo has been applied, the **currently applied logo** is shown as a thumbnail in the Quick Update modal so you always know what's set — leave the logo field blank on subsequent updates to keep the existing one.
+The push wizard (Step 5) and Quick Update modal both include a logo picker. You can select one of the 12 bundled ScorecastArr logos (available in various accent colors), upload a custom image file, or paste any public image URL. The selected logo is uploaded to Dispatcharr's logo manager and assigned to the channel. Once a logo has been applied, the **currently applied logo** is shown as a thumbnail in the Quick Update modal so you always know what's set — leave the logo field blank on subsequent updates to keep the existing one.
 
 > **Logo URL requirement:** The logo URL sent to Dispatcharr must use your `STREAM_BASE_URL` (your server's LAN IP), not `localhost`. ScorecastArr automatically rewrites any `localhost` or `127.0.0.1` address to `STREAM_BASE_URL` before uploading — no manual action required as long as `STREAM_BASE_URL` is set correctly in your `.env`.
 
