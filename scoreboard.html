@@ -707,10 +707,8 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
         <div id="sbCards" class="sb-cards-grid"></div>
         <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
           <button class="modal-btn" onclick="createNewScoreboard()" style="padding:10px 24px;">+ New Scoreboard</button>
-          <button class="modal-btn" onclick="importSbFromJson()" style="padding:10px 18px;border-color:var(--border);color:var(--text-secondary);" title="Paste a JSON snippet exported from another ScorecastArr install">📥 Import from JSON</button>
+          <button class="modal-btn" onclick="openSbImportModal()" style="padding:10px 18px;border-color:var(--border);color:var(--text-secondary);" title="Import a scoreboard exported from another ScorecastArr install">📥 Import from JSON</button>
         </div>
-        <input type="file" id="sbImportFile" accept=".json,application/json" style="display:none;" onchange="handleSbImportFile(event)">
-        <div id="sbImportResult" style="margin-top:10px;font-size:12px;display:none;"></div>
       </div>
       <!-- Quick update panel for existing channels -->
       <div id="sbQuickUpdate" style="display:none;max-width:520px;margin:0 auto;">
@@ -1797,6 +1795,53 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
   </div><!-- settings-content -->
 </div><!-- settings-page -->
 
+<!-- ── Scoreboard Name Modal (New / Duplicate) ─────────────────────────── -->
+<div id="sbNameModal" style="display:none;position:fixed;inset:0;z-index:10100;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeSbNameModal(null)">
+  <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;padding:28px;width:400px;max-width:95vw;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--text-primary);margin-bottom:18px;" id="sbNameModalTitle">New Scoreboard</div>
+    <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">Scoreboard Name</label>
+    <input id="sbNameModalInput" type="text" placeholder="e.g. NFL Sunday, NBA Only"
+      onkeydown="if(event.key==='Enter')confirmSbNameModal();if(event.key==='Escape')closeSbNameModal(null);"
+      style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+    <div id="sbNameModalError" style="display:none;color:var(--accent-red);font-size:12px;margin-top:8px;font-family:'Barlow Condensed',sans-serif;"></div>
+    <div id="sbNameModalStatus" style="display:none;font-size:12px;margin-top:8px;font-family:'Barlow Condensed',sans-serif;"></div>
+    <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end;">
+      <button onclick="closeSbNameModal(null)" style="padding:9px 20px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Cancel</button>
+      <button onclick="confirmSbNameModal()" id="sbNameModalConfirm" style="padding:9px 20px;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);border-radius:8px;color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Scoreboard Import Modal ──────────────────────────────────────────── -->
+<div id="sbImportModal" style="display:none;position:fixed;inset:0;z-index:10100;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeSbImportModal()">
+  <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;padding:28px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--text-primary);margin-bottom:18px;">Import Scoreboard</div>
+    <!-- Paste area -->
+    <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">Paste JSON</label>
+    <textarea id="sbImportTextarea" rows="7" placeholder="Paste the exported JSON from another ScorecastArr install here…"
+      oninput="sbImportOnTextChange()"
+      style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:monospace;font-size:12px;outline:none;resize:vertical;"></textarea>
+    <!-- File upload row -->
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">— or —</span>
+      <button onclick="document.getElementById('sbImportFileInp').click()" style="padding:7px 16px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📁 Upload JSON File</button>
+      <input type="file" id="sbImportFileInp" accept=".json,application/json" style="display:none;" onchange="handleSbImportFile(event)">
+    </div>
+    <!-- Name field — shown after valid JSON is detected -->
+    <div id="sbImportNameRow" style="display:none;margin-top:18px;">
+      <label style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:5px;">Import As</label>
+      <input id="sbImportNameInput" type="text"
+        onkeydown="if(event.key==='Enter')executeSbImport();"
+        style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div id="sbImportModalResult" style="display:none;font-size:12px;margin-top:10px;font-family:'Barlow Condensed',sans-serif;"></div>
+    <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end;">
+      <button onclick="closeSbImportModal()" style="padding:9px 20px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Cancel</button>
+      <button onclick="executeSbImport()" id="sbImportConfirmBtn" disabled style="padding:9px 20px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:not-allowed;transition:all 0.15s;">📥 Import</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Ticker Team Selection Modal ─────────────────────────────────────── -->
 <div id="tickerTeamModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:14px;width:100%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
@@ -1925,21 +1970,55 @@ async function copyStreamUrl(slug, id){
     setTimeout(()=>{ btn.textContent = '📡 Stream URL'; btn.classList.remove('copied'); }, 2000); }
 }
 
+// ── Scoreboard Name Modal (shared by New + Duplicate) ────────────────────────
+let _sbNameModalResolve=null;
+function openSbNameModal(title,defaultVal,confirmLabel){
+  const m=document.getElementById('sbNameModal');
+  document.getElementById('sbNameModalTitle').textContent=title;
+  document.getElementById('sbNameModalConfirm').textContent=confirmLabel||'Create';
+  document.getElementById('sbNameModalError').style.display='none';
+  document.getElementById('sbNameModalStatus').style.display='none';
+  const inp=document.getElementById('sbNameModalInput');
+  inp.value=defaultVal||'';inp.disabled=false;
+  document.getElementById('sbNameModalConfirm').disabled=false;
+  m.style.display='flex';
+  setTimeout(()=>{inp.focus();inp.select();},50);
+  return new Promise(r=>{_sbNameModalResolve=r;});
+}
+function closeSbNameModal(val){
+  document.getElementById('sbNameModal').style.display='none';
+  if(_sbNameModalResolve){_sbNameModalResolve(val??null);_sbNameModalResolve=null;}
+}
+function confirmSbNameModal(){
+  const val=document.getElementById('sbNameModalInput').value.trim();
+  const err=document.getElementById('sbNameModalError');
+  if(!val){err.style.display='block';err.textContent='Name is required.';return;}
+  err.style.display='none';
+  closeSbNameModal(val);
+}
+
 async function createNewScoreboard(){
-  const name=prompt('Scoreboard name:','My Scoreboard');
-  if(!name?.trim())return;
-  const r=await fetch(`${API_BASE}/scoreboards`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
+  const name=await openSbNameModal('New Scoreboard','My Scoreboard','Create');
+  if(!name)return;
+  const btn=document.getElementById('sbNameModalConfirm');
+  // modal already closed at this point; just hit API
+  const r=await fetch(`${API_BASE}/scoreboards`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
   if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();initSidebarScoreboardSelector();openSbEditor(d.id);}
-  else alert('Failed to create scoreboard');
+  else{
+    // Re-open with error
+    const st=document.getElementById('sbNameModalStatus');
+    await openSbNameModal('New Scoreboard',name,'Create');
+    // noop — user will retry
+  }
 }
 
 async function duplicateScoreboard(id){
   const src=_scoreboards.find(s=>s.id===id);
-  const name=prompt('New scoreboard name:',src?.name+' (Copy)');
-  if(!name?.trim())return;
-  const r=await fetch(`${API_BASE}/scoreboards/${id}/duplicate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
+  const name=await openSbNameModal('Duplicate Scoreboard',(src?.name||'Scoreboard')+' (Copy)','Duplicate');
+  if(!name)return;
+  const r=await fetch(`${API_BASE}/scoreboards/${id}/duplicate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
   if(r.ok){const d=await r.json();_scoreboards.push(d);renderSbCards();initSidebarScoreboardSelector();}
-  else alert('Failed to duplicate scoreboard');
+  else{const err=await r.json().catch(()=>({}));showSbImportModalResult('❌ '+(err.error||'Failed to duplicate'),false);}
 }
 
 // =============================================================================
@@ -1986,74 +2065,112 @@ function exportSbAsJson(id){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-function importSbFromJson(){
-  // Offer two ways: file upload or paste
-  const choice=confirm('Click OK to upload a JSON file. Click Cancel to paste JSON text instead.');
-  if(choice){
-    document.getElementById('sbImportFile')?.click();
-  }else{
-    const txt=prompt('Paste the JSON export from another ScorecastArr install:');
-    if(!txt) return;
-    _processSbImportText(txt);
-  }
-}
+// ── Scoreboard Import Modal ───────────────────────────────────────────────────
+let _sbImportParsed=null;  // holds the parsed payload while modal is open
 
+function openSbImportModal(){
+  _sbImportParsed=null;
+  document.getElementById('sbImportTextarea').value='';
+  document.getElementById('sbImportNameRow').style.display='none';
+  document.getElementById('sbImportNameInput').value='';
+  document.getElementById('sbImportModalResult').style.display='none';
+  document.getElementById('sbImportConfirmBtn').disabled=true;
+  document.getElementById('sbImportConfirmBtn').style.cssText='padding:9px 20px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:8px;color:var(--text-dim);font-family:\'Barlow Condensed\',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:not-allowed;transition:all 0.15s;';
+  document.getElementById('sbImportFileInp').value='';
+  document.getElementById('sbImportModal').style.display='flex';
+}
+function closeSbImportModal(){
+  document.getElementById('sbImportModal').style.display='none';
+  _sbImportParsed=null;
+}
+function showSbImportModalResult(msg,ok){
+  const el=document.getElementById('sbImportModalResult');
+  el.style.display='block';
+  el.style.color=ok?'var(--accent-green)':'var(--accent-red)';
+  el.textContent=msg;
+}
+function _sbImportEnableConfirm(sbPayload,proposedName){
+  _sbImportParsed=sbPayload;
+  document.getElementById('sbImportNameRow').style.display='block';
+  document.getElementById('sbImportNameInput').value=proposedName;
+  const btn=document.getElementById('sbImportConfirmBtn');
+  btn.disabled=false;
+  btn.style.cssText='padding:9px 20px;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);border-radius:8px;color:var(--accent);font-family:\'Barlow Condensed\',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;';
+  setTimeout(()=>document.getElementById('sbImportNameInput').focus(),50);
+}
+function sbImportOnTextChange(){
+  const text=document.getElementById('sbImportTextarea').value.trim();
+  document.getElementById('sbImportModalResult').style.display='none';
+  if(!text){
+    _sbImportParsed=null;
+    document.getElementById('sbImportNameRow').style.display='none';
+    document.getElementById('sbImportConfirmBtn').disabled=true;
+    return;
+  }
+  let payload;
+  try{ payload=JSON.parse(text); }
+  catch(e){ showSbImportModalResult('❌ Invalid JSON: '+e.message,false); return; }
+  _sbImportValidateAndPrepare(payload);
+}
 function handleSbImportFile(ev){
   const file=ev.target.files&&ev.target.files[0];
   if(!file) return;
-  const reader=new FileReader();
-  reader.onload=()=>_processSbImportText(reader.result);
-  reader.readAsText(file);
-  // Reset so the same file can be re-selected later
   ev.target.value='';
-}
-
-async function _processSbImportText(text){
-  const result=document.getElementById('sbImportResult');
-  const showResult=(msg,ok)=>{
-    if(!result) return;
-    result.style.display='block';
-    result.style.color=ok?'var(--accent-green)':'var(--accent-red)';
-    result.textContent=msg;
-    if(ok) setTimeout(()=>{result.style.display='none';},5000);
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const text=reader.result;
+    document.getElementById('sbImportTextarea').value=text;
+    document.getElementById('sbImportModalResult').style.display='none';
+    let payload;
+    try{ payload=JSON.parse(text); }
+    catch(e){ showSbImportModalResult('❌ Invalid JSON: '+e.message,false); return; }
+    _sbImportValidateAndPrepare(payload);
   };
-  let payload;
-  try{ payload=JSON.parse(text); }
-  catch(e){ showResult('❌ Invalid JSON: '+e.message,false); return; }
-  if(!payload || payload.type!=='scoreboard' || !payload.scoreboard){
-    showResult('❌ Not a ScorecastArr scoreboard export (missing type or scoreboard field)',false);
+  reader.readAsText(file);
+}
+function _sbImportValidateAndPrepare(payload){
+  if(!payload||payload.type!=='scoreboard'||!payload.scoreboard){
+    showSbImportModalResult('❌ Not a ScorecastArr scoreboard export (missing type or scoreboard field)',false);
     return;
   }
   const sb=payload.scoreboard;
-  if(!sb.name || typeof sb.name!=='string'){
-    showResult('❌ Imported scoreboard is missing a name',false);
+  if(!sb.name||typeof sb.name!=='string'){
+    showSbImportModalResult('❌ Exported scoreboard is missing a name',false);
     return;
   }
-  // Ask for a name (default to original + " (Imported)" to avoid collision)
   const existingNames=new Set(_scoreboards.map(s=>s.name));
-  let proposedName=sb.name;
-  if(existingNames.has(proposedName)) proposedName=sb.name+' (Imported)';
-  const finalName=prompt(`Import scoreboard as:`,proposedName);
-  if(!finalName?.trim()){ showResult('Import cancelled',false); return; }
-  // Step 1: POST to create the scoreboard with the core configs
-  // (POST /scoreboards only accepts name + 4 *_config fields — additional
-  // fields like audio_mode/use_default_* are set via PATCH below)
+  let proposed=sb.name;
+  if(existingNames.has(proposed)) proposed=sb.name+' (Imported)';
+  _sbImportEnableConfirm(sb, proposed);
+}
+async function executeSbImport(){
+  if(!_sbImportParsed) return;
+  const finalName=document.getElementById('sbImportNameInput').value.trim();
+  if(!finalName){ showSbImportModalResult('❌ Name is required',false); return; }
+  const btn=document.getElementById('sbImportConfirmBtn');
+  btn.disabled=true; btn.textContent='Importing…';
+  const sb=_sbImportParsed;
   try{
-    showResult('Importing...',true);
+    // Step 1: POST to create
     const createResp=await fetch(`${API_BASE}/scoreboards`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        name:finalName.trim(),
+        name:finalName,
         sport_config:sb.sport_config||{},
         team_config:sb.team_config||{},
         display_config:sb.display_config||{},
         motor_config:sb.motor_config||{},
       })
     });
-    if(!createResp.ok){ showResult('❌ Server rejected import: '+createResp.status,false); return; }
+    if(!createResp.ok){
+      const err=await createResp.json().catch(()=>({}));
+      showSbImportModalResult('❌ Server rejected import: '+(err.error||createResp.status),false);
+      btn.disabled=false; btn.textContent='📥 Import';
+      return;
+    }
     const created=await createResp.json();
-    // Step 2: PATCH any additional fields the POST endpoint doesn't accept
+    // Step 2: PATCH extra fields the POST endpoint doesn't accept
     const patchBody={};
     if(sb.audio_mode!=null) patchBody.audio_mode=sb.audio_mode;
     if(sb.audio_source_url!=null) patchBody.audio_source_url=sb.audio_source_url;
@@ -2064,18 +2181,19 @@ async function _processSbImportText(text){
     let final=created;
     if(Object.keys(patchBody).length){
       const patchResp=await fetch(`${API_BASE}/scoreboards/${created.id}`,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(patchBody)
+        method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patchBody)
       });
       if(patchResp.ok) final=await patchResp.json();
     }
     _scoreboards.push(final);
     renderSbCards();
     initSidebarScoreboardSelector();
-    showResult(`✅ Imported "${final.name}" successfully`,true);
+    showSbImportModalResult(`✅ Imported "${final.name}" successfully`,true);
+    btn.textContent='✅ Done';
+    setTimeout(()=>closeSbImportModal(),2000);
   }catch(e){
-    showResult('❌ Import failed: '+e.message,false);
+    showSbImportModalResult('❌ Import failed: '+e.message,false);
+    btn.disabled=false; btn.textContent='📥 Import';
   }
 }
 
