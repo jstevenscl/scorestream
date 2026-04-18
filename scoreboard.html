@@ -1825,7 +1825,6 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
       <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">— or —</span>
       <button onclick="document.getElementById('sbImportFileInp').click()" style="padding:7px 16px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📁 Upload JSON File</button>
-      <input type="file" id="sbImportFileInp" accept=".json,application/json" style="display:none;" onchange="handleSbImportFile(event)">
     </div>
     <!-- Name field — shown after valid JSON is detected -->
     <div id="sbImportNameRow" style="display:none;margin-top:18px;">
@@ -4027,7 +4026,7 @@ async function executeQuickUpdate(){
   try{
     const r=await fetch(`${API_BASE}/scoreboards/${_sbId}/push`,{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)
+      body:JSON.stringify(payload),signal:AbortSignal.timeout(90000)
     });
     const d=await r.json();
     if(r.ok){
@@ -4129,9 +4128,9 @@ function renderWizardStep(){
           <button class="modal-btn" onclick="wizRefreshGroups()" style="padding:8px 12px;">↻</button>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:6px;">
-          <button class="grp-filter-btn active" data-filter="dispatcharr" onclick="wizSetGroupFilter('dispatcharr',this)">Dispatcharr</button>
+          <button class="grp-filter-btn" data-filter="dispatcharr" onclick="wizSetGroupFilter('dispatcharr',this)">Dispatcharr</button>
           <button class="grp-filter-btn" data-filter="m3u" onclick="wizSetGroupFilter('m3u',this)">M3U</button>
-          <button class="grp-filter-btn" data-filter="all" onclick="wizSetGroupFilter('all',this)">Both</button>
+          <button class="grp-filter-btn active" data-filter="all" onclick="wizSetGroupFilter('all',this)">Both</button>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <input class="wiz-input" id="wiz_newGroupName" placeholder="Create new group..." style="flex:1;">
@@ -4162,7 +4161,7 @@ function renderWizardStep(){
           </div>
         </div>
       </div>`;
-    setTimeout(wizLoadProfiles,100);
+    wizLoadProfiles();
   }
   else if(_wizardStep===4){
     // HLS-correct ffmpeg profile for ScorecastArr
@@ -4254,7 +4253,7 @@ function renderWizardStep(){
         <div class="wiz-review-row"><span class="wiz-review-key">Stream URL</span><span class="wiz-review-val" style="font-family:monospace;font-size:10px;">${sb2.slug?'Loading…':'(not set — configure STREAM_BASE_URL)'}</span></div>
       </div>`;
   // Fetch real stream URL (uses STREAM_BASE_URL not browser origin)
-  if(step===6&&_activeSbId){fetch(`${API_BASE}/scoreboards/${_activeSbId}/stream_url`).then(r=>r.json()).then(d=>{const el=document.getElementById('wiz_reviewStreamUrl');if(el)el.textContent=d.stream_url||'(STREAM_BASE_URL not configured in docker-compose)';}).catch(e=>{const el=document.getElementById('wiz_reviewStreamUrl');if(el)el.textContent='Error fetching URL: '+e.message;});}
+  if(_activeSbId){fetch(`${API_BASE}/scoreboards/${_activeSbId}/stream_url`).then(r=>r.json()).then(d=>{const el=document.getElementById('wiz_reviewStreamUrl');if(el)el.textContent=d.stream_url||'(STREAM_BASE_URL not configured in docker-compose)';}).catch(e=>{const el=document.getElementById('wiz_reviewStreamUrl');if(el)el.textContent='Error fetching URL: '+e.message;});}
   }
 }
 
@@ -4376,7 +4375,7 @@ async function executeWizardPush(){
   try{
     const r=await fetch(`${API_BASE}/scoreboards/${_sbId}/push`,{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)
+      body:JSON.stringify(payload),signal:AbortSignal.timeout(90000)
     });
     const d=await r.json();
     if(r.ok){
@@ -4405,7 +4404,7 @@ async function executeWizardPush(){
 }
 
 // Wizard group helpers
-let _wizGroupFilter='dispatcharr';
+let _wizGroupFilter='all';
 function wizPopulateGroups(){
   const sel=document.getElementById('wiz_groupSel');
   if(!sel||!_allGroups.length){
@@ -10142,5 +10141,7 @@ async function deleteNcaaProgram(pid, name, schoolId){
 }
 
 </script>
+<!-- Body-level file inputs (must be outside fixed modals for reliable programmatic .click()) -->
+<input type="file" id="sbImportFileInp" accept=".json,application/json" style="display:none;" onchange="handleSbImportFile(event)">
 </body>
 </html>
