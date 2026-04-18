@@ -3849,7 +3849,9 @@ function closePushWizard(){
 }
 
 // ── Quick Update (existing channels) ─────────────────────────────────────────
+let _quAbortCtrl=null;  // aborts any in-flight executeQuickUpdate fetch on scoreboard switch
 function openQuickUpdate(id){
+  if(_quAbortCtrl){_quAbortCtrl.abort();_quAbortCtrl=null;}
   _activeSbId=id;
   const sb=_scoreboards.find(s=>s.id===id);
   if(!sb)return;
@@ -3892,6 +3894,7 @@ function openQuickUpdate(id){
 }
 
 function closeQuickUpdate(){
+  if(_quAbortCtrl){_quAbortCtrl.abort();_quAbortCtrl=null;}
   document.getElementById('sbQuickUpdate').style.display='none';
   document.getElementById('sbListView').style.display='block';
   _activeSbId=null;
@@ -4003,6 +4006,10 @@ async function executeQuickUpdate(){
   const _sbId=_activeSbId;  // capture before any awaits
   const sb=_scoreboards.find(s=>s.id===_sbId);
   if(!sb)return;
+  // Cancel any previous in-flight save and create a new controller for this one
+  if(_quAbortCtrl){_quAbortCtrl.abort();}
+  _quAbortCtrl=new AbortController();
+  const _ctrl=_quAbortCtrl;
   const resultEl=document.getElementById('quResult');
   const btn=document.getElementById('quSaveBtn');
   resultEl.style.display='block';
@@ -4026,12 +4033,11 @@ async function executeQuickUpdate(){
   try{
     const r=await fetch(`${API_BASE}/scoreboards/${_sbId}/push`,{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload),signal:AbortSignal.timeout(90000)
+      body:JSON.stringify(payload),signal:AbortSignal.any([_ctrl.signal,AbortSignal.timeout(90000)])
     });
     const d=await r.json();
     if(r.ok){
-      // Guard: if the user navigated away (cancel or opened different scoreboard), discard this result
-      if(_activeSbId!==_sbId)return;
+      if(_ctrl.signal.aborted||_activeSbId!==_sbId)return;
       resultEl.style.color='var(--accent-green)';
       let msg=`✅ Channel updated: ${d.channel_name}${d.channel_number?' (Ch '+d.channel_number+')':''}`;
       if(d.logo_debug&&Object.keys(d.logo_debug).length){
@@ -4061,13 +4067,13 @@ async function executeQuickUpdate(){
       }
       setTimeout(()=>{if(_activeSbId===_sbId){closeQuickUpdate();renderSbCards();}},3000);
     }else{
-      if(_activeSbId!==_sbId)return;
+      if(_ctrl.signal.aborted||_activeSbId!==_sbId)return;
       resultEl.style.color='var(--accent-red)';
       resultEl.textContent='❌ '+(d.error||'Update failed');
       btn.disabled=false;btn.textContent='💾 Save Changes';
     }
   }catch(e){
-    if(_activeSbId!==_sbId)return;
+    if(_ctrl.signal.aborted||_activeSbId!==_sbId)return;  // aborted = user switched away; discard silently
     resultEl.style.color='var(--accent-red)';
     resultEl.textContent='❌ '+e.message;
     btn.disabled=false;btn.textContent='💾 Save Changes';
