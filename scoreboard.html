@@ -393,8 +393,6 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
 .sb-editor{max-width:none;}
 #sbStep3FloatPreview::-webkit-scrollbar{width:4px;}
 #sbStep3FloatPreview::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-#dispFloatPreview::-webkit-scrollbar{width:4px;}
-#dispFloatPreview::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 #ddFloatPreview::-webkit-scrollbar{width:4px;}
 #ddFloatPreview::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .settings-section.active{display:block;}
@@ -652,9 +650,6 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
       </button>
 
       <div class="snav-group-label">Appearance</div>
-      <button class="snav-btn" data-section="display" onclick="switchSection('display')">
-        <span class="snav-icon">🎨</span><span>Stream Card Style</span>
-      </button>
       <button class="snav-btn" data-section="displaydefaults" onclick="switchSection('displaydefaults')">
         <span class="snav-icon">🎛️</span><span>Default Stream Settings</span>
       </button>
@@ -810,235 +805,6 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
     </div>
 
     <!-- SECTION 4: DISPLAY & DATA -->
-    <div id="section-display" class="settings-section">
-      <div class="settings-section-header">
-        <h2>Stream Card Style <button id="dispPreviewBtn" onclick="document.getElementById('dispFloatPreview').style.display='block';this.style.display='none';" style="display:none;margin-left:12px;padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;cursor:pointer;vertical-align:middle;letter-spacing:1px;">👁 PREVIEW</button></h2>
-        <p>Controls the typography and appearance of game cards in the <strong>sidebar preview</strong> and <strong>stream output</strong>. Adjust font sizes, team name color, logo size, and data refresh rate. For global defaults shared across all scoreboards, see <strong>Default Stream Settings</strong>.</p>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Save Mode</div>
-        <div class="modal-row">
-          <div>
-            <div class="modal-label">Auto-save settings</div>
-            <div class="modal-sublabel">When off, a Save button appears so you can review changes before applying.</div>
-          </div>
-          <div class="big-toggle" id="autoSaveToggle" onclick="toggleAutoSave()"></div>
-        </div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Auto-Refresh Rate</div>
-        <div class="rate-pills" id="ratePills" data-tip="How often scores automatically refresh from ESPN. Lower = more up-to-date but more network requests.">
-          <div class="rate-pill" data-rate="0" onclick="setRefreshRate(0)">Manual only</div>
-          <div class="rate-pill" data-rate="30" onclick="setRefreshRate(30)">30 sec</div>
-          <div class="rate-pill active" data-rate="60" onclick="setRefreshRate(60)">1 min</div>
-          <div class="rate-pill" data-rate="120" onclick="setRefreshRate(120)">2 min</div>
-          <div class="rate-pill" data-rate="300" onclick="setRefreshRate(300)">5 min</div>
-        </div>
-        <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="rateStatus">Auto-refresh: every 60 seconds</div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Card Typography</div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of the 2-3 letter team abbreviation (e.g. LAL, BOS) on each game card">Team Abbreviation Size</span>
-          <input type="range" min="14" max="28" value="18" id="sl-abbr" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-abbr">18px</span>
-        </div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of the score numbers displayed on each game card">Score Size</span>
-          <input type="range" min="24" max="52" value="34" id="sl-score" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-score">34px</span>
-        </div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of the full team name shown in small text below the abbreviation (e.g. 'Los Angeles Lakers · Away')">Team Name Size</span>
-          <input type="range" min="9" max="16" value="11" id="sl-name" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-name">11px</span>
-        </div>
-
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of the channel/event name shown at the top of each game card (e.g. tournament name, network).">Channel Name Size</span>
-          <input type="range" min="8" max="20" value="11" id="sl-channel" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-channel">11px</span>
-        </div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of team logo and score badge on each card.">Logo Size</span>
-          <input type="range" min="20" max="64" value="34" id="sl-logo" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-logo">34px</span>
-        </div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of the LIVE/FINAL/upcoming status text and the period time (e.g. Q4 · 2:15, 2nd Half) at the top of each card.">Live/Final Status Size</span>
-          <input type="range" min="9" max="22" value="11" id="sl-header" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-header">11px</span>
-        </div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of the sport emoji and name badge (e.g. 🏀 NBA, 🏈 NFL) shown at the top-right of each card.">Sport Badge Size</span>
-          <input type="range" min="9" max="22" value="11" id="sl-period" oninput="applyDisplay()">
-          <span class="modal-slider-val" id="val-period">11px</span>
-        </div>
-        <div style="margin-top:6px;padding:8px 12px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:7px;font-size:11px;color:var(--text-dim);">
-          💡 <strong>Headshot size</strong> is now per-sport. Adjust it in <strong>Sports Library</strong> (expand a motor/tennis sport row) for the main view, or in the scoreboard editor's Display step for per-scoreboard stream output.
-        </div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Header &amp; Period Colors</div>
-        <div class="modal-sublabel" style="margin-bottom:10px;">Colors for the status bar at the top of each game card.</div>
-        <div class="modal-row">
-          <div>
-            <div class="modal-label">LIVE Status Color</div>
-            <div class="modal-sublabel">Pulsing indicator shown on in-progress games</div>
-          </div>
-          <div class="color-row" style="margin:0;">
-            <div class="color-swatch-wrap">
-              <div class="color-swatch" id="liveColorSwatch" style="background:#00ff88;"></div>
-              <input type="color" id="liveColorPicker" value="#00ff88" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
-            </div>
-            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="liveColorVal">#00ff88</span>
-          </div>
-        </div>
-        <div class="modal-row" style="margin-top:8px;">
-          <div>
-            <div class="modal-label">FINAL Status Color</div>
-            <div class="modal-sublabel">Shown on completed games</div>
-          </div>
-          <div class="color-row" style="margin:0;">
-            <div class="color-swatch-wrap">
-              <div class="color-swatch" id="finalColorSwatch" style="background:#3d5a78;"></div>
-              <input type="color" id="finalColorPicker" value="#3d5a78" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
-            </div>
-            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="finalColorVal">#3d5a78</span>
-          </div>
-        </div>
-        <div class="modal-row" style="margin-top:8px;">
-          <div>
-            <div class="modal-label">Period / Time Color</div>
-            <div class="modal-sublabel">Color of game time/period text (Q4 2:15, 7th, etc.)</div>
-          </div>
-          <div class="color-row" style="margin:0;">
-            <div class="color-swatch-wrap">
-              <div class="color-swatch" id="periodColorSwatch" style="background:#7a9ab8;"></div>
-              <input type="color" id="periodColorPicker" value="#7a9ab8" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
-            </div>
-            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="periodColorVal">#7a9ab8</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Stream Section Headers</div>
-        <div class="modal-sublabel" style="margin-bottom:14px;">Headers that appear above each group of cards on the stream output (e.g. "🏎️ FORMULA 1 — UPCOMING", "⛳ PGA TOUR — THE MASTERS"). Includes the colored stripe on the left.</div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Font size of the section header text on stream pages">Header Text Size</span>
-          <input type="range" min="11" max="32" step="1" value="15" id="sl-section-header" oninput="document.getElementById('val-section-header').textContent=this.value+'px'" onchange="applyDisplay()">
-          <span class="modal-slider-val" id="val-section-header">15px</span>
-        </div>
-        <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Width of the colored stripe before each section header (set to 0 to hide)">Stripe Width</span>
-          <input type="range" min="0" max="14" step="1" value="6" id="sl-section-stripe" oninput="document.getElementById('val-section-stripe').textContent=this.value+'px'" onchange="applyDisplay()">
-          <span class="modal-slider-val" id="val-section-stripe">6px</span>
-        </div>
-        <div class="modal-row" style="margin-top:8px;">
-          <div>
-            <div class="modal-label">Header Text Color</div>
-            <div class="modal-sublabel">Color of the section header text</div>
-          </div>
-          <div class="color-row" style="margin:0;">
-            <div class="color-swatch-wrap">
-              <div class="color-swatch" id="sectionHeaderColorSwatch" style="background:#e8f0fe;"></div>
-              <input type="color" id="sectionHeaderColorPicker" value="#e8f0fe" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
-            </div>
-            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="sectionHeaderColorVal">#e8f0fe</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Team Name Color</div>
-        <div class="modal-row">
-          <div>
-            <div class="modal-label" data-tip="Color of the full team name and subtitle text shown below the abbreviation on game cards">Name / Subtitle Color</div>
-            <div class="modal-sublabel">The small text below the abbreviation</div>
-          </div>
-          <div class="color-row" style="margin:0;">
-            <div class="color-swatch-wrap">
-              <div class="color-swatch" id="nameColorSwatch" style="background:#3d5a78;"></div>
-              <input type="color" id="nameColorPicker" value="#3d5a78" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" oninput="applyDisplay()">
-            </div>
-            <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);" id="nameColorVal">#3d5a78</span>
-          </div>
-        </div>
-        <div class="modal-row" style="margin-top:10px;">
-          <span class="modal-label">Presets</span>
-          <div style="display:flex;gap:5px;">
-            <div onclick="setNameColor('#3d5a78')" style="width:24px;height:24px;border-radius:5px;background:#3d5a78;cursor:pointer;border:2px solid var(--border);" title="Default dim"></div>
-            <div onclick="setNameColor('#7a9ab8')" style="width:24px;height:24px;border-radius:5px;background:#7a9ab8;cursor:pointer;border:2px solid var(--border);" title="Medium"></div>
-            <div onclick="setNameColor('#b0c4de')" style="width:24px;height:24px;border-radius:5px;background:#b0c4de;cursor:pointer;border:2px solid var(--border);" title="Light blue"></div>
-            <div onclick="setNameColor('#e8f0fe')" style="width:24px;height:24px;border-radius:5px;background:#e8f0fe;cursor:pointer;border:2px solid var(--border);" title="White"></div>
-            <div onclick="setNameColor('#00d4ff')" style="width:24px;height:24px;border-radius:5px;background:#00d4ff;cursor:pointer;border:2px solid var(--border);" title="Accent cyan"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Stats</div>
-        <div class="modal-row">
-          <span class="modal-label">Stats Depth</span>
-          <div class="pill-toggle">
-            <div class="pill-opt active" data-opt="stats" data-val="basic">Basic</div>
-            <div class="pill-opt" data-opt="stats" data-val="deep">Deep</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title">Data Source</div>
-        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">
-          ScorecastArr uses the unofficial ESPN Scoreboard API. Data is fetched directly from your browser — no proxy needed.<br><br>
-          <span style="color:var(--text-dim);font-size:11px;">If scores show "demo" it means ESPN blocked the request from your network (CORS). This is normal inside some Docker/reverse proxy setups.</span>
-        </div>
-      </div>
-
-      <!-- FLOATING PREVIEW: Stream Card Style -->
-      <div id="dispFloatPreview" style="position:fixed;top:80px;right:30px;width:240px;height:calc(100vh - 120px);overflow-y:scroll;overflow-x:hidden;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);box-sizing:border-box;">
-        <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
-          <div id="dispPreviewResizeHandle" title="Drag to resize preview" style="cursor:nwse-resize;padding:2px 6px 2px 0;flex-shrink:0;opacity:0.5;line-height:1;font-size:13px;color:var(--text-dim);">⤡</div>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;color:var(--text-primary);">Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust)</span></span>
-          <button onclick="document.getElementById('dispFloatPreview').style.display='none';document.getElementById('dispPreviewBtn').style.display='inline-block';" title="Hide preview" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;">✕</button>
-        </div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
-        <div class="league-section" style="margin-bottom:10px;">
-          <div class="league-header" style="margin-bottom:6px;padding-bottom:6px;">
-            <div class="league-stripe" style="background:#e10600;"></div>
-            <div class="league-name">SAMPLE SECTION HEADER</div>
-          </div>
-        </div>
-        <div class="game-card live" id="dispFloatCard" style="pointer-events:none;">
-          <div class="card-status">
-            <div class="status-live"><div class="status-live-dot"></div>Q4 · 2:15</div>
-            <div class="network-badges"><span class="network-badge nb-espn">ESPN</span></div>
-            <span class="game-period" style="color:#c9082a;">🏀 NBA</span>
-          </div>
-          <div class="card-body">
-            <div class="teams-container">
-              <div class="team-row">
-                <div style="width:var(--team-logo-size,34px);height:var(--team-logo-size,34px);border-radius:6px;background:linear-gradient(135deg,#552583,#f9a01b);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:calc(var(--team-logo-size,34px)*0.28);color:white;">LAL</div>
-                <div class="team-name-block"><div class="team-abbr">LAL</div><div class="team-full-name">Los Angeles Lakers · Away</div></div>
-                <div class="team-score">108</div>
-              </div>
-              <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:2px 0;"></div>
-              <div class="team-row winning">
-                <div style="width:var(--team-logo-size,34px);height:var(--team-logo-size,34px);border-radius:6px;background:linear-gradient(135deg,#007A33,#BA9A00);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:calc(var(--team-logo-size,34px)*0.28);color:white;">BOS</div>
-                <div class="team-name-block"><div class="team-abbr">BOS</div><div class="team-full-name">Boston Celtics · Home</div></div>
-                <div class="team-score" style="color:white;">112</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ═══════════════════════════════════════════════════════════
          SECTION 5: INTEGRATIONS
     ═══════════════════════════════════════════════════════════ -->
@@ -1097,6 +863,21 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
             <input type="range" min="8" max="22" id="ddNameSize" oninput="document.getElementById('ddNameSizeVal').textContent=this.value+'px';ddPreview()">
             <span class="modal-slider-val" id="ddNameSizeVal">11px</span>
           </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Size of the LIVE/FINAL status text and period time (Q4 · 2:15) at the top of each card">Live/Final Status Size</span>
+            <input type="range" min="9" max="22" id="ddHeaderSize" oninput="document.getElementById('ddHeaderSizeVal').textContent=this.value+'px';ddPreview()">
+            <span class="modal-slider-val" id="ddHeaderSizeVal">11px</span>
+          </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Size of the sport emoji and name badge (e.g. 🏀 NBA) at the top-right of each card">Sport Badge Size</span>
+            <input type="range" min="9" max="22" id="ddPeriodSize" oninput="document.getElementById('ddPeriodSizeVal').textContent=this.value+'px';ddPreview()">
+            <span class="modal-slider-val" id="ddPeriodSizeVal">11px</span>
+          </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Size of the channel/network badge text at the top of each card (e.g. ESPN, TNT)">Channel Name Size</span>
+            <input type="range" min="8" max="20" id="ddChannelNameSize" oninput="document.getElementById('ddChannelNameSizeVal').textContent=this.value+'px';ddPreview()">
+            <span class="modal-slider-val" id="ddChannelNameSizeVal">11px</span>
+          </div>
         </div>
 
         <!-- COLORS -->
@@ -1112,6 +893,62 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
                 style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
             </div>
             <span class="modal-slider-val" id="ddNameColorVal">#3d5a78</span>
+          </div>
+          <div class="modal-slider-row" style="grid-template-columns:1fr auto auto;">
+            <span class="modal-slider-label" data-tip="Color of the pulsing LIVE indicator on in-progress games">LIVE Status Color</span>
+            <div style="position:relative;width:28px;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+              <div id="ddLiveColorSwatch" style="position:absolute;inset:0;background:#00ff88;"></div>
+              <input type="color" id="ddLiveColor" value="#00ff88"
+                oninput="document.getElementById('ddLiveColorSwatch').style.background=this.value;document.getElementById('ddLiveColorVal').textContent=this.value;ddPreview()"
+                style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+            </div>
+            <span class="modal-slider-val" id="ddLiveColorVal">#00ff88</span>
+          </div>
+          <div class="modal-slider-row" style="grid-template-columns:1fr auto auto;">
+            <span class="modal-slider-label" data-tip="Color of FINAL/STANDINGS labels on completed and standings cards">FINAL Status Color</span>
+            <div style="position:relative;width:28px;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+              <div id="ddFinalColorSwatch" style="position:absolute;inset:0;background:#3d5a78;"></div>
+              <input type="color" id="ddFinalColor" value="#3d5a78"
+                oninput="document.getElementById('ddFinalColorSwatch').style.background=this.value;document.getElementById('ddFinalColorVal').textContent=this.value;ddPreview()"
+                style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+            </div>
+            <span class="modal-slider-val" id="ddFinalColorVal">#3d5a78</span>
+          </div>
+          <div class="modal-slider-row" style="grid-template-columns:1fr auto auto;">
+            <span class="modal-slider-label" data-tip="Color of the period/game-time text (Q4 2:15, 7th inning, etc.)">Period / Time Color</span>
+            <div style="position:relative;width:28px;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+              <div id="ddPeriodColorSwatch" style="position:absolute;inset:0;background:#7a9ab8;"></div>
+              <input type="color" id="ddPeriodColor" value="#7a9ab8"
+                oninput="document.getElementById('ddPeriodColorSwatch').style.background=this.value;document.getElementById('ddPeriodColorVal').textContent=this.value;ddPreview()"
+                style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+            </div>
+            <span class="modal-slider-val" id="ddPeriodColorVal">#7a9ab8</span>
+          </div>
+        </div>
+
+        <!-- SECTION HEADERS -->
+        <div style="margin-bottom:24px;">
+          <div class="modal-section-title" style="margin-bottom:4px;">📋 Section Headers</div>
+          <div class="wiz-sublabel" style="margin-bottom:14px;">Headers above each card group on stream output (e.g. "🏈 NFL — LIVE").</div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Font size of section header text on stream pages">Header Text Size</span>
+            <input type="range" min="11" max="32" step="1" id="ddSectionHeaderSize" oninput="document.getElementById('ddSectionHeaderSizeVal').textContent=this.value+'px';ddPreview()">
+            <span class="modal-slider-val" id="ddSectionHeaderSizeVal">15px</span>
+          </div>
+          <div class="modal-slider-row">
+            <span class="modal-slider-label" data-tip="Width of the colored stripe before each section header (0 = hidden)">Stripe Width</span>
+            <input type="range" min="0" max="14" step="1" id="ddSectionStripeWidth" oninput="document.getElementById('ddSectionStripeWidthVal').textContent=this.value+'px';ddPreview()">
+            <span class="modal-slider-val" id="ddSectionStripeWidthVal">6px</span>
+          </div>
+          <div class="modal-slider-row" style="grid-template-columns:1fr auto auto;">
+            <span class="modal-slider-label" data-tip="Color of section header text">Header Text Color</span>
+            <div style="position:relative;width:28px;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+              <div id="ddSectionHeaderColorSwatch" style="position:absolute;inset:0;background:#e8f0fe;"></div>
+              <input type="color" id="ddSectionHeaderColor" value="#e8f0fe"
+                oninput="document.getElementById('ddSectionHeaderColorSwatch').style.background=this.value;document.getElementById('ddSectionHeaderColorVal').textContent=this.value;ddPreview()"
+                style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+            </div>
+            <span class="modal-slider-val" id="ddSectionHeaderColorVal">#e8f0fe</span>
           </div>
         </div>
 
@@ -1142,7 +979,7 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
           </div>
           <div class="modal-slider-row">
             <span class="modal-slider-label">Team Logo Size</span>
-            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';const _m=document.getElementById('main');if(_m)_m.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);['ddPreviewInner','ddFloatInner'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.setProperty('--team-logo-size',this.value+'px');},this);">
+            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';ddPreview()">
             <span class="modal-slider-val" id="ddLogoSizeVal">34px</span>
           </div>
           <div style="margin-bottom:12px;">
@@ -1674,6 +1511,48 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="40" height="40"><rect width="32" height="32" rx="16" fill="#1d4ed8"/><rect x="3" y="3" width="26" height="26" rx="13" fill="none" stroke="#ffffff" stroke-width="2"/><rect x="6" y="10" width="8" height="12" rx="2" fill="#0d1117"/><rect x="6" y="10" width="8" height="3" rx="1" fill="#60a5fa"/><rect x="18" y="10" width="8" height="12" rx="2" fill="#0d1117"/><rect x="18" y="10" width="8" height="3" rx="1" fill="#60a5fa"/><rect x="15" y="12" width="2" height="8" rx="1" fill="#ffffff"/></svg>
             Round Pill
           </button>
+        </div>
+      </div>
+
+      <div class="modal-section" style="margin-top:20px;">
+        <div class="modal-section-title">Save Mode</div>
+        <div class="modal-row">
+          <div>
+            <div class="modal-label">Auto-save settings</div>
+            <div class="modal-sublabel">When off, a Save button appears so you can review changes before applying.</div>
+          </div>
+          <div class="big-toggle" id="autoSaveToggle" onclick="toggleAutoSave()"></div>
+        </div>
+      </div>
+
+      <div class="modal-section" style="margin-top:20px;">
+        <div class="modal-section-title">Auto-Refresh Rate</div>
+        <div class="rate-pills" id="ratePills" data-tip="How often scores automatically refresh from ESPN. Lower = more up-to-date but more network requests.">
+          <div class="rate-pill" data-rate="0" onclick="setRefreshRate(0)">Manual only</div>
+          <div class="rate-pill" data-rate="30" onclick="setRefreshRate(30)">30 sec</div>
+          <div class="rate-pill active" data-rate="60" onclick="setRefreshRate(60)">1 min</div>
+          <div class="rate-pill" data-rate="120" onclick="setRefreshRate(120)">2 min</div>
+          <div class="rate-pill" data-rate="300" onclick="setRefreshRate(300)">5 min</div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;" id="rateStatus">Auto-refresh: every 60 seconds</div>
+      </div>
+
+      <div class="modal-section" style="margin-top:20px;">
+        <div class="modal-section-title">Stats</div>
+        <div class="modal-row">
+          <span class="modal-label">Stats Depth</span>
+          <div class="pill-toggle">
+            <div class="pill-opt active" data-opt="stats" data-val="basic">Basic</div>
+            <div class="pill-opt" data-opt="stats" data-val="deep">Deep</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section" style="margin-top:20px;">
+        <div class="modal-section-title">Data Source</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">
+          ScorecastArr uses the unofficial ESPN Scoreboard API. Data is fetched directly from your browser — no proxy needed.<br><br>
+          <span style="color:var(--text-dim);font-size:11px;">If scores show "demo" it means ESPN blocked the request from your network (CORS). This is normal inside some Docker/reverse proxy setups.</span>
         </div>
       </div>
 
@@ -3462,22 +3341,34 @@ async function loadDisplayDefaults(){
 function ddPopulateUI(def){
   const s = (id,val) => { const el=document.getElementById(id); if(el) el.value=val; };
   const t = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-  s('ddAbbrSize', def.card_abbr_size||18);  t('ddAbbrSizeVal',(def.card_abbr_size||18)+'px');
-  s('ddScoreSize', def.card_score_size||34); t('ddScoreSizeVal',(def.card_score_size||34)+'px');
-  s('ddNameSize',  def.card_name_size||11);  t('ddNameSizeVal',(def.card_name_size||11)+'px');
+  const sw = (swatchId,valId,v) => { const el=document.getElementById(swatchId); if(el) el.style.background=v; t(valId,v); };
+  s('ddAbbrSize', def.card_abbr_size||18);       t('ddAbbrSizeVal',(def.card_abbr_size||18)+'px');
+  s('ddScoreSize', def.card_score_size||34);      t('ddScoreSizeVal',(def.card_score_size||34)+'px');
+  s('ddNameSize', def.card_name_size||11);        t('ddNameSizeVal',(def.card_name_size||11)+'px');
+  s('ddHeaderSize', def.card_header_size||11);    t('ddHeaderSizeVal',(def.card_header_size||11)+'px');
+  s('ddPeriodSize', def.card_period_size||11);    t('ddPeriodSizeVal',(def.card_period_size||11)+'px');
+  s('ddChannelNameSize', def.channel_name_size||11); t('ddChannelNameSizeVal',(def.channel_name_size||11)+'px');
   const _scale=Math.round((def.stream_card_scale||1.0)*100);
   s('ddCardScale', _scale); t('ddCardScaleVal',_scale+'%');
   s('ddRotationSecs', def.stream_rotation_secs??15);
-  const color = def.card_name_color||'#3d5a78';
-  s('ddNameColor', color);
-  const sw=document.getElementById('ddNameColorSwatch'); if(sw) sw.style.background=color;
-  t('ddNameColorVal', color);
-  const layout = def.stream_layout||'grid';
-  const rb = document.querySelector(`input[name="ddLayout"][value="${layout}"]`);
+  s('ddLogoSize', def.logo_size||34); t('ddLogoSizeVal',(def.logo_size||34)+'px');
+  const nc=def.card_name_color||'#3d5a78';
+  s('ddNameColor',nc); sw('ddNameColorSwatch','ddNameColorVal',nc);
+  const lc=def.card_live_color||'#00ff88';
+  s('ddLiveColor',lc); sw('ddLiveColorSwatch','ddLiveColorVal',lc);
+  const fc=def.card_final_color||'#3d5a78';
+  s('ddFinalColor',fc); sw('ddFinalColorSwatch','ddFinalColorVal',fc);
+  const pc=def.card_period_color||'#7a9ab8';
+  s('ddPeriodColor',pc); sw('ddPeriodColorSwatch','ddPeriodColorVal',pc);
+  s('ddSectionHeaderSize', def.section_header_size||15); t('ddSectionHeaderSizeVal',(def.section_header_size||15)+'px');
+  s('ddSectionStripeWidth', def.section_stripe_width??6); t('ddSectionStripeWidthVal',(def.section_stripe_width??6)+'px');
+  const shc=def.section_header_color||'#e8f0fe';
+  s('ddSectionHeaderColor',shc); sw('ddSectionHeaderColorSwatch','ddSectionHeaderColorVal',shc);
+  const layout=def.stream_layout||'grid';
+  const rb=document.querySelector(`input[name="ddLayout"][value="${layout}"]`);
   if(rb) rb.checked=true;
-  // Apply theme
-  _activeThemeId = def.theme_id || 'dark-blue';
-  const _t = _getThemeById(_activeThemeId) || BUILT_IN_THEMES[0];
+  _activeThemeId=def.theme_id||'dark-blue';
+  const _t=_getThemeById(_activeThemeId)||BUILT_IN_THEMES[0];
   if(_t) applyTheme(_t.vars);
   ddRenderThemeSwatches();
 }
@@ -3486,15 +3377,23 @@ function ddGetValues(){
   const gv = id => document.getElementById(id)?.value;
   const layout = document.querySelector('input[name="ddLayout"]:checked')?.value||'grid';
   return {
-    card_abbr_size:  parseInt(gv('ddAbbrSize'))||18,
-    card_score_size: parseInt(gv('ddScoreSize'))||34,
-    card_name_size:  parseInt(gv('ddNameSize'))||11,
-    card_name_color: gv('ddNameColor')||'#3d5a78',
-    logo_size: parseInt(gv('ddLogoSize'))||34,
-    channel_name_size: parseInt(gv('ddChannelNameSize'))||14,
-    stream_card_scale: (parseInt(gv('ddCardScale'))||100)/100,
+    card_abbr_size:       parseInt(gv('ddAbbrSize'))||18,
+    card_score_size:      parseInt(gv('ddScoreSize'))||34,
+    card_name_size:       parseInt(gv('ddNameSize'))||11,
+    card_name_color:      gv('ddNameColor')||'#3d5a78',
+    card_header_size:     parseInt(gv('ddHeaderSize'))||11,
+    card_period_size:     parseInt(gv('ddPeriodSize'))||11,
+    card_live_color:      gv('ddLiveColor')||'#00ff88',
+    card_final_color:     gv('ddFinalColor')||'#3d5a78',
+    card_period_color:    gv('ddPeriodColor')||'#7a9ab8',
+    section_header_size:  parseInt(gv('ddSectionHeaderSize'))||15,
+    section_stripe_width: parseInt(gv('ddSectionStripeWidth'))??6,
+    section_header_color: gv('ddSectionHeaderColor')||'#e8f0fe',
+    logo_size:            parseInt(gv('ddLogoSize'))||34,
+    channel_name_size:    parseInt(gv('ddChannelNameSize'))||11,
+    stream_card_scale:    (parseInt(gv('ddCardScale'))||100)/100,
     stream_rotation_secs: parseInt(gv('ddRotationSecs'))||15,
-    stream_layout: layout,
+    stream_layout:        layout,
   };
 }
 
@@ -3526,6 +3425,15 @@ function ddBuildPreview(){
     el.style.setProperty('--card-name-size',vals.card_name_size+'px');
     el.style.setProperty('--card-name-color',vals.card_name_color);
     el.style.setProperty('--team-logo-size',(vals.logo_size||34)+'px');
+    el.style.setProperty('--channel-name-size',(vals.channel_name_size||11)+'px');
+    el.style.setProperty('--card-header-size',(vals.card_header_size||11)+'px');
+    el.style.setProperty('--card-period-size',(vals.card_period_size||11)+'px');
+    if(vals.card_live_color)   el.style.setProperty('--card-live-color',vals.card_live_color);
+    if(vals.card_final_color)  el.style.setProperty('--card-final-color',vals.card_final_color);
+    if(vals.card_period_color) el.style.setProperty('--card-period-color',vals.card_period_color);
+    el.style.setProperty('--section-header-size',(vals.section_header_size||15)+'px');
+    el.style.setProperty('--section-stripe-width',(vals.section_stripe_width??6)+'px');
+    if(vals.section_header_color) el.style.setProperty('--section-header-color',vals.section_header_color);
   }
   if(inner) _populate(inner);
   if(floatInner) _populate(floatInner);
@@ -3555,30 +3463,24 @@ function ddPreviewLayout(layout){
 
 function ddPreview(){
   const vals = ddGetValues();
-  // Scope to #main so settings UI is not affected
-  const displayRoot=document.getElementById('main');
-  if(displayRoot){
-    displayRoot.style.setProperty('--card-abbr-size', vals.card_abbr_size+'px');
-    displayRoot.style.setProperty('--card-score-size', vals.card_score_size+'px');
-    displayRoot.style.setProperty('--card-name-size', vals.card_name_size+'px');
-    displayRoot.style.setProperty('--card-name-color', vals.card_name_color);
-  }
-  // Push into dd preview inner and float panel inner
-  ['ddPreviewInner','ddFloatInner'].forEach(id=>{
+  // Push all vars into the float preview panel
+  ['ddFloatInner'].forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
-    el.style.setProperty('--card-abbr-size', vals.card_abbr_size+'px');
-    el.style.setProperty('--card-score-size', vals.card_score_size+'px');
-    el.style.setProperty('--card-name-size', vals.card_name_size+'px');
-    el.style.setProperty('--card-name-color', vals.card_name_color);
-    el.style.setProperty('--team-logo-size', (vals.logo_size||34)+'px');
-  });
-  // Also update editor preview if open
-  document.querySelectorAll('.sbCardScaleInner,.dd-preview-card').forEach(el=>{
-    el.style.setProperty('--card-abbr-size', vals.card_abbr_size+'px');
-    el.style.setProperty('--card-score-size', vals.card_score_size+'px');
-    el.style.setProperty('--card-name-size', vals.card_name_size+'px');
-    el.style.setProperty('--card-name-color', vals.card_name_color);
+    el.style.setProperty('--card-abbr-size',vals.card_abbr_size+'px');
+    el.style.setProperty('--card-score-size',vals.card_score_size+'px');
+    el.style.setProperty('--card-name-size',vals.card_name_size+'px');
+    el.style.setProperty('--card-name-color',vals.card_name_color);
+    el.style.setProperty('--team-logo-size',(vals.logo_size||34)+'px');
+    el.style.setProperty('--channel-name-size',(vals.channel_name_size||11)+'px');
+    el.style.setProperty('--card-header-size',(vals.card_header_size||11)+'px');
+    el.style.setProperty('--card-period-size',(vals.card_period_size||11)+'px');
+    if(vals.card_live_color)   el.style.setProperty('--card-live-color',vals.card_live_color);
+    if(vals.card_final_color)  el.style.setProperty('--card-final-color',vals.card_final_color);
+    if(vals.card_period_color) el.style.setProperty('--card-period-color',vals.card_period_color);
+    el.style.setProperty('--section-header-size',(vals.section_header_size||15)+'px');
+    el.style.setProperty('--section-stripe-width',(vals.section_stripe_width??6)+'px');
+    if(vals.section_header_color) el.style.setProperty('--section-header-color',vals.section_header_color);
   });
 }
 
@@ -3617,26 +3519,51 @@ async function ddSave(){
 }
 
 function ddReset(){
-  ddPopulateUI({card_abbr_size:18,card_score_size:34,card_name_size:11,card_name_color:'#3d5a78',stream_card_scale:1.0,stream_rotation_secs:15,stream_layout:'grid'});
+  ddPopulateUI({
+    card_abbr_size:18, card_score_size:34, card_name_size:11,
+    card_header_size:11, card_period_size:11,
+    card_name_color:'#3d5a78', card_live_color:'#00ff88',
+    card_final_color:'#3d5a78', card_period_color:'#7a9ab8',
+    section_header_size:15, section_stripe_width:6, section_header_color:'#e8f0fe',
+    logo_size:34, channel_name_size:11,
+    stream_card_scale:1.0, stream_rotation_secs:15, stream_layout:'grid'
+  });
 }
 
 function applyDisplayDefaults(){
-  // Apply defaults to all scoreboards that are using them
   const def = _displayDefaults;
   if(!def||!Object.keys(def).length) return;
   const root = document.documentElement;
-  // For the currently active scoreboard, check which groups it uses defaults for
-  const activeSb = _scoreboards?.find(s=>s.id===_activeSidebarSbId);
-  const useDefFonts = activeSb ? activeSb.use_default_fonts!==false : true;
-  const useDefColors = activeSb ? activeSb.use_default_colors!==false : true;
-  if(useDefFonts){
-    if(def.card_abbr_size)  root.style.setProperty('--card-abbr-size',  def.card_abbr_size+'px');
-    if(def.card_score_size) root.style.setProperty('--card-score-size', def.card_score_size+'px');
-    if(def.card_name_size)  root.style.setProperty('--card-name-size',  def.card_name_size+'px');
-  }
-  if(useDefColors){
-    if(def.card_name_color) root.style.setProperty('--card-name-color', def.card_name_color);
-  }
+  // Populate state.display from API defaults (no localStorage for card styles)
+  if(def.card_abbr_size   != null) state.display.abbrSize          = def.card_abbr_size;
+  if(def.card_score_size  != null) state.display.scoreSize         = def.card_score_size;
+  if(def.card_name_size   != null) state.display.nameSize          = def.card_name_size;
+  if(def.card_name_color)          state.display.nameColor         = def.card_name_color;
+  if(def.logo_size        != null) state.display.logoSize          = def.logo_size;
+  if(def.channel_name_size!= null) state.display.channelSize       = def.channel_name_size;
+  if(def.card_header_size != null) state.display.headerSize        = def.card_header_size;
+  if(def.card_period_size != null) state.display.periodSize        = def.card_period_size;
+  if(def.card_live_color)          state.display.liveColor         = def.card_live_color;
+  if(def.card_final_color)         state.display.finalColor        = def.card_final_color;
+  if(def.card_period_color)        state.display.periodColor       = def.card_period_color;
+  if(def.section_header_size != null) state.display.sectionHeaderSize  = def.section_header_size;
+  if(def.section_stripe_width!= null) state.display.sectionStripeWidth = def.section_stripe_width;
+  if(def.section_header_color)        state.display.sectionHeaderColor = def.section_header_color;
+  // Apply all vars to :root so admin-side card renders pick them up
+  root.style.setProperty('--card-abbr-size',        state.display.abbrSize+'px');
+  root.style.setProperty('--card-score-size',       state.display.scoreSize+'px');
+  root.style.setProperty('--card-name-size',        state.display.nameSize+'px');
+  root.style.setProperty('--card-name-color',       state.display.nameColor);
+  root.style.setProperty('--team-logo-size',        (state.display.logoSize||34)+'px');
+  root.style.setProperty('--channel-name-size',     (state.display.channelSize||11)+'px');
+  root.style.setProperty('--card-header-size',      (state.display.headerSize||11)+'px');
+  root.style.setProperty('--card-period-size',      (state.display.periodSize||11)+'px');
+  if(state.display.liveColor)         root.style.setProperty('--card-live-color',        state.display.liveColor);
+  if(state.display.finalColor)        root.style.setProperty('--card-final-color',       state.display.finalColor);
+  if(state.display.periodColor)       root.style.setProperty('--card-period-color',      state.display.periodColor);
+  root.style.setProperty('--section-header-size',  (state.display.sectionHeaderSize||15)+'px');
+  root.style.setProperty('--section-stripe-width', (state.display.sectionStripeWidth??6)+'px');
+  if(state.display.sectionHeaderColor) root.style.setProperty('--section-header-color', state.display.sectionHeaderColor);
 }
 
 function sbGetEffectiveDisplayConfig(sb){
@@ -3645,17 +3572,27 @@ function sbGetEffectiveDisplayConfig(sb){
   const own = sb.display_config||{};
   const merged = Object.assign({}, own);
   if(sb.use_default_fonts!==false){
-    if(def.card_abbr_size)  merged.card_abbr_size  = def.card_abbr_size;
-    if(def.card_score_size) merged.card_score_size = def.card_score_size;
-    if(def.card_name_size)  merged.card_name_size  = def.card_name_size;
+    if(def.card_abbr_size   != null) merged.card_abbr_size   = def.card_abbr_size;
+    if(def.card_score_size  != null) merged.card_score_size  = def.card_score_size;
+    if(def.card_name_size   != null) merged.card_name_size   = def.card_name_size;
+    if(def.card_header_size != null) merged.card_header_size = def.card_header_size;
+    if(def.card_period_size != null) merged.card_period_size = def.card_period_size;
+    if(def.logo_size        != null) merged.logo_size        = def.logo_size;
+    if(def.channel_name_size!= null) merged.channel_name_size= def.channel_name_size;
+    if(def.section_header_size != null) merged.section_header_size = def.section_header_size;
+    if(def.section_stripe_width!= null) merged.section_stripe_width= def.section_stripe_width;
   }
   if(sb.use_default_colors!==false){
-    if(def.card_name_color) merged.card_name_color = def.card_name_color;
+    if(def.card_name_color)       merged.card_name_color       = def.card_name_color;
+    if(def.card_live_color)       merged.card_live_color       = def.card_live_color;
+    if(def.card_final_color)      merged.card_final_color      = def.card_final_color;
+    if(def.card_period_color)     merged.card_period_color     = def.card_period_color;
+    if(def.section_header_color)  merged.section_header_color  = def.section_header_color;
   }
   if(sb.use_default_card_size!==false){
-    if(def.stream_card_scale)      merged.stream_card_scale      = def.stream_card_scale;
-    if(def.stream_rotation_secs)   merged.stream_rotation_secs   = def.stream_rotation_secs;
-    if(def.stream_layout)          merged.stream_layout          = def.stream_layout;
+    if(def.stream_card_scale)    merged.stream_card_scale    = def.stream_card_scale;
+    if(def.stream_rotation_secs) merged.stream_rotation_secs = def.stream_rotation_secs;
+    if(def.stream_layout)        merged.stream_layout        = def.stream_layout;
   }
   return merged;
 }
@@ -4867,8 +4804,23 @@ function getAllEnabledSports(){return ALL_SPORTS.filter(s=>state.enabledSports.h
 
 function loadFavs(){try{return new Set(JSON.parse(ss.get('ss_favs')||'[]'));}catch(e){return new Set();}}
 function saveFavs(){ss.set('ss_favs',JSON.stringify([...state.favTeams]));}
-function saveDisplay(){ss.set('ss_display',JSON.stringify(state.display));}
-function loadDisplay(){try{const d=ss.get('ss_display');if(d)Object.assign(state.display,JSON.parse(d));}catch(e){}}
+function saveDisplay(){
+  // Only persist sport-specific headshot sizes — card styles come from API defaults
+  const hs = state.display.sportHeadshots||{};
+  ss.set('ss_display_hs', JSON.stringify(hs));
+}
+function loadDisplay(){
+  try{
+    const d=ss.get('ss_display_hs');
+    if(d) state.display.sportHeadshots=Object.assign({},JSON.parse(d));
+    // Also try legacy key for migration
+    const legacy=ss.get('ss_display');
+    if(legacy && !d){
+      const p=JSON.parse(legacy);
+      if(p.sportHeadshots) state.display.sportHeadshots=p.sportHeadshots;
+    }
+  }catch(e){}
+}
 
 // =====================
 //  FAVORITES
@@ -5037,134 +4989,49 @@ function refreshSportToggles(){buildSportToggles();}
 // =====================
 //  DISPLAY SETTINGS
 // =====================
-function applyDisplay(){
-  const abbrEl=document.getElementById('sl-abbr'),scoreEl=document.getElementById('sl-score'),nameEl=document.getElementById('sl-name'),colorEl=document.getElementById('nameColorPicker'),tickerEl=document.getElementById('sl-ticker'),logoEl=document.getElementById('sl-logo');
-  const headerEl=document.getElementById('sl-header'),periodEl=document.getElementById('sl-period');
-  const liveColorEl=document.getElementById('liveColorPicker'),finalColorEl=document.getElementById('finalColorPicker'),periodColorEl=document.getElementById('periodColorPicker');
-  const sectionHeaderEl=document.getElementById('sl-section-header'),sectionStripeEl=document.getElementById('sl-section-stripe'),sectionHeaderColorEl=document.getElementById('sectionHeaderColorPicker');
-  if(abbrEl){state.display.abbrSize=parseInt(abbrEl.value);document.getElementById('val-abbr').textContent=abbrEl.value+'px';}
-  if(scoreEl){state.display.scoreSize=parseInt(scoreEl.value);document.getElementById('val-score').textContent=scoreEl.value+'px';}
-  if(nameEl){state.display.nameSize=parseInt(nameEl.value);document.getElementById('val-name').textContent=nameEl.value+'px';}
-  if(colorEl){state.display.nameColor=colorEl.value;document.getElementById('nameColorVal').textContent=colorEl.value;document.getElementById('nameColorSwatch').style.background=colorEl.value;}
-  if(logoEl){state.display.logoSize=parseInt(logoEl.value);const lv=document.getElementById('val-logo');if(lv)lv.textContent=logoEl.value+'px';}
-  if(headerEl){state.display.headerSize=parseInt(headerEl.value);document.getElementById('val-header').textContent=headerEl.value+'px';}
-  if(periodEl){state.display.periodSize=parseInt(periodEl.value);document.getElementById('val-period').textContent=periodEl.value+'px';}
-  if(liveColorEl){state.display.liveColor=liveColorEl.value;document.getElementById('liveColorVal').textContent=liveColorEl.value;document.getElementById('liveColorSwatch').style.background=liveColorEl.value;}
-  if(finalColorEl){state.display.finalColor=finalColorEl.value;document.getElementById('finalColorVal').textContent=finalColorEl.value;document.getElementById('finalColorSwatch').style.background=finalColorEl.value;}
-  if(periodColorEl){state.display.periodColor=periodColorEl.value;document.getElementById('periodColorVal').textContent=periodColorEl.value;document.getElementById('periodColorSwatch').style.background=periodColorEl.value;}
-  if(sectionHeaderEl){state.display.sectionHeaderSize=parseInt(sectionHeaderEl.value)||15;}
-  if(sectionStripeEl){state.display.sectionStripeWidth=parseInt(sectionStripeEl.value);if(isNaN(state.display.sectionStripeWidth))state.display.sectionStripeWidth=6;}
-  if(sectionHeaderColorEl){state.display.sectionHeaderColor=sectionHeaderColorEl.value;document.getElementById('sectionHeaderColorVal').textContent=sectionHeaderColorEl.value;document.getElementById('sectionHeaderColorSwatch').style.background=sectionHeaderColorEl.value;}
-  const displayRoot=document.getElementById('main');
-  if(displayRoot){
-    displayRoot.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
-    displayRoot.style.setProperty('--card-score-size',state.display.scoreSize+'px');
-    displayRoot.style.setProperty('--card-name-size',state.display.nameSize+'px');
-    displayRoot.style.setProperty('--card-name-color',state.display.nameColor);
-    displayRoot.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
-    displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
-    displayRoot.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
-    displayRoot.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    if(state.display.liveColor) displayRoot.style.setProperty('--card-live-color',state.display.liveColor);
-    if(state.display.finalColor) displayRoot.style.setProperty('--card-final-color',state.display.finalColor);
-    if(state.display.periodColor) displayRoot.style.setProperty('--card-period-color',state.display.periodColor);
-    displayRoot.style.setProperty('--section-header-size',(state.display.sectionHeaderSize||15)+'px');
-    displayRoot.style.setProperty('--section-stripe-width',(state.display.sectionStripeWidth??6)+'px');
-    if(state.display.sectionHeaderColor) displayRoot.style.setProperty('--section-header-color',state.display.sectionHeaderColor);
-  }
-  // Push all display vars into float preview panel so section header + card both respond
-  const _fp=document.getElementById('dispFloatPreview');
-  if(_fp){
-    _fp.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
-    _fp.style.setProperty('--card-score-size',state.display.scoreSize+'px');
-    _fp.style.setProperty('--card-name-size',state.display.nameSize+'px');
-    _fp.style.setProperty('--card-name-color',state.display.nameColor);
-    _fp.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
-    _fp.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
-    _fp.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
-    _fp.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    if(state.display.liveColor) _fp.style.setProperty('--card-live-color',state.display.liveColor);
-    if(state.display.finalColor) _fp.style.setProperty('--card-final-color',state.display.finalColor);
-    if(state.display.periodColor) _fp.style.setProperty('--card-period-color',state.display.periodColor);
-    _fp.style.setProperty('--section-header-size',(state.display.sectionHeaderSize||15)+'px');
-    _fp.style.setProperty('--section-stripe-width',(state.display.sectionStripeWidth??6)+'px');
-    _fp.style.setProperty('--section-header-color',state.display.sectionHeaderColor||'#e8f0fe');
-  }
-  settingsSave(saveDisplay);
-}
 
-function setNameColor(c){
-  document.getElementById('nameColorPicker').value=c;
-  applyDisplay();
-}
 
 function initDisplayControls(fromSettingsPanel=false){
-  loadDisplay();
-  // In stream mode the renderer has empty localStorage — override from display_config.
-  // Skip this when called from the settings UI so global defaults show correctly.
+  // Stream mode only: overlay per-scoreboard config on top of global defaults
   if(_activeStreamDisplayConfig && !fromSettingsPanel){
-    const dc=_activeStreamDisplayConfig;
-    if(dc.card_abbr_size  != null) state.display.abbrSize  = dc.card_abbr_size;
-    if(dc.card_score_size != null) state.display.scoreSize = dc.card_score_size;
-    if(dc.card_name_size  != null) state.display.nameSize  = dc.card_name_size;
-    if(dc.card_name_color != null) state.display.nameColor = dc.card_name_color;
-    if(dc.card_header_size != null) state.display.headerSize = dc.card_header_size;
-    if(dc.card_period_size != null) state.display.periodSize = dc.card_period_size;
-    if(dc.card_live_color != null) state.display.liveColor = dc.card_live_color;
-    if(dc.card_final_color != null) state.display.finalColor = dc.card_final_color;
-    if(dc.card_period_color != null) state.display.periodColor = dc.card_period_color;
-    const mainEl=document.getElementById('main');
-    if(dc.motor_label_color != null && mainEl) mainEl.style.setProperty('--motor-label-color', dc.motor_label_color);
-    if(dc.motor_secondary_color != null && mainEl) mainEl.style.setProperty('--motor-secondary-color', dc.motor_secondary_color);
+    const dc  = _activeStreamDisplayConfig;
+    const def = _displayDefaults || {};
+    const v   = (dcKey, defKey, fb) => dc[dcKey] ?? def[defKey] ?? fb;
+    state.display.abbrSize          = v('card_abbr_size',   'card_abbr_size',   18);
+    state.display.scoreSize         = v('card_score_size',  'card_score_size',  34);
+    state.display.nameSize          = v('card_name_size',   'card_name_size',   11);
+    state.display.nameColor         = dc.card_name_color   || def.card_name_color   || state.display.nameColor;
+    state.display.logoSize          = v('logo_size',        'logo_size',         34);
+    state.display.channelSize       = v('channel_name_size','channel_name_size', 11);
+    state.display.headerSize        = v('card_header_size', 'card_header_size',  11);
+    state.display.periodSize        = v('card_period_size', 'card_period_size',  11);
+    state.display.liveColor         = dc.card_live_color   || def.card_live_color   || state.display.liveColor;
+    state.display.finalColor        = dc.card_final_color  || def.card_final_color  || state.display.finalColor;
+    state.display.periodColor       = dc.card_period_color || def.card_period_color || state.display.periodColor;
+    state.display.sectionHeaderSize  = v('section_header_size', 'section_header_size',  15);
+    state.display.sectionStripeWidth = dc.section_stripe_width ?? def.section_stripe_width ?? 6;
+    state.display.sectionHeaderColor = dc.section_header_color || def.section_header_color || state.display.sectionHeaderColor;
+    const displayRoot = document.getElementById('main');
+    if(displayRoot){
+      displayRoot.style.setProperty('--card-abbr-size',        state.display.abbrSize+'px');
+      displayRoot.style.setProperty('--card-score-size',       state.display.scoreSize+'px');
+      displayRoot.style.setProperty('--card-name-size',        state.display.nameSize+'px');
+      displayRoot.style.setProperty('--card-name-color',       state.display.nameColor);
+      displayRoot.style.setProperty('--team-logo-size',        (state.display.logoSize||34)+'px');
+      displayRoot.style.setProperty('--channel-name-size',     (state.display.channelSize||11)+'px');
+      displayRoot.style.setProperty('--card-header-size',      (state.display.headerSize||11)+'px');
+      displayRoot.style.setProperty('--card-period-size',      (state.display.periodSize||11)+'px');
+      if(state.display.liveColor)          displayRoot.style.setProperty('--card-live-color',        state.display.liveColor);
+      if(state.display.finalColor)         displayRoot.style.setProperty('--card-final-color',       state.display.finalColor);
+      if(state.display.periodColor)        displayRoot.style.setProperty('--card-period-color',      state.display.periodColor);
+      displayRoot.style.setProperty('--section-header-size',  (state.display.sectionHeaderSize||15)+'px');
+      displayRoot.style.setProperty('--section-stripe-width', (state.display.sectionStripeWidth??6)+'px');
+      if(state.display.sectionHeaderColor) displayRoot.style.setProperty('--section-header-color',  state.display.sectionHeaderColor);
+      if(dc.motor_label_color)             displayRoot.style.setProperty('--motor-label-color',      dc.motor_label_color);
+      if(dc.motor_secondary_color)         displayRoot.style.setProperty('--motor-secondary-color',  dc.motor_secondary_color);
+      if(dc.card_title_size)               displayRoot.style.setProperty('--card-title-size',        dc.card_title_size+'px');
+    }
   }
-  const displayRoot=document.getElementById('main');
-  if(displayRoot){
-    displayRoot.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
-    displayRoot.style.setProperty('--card-score-size',state.display.scoreSize+'px');
-    displayRoot.style.setProperty('--card-name-size',state.display.nameSize+'px');
-    displayRoot.style.setProperty('--card-name-color',state.display.nameColor);
-    displayRoot.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
-    displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
-    displayRoot.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
-    displayRoot.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    if(state.display.liveColor) displayRoot.style.setProperty('--card-live-color',state.display.liveColor);
-    if(state.display.finalColor) displayRoot.style.setProperty('--card-final-color',state.display.finalColor);
-    if(state.display.periodColor) displayRoot.style.setProperty('--card-period-color',state.display.periodColor);
-  }
-  const abbrEl=document.getElementById('sl-abbr');if(abbrEl){abbrEl.value=state.display.abbrSize;document.getElementById('val-abbr').textContent=state.display.abbrSize+'px';}
-  const scoreEl=document.getElementById('sl-score');if(scoreEl){scoreEl.value=state.display.scoreSize;document.getElementById('val-score').textContent=state.display.scoreSize+'px';}
-  const nameEl=document.getElementById('sl-name');if(nameEl){nameEl.value=state.display.nameSize;document.getElementById('val-name').textContent=state.display.nameSize+'px';}
-  const colorEl=document.getElementById('nameColorPicker');if(colorEl){colorEl.value=state.display.nameColor;document.getElementById('nameColorSwatch').style.background=state.display.nameColor;document.getElementById('nameColorVal').textContent=state.display.nameColor;}
-  const logoEl2=document.getElementById('sl-logo');if(logoEl2){logoEl2.value=state.display.logoSize||34;const lv=document.getElementById('val-logo');if(lv)lv.textContent=(state.display.logoSize||34)+'px';}
-  if(displayRoot) displayRoot.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
-  const chanEl=document.getElementById('sl-channel');if(chanEl){chanEl.value=state.display.channelSize||11;const cv=document.getElementById('val-channel');if(cv)cv.textContent=(state.display.channelSize||11)+'px';}
-  const headerEl2=document.getElementById('sl-header');if(headerEl2){const v=state.display.headerSize||11;headerEl2.value=v;document.getElementById('val-header').textContent=v+'px';}
-  const periodEl2=document.getElementById('sl-period');if(periodEl2){const v=state.display.periodSize||11;periodEl2.value=v;document.getElementById('val-period').textContent=v+'px';}
-  const liveColorEl2=document.getElementById('liveColorPicker');if(liveColorEl2){const v=state.display.liveColor||'#00ff88';liveColorEl2.value=v;document.getElementById('liveColorSwatch').style.background=v;document.getElementById('liveColorVal').textContent=v;}
-  const finalColorEl2=document.getElementById('finalColorPicker');if(finalColorEl2){const v=state.display.finalColor||'#3d5a78';finalColorEl2.value=v;document.getElementById('finalColorSwatch').style.background=v;document.getElementById('finalColorVal').textContent=v;}
-  const periodColorEl2=document.getElementById('periodColorPicker');if(periodColorEl2){const v=state.display.periodColor||'#7a9ab8';periodColorEl2.value=v;document.getElementById('periodColorSwatch').style.background=v;document.getElementById('periodColorVal').textContent=v;}
-  const sectionHeaderEl2=document.getElementById('sl-section-header');if(sectionHeaderEl2){const v=state.display.sectionHeaderSize||15;sectionHeaderEl2.value=v;document.getElementById('val-section-header').textContent=v+'px';}
-  const sectionStripeEl2=document.getElementById('sl-section-stripe');if(sectionStripeEl2){const v=state.display.sectionStripeWidth??6;sectionStripeEl2.value=v;document.getElementById('val-section-stripe').textContent=v+'px';}
-  const sectionHeaderColorEl2=document.getElementById('sectionHeaderColorPicker');if(sectionHeaderColorEl2){const v=state.display.sectionHeaderColor||'#e8f0fe';sectionHeaderColorEl2.value=v;document.getElementById('sectionHeaderColorSwatch').style.background=v;document.getElementById('sectionHeaderColorVal').textContent=v;}
-  // Sync float preview panel with loaded values (panel contains section header + card)
-  const _fp2=document.getElementById('dispFloatPreview');
-  if(_fp2){
-    _fp2.style.setProperty('--card-abbr-size',(state.display.abbrSize||18)+'px');
-    _fp2.style.setProperty('--card-score-size',(state.display.scoreSize||34)+'px');
-    _fp2.style.setProperty('--card-name-size',(state.display.nameSize||11)+'px');
-    _fp2.style.setProperty('--card-name-color',state.display.nameColor||'#3d5a78');
-    _fp2.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
-    _fp2.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
-    _fp2.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
-    _fp2.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    if(state.display.liveColor) _fp2.style.setProperty('--card-live-color',state.display.liveColor);
-    if(state.display.finalColor) _fp2.style.setProperty('--card-final-color',state.display.finalColor);
-    if(state.display.periodColor) _fp2.style.setProperty('--card-period-color',state.display.periodColor);
-    _fp2.style.setProperty('--section-header-size',(state.display.sectionHeaderSize||15)+'px');
-    _fp2.style.setProperty('--section-stripe-width',(state.display.sectionStripeWidth??6)+'px');
-    _fp2.style.setProperty('--section-header-color',state.display.sectionHeaderColor||'#e8f0fe');
-  }
-  setTimeout(()=>_initFloatPanel('dispFloatPreview','dispPreviewResizeHandle','dispPreviewW','dispPreviewH'),0);
 }
 
 // Shared initializer for all floating preview panels (resize handle, wheel capture, zoom counter, localStorage dims)
@@ -5774,13 +5641,18 @@ function _sbApplyEffectivePreviewVars(group){
   }
 
   if(!group || group==='fonts'){
-    _sz('--card-abbr-size',  'sbEditAbbrSize',  'sbEditAbbrSizeVal',  'card_abbr_size',  'card_abbr_size',  18);
-    _sz('--card-score-size', 'sbEditScoreSize', 'sbEditScoreSizeVal', 'card_score_size', 'card_score_size', 34);
-    _sz('--card-name-size',  'sbEditNameSize',  'sbEditNameSizeVal',  'card_name_size',  'card_name_size',  11);
-    _sz('--card-title-size', 'sbEditTitleSize', 'sbEditTitleSizeVal', 'card_title_size', 'card_title_size', 13);
+    _sz('--card-abbr-size',   'sbEditAbbrSize',        'sbEditAbbrSizeVal',        'card_abbr_size',    'card_abbr_size',    18);
+    _sz('--card-score-size',  'sbEditScoreSize',       'sbEditScoreSizeVal',       'card_score_size',   'card_score_size',   34);
+    _sz('--card-name-size',   'sbEditNameSize',        'sbEditNameSizeVal',        'card_name_size',    'card_name_size',    11);
+    _sz('--card-title-size',  'sbEditTitleSize',       'sbEditTitleSizeVal',       'card_title_size',   'card_title_size',   13);
+    _sz('--card-header-size', 'sbEditCardHeaderSize',  'sbEditCardHeaderSizeVal',  'card_header_size',  'card_header_size',  11);
+    _sz('--card-period-size', 'sbEditCardPeriodSize',  'sbEditCardPeriodSizeVal',  'card_period_size',  'card_period_size',  11);
   }
   if(!group || group==='colors'){
     _col('--card-name-color',       'sbEditNameColor',       'sbEditNameColorVal',       'sbEditNameColorSwatch',       'card_name_color',       'card_name_color',       '#3d5a78');
+    _col('--card-live-color',       'sbEditLiveColor',       'sbEditLiveColorVal',       'sbEditLiveColorSwatch',       'card_live_color',       'card_live_color',       '#00ff88');
+    _col('--card-final-color',      'sbEditFinalColor',      'sbEditFinalColorVal',      'sbEditFinalColorSwatch',      'card_final_color',      'card_final_color',      '#3d5a78');
+    _col('--card-period-color',     'sbEditPeriodColor',     'sbEditPeriodColorVal',     'sbEditPeriodColorSwatch',     'card_period_color',     'card_period_color',     '#7a9ab8');
     _col('--motor-label-color',     'sbEditMotorLabelColor', 'sbEditMotorLabelColorVal', 'sbEditMotorLabelColorSwatch', 'motor_label_color',     'motor_label_color',     '#3d5a78');
     _col('--motor-secondary-color', 'sbEditMotorSecColor',   'sbEditMotorSecColorVal',   'sbEditMotorSecColorSwatch',   'motor_secondary_color', 'motor_secondary_color', '#7a9ab8');
   }
@@ -8589,7 +8461,7 @@ function setSettingsScale(px){
   // The panel is position:fixed but lives inside .settings-content in the DOM,
   // so it inherits zoom. Applying 1/z cancels that out and keeps the panel at
   // its natural CSS size regardless of which text-size button is active.
-  ['sbStep3FloatPreview','dispFloatPreview','ddFloatPreview'].forEach(id=>{const p=document.getElementById(id);if(p)p.style.zoom=(1/z)+'';});
+  ['sbStep3FloatPreview','ddFloatPreview'].forEach(id=>{const p=document.getElementById(id);if(p)p.style.zoom=(1/z)+'';});
   for(const id of ['scaleS','scaleM','scaleL','scaleXL'])
     document.getElementById(id)?.classList.remove('active');
   const map={13:'scaleS',15:'scaleM',17:'scaleL',20:'scaleXL'};
@@ -9332,7 +9204,7 @@ document.getElementById('refreshBtn').addEventListener('click',fetchAllScores);
 // =====================
 const savedRate=parseInt(ss.get('ss_refresh_rate')||'60');
 state.refreshRate=savedRate;
-initDisplayControls();
+loadDisplay();
 initAutoSaveToggle();
 buildSportToggles();
 startClock(); // default clock, no timezone — overridden in stream mode
@@ -9403,36 +9275,7 @@ renderFavSummary();
       // Store scoreboard so fetchSport can pass motor_config to fetchF1Data/fetchNascarData
       _scoreboards=[sb];
       _activeSbId=sb.id;
-      // Apply scoreboard display_config to CSS vars immediately
-      if(sb.display_config){
-        const dc=sb.display_config;
-        const displayRoot=document.getElementById('main');
-        if(displayRoot){
-          if(dc.card_abbr_size) displayRoot.style.setProperty('--card-abbr-size',dc.card_abbr_size+'px');
-          if(dc.card_score_size) displayRoot.style.setProperty('--card-score-size',dc.card_score_size+'px');
-          if(dc.card_name_size) displayRoot.style.setProperty('--card-name-size',dc.card_name_size+'px');
-          if(dc.card_name_color) displayRoot.style.setProperty('--card-name-color',dc.card_name_color);
-          if(dc.logo_size) displayRoot.style.setProperty('--team-logo-size',dc.logo_size+'px');
-          if(dc.card_header_size) displayRoot.style.setProperty('--card-header-size',dc.card_header_size+'px');
-          if(dc.card_period_size) displayRoot.style.setProperty('--card-period-size',dc.card_period_size+'px');
-          if(dc.card_live_color) displayRoot.style.setProperty('--card-live-color',dc.card_live_color);
-          if(dc.card_final_color) displayRoot.style.setProperty('--card-final-color',dc.card_final_color);
-          if(dc.card_period_color) displayRoot.style.setProperty('--card-period-color',dc.card_period_color);
-          if(dc.section_header_size) displayRoot.style.setProperty('--section-header-size',dc.section_header_size+'px');
-          if(dc.section_stripe_width!=null) displayRoot.style.setProperty('--section-stripe-width',dc.section_stripe_width+'px');
-          if(dc.section_header_color) displayRoot.style.setProperty('--section-header-color',dc.section_header_color);
-        }
-        state.display.abbrSize=dc.card_abbr_size||state.display.abbrSize;
-        state.display.scoreSize=dc.card_score_size||state.display.scoreSize;
-        state.display.nameSize=dc.card_name_size||state.display.nameSize;
-        state.display.nameColor=dc.card_name_color||state.display.nameColor;
-        state.display.logoSize=dc.logo_size||state.display.logoSize;
-        if(dc.card_header_size) state.display.headerSize=dc.card_header_size;
-        if(dc.card_period_size) state.display.periodSize=dc.card_period_size;
-        if(dc.card_live_color) state.display.liveColor=dc.card_live_color;
-        if(dc.card_final_color) state.display.finalColor=dc.card_final_color;
-        if(dc.card_period_color) state.display.periodColor=dc.card_period_color;
-      }
+      // display_config applied below via initDisplayControls() after _activeStreamDisplayConfig is set
       // Update topbar title
       const titleEl=document.getElementById('topbarTitle');
       if(titleEl)titleEl.textContent=sb.name||'ScorecastArr';
