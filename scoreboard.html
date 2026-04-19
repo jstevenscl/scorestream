@@ -2369,6 +2369,8 @@ function renderEditorStep(sbOverride){
             <div id="sbEditThemeSwatches" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
           </div>
 
+          <div id="dd-group-fonts" style="transition:opacity 0.2s;${_editorDraft.use_default_fonts!==false?'opacity:0.35;pointer-events:none;user-select:none;':''}">
+          <div id="dd-hint-fonts" style="display:${_editorDraft.use_default_fonts!==false?'flex':'none'};align-items:center;gap:6px;padding:5px 9px;border-radius:5px;background:var(--bg-secondary);border:1px solid var(--border);font-size:10px;color:var(--text-dim);margin-bottom:10px;"><span style="color:var(--accent);">↑</span>&nbsp;Inherited from <strong style="color:var(--text-secondary);">Default Stream Settings</strong> — toggle off above to override</div>
           <div class="modal-section-title" style="font-size:11px;margin-bottom:10px;letter-spacing:2px;">CARD TYPOGRAPHY</div>
           <div class="modal-slider-row">
             <span class="modal-slider-label" data-tip="${_isTennisSb?'Size of player name/abbreviation on tennis cards':_isMotorSb?'Size of driver/player name text on motor sport cards':'Size of the team abbreviation (e.g. LAL, BOS) on stream cards'}">${_isTennisSb?'Player Name Size':_isMotorSb?'Driver/Player Name Size':'Abbreviation Size'}</span>
@@ -2402,6 +2404,9 @@ function renderEditorStep(sbOverride){
               oninput="document.getElementById('sbEditNameSizeVal').textContent=this.value+'px';document.getElementById('sbCardScaleInner')?.style.setProperty('--card-name-size',this.value+'px')">
             <span class="modal-slider-val" id="sbEditNameSizeVal">${_editorDraft.display_config.card_name_size || 11}px</span>
           </div>
+          </div>
+          <div id="dd-group-colors" style="transition:opacity 0.2s;${_editorDraft.use_default_colors!==false?'opacity:0.35;pointer-events:none;user-select:none;':''}">
+          <div id="dd-hint-colors" style="display:${_editorDraft.use_default_colors!==false?'flex':'none'};align-items:center;gap:6px;padding:5px 9px;border-radius:5px;background:var(--bg-secondary);border:1px solid var(--border);font-size:10px;color:var(--text-dim);margin-bottom:10px;"><span style="color:var(--accent);">↑</span>&nbsp;Inherited from <strong style="color:var(--text-secondary);">Default Stream Settings</strong> — toggle off above to override</div>
           ${(_isMotorSb||_isTennisSb)?'':`<div class="modal-slider-row" style="align-items:center;">
             <span class="modal-slider-label" data-tip="Color of the full team name subtitle text on stream cards">Team Name Color</span>
             <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;grid-column:2/-1;">
@@ -2441,6 +2446,7 @@ function renderEditorStep(sbOverride){
               <span class="modal-slider-val" id="sbEditMotorSecColorVal">${_editorDraft.display_config.motor_secondary_color || '#7a9ab8'}</span>
             </div>
           </div>`:''}
+          </div>
 
           <div class="modal-section-title" style="font-size:11px;margin:18px 0 10px;letter-spacing:2px;">CARD HEADER &amp; STATUS</div>
           <div class="modal-slider-row">
@@ -2531,6 +2537,8 @@ function renderEditorStep(sbOverride){
           </div>
         </div>
 
+        <div id="dd-group-card-size" style="transition:opacity 0.2s;${_editorDraft.use_default_card_size!==false?'opacity:0.35;pointer-events:none;user-select:none;':''}">
+        <div id="dd-hint-card-size" style="display:${_editorDraft.use_default_card_size!==false?'flex':'none'};align-items:center;gap:6px;padding:5px 9px;border-radius:5px;background:var(--bg-secondary);border:1px solid var(--border);font-size:10px;color:var(--text-dim);margin-bottom:10px;"><span style="color:var(--accent);">↑</span>&nbsp;Inherited from <strong style="color:var(--text-secondary);">Default Stream Settings</strong> — toggle off above to override</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <div class="wiz-label" data-tip="Scales all game cards larger or smaller in the stream output. 100% = default size. Higher % = bigger cards, fewer columns.">Card Scale</div>
@@ -2576,6 +2584,7 @@ function renderEditorStep(sbOverride){
             </select>
             <div class="wiz-sublabel">Card layout used in the stream output</div>
           </div>
+        </div>
         </div>
 
         ${(_isTennisSb||_enabledIds.some(id=>['pga','nascar','nascar-noaps','nascar-trucks','f1'].includes(id)))?`<div style="margin-top:12px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
@@ -5658,8 +5667,14 @@ function buildMotorsportEditorPanel(draft){
 function sbToggleDefault(group, toggleEl){
   const key = group==='fonts' ? 'use_default_fonts' : group==='colors' ? 'use_default_colors' : 'use_default_card_size';
   const current = _editorDraft[key]!==false;
-  _editorDraft[key] = !current;
-  toggleEl.classList.toggle('on', !current);
+  const nowOn = !current; // new state: true = using defaults
+  _editorDraft[key] = nowOn;
+  toggleEl.classList.toggle('on', nowOn);
+  const groupId = group==='card_size' ? 'card-size' : group;
+  const groupEl = document.getElementById('dd-group-'+groupId);
+  const hintEl  = document.getElementById('dd-hint-'+groupId);
+  if(groupEl) groupEl.style.cssText = nowOn ? 'transition:opacity 0.2s;opacity:0.35;pointer-events:none;user-select:none;' : 'transition:opacity 0.2s;';
+  if(hintEl)  hintEl.style.display  = nowOn ? 'flex' : 'none';
 }
 
 function setMotorConfig(key,val,explicitSbId){
