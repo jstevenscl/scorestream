@@ -3500,7 +3500,8 @@ function ddGetValues(){
 
 function ddBuildPreview(){
   const inner=document.getElementById('ddPreviewInner');
-  if(!inner)return;
+  const floatInner=document.getElementById('ddFloatInner');
+  if(!inner && !floatInner) return;
   const layout=document.querySelector('input[name="ddLayout"]:checked')?.value||'grid';
   const teams=[
     {abbr:'KC', name:'Kansas City Chiefs',color:'#e31837',homeAway:'away',score:'21'},
@@ -3509,43 +3510,25 @@ function ddBuildPreview(){
   const gData1={id:'dd-prev1',sportName:'NFL',sportEmoji:'🏈',sportColor:'#4169e1',isLive:true,isFinal:false,isScheduled:false,periodDesc:'4th · 2:14',date:new Date().toISOString(),teams,networks:['ESPN']};
   const gData2={id:'dd-prev2',sportName:'NFL',sportEmoji:'🏈',sportColor:'#4169e1',isLive:false,isFinal:false,isScheduled:true,periodDesc:'',date:new Date().toISOString(),teams:teams.map(t=>({...t,score:'–'})),networks:['TNT']};
   const buildCard = layout==='ticker' ? buildTickerCard : buildFullCard;
-  const g1=buildCard(gData1), g2=buildCard(gData2);
-  [g1,g2].forEach(g=>g.style.pointerEvents='none');
-  inner.innerHTML='';
-  if(layout==='grid'){
-    inner.style.gridTemplateColumns='1fr 1fr';
-    inner.appendChild(g1); inner.appendChild(g2);
-  } else if(layout==='fullscreen'){
-    inner.style.gridTemplateColumns='1fr';
-    g1.style.maxWidth='100%';
-    inner.appendChild(g1);
-  } else { // ticker
-    inner.style.gridTemplateColumns='1fr';
-    inner.appendChild(g1); inner.appendChild(g2);
-  }
-  // Push current dd vals into the preview container
   const vals=ddGetValues();
-  inner.style.setProperty('--card-abbr-size',vals.card_abbr_size+'px');
-  inner.style.setProperty('--card-score-size',vals.card_score_size+'px');
-  inner.style.setProperty('--card-name-size',vals.card_name_size+'px');
-  inner.style.setProperty('--card-name-color',vals.card_name_color);
-  inner.style.setProperty('--team-logo-size',(vals.logo_size||34)+'px');
-  // Also populate float panel
-  const floatInner=document.getElementById('ddFloatInner');
-  if(floatInner){
-    const fg1=buildCard(gData1),fg2=buildCard(gData2);
-    [fg1,fg2].forEach(g=>g.style.pointerEvents='none');
-    floatInner.innerHTML='';
-    floatInner.style.gridTemplateColumns=inner.style.gridTemplateColumns;
-    if(layout==='grid'){floatInner.appendChild(fg1);floatInner.appendChild(fg2);}
-    else if(layout==='fullscreen'){fg1.style.maxWidth='100%';floatInner.appendChild(fg1);}
-    else{floatInner.appendChild(fg1);floatInner.appendChild(fg2);}
-    floatInner.style.setProperty('--card-abbr-size',vals.card_abbr_size+'px');
-    floatInner.style.setProperty('--card-score-size',vals.card_score_size+'px');
-    floatInner.style.setProperty('--card-name-size',vals.card_name_size+'px');
-    floatInner.style.setProperty('--card-name-color',vals.card_name_color);
-    floatInner.style.setProperty('--team-logo-size',(vals.logo_size||34)+'px');
+  const gridCols = layout==='grid' ? '1fr 1fr' : '1fr';
+  // Helper to populate a container with fresh cards
+  function _populate(el){
+    const c1=buildCard(gData1),c2=buildCard(gData2);
+    [c1,c2].forEach(c=>c.style.pointerEvents='none');
+    el.innerHTML='';
+    el.style.gridTemplateColumns=gridCols;
+    if(layout==='grid'){el.appendChild(c1);el.appendChild(c2);}
+    else if(layout==='fullscreen'){c1.style.maxWidth='100%';el.appendChild(c1);}
+    else{el.appendChild(c1);el.appendChild(c2);}
+    el.style.setProperty('--card-abbr-size',vals.card_abbr_size+'px');
+    el.style.setProperty('--card-score-size',vals.card_score_size+'px');
+    el.style.setProperty('--card-name-size',vals.card_name_size+'px');
+    el.style.setProperty('--card-name-color',vals.card_name_color);
+    el.style.setProperty('--team-logo-size',(vals.logo_size||34)+'px');
   }
+  if(inner) _populate(inner);
+  if(floatInner) _populate(floatInner);
   ddPreviewApplyScale();
 }
 
