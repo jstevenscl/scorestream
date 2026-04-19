@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ScorecastArr</title>
+<link id="appFavicon" rel="icon" type="image/svg+xml" href="">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1645,6 +1646,21 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
         <div class="modal-section-title">Presets</div>
         <div class="modal-sublabel" style="margin-bottom:14px;">Quick-apply a preset and customize from there.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;" id="sysThemePresets"></div>
+      </div>
+
+      <div class="modal-section" style="margin-top:20px;">
+        <div class="modal-section-title">Browser Tab Icon</div>
+        <div class="modal-sublabel" style="margin-bottom:14px;">Choose the favicon shown in browser tabs and bookmarks.</div>
+        <div style="display:flex;gap:12px;" id="faviconOptRow">
+          <button id="faviconOptA" onclick="setFaviconStyle('a')" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 20px;background:var(--bg-card);border:2px solid var(--border);border-radius:10px;cursor:pointer;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all 0.15s;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="40" height="40"><rect width="32" height="32" rx="6" fill="#0d1117"/><rect x="2" y="2" width="28" height="3" rx="1.5" fill="#2563eb"/><rect x="2" y="8" width="12" height="16" rx="3" fill="#1e293b"/><rect x="18" y="8" width="12" height="16" rx="3" fill="#1e293b"/><rect x="14.5" y="10" width="3" height="12" rx="1.5" fill="#2563eb"/><rect x="2" y="27" width="28" height="3" rx="1.5" fill="#1e293b"/></svg>
+            Two Panels
+          </button>
+          <button id="faviconOptC" onclick="setFaviconStyle('c')" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 20px;background:var(--bg-card);border:2px solid var(--border);border-radius:10px;cursor:pointer;color:var(--text-secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all 0.15s;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="40" height="40"><rect width="32" height="32" rx="16" fill="#0d1117"/><rect x="3" y="3" width="26" height="26" rx="13" fill="none" stroke="#2563eb" stroke-width="2"/><rect x="6" y="10" width="8" height="12" rx="2" fill="#1e3a5f"/><rect x="6" y="10" width="8" height="3" rx="1" fill="#2563eb"/><rect x="18" y="10" width="8" height="12" rx="2" fill="#1e3a5f"/><rect x="18" y="10" width="8" height="3" rx="1" fill="#2563eb"/><rect x="15" y="12" width="2" height="8" rx="1" fill="#2563eb"/></svg>
+            Round Pill
+          </button>
+        </div>
       </div>
 
       <div style="display:flex;gap:10px;margin-top:20px;">
@@ -8572,6 +8588,7 @@ function initSystemTheme(){
   const topbarMetaSize=_sysTheme._topbarMetaSize||11;
   const tmEl=document.getElementById('sysThemeTopbarMetaSize');
   if(tmEl){tmEl.value=topbarMetaSize;document.getElementById('sysThemeTopbarMetaSizeVal').textContent=topbarMetaSize+'px';}
+  _initFaviconPicker();
 }
 
 function applySystemTheme(){
@@ -8617,6 +8634,41 @@ function applySystemTheme(){
   }
   // Auto-persist to localStorage so slider drags survive navigation/refresh
   _persistSysThemeLocal();
+}
+
+// ── Favicon ──────────────────────────────────────────────────────────────────
+const _FAVICON_SVGS={
+  a:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0d1117"/><rect x="2" y="2" width="28" height="3" rx="1.5" fill="#2563eb"/><rect x="2" y="8" width="12" height="16" rx="3" fill="#1e293b"/><rect x="18" y="8" width="12" height="16" rx="3" fill="#1e293b"/><rect x="14.5" y="10" width="3" height="12" rx="1.5" fill="#2563eb"/><rect x="2" y="27" width="28" height="3" rx="1.5" fill="#1e293b"/></svg>`,
+  c:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="16" fill="#0d1117"/><rect x="3" y="3" width="26" height="26" rx="13" fill="none" stroke="#2563eb" stroke-width="2"/><rect x="6" y="10" width="8" height="12" rx="2" fill="#1e3a5f"/><rect x="6" y="10" width="8" height="3" rx="1" fill="#2563eb"/><rect x="18" y="10" width="8" height="12" rx="2" fill="#1e3a5f"/><rect x="18" y="10" width="8" height="3" rx="1" fill="#2563eb"/><rect x="15" y="12" width="2" height="8" rx="1" fill="#2563eb"/></svg>`
+};
+
+function applyFavicon(style){
+  style=style||'a';
+  const svg=_FAVICON_SVGS[style]||_FAVICON_SVGS.a;
+  const href='data:image/svg+xml,'+encodeURIComponent(svg);
+  let link=document.getElementById('appFavicon');
+  if(!link){link=document.createElement('link');link.id='appFavicon';link.rel='icon';link.type='image/svg+xml';document.head.appendChild(link);}
+  link.href=href;
+}
+
+function setFaviconStyle(style){
+  _sysTheme._faviconStyle=style;
+  applyFavicon(style);
+  _persistSysThemeLocal();
+  // Update button highlight
+  ['a','c'].forEach(k=>{
+    const btn=document.getElementById('faviconOpt'+k.toUpperCase());
+    if(btn) btn.style.borderColor=k===style?'var(--accent)':'var(--border)';
+  });
+}
+
+function _initFaviconPicker(){
+  const style=_sysTheme._faviconStyle||'a';
+  applyFavicon(style);
+  ['a','c'].forEach(k=>{
+    const btn=document.getElementById('faviconOpt'+k.toUpperCase());
+    if(btn) btn.style.borderColor=k===style?'var(--accent)':'var(--border)';
+  });
 }
 
 function applySysThemePreset(idx){
@@ -8694,8 +8746,12 @@ function _restoreSystemTheme(){
       if(saved._topbarMetaSize){
         root.style.setProperty('--topbar-meta-size',saved._topbarMetaSize+'px');
       }
+      // Restore favicon choice
+      applyFavicon(saved._faviconStyle||'a');
+    }else{
+      applyFavicon('a');  // default on first load
     }
-  }catch(e){}
+  }catch(e){ applyFavicon('a'); }
 }
 // Run immediately and again on DOMContentLoaded (to catch #app which loads after script)
 _restoreSystemTheme();

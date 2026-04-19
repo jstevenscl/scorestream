@@ -637,25 +637,30 @@ System Theme controls the overall color palette of the ScorecastArr UI — both 
 
 ### Color slots
 
-| Slot | Controls |
-|------|---------|
-| **Main Page Background** | The background behind the scoreboard grid |
-| **Canvas Page Background** | The background visible around score cards |
-| **Background / Panels** | Sidebar and settings panel backgrounds |
-| **Scoreboard Accent** | Primary highlight color (cyan/teal by default) |
-| **Secondary Text** | Dimmed label text color |
-| **Ticker Color** | Ticker bar background color |
-| **Error / Change** | Score-change highlight and error indicator color |
-
-Click any color swatch to open a color picker. Changes apply immediately.
+Click any color swatch to open a color picker. Changes apply immediately. Each slot is labeled with exactly what it controls in the interface.
 
 ### UI Scale
 
-Two scale sliders control how large the interface renders:
+Three scale sliders control how large the interface renders:
 
-**Global UI Scale** — Scales the entire settings UI, navigation, and sidebar. Use this if ScorecastArr looks too small or too large on your display.
+**Global UI Scale** — Scales the entire settings UI, navigation, and sidebar.
 
 **Scoreboard Sidebar Scale** — Applies additional zoom to just the main scoreboard's left sidebar (sport toggles and labels). Stacks on top of the global scale.
+
+**Topbar Meta Size** — Controls the font size of the Live/Total count and clock in the top bar.
+
+### Presets
+
+Quick-apply a full color scheme (Dark Blue, Carbon, Dark Green, Dark Red, Light) and customize from there.
+
+### Browser Tab Icon
+
+Choose which favicon appears in browser tabs and bookmarks. Two options are available:
+
+- **Two Panels** — A dark square icon with a blue top bar, two score panels, and a blue center divider. Most on-brand.
+- **Round Pill** — A circular icon with a blue ring and two panels inside.
+
+Your selection is saved automatically to your browser and persists across sessions. Click **Save System Theme** to also persist it to the server database (survives browser cache clears).
 
 ---
 

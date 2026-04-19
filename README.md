@@ -493,6 +493,8 @@ Custom themes are stored in your display defaults and are available across all s
 
 **Presets:** Five built-in presets (Dark Blue, Carbon, Dark Green, Dark Red, Light) let you quick-apply a full color scheme and customize from there.
 
+**Browser Tab Icon:** Choose the favicon shown in browser tabs and bookmarks — **Two Panels** (dark square with blue top bar and center divider) or **Round Pill** (circular with blue ring). Saves automatically to localStorage; also persisted to the server database on **Save System Theme**.
+
 **Saving:** Slider drags **auto-save** to local storage on release AND push to the server database (debounced ~600ms). The active stream's puppeteer browser also re-fetches the system theme on every config refresh (every 30s), so changes propagate to live streams without restarting any container. The **Save System Theme** button is now optional — it just forces an immediate server push.
 
 **Resetting:** Click **Reset** to return to the default Dark Blue theme.
