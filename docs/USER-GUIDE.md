@@ -18,16 +18,15 @@ ScorecastArr is a self-hosted live sports scoreboard that streams directly into 
 7. [Integrations — Connecting Dispatcharr](#7-integrations--connecting-dispatcharr)
 8. [My Scoreboards](#8-my-scoreboards)
 9. [Creating & Editing a Scoreboard](#9-creating--editing-a-scoreboard)
-10. [Stream Card Style](#10-stream-card-style)
-11. [Default Stream Settings](#11-default-stream-settings)
-12. [Sports Library](#12-sports-library)
-13. [Audio Library](#13-audio-library)
-14. [Ticker Overlay](#14-ticker-overlay)
-15. [System Theme](#15-system-theme)
-16. [Backup & Restore](#16-backup--restore)
-17. [Pushing Channels to Dispatcharr](#17-pushing-channels-to-dispatcharr)
-18. [Troubleshooting](#18-troubleshooting)
-19. [Getting Help & Reporting Issues](#19-getting-help--reporting-issues)
+10. [Default Stream Settings](#10-default-stream-settings)
+11. [Sports Library](#11-sports-library)
+12. [Audio Library](#12-audio-library)
+13. [Ticker Overlay](#13-ticker-overlay)
+14. [System Theme](#14-system-theme)
+15. [Backup & Restore](#15-backup--restore)
+16. [Pushing Channels to Dispatcharr](#16-pushing-channels-to-dispatcharr)
+17. [Troubleshooting](#17-troubleshooting)
+18. [Getting Help & Reporting Issues](#18-getting-help--reporting-issues)
 
 ---
 
@@ -277,9 +276,8 @@ The Settings panel has a left navigation with these sections:
 | Section | Purpose |
 |---------|---------|
 | **My Scoreboards** | Create, edit, and manage your scoreboard channels |
-| **Stream Card Style** | Global card appearance (applies to all scoreboards by default) |
-| **Default Stream Settings** | Default display settings new scoreboards inherit |
-| **System Theme** | UI colors and font scaling |
+| **Default Stream Settings** | Global card appearance defaults (font sizes, colors, card scale, rotation, layout) — all scoreboards inherit these unless overridden |
+| **System Theme** | ScorecastArr UI skin — colors, font scale, favicon, auto-refresh rate, save mode, stats depth |
 | **Sports Library** | Enable/disable sports globally |
 | **Audio Library** | Upload music tracks and create playlists |
 | **Ticker Overlay** | Configure the score ticker crawl for HLS streams |
@@ -485,67 +483,64 @@ Click **💾 Save & Exit** to save the scoreboard and return to My Scoreboards.
 
 ---
 
-## 10. Stream Card Style
-
-Go to **Settings → Stream Card Style**.
-
-![Stream Card Style](screenshots/09-display-settings.png)
-
-These settings control the visual appearance of game cards **globally** — across all scoreboards that haven't overridden them individually.
-
-### Dark/Light/Preference mode
-Toggle between dark, light, or system-preference card themes.
-
-### Card typography sliders
-
-| Slider | Controls |
-|--------|---------|
-| **Team Abbreviation Size** | Font size of team abbreviations (e.g. NYY, LAD) |
-| **Score Size** | Font size of the score numbers |
-| **Count Size** | Font size of count/period/inning info |
-| **Logo Size** | Size of team logo icons on cards |
-| **Header / Status Size** | Font size of the status text (LIVE, FINAL, upcoming time) and the sport name label in motor sport card headers (🏎️ Formula 1, 🏁 NASCAR, etc.) |
-| **Period / Time Size** | Font size of period/game-time text for team sports (Q4 2:15, 7th, etc.); controls position numbers, lap times, points, race round, and circuit/date lines for motor sports |
-
-### Score & status colors
-Set the colors used for:
-- **Live Status** — color of the LIVE badge on in-progress games
-- **Final Status** — color of the FINAL badge on completed games
-
-### Section headers
-Control the size and color of the sport section header bars that separate sports on the scoreboard.
-
-Changes here apply to all scoreboards that use the default style. To override for a specific scoreboard, edit that scoreboard in Step 3.
-
----
-
-## 11. Default Stream Settings
+## 10. Default Stream Settings
 
 Go to **Settings → Default Stream Settings**.
 
 ![Default Stream Settings](screenshots/10-display-defaults.png)
 
-These are the baseline display settings that new scoreboards inherit. When you create a new scoreboard, it starts with these values. If you later change the defaults, scoreboards that are still set to "Inherit from Default" will update automatically.
+These are the global defaults for how game cards look across **all** scoreboards. When you create a new scoreboard it starts with these values. Scoreboards that haven't overridden a group will automatically pick up any changes you make here.
+
+A live float preview panel (open/close via the **Preview** button) shows how cards render with your current settings in real time.
 
 ### Scoreboard presets
 
-At the top, several quick-apply presets are available — click one to apply a complete style package (font + color combination) as your new default.
+Quick-apply a complete font + color package. Click a preset tile to load it, then tweak individual sliders as needed.
 
-### Settings
+### Default Font Sizes
 
-All the same display options as in the per-scoreboard editor (Step 3) are available here as defaults:
-- Default font
-- Default accent color
-- Default resolution
-- Default Inline Fonts/Icons/Card Divider toggles
-- Default ticker mode
-- Default card transparency
+| Slider | Controls |
+|--------|---------|
+| **Team Abbreviation Size** | Font size of team abbreviations (e.g. NYY, LAD) |
+| **Score Size** | Font size of the score numbers |
+| **Team Name Size** | Font size of the full team name line below the score |
+| **Logo Size** | Size of team logo icons on cards |
+| **Live/Final Status Size** | Font size of the status text (LIVE, FINAL, upcoming time) and sport name label in motor sport card headers |
+| **Sport Badge Size** | Font size of period/game-time text for team sports (Q4 2:15, 7th, etc.); controls position numbers, lap times, points, race round, and circuit/date lines for motor sports |
+| **Channel Name Size** | Font size of the channel name label shown on each card |
 
-A live preview at the bottom shows how cards will look with your current default settings.
+### Default Colors
+
+| Swatch | Controls |
+|--------|---------|
+| **Team Name Color** | Color of the full team name text |
+| **LIVE Status Color** | Color of the LIVE badge on in-progress games |
+| **FINAL Status Color** | Color of the FINAL badge on completed games |
+| **Period/Time Color** | Color of the period and game-time text |
+
+### Section Headers
+
+| Control | Controls |
+|---------|---------|
+| **Header Text Size** | Font size of the sport section header bars |
+| **Stripe Width** | Width (px) of the colored accent stripe on section headers |
+| **Header Text Color** | Text color inside section header bars |
+
+### Card Size & Layout
+
+| Control | Controls |
+|---------|---------|
+| **Card Scale** | Overall size of each game card (percentage) |
+| **Rotation Speed** | Seconds each page is shown before advancing to the next |
+| **Layout** | Grid (multi-column) or List (single-column) arrangement |
+
+### Per-scoreboard overrides
+
+In the scoreboard editor **Step 3**, each of these groups (Fonts, Colors, Card Size) has a **Default** toggle pill. When the pill is **on**, that group is inherited from these global defaults. Toggle it **off** to unlock the sliders and set custom values for just that scoreboard.
 
 ---
 
-## 12. Sports Library
+## 11. Sports Library
 
 Go to **Settings → Sports Library**.
 
@@ -572,7 +567,7 @@ Sports are grouped by category:
 
 ---
 
-## 13. Audio Library
+## 12. Audio Library
 
 Go to **Settings → Audio Library**.
 
@@ -609,7 +604,7 @@ In the scoreboard editor (Step 3 → Audio section), set the mode to **Playlist*
 
 ---
 
-## 14. Ticker Overlay
+## 13. Ticker Overlay
 
 Go to **Settings → Ticker Overlay**.
 
@@ -637,13 +632,13 @@ The grid of checkboxes at the bottom lets you choose which sports feed into the 
 
 ---
 
-## 15. System Theme
+## 14. System Theme
 
 Go to **Settings → System Theme**.
 
 ![System Theme](screenshots/11-system-theme.png)
 
-System Theme controls the overall color palette of the ScorecastArr UI — both the settings interface and the main scoreboard view.
+System Theme controls how the **ScorecastArr app interface** looks in your browser. It does **not** affect stream output or game cards — those are controlled by Default Stream Settings and per-scoreboard editor Step 3.
 
 ### Color slots
 
@@ -672,9 +667,21 @@ Choose which favicon appears in browser tabs and bookmarks. Two options are avai
 
 Your selection is saved automatically to your browser and persists across sessions. Click **Save System Theme** to also persist it to the server database (survives browser cache clears).
 
+### Auto-Refresh Rate
+
+How often the scoreboard data refreshes (in seconds). Lower values give more up-to-date scores but increase API load. The current status (last refresh time) is shown next to the control.
+
+### Save Mode
+
+Toggle between **Auto-save** (changes save automatically as you make them) and **Manual** (you click Save explicitly). Auto-save is on by default.
+
+### Stats Depth
+
+Controls how many historical stats entries are retained per team/player. Higher values give richer stats panels but use more storage.
+
 ---
 
-## 16. Backup & Restore
+## 15. Backup & Restore
 
 Go to **Settings → Backup & Restore**.
 
@@ -696,7 +703,7 @@ Click **Choose Backup File**, select a previously downloaded backup JSON, and cl
 
 ---
 
-## 17. Pushing Channels to Dispatcharr
+## 16. Pushing Channels to Dispatcharr
 
 Once your Dispatcharr credentials are saved and tested (Section 7), you can push any scoreboard to Dispatcharr as an IPTV channel.
 
@@ -732,7 +739,7 @@ Go to **Settings → Integrations** and click **Force Sync** to push all scorebo
 
 ---
 
-## 18. Troubleshooting
+## 17. Troubleshooting
 
 ### Scoreboard shows a blank page / "ScorecastArr" with no games
 
@@ -820,7 +827,7 @@ Your configuration (scoreboards, audio playlists, settings) is stored in the `sc
 
 ---
 
-## 19. Getting Help & Reporting Issues
+## 18. Getting Help & Reporting Issues
 
 If something isn't working or you have a question, the fastest paths to an answer are:
 

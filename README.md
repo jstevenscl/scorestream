@@ -284,9 +284,8 @@ Click the gear icon in the sidebar to open Settings. The navigation is grouped:
 
 | Page | What It Controls | Affects |
 |---|---|---|
-| **Stream Card Style** | Card typography for the sidebar preview and stream output — font sizes for abbreviations, scores, team names, channel names, header/status bar, period/time text; team name color; header status colors (LIVE/FINAL/period); logo size; refresh rate. | Sidebar preview + stream cards |
-| **Default Stream Settings** | Global defaults that all scoreboards inherit: theme, font sizes, colors, card scale, rotation timer, layout. Scoreboards use these unless they override individually. | Stream output (all scoreboards) |
-| **System Theme** | Customize the **app UI itself** — background colors, text colors, accent colors, borders, and base font size. Does **not** affect stream output or game cards. | Settings UI + sidebar appearance |
+| **Default Stream Settings** | Global card style defaults all scoreboards inherit — font sizes (abbr, score, name, header/status, period/time, logo, channel name), card colors (LIVE/FINAL/period/name), section header appearance, card scale, rotation timer, layout. Per-scoreboard editor Step 3 can override any group. | Stream cards (all scoreboards) |
+| **System Theme** | ScorecastArr **app UI skin** — background/text/accent colors, UI scale, favicon, auto-refresh rate, save mode, stats depth. Does **not** affect stream output or game cards. | Settings UI + sidebar appearance |
 
 **Data & Media** *(group — content sources and overlays)*
 
@@ -302,8 +301,6 @@ Click the gear icon in the sidebar to open Settings. The navigation is grouped:
 |---|---|---|
 | **Integrations** | Connect to Dispatcharr — URL, API token, channel group name, starting channel number. | Dispatcharr push |
 | **Backup & Restore** | Export all settings to a JSON file or restore from a previous backup. | Configuration |
-
-> **Key distinction:** *Stream Card Style* and *Default Stream Settings* control how game cards look in the **stream output** (the video). *System Theme* controls how the **ScorecastArr app interface** looks in your browser.
 
 ---
 
