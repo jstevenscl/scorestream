@@ -406,7 +406,15 @@ In editor Step 3 (Display & Layout), each scoreboard has independent **per-score
 | **Theme Override** | Use a different color theme just for this scoreboard |
 | **Stream Audio** | None, built-in playlist music, or a custom audio stream URL |
 
-Each setting can also inherit from **Default Stream Settings** (the global defaults) by leaving the "Use Default" toggles on.
+Three **Inherit From Default Stream Settings** toggles at the top of the display section control which groups follow the global defaults:
+
+| Toggle | Controlled settings |
+|--------|---------------------|
+| **Default Fonts** | Abbreviation, Score, and Team Name sizes |
+| **Default Colors** | Team Name color |
+| **Default Card Size** | Card Scale, Rotation Timer, and Layout |
+
+When a toggle is **on**, the relevant sliders are dimmed with a banner indicating the values come from Default Stream Settings and will update automatically if the defaults change. Toggle **off** to unlock those controls and set values specific to this scoreboard.
 
 ---
 

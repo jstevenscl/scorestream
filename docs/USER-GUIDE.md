@@ -405,8 +405,18 @@ The **Sample Section Header** preview panel on the right updates live as you cha
 #### Scoreboard Name
 The display name for this scoreboard. This name appears in Dispatcharr as the channel name.
 
-#### Inherit from Default
-When this link is active, the scoreboard uses the global defaults from **Default Stream Settings**. Click it to break inheritance and set custom values for just this scoreboard.
+#### Inherit From Default Stream Settings
+Three toggles control which groups of settings this scoreboard inherits from **Default Stream Settings**:
+
+| Toggle | Controls |
+|--------|---------|
+| **Default Fonts** | Abbreviation size, Score size, Team Name size |
+| **Default Colors** | Team Name color |
+| **Default Card Size** | Card Scale, Page Rotation timer, Stream Layout |
+
+When a toggle is **on**, the corresponding sliders/pickers are dimmed and a banner reads *"Inherited from Default Stream Settings — toggle off above to override."* Those values follow whatever is set in **Settings → Default Stream Settings**, so if you update the defaults later they apply to this scoreboard automatically.
+
+When a toggle is **off**, the controls become fully active and you can dial in values specific to this scoreboard only. Changes only affect this scoreboard; other scoreboards that still have the toggle on remain linked to the defaults.
 
 #### Font
 Choose the font used for team names, scores, and labels on this scoreboard's cards.
