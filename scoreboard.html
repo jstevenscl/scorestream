@@ -237,7 +237,7 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
 .games-grid.fullscreen-mode,.games-grid.ticker-mode{grid-template-columns:1fr;}
 .game-card{background:var(--bg-card);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:all 0.25s;animation:cardIn 0.4s ease forwards;}
 .network-badges{display:flex;gap:3px;align-items:center;flex-shrink:0;}
-.network-badge{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:0.5px;padding:2px 6px;border-radius:4px;white-space:nowrap;text-transform:uppercase;line-height:1.4;}
+.network-badge{font-family:'Barlow Condensed',sans-serif;font-size:var(--channel-name-size,11px);font-weight:800;letter-spacing:0.5px;padding:2px 6px;border-radius:4px;white-space:nowrap;text-transform:uppercase;line-height:1.4;}
 .nb-espn{background:#cc0000;color:#fff;}
 .nb-espn2{background:#990000;color:#fff;}
 .nb-espnplus{background:#009ddc;color:#fff;}
@@ -868,12 +868,12 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
           <span class="modal-slider-val" id="val-logo">34px</span>
         </div>
         <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of the status text at the top of each card: LIVE, FINAL, upcoming time.">Header / Status Size</span>
+          <span class="modal-slider-label" data-tip="Size of the LIVE/FINAL/upcoming status text and the period time (e.g. Q4 · 2:15, 2nd Half) at the top of each card.">Live/Final Status Size</span>
           <input type="range" min="9" max="22" value="11" id="sl-header" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-header">11px</span>
         </div>
         <div class="modal-slider-row">
-          <span class="modal-slider-label" data-tip="Size of the period/game-time text (e.g. Q4 2:15, 7th inning, sport emoji label) shown at the top of each card.">Period / Time Size</span>
+          <span class="modal-slider-label" data-tip="Size of the sport emoji and name badge (e.g. 🏀 NBA, 🏈 NFL) shown at the top-right of each card.">Sport Badge Size</span>
           <input type="range" min="9" max="22" value="11" id="sl-period" oninput="applyDisplay()">
           <span class="modal-slider-val" id="val-period">11px</span>
         </div>
@@ -982,35 +982,6 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
       </div>
 
       <div class="modal-section">
-        <div class="modal-section-title">Live Preview</div>
-        <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;max-width:320px;">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">CARD PREVIEW</div>
-          <div class="game-card live" id="displayPreviewCard" style="pointer-events:none;max-width:290px;">
-            <div class="card-status">
-              <div class="status-live"><div class="status-live-dot"></div>Q4 · 2:15</div>
-              <span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,100,50,0.9);letter-spacing:0.5px;">ESPN</span>
-              <span class="game-period" style="color:#c9082a;">🏀 NBA</span>
-            </div>
-            <div class="card-body">
-              <div class="teams-container">
-                <div class="team-row">
-                  <div style="width:var(--team-logo-size,34px);height:var(--team-logo-size,34px);border-radius:6px;background:linear-gradient(135deg,#552583,#f9a01b);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:calc(var(--team-logo-size,34px)*0.28);color:white;">LAL</div>
-                  <div class="team-name-block"><div class="team-abbr">LAL</div><div class="team-full-name">Los Angeles Lakers · Away</div></div>
-                  <div class="team-score">108</div>
-                </div>
-                <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:2px 0;"></div>
-                <div class="team-row winning">
-                  <div style="width:var(--team-logo-size,34px);height:var(--team-logo-size,34px);border-radius:6px;background:linear-gradient(135deg,#007A33,#BA9A00);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:calc(var(--team-logo-size,34px)*0.28);color:white;">BOS</div>
-                  <div class="team-name-block"><div class="team-abbr">BOS</div><div class="team-full-name">Boston Celtics · Home</div></div>
-                  <div class="team-score" style="color:white;">112</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-section">
         <div class="modal-section-title">Stats</div>
         <div class="modal-row">
           <span class="modal-label">Stats Depth</span>
@@ -1030,17 +1001,23 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
       </div>
 
       <!-- FLOATING PREVIEW: Stream Card Style -->
-      <div id="dispFloatPreview" style="position:fixed;top:80px;right:30px;width:300px;height:calc(100vh - 120px);overflow-y:scroll;overflow-x:hidden;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);box-sizing:border-box;">
+      <div id="dispFloatPreview" style="position:fixed;top:80px;right:30px;width:240px;height:calc(100vh - 120px);overflow-y:scroll;overflow-x:hidden;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);box-sizing:border-box;">
         <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
           <div id="dispPreviewResizeHandle" title="Drag to resize preview" style="cursor:nwse-resize;padding:2px 6px 2px 0;flex-shrink:0;opacity:0.5;line-height:1;font-size:13px;color:var(--text-dim);">⤡</div>
           <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;color:var(--text-primary);">Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust)</span></span>
           <button onclick="document.getElementById('dispFloatPreview').style.display='none';document.getElementById('dispPreviewBtn').style.display='inline-block';" title="Hide preview" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;">✕</button>
         </div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT · 1920×1080</div>
+        <div class="league-section" style="margin-bottom:10px;">
+          <div class="league-header" style="margin-bottom:6px;padding-bottom:6px;">
+            <div class="league-stripe" style="background:#e10600;"></div>
+            <div class="league-name">SAMPLE SECTION HEADER</div>
+          </div>
+        </div>
         <div class="game-card live" id="dispFloatCard" style="pointer-events:none;">
           <div class="card-status">
             <div class="status-live"><div class="status-live-dot"></div>Q4 · 2:15</div>
-            <span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,100,50,0.9);letter-spacing:0.5px;">ESPN</span>
+            <div class="network-badges"><span class="network-badge nb-espn">ESPN</span></div>
             <span class="game-period" style="color:#c9082a;">🏀 NBA</span>
           </div>
           <div class="card-body">
@@ -1165,7 +1142,7 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
           </div>
           <div class="modal-slider-row">
             <span class="modal-slider-label">Team Logo Size</span>
-            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';const _m=document.getElementById('main');if(_m)_m.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);const _pi=document.getElementById('ddPreviewInner');if(_pi)_pi.style.setProperty('--team-logo-size',this.value+'px');">
+            <input type="range" min="20" max="64" value="34" id="ddLogoSize" oninput="document.getElementById('ddLogoSizeVal').textContent=this.value+'px';const _m=document.getElementById('main');if(_m)_m.style.setProperty('--team-logo-size',this.value+'px');state.display.logoSize=parseInt(this.value);['ddPreviewInner','ddFloatInner'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.setProperty('--team-logo-size',this.value+'px');},this);">
             <span class="modal-slider-val" id="ddLogoSizeVal">34px</span>
           </div>
           <div style="margin-bottom:12px;">
@@ -1187,16 +1164,6 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
           </div>
         </div>
 
-        <!-- PREVIEW -->
-        <div style="margin-bottom:20px;padding-top:4px;">
-          <div class="modal-section-title" style="margin-bottom:4px;">👁 Live Preview</div>
-          <div class="wiz-sublabel" style="margin-bottom:12px;">Updates as you adjust settings above.</div>
-          <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px 14px 10px;overflow:hidden;">
-            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;opacity:0.5;">STREAM OUTPUT PREVIEW</div>
-            <div id="ddPreviewInner" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;"></div>
-          </div>
-        </div>
-
         <div style="display:flex;gap:10px;margin-top:8px;">
           <button class="modal-btn primary" onclick="ddSave()" style="flex:2;">💾 Save Defaults</button>
           <button class="modal-btn" onclick="ddReset()" style="flex:1;border-color:var(--border);color:var(--text-dim);">Reset</button>
@@ -1206,7 +1173,7 @@ body.stream-mode .card-header{padding:calc(var(--card-header-size,11px) * 0.36) 
       </div>
 
       <!-- FLOATING PREVIEW: Default Stream Settings -->
-      <div id="ddFloatPreview" style="position:fixed;top:80px;right:30px;width:360px;height:calc(100vh - 120px);overflow-y:scroll;overflow-x:hidden;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);box-sizing:border-box;">
+      <div id="ddFloatPreview" style="position:fixed;top:80px;right:30px;width:260px;height:calc(100vh - 120px);overflow-y:scroll;overflow-x:hidden;z-index:50;background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);box-sizing:border-box;">
         <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
           <div id="ddPreviewResizeHandle" title="Drag to resize preview" style="cursor:nwse-resize;padding:2px 6px 2px 0;flex-shrink:0;opacity:0.5;line-height:1;font-size:13px;color:var(--text-dim);">⤡</div>
           <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;color:var(--text-primary);">Live Preview <span style="color:var(--text-dim);font-weight:400;font-size:10px;">(updates as you adjust)</span></span>
@@ -3583,18 +3550,18 @@ function ddBuildPreview(){
 }
 
 function ddPreviewApplyScale(){
-  const inner=document.getElementById('ddPreviewInner');
-  if(!inner)return;
   const pct=parseInt(document.getElementById('ddCardScale')?.value)||100;
-  document.getElementById('ddCardScaleVal').textContent=pct+'%';
+  const scaleValEl=document.getElementById('ddCardScaleVal');
+  if(scaleValEl) scaleValEl.textContent=pct+'%';
   const scale=pct/100;
-  // Show scale visually on the outer wrapper
-  const wrap=inner.parentElement;
-  inner.style.transform=`scale(${scale})`;
-  inner.style.transformOrigin='top left';
-  wrap.style.height=Math.round(inner.offsetHeight*scale+20)+'px';
-  wrap.style.overflow='hidden';
-  // Also scale float panel inner (no height adjustment needed — panel scrolls)
+  const inner=document.getElementById('ddPreviewInner');
+  if(inner){
+    const wrap=inner.parentElement;
+    inner.style.transform=`scale(${scale})`;
+    inner.style.transformOrigin='top left';
+    wrap.style.height=Math.round(inner.offsetHeight*scale+20)+'px';
+    wrap.style.overflow='hidden';
+  }
   const floatInner=document.getElementById('ddFloatInner');
   if(floatInner){floatInner.style.transform=`scale(${scale})`;floatInner.style.transformOrigin='top left';}
 }
@@ -5122,21 +5089,24 @@ function applyDisplay(){
     displayRoot.style.setProperty('--section-stripe-width',(state.display.sectionStripeWidth??6)+'px');
     if(state.display.sectionHeaderColor) displayRoot.style.setProperty('--section-header-color',state.display.sectionHeaderColor);
   }
-  // Push into both static preview card and floating preview card
-  ['displayPreviewCard','dispFloatCard'].forEach(id=>{
-    const card=document.getElementById(id);
-    if(!card) return;
-    card.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
-    card.style.setProperty('--card-score-size',state.display.scoreSize+'px');
-    card.style.setProperty('--card-name-size',state.display.nameSize+'px');
-    card.style.setProperty('--card-name-color',state.display.nameColor);
-    card.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
-    card.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
-    card.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    if(state.display.liveColor) card.style.setProperty('--card-live-color',state.display.liveColor);
-    if(state.display.finalColor) card.style.setProperty('--card-final-color',state.display.finalColor);
-    if(state.display.periodColor) card.style.setProperty('--card-period-color',state.display.periodColor);
-  });
+  // Push all display vars into float preview panel so section header + card both respond
+  const _fp=document.getElementById('dispFloatPreview');
+  if(_fp){
+    _fp.style.setProperty('--card-abbr-size',state.display.abbrSize+'px');
+    _fp.style.setProperty('--card-score-size',state.display.scoreSize+'px');
+    _fp.style.setProperty('--card-name-size',state.display.nameSize+'px');
+    _fp.style.setProperty('--card-name-color',state.display.nameColor);
+    _fp.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
+    _fp.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
+    _fp.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
+    _fp.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
+    if(state.display.liveColor) _fp.style.setProperty('--card-live-color',state.display.liveColor);
+    if(state.display.finalColor) _fp.style.setProperty('--card-final-color',state.display.finalColor);
+    if(state.display.periodColor) _fp.style.setProperty('--card-period-color',state.display.periodColor);
+    _fp.style.setProperty('--section-header-size',(state.display.sectionHeaderSize||15)+'px');
+    _fp.style.setProperty('--section-stripe-width',(state.display.sectionStripeWidth??6)+'px');
+    _fp.style.setProperty('--section-header-color',state.display.sectionHeaderColor||'#e8f0fe');
+  }
   settingsSave(saveDisplay);
 }
 
@@ -5193,21 +5163,24 @@ function initDisplayControls(fromSettingsPanel=false){
   const sectionHeaderEl2=document.getElementById('sl-section-header');if(sectionHeaderEl2){const v=state.display.sectionHeaderSize||15;sectionHeaderEl2.value=v;document.getElementById('val-section-header').textContent=v+'px';}
   const sectionStripeEl2=document.getElementById('sl-section-stripe');if(sectionStripeEl2){const v=state.display.sectionStripeWidth??6;sectionStripeEl2.value=v;document.getElementById('val-section-stripe').textContent=v+'px';}
   const sectionHeaderColorEl2=document.getElementById('sectionHeaderColorPicker');if(sectionHeaderColorEl2){const v=state.display.sectionHeaderColor||'#e8f0fe';sectionHeaderColorEl2.value=v;document.getElementById('sectionHeaderColorSwatch').style.background=v;document.getElementById('sectionHeaderColorVal').textContent=v;}
-  // Sync floating preview card to loaded values
-  ['displayPreviewCard','dispFloatCard'].forEach(id=>{
-    const card=document.getElementById(id);
-    if(!card) return;
-    card.style.setProperty('--card-abbr-size',(state.display.abbrSize||18)+'px');
-    card.style.setProperty('--card-score-size',(state.display.scoreSize||34)+'px');
-    card.style.setProperty('--card-name-size',(state.display.nameSize||11)+'px');
-    card.style.setProperty('--card-name-color',state.display.nameColor||'#3d5a78');
-    card.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
-    card.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
-    card.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
-    if(state.display.liveColor) card.style.setProperty('--card-live-color',state.display.liveColor);
-    if(state.display.finalColor) card.style.setProperty('--card-final-color',state.display.finalColor);
-    if(state.display.periodColor) card.style.setProperty('--card-period-color',state.display.periodColor);
-  });
+  // Sync float preview panel with loaded values (panel contains section header + card)
+  const _fp2=document.getElementById('dispFloatPreview');
+  if(_fp2){
+    _fp2.style.setProperty('--card-abbr-size',(state.display.abbrSize||18)+'px');
+    _fp2.style.setProperty('--card-score-size',(state.display.scoreSize||34)+'px');
+    _fp2.style.setProperty('--card-name-size',(state.display.nameSize||11)+'px');
+    _fp2.style.setProperty('--card-name-color',state.display.nameColor||'#3d5a78');
+    _fp2.style.setProperty('--team-logo-size',(state.display.logoSize||34)+'px');
+    _fp2.style.setProperty('--channel-name-size',(state.display.channelSize||11)+'px');
+    _fp2.style.setProperty('--card-header-size',(state.display.headerSize||11)+'px');
+    _fp2.style.setProperty('--card-period-size',(state.display.periodSize||11)+'px');
+    if(state.display.liveColor) _fp2.style.setProperty('--card-live-color',state.display.liveColor);
+    if(state.display.finalColor) _fp2.style.setProperty('--card-final-color',state.display.finalColor);
+    if(state.display.periodColor) _fp2.style.setProperty('--card-period-color',state.display.periodColor);
+    _fp2.style.setProperty('--section-header-size',(state.display.sectionHeaderSize||15)+'px');
+    _fp2.style.setProperty('--section-stripe-width',(state.display.sectionStripeWidth??6)+'px');
+    _fp2.style.setProperty('--section-header-color',state.display.sectionHeaderColor||'#e8f0fe');
+  }
   setTimeout(()=>_initFloatPanel('dispFloatPreview','dispPreviewResizeHandle','dispPreviewW','dispPreviewH'),0);
 }
 
