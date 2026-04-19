@@ -3884,7 +3884,7 @@ function openQuickUpdate(id){
   const gallery=document.getElementById('qu_logoGallery');
   if(gallery){
     const keys=['blue','cyan','green','lime','mono','multicolor','orange','pink','purple','red','teal','yellow'];
-    gallery.innerHTML=keys.map(k=>`<img src="/logos/scorecastarr_${k}.png" title="${k}" onclick="pickBuiltinLogo('${k}','qu_logoPreviewWrap','qu_logoUrl')" style="width:140px;height:27px;object-fit:cover;cursor:pointer;border-radius:5px;border:2px solid var(--border);padding:2px;background:var(--bg-card);transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">`).join('');
+    gallery.innerHTML=keys.map(k=>`<img src="/logos/scorecastarr_${k}.png" title="${k}" onclick="pickBuiltinLogo('${k}','qu_logoPreview','qu_logoUrl')" style="width:140px;height:27px;object-fit:cover;cursor:pointer;border-radius:5px;border:2px solid var(--border);padding:2px;background:var(--bg-card);transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">`).join('');
   }
   document.getElementById('quSaveBtn').disabled=false;
   document.getElementById('quSaveBtn').textContent='💾 Save Changes';
@@ -4304,7 +4304,14 @@ function pickBuiltinLogo(key,previewId,urlInputId){
   const inp=document.getElementById(urlInputId);
   if(inp){inp.value=url;inp.dispatchEvent(new Event('input'));}
   const prev=document.getElementById(previewId);
-  if(prev) prev.innerHTML=`<img src="${url}" style="width:76px;height:76px;object-fit:contain;border-radius:8px;">`;
+  if(prev){
+    if(prev.tagName==='IMG'){
+      // Quick Update path: update the existing img element in-place (don't replace it — that destroys the element ID)
+      prev.src=url;prev.style.cssText='height:32px;border-radius:4px;display:block;';
+    } else {
+      prev.innerHTML=`<img src="${url}" style="width:76px;height:76px;object-fit:contain;border-radius:8px;">`;
+    }
+  }
   if(urlInputId==='wiz_logoUrl') _wizardData.logoUrl=url;
 }
 
