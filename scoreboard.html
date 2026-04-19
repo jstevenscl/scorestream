@@ -5747,6 +5747,43 @@ function sbToggleDefault(group, toggleEl){
   const hintEl  = document.getElementById('dd-hint-'+groupId);
   if(groupEl) groupEl.style.cssText = nowOn ? 'transition:opacity 0.2s;opacity:0.35;pointer-events:none;user-select:none;' : 'transition:opacity 0.2s;';
   if(hintEl)  hintEl.style.display  = nowOn ? 'flex' : 'none';
+  // Re-apply effective CSS vars + sync slider UI to reflect the new inherited/overridden values
+  if(group==='fonts' || group==='colors') _sbApplyEffectivePreviewVars(group);
+}
+
+function _sbApplyEffectivePreviewVars(group){
+  const inner = document.getElementById('sbCardScaleInner');
+  if(!inner) return;
+  const def = _displayDefaults || {};
+  const own = (_editorDraft && _editorDraft.display_config) || {};
+  const useDefFonts  = _editorDraft && _editorDraft.use_default_fonts  !== false;
+  const useDefColors = _editorDraft && _editorDraft.use_default_colors !== false;
+
+  function _sz(cssVar, inputId, valId, defKey, ownKey, fallback){
+    const v = useDefFonts ? (def[defKey] ?? own[ownKey] ?? fallback) : (own[ownKey] ?? fallback);
+    inner.style.setProperty(cssVar, v+'px');
+    const el=document.getElementById(inputId); if(el) el.value=v;
+    const vl=document.getElementById(valId);   if(vl) vl.textContent=v+'px';
+  }
+  function _col(cssVar, inputId, valId, swatchId, defKey, ownKey, fallback){
+    const v = useDefColors ? (def[defKey] ?? own[ownKey] ?? fallback) : (own[ownKey] ?? fallback);
+    inner.style.setProperty(cssVar, v);
+    const el=document.getElementById(inputId);  if(el) el.value=v;
+    const vl=document.getElementById(valId);    if(vl) vl.textContent=v;
+    const sw=document.getElementById(swatchId); if(sw) sw.style.background=v;
+  }
+
+  if(!group || group==='fonts'){
+    _sz('--card-abbr-size',  'sbEditAbbrSize',  'sbEditAbbrSizeVal',  'card_abbr_size',  'card_abbr_size',  18);
+    _sz('--card-score-size', 'sbEditScoreSize', 'sbEditScoreSizeVal', 'card_score_size', 'card_score_size', 34);
+    _sz('--card-name-size',  'sbEditNameSize',  'sbEditNameSizeVal',  'card_name_size',  'card_name_size',  11);
+    _sz('--card-title-size', 'sbEditTitleSize', 'sbEditTitleSizeVal', 'card_title_size', 'card_title_size', 13);
+  }
+  if(!group || group==='colors'){
+    _col('--card-name-color',       'sbEditNameColor',       'sbEditNameColorVal',       'sbEditNameColorSwatch',       'card_name_color',       'card_name_color',       '#3d5a78');
+    _col('--motor-label-color',     'sbEditMotorLabelColor', 'sbEditMotorLabelColorVal', 'sbEditMotorLabelColorSwatch', 'motor_label_color',     'motor_label_color',     '#3d5a78');
+    _col('--motor-secondary-color', 'sbEditMotorSecColor',   'sbEditMotorSecColorVal',   'sbEditMotorSecColorSwatch',   'motor_secondary_color', 'motor_secondary_color', '#7a9ab8');
+  }
 }
 
 function setMotorConfig(key,val,explicitSbId){
